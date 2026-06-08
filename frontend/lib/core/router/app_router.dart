@@ -1,0 +1,60 @@
+import 'package:go_router/go_router.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/dashboard/presentation/pages/dashboard_page.dart';
+import '../../features/inventory/presentation/pages/inventory_page.dart';
+import '../../features/sales/presentation/pages/sales_page.dart';
+import '../../features/expenses/presentation/pages/expenses_page.dart';
+import '../../features/workers/presentation/pages/workers_page.dart';
+import '../../features/branches/presentation/pages/branches_page.dart';
+import '../../features/reports/presentation/pages/reports_page.dart';
+
+final GoRouter appRouter = GoRouter(
+  initialLocation: '/login',
+  errorBuilder: (context, state) => Scaffold(
+    body: Center(
+      child: Text('Error: ${state.error}'),
+    ),
+  ),
+  routes: [
+    GoRoute(
+      path: '/login',
+      name: 'login',
+      builder: (context, state) => const LoginPage(),
+    ),
+    GoRoute(
+      path: '/dashboard',
+      name: 'dashboard',
+      builder: (context, state) => const DashboardPage(),
+    ),
+    GoRoute(
+      path: '/inventory',
+      name: 'inventory',
+      builder: (context, state) => const InventoryPage(),
+    ),
+    GoRoute(
+      path: '/sales',
+      name: 'sales',
+      builder: (context, state) => const SalesPage(),
+    ),
+    GoRoute(
+      path: '/expenses',
+      name: 'expenses',
+      builder: (context, state) => const ExpensesPage(),
+    ),
+    GoRoute(
+      path: '/workers',
+      name: 'workers',
+      builder: (context, state) => const WorkersPage(),
+    ),
+    GoRoute(
+      path: '/branches',
+      name: 'branches',
+      builder: (context, state) => const BranchesPage(),
+    ),
+    GoRoute(
+      path: '/reports',
+      name: 'reports',
+      builder: (context, state) => const ReportsPage(),
+    ),
+  ],
+);

@@ -1,0 +1,151 @@
+name: Build Signed Release APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  build-signed:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Step 2: Set up Java
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+      
+      # Step 3: Set up Flutter
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+      
+      # Step 4: Get Flutter dependencies
+      - name: Get Flutter dependencies
+        run: |
+          cd frontend
+          flutter pub get
+      
+      # Step 5: Create keystore (if using secrets)
+      - name: Create Android keystore
+        if: secrets.KEYSTORE_BASE64 != ''
+        run: |
+          cd frontend/android/app
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+      
+      # Step 6: Build release APK with signing
+      - name: Build release APK
+        run: |
+          cd frontend
+          flutter build apk --release \
+            --target-platform android-arm64 \
+            --split-per-abi
+        env:
+          KEYSTORE_PATH: ${{ secrets.KEYSTORE_PATH }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      
+      # Step 7: Build AAB (Android App Bundle) for Play Store
+      - name: Build App Bundle
+        run: |
+          cd frontend
+          flutter build appbundle --release
+        env:
+          KEYSTORE_PATH: ${{ secrets.KEYSTORE_PATH }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      
+      # Step 8: Upload APK as artifact
+      - name: Upload release APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: gemstone-app-signed-release-${{ github.event.inputs.version }}
+          path: frontend/build/app/outputs/flutter-apk/
+          retention-days: 30
+      
+      # Step 9: Upload AAB as artifact
+      - name: Upload App Bundle
+        uses: actions/upload-artifact@v3
+        with:
+          name: gemstone-app-bundle-${{ github.event.inputs.version }}
+          path: frontend/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+      
+      # Step 10: Create release notes
+      - name: Create release notes
+        run: |
+          cat > release-notes.md << 'EOF'
+          # Gemstone Management App v${{ github.event.inputs.version }}
+          
+          ## Release Information
+          - **Version**: ${{ github.event.inputs.version }}
+          - **Build Date**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          - **Commit**: ${{ github.sha }}
+          
+          ## Features
+          - ✅ Offline-first SQLite database
+          - ✅ Full inventory management
+          - ✅ Sales and expense tracking
+          - ✅ Worker management
+          - ✅ Profit/Loss reports
+          - ✅ QR code tracking
+          - ✅ Notifications system
+          - ✅ Hybrid sync engine (offline + online)
+          
+          ## Installation
+          1. Download `gemstone-app-release.apk`
+          2. Enable "Unknown Sources" in Android settings
+          3. Install the APK on your Android device
+          4. Launch the app
+          
+          ## Offline Mode
+          The app works completely offline with SQLite. All data is stored locally and can be synced to the backend when internet is available.
+          
+          ## System Requirements
+          - Android 5.0 (API 21) or higher
+          - Minimum 50MB free storage
+          - Internet connection (optional, for sync only)
+          
+          ## Known Issues
+          - None reported
+          
+          ## Support
+          For issues or feature requests, please contact support@gemstone-app.com
+          EOF
+          cat release-notes.md
+      
+      # Step 11: Upload release notes
+      - name: Upload release notes
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-notes-${{ github.event.inputs.version }}
+          path: release-notes.md
+          retention-days: 30
+      
+      # Step 12: Create GitHub Release
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          files: |
+            frontend/build/app/outputs/flutter-apk/app-release.apk
+            frontend/build/app/outputs/bundle/release/app-release.aab
+            release-notes.md
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
