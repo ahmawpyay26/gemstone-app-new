@@ -8,6 +8,7 @@ import '../services/auth_service.dart';
 import '../services/api_client.dart';
 
 final sl = GetIt.instance;
+final getIt = GetIt.instance;
 
 Future<void> init() async {
   // 1. External - Offline Only

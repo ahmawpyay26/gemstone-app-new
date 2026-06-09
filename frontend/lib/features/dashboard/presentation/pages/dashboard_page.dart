@@ -20,7 +20,26 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _authService = getIt<AuthService>();
-    _loadUserInfo();
+    _checkAuthenticationAndLoad();
+  }
+
+  Future<void> _checkAuthenticationAndLoad() async {
+    try {
+      final isAuthenticated = await _authService.isAuthenticated();
+      if (!isAuthenticated) {
+        // Redirect to login if not authenticated
+        if (mounted) {
+          context.go('/login');
+        }
+        return;
+      }
+      // Load user info if authenticated
+      await _loadUserInfo();
+    } catch (e) {
+      if (mounted) {
+        context.go('/login');
+      }
+    }
   }
 
   Future<void> _loadUserInfo() async {
