@@ -1,0 +1,105 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+
+      - name: Get Flutter dependencies
+        working-directory: ./frontend
+        run: flutter pub get
+
+      - name: Run Flutter tests
+        working-directory: ./frontend
+        run: flutter test --no-pub
+        continue-on-error: true
+
+      - name: Build APK
+        working-directory: ./frontend
+        run: flutter build apk --release --no-pub
+
+      - name: Upload APK to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release
+          path: frontend/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Create Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          body: |
+            ## Gemstone Management App - Android Release
+            
+            **Build Number:** ${{ github.run_number }}
+            **Commit:** ${{ github.sha }}
+            **Branch:** main
+            
+            ### Download APK
+            The APK file is available in the artifacts section.
+            
+            ### Installation Instructions
+            1. Download the `app-release.apk` file
+            2. Transfer to your Android device
+            3. Enable "Unknown Sources" in Settings > Security
+            4. Open the APK file and tap Install
+            5. Launch the app and login with your credentials
+            
+            ### Features
+            - ✅ Gemstone Inventory Management
+            - ✅ Sales & Expense Tracking
+            - ✅ Worker Management
+            - ✅ Branch Operations
+            - ✅ Offline-first Architecture
+            - ✅ Real-time Synchronization
+            
+            ### System Requirements
+            - Android 5.0 (API 21) or higher
+            - Minimum 100MB free storage
+            - Internet connection for sync
+          draft: false
+          prerelease: false
+
+      - name: Upload APK to Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./frontend/build/app/outputs/flutter-apk/app-release.apk
+          asset_name: gemstone-app-v${{ github.run_number }}.apk
+          asset_content_type: application/vnd.android.package-archive
+
+      - name: Notify Build Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ APK build completed successfully!"
+            echo "📦 APK file: gemstone-app-v${{ github.run_number }}.apk"
+          else
+            echo "❌ APK build failed. Check logs for details."
+          fi
