@@ -58,6 +58,31 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3001;
 
 /**
+ * Wait for database to be ready with retries
+ */
+async function waitForDatabase(maxRetries = 10, delay = 5000) {
+  const db = require('./config/database');
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      logger.info(`🔄 Checking database connection (attempt ${i + 1}/${maxRetries})...`);
+      await db.authenticate();
+      logger.info('✅ Database is ready');
+      return true;
+    } catch (error) {
+      logger.warn(`⚠️  Database not ready yet: ${error.message}`);
+      if (i < maxRetries - 1) {
+        logger.info(`⏳ Waiting ${delay / 1000}s before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  logger.error('❌ Database connection failed after all retries');
+  return false;
+}
+
+/**
  * Start server with database initialization
  */
 async function startServer() {
@@ -66,13 +91,34 @@ async function startServer() {
     logger.info(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
     logger.info(`🔌 Port: ${PORT}`);
 
-    // Initialize database and create tables
-    logger.info('🔨 Initializing database...');
-    await initializeDatabase();
+    // Wait for database to be ready
+    logger.info('⏳ Waiting for database connection...');
+    const dbReady = await waitForDatabase();
+    
+    if (!dbReady) {
+      logger.error('❌ Database connection failed. Server starting in limited mode.');
+      // Continue anyway - health check will work, but data operations will fail
+    } else {
+      // Initialize database and create tables
+      try {
+        logger.info('🔨 Initializing database...');
+        await initializeDatabase();
+        logger.info('✅ Database tables initialized');
+      } catch (error) {
+        logger.warn('⚠️  Database initialization warning:', error.message);
+        // Don't exit - server can still start
+      }
 
-    // Seed admin user
-    logger.info('👤 Seeding admin user...');
-    await seedAdminUser();
+      // Seed admin user
+      try {
+        logger.info('👤 Seeding admin user...');
+        await seedAdminUser();
+        logger.info('✅ Admin user seeded');
+      } catch (error) {
+        logger.warn('⚠️  Admin user seeding warning:', error.message);
+        // Don't exit - server can still start
+      }
+    }
 
     // Start Express server
     app.listen(PORT, () => {
@@ -91,11 +137,13 @@ async function startServer() {
 
   } catch (error) {
     logger.error('❌ Failed to start server:', error);
-    process.exit(1);
+    // Still start the server for health checks
+    app.listen(PORT, () => {
+      logger.info(`✅ Server running on port ${PORT} (limited mode - database unavailable)`);
+      logger.info('📊 Health Check: GET /api/health');
+    });
   }
 }
 
 // Start server
 startServer();
-
-module.exports = app;

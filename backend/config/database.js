@@ -1,12 +1,20 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-// Parse DATABASE_URL if available (Render provides this)
 let sequelize;
 
+// Log environment for debugging
+console.log('🔍 Database Configuration Debug:');
+console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`   DATABASE_URL present: ${!!process.env.DATABASE_URL}`);
+console.log(`   DB_HOST: ${process.env.DB_HOST || 'not set'}`);
+console.log(`   DB_PORT: ${process.env.DB_PORT || 'not set'}`);
+console.log(`   DB_NAME: ${process.env.DB_NAME || 'not set'}`);
+console.log(`   DB_USER: ${process.env.DB_USER || 'not set'}`);
+
 if (process.env.DATABASE_URL) {
-  // Use connection string from Render
-  console.log('📌 Using DATABASE_URL for connection...');
+  // Use Render's DATABASE_URL (production)
+  console.log('📌 Connecting using DATABASE_URL...');
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
@@ -17,12 +25,15 @@ if (process.env.DATABASE_URL) {
       idle: 10000
     },
     dialectOptions: {
-      ssl: process.env.DB_SSL === 'true' ? { require: true, rejectUnauthorized: false } : false
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
     }
   });
 } else {
-  // Fallback to individual environment variables
-  console.log('📌 Using individual environment variables for connection...');
+  // Fallback to individual environment variables (development)
+  console.log('📌 Connecting using individual environment variables...');
   sequelize = new Sequelize(
     process.env.DB_NAME || 'gemstone_db',
     process.env.DB_USER || 'postgres',
@@ -39,16 +50,20 @@ if (process.env.DATABASE_URL) {
         idle: 10000
       },
       dialectOptions: {
-        ssl: process.env.DB_SSL === 'true' ? { require: true, rejectUnauthorized: false } : false
+        ssl: process.env.DB_SSL === 'true' ? {
+          require: true,
+          rejectUnauthorized: false
+        } : false
       }
     }
   );
 }
 
 // Test database connection with retry logic
-const testConnection = async (retries = 3, delay = 5000) => {
+const testConnection = async (retries = 5, delay = 3000) => {
   for (let i = 0; i < retries; i++) {
     try {
+      console.log(`🔄 Database connection attempt ${i + 1}/${retries}...`);
       await sequelize.authenticate();
       console.log('✅ Database connection established successfully');
       return true;
@@ -64,6 +79,7 @@ const testConnection = async (retries = 3, delay = 5000) => {
   return false;
 };
 
+// Don't wait for connection test, let it run in background
 testConnection();
 
 module.exports = sequelize;
