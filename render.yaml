@@ -3,8 +3,9 @@ services:
     name: gemstone-backend
     env: node
     plan: free
-    buildCommand: npm install
-    startCommand: npm start
+    region: singapore
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -31,13 +32,13 @@ services:
           name: gemstone-postgres
           property: password
       - key: DB_SSL
-        value: true
+        value: "true"
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://gemdash-ggyfjknd.manus.space
+        value: "https://gemdash-ggyfjknd.manus.space,http://localhost:3000,http://localhost:5173"
 
 databases:
   - name: gemstone-postgres
@@ -45,3 +46,4 @@ databases:
     user: gemstone_user
     plan: free
     region: singapore
+    postgresMajorVersion: "15"
