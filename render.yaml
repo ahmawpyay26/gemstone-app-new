@@ -46,8 +46,8 @@ services:
 
 databases:
   - name: gemstone-postgres
-    databaseName: gemstone_production
-    user: gemstone_user
+    databaseName: geestoneproduction
+    user: geestoneuser
     plan: free
     region: singapore
-    postgresMajorVersion: "15"
+    postgresMajorVersion: "18"
