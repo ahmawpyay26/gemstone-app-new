@@ -11,6 +11,10 @@
   "keywords": ["gemstone", "trading", "management", "api"],
   "author": "Gemstone Team",
   "license": "ISC",
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
   "dependencies": {
     "express": "^5.2.1",
     "cors": "^2.8.6",

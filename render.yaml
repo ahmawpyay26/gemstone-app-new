@@ -4,8 +4,9 @@ services:
     env: node
     plan: free
     region: singapore
-    buildCommand: cd backend && yarn install
-    startCommand: cd backend && yarn start
+    buildCommand: npm install
+    startCommand: npm start
+    rootDir: backend
     envVars:
       - key: NODE_ENV
         value: production
