@@ -25,7 +25,6 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   drift: ^2.14.0
-  sqlite3_flutter_libs: ^0.5.8
   
   # Authentication & Security
   flutter_secure_storage: ^4.2.1
