@@ -29,7 +29,7 @@ dependencies:
   
   # Authentication & Security
   flutter_secure_storage: ^9.2.0
-  local_auth: ^2.3.0
+  local_auth: ^2.1.0
   
   # Dependency Injection
   get_it: ^7.6.0
