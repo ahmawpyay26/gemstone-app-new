@@ -28,7 +28,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.20
   
   # Authentication & Security
-  flutter_secure_storage: ^9.2.0
+  flutter_secure_storage: ^8.1.1
   local_auth: ^2.1.0
   
   # Dependency Injection
