@@ -27,6 +27,10 @@ jobs:
         working-directory: ./frontend
         run: flutter pub get
 
+      - name: Regenerate Android Project
+        working-directory: ./frontend
+        run: flutter create . --platforms android
+
       - name: Run Flutter tests
         working-directory: ./frontend
         run: flutter test --no-pub
