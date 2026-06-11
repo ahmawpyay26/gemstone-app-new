@@ -27,7 +27,7 @@ dependencies:
   drift: ^2.10.0
   
   # Authentication & Security
-  flutter_secure_storage: ^9.0.0
+  flutter_secure_storage: ^8.1.1
   local_auth: ^2.1.8
   
   # Dependency Injection
