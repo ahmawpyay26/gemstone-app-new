@@ -29,7 +29,10 @@ jobs:
 
       - name: Regenerate Android Project
         working-directory: ./frontend
-        run: flutter create . --platforms android
+        run: |
+          flutter create . --platforms android
+          # Enable Android Embedding v2
+          sed -i 's/org.gradle.jvmargs=-Xmx1536m/org.gradle.jvmargs=-Xmx1536m\nandroid.useAndroidX=true\nandroid.enableJetifier=true/' android/gradle.properties || true
 
       - name: Clean Flutter
         working-directory: ./frontend
