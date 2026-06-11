@@ -1,9 +1,9 @@
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
 import '../constants/app_constants.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  late Dio _dio;
+  late dio.Dio _dio;
   final FlutterSecureStorage _secureStorage;
 
   ApiClient({FlutterSecureStorage? secureStorage})
@@ -12,19 +12,19 @@ class ApiClient {
   }
 
   void _initializeDio() {
-    _dio = Dio(
-      BaseOptions(
+    _dio = dio.Dio(
+      dio.BaseOptions(
         baseUrl: AppConstants.apiBaseUrl,
         connectTimeout: Duration(seconds: AppConstants.connectionTimeout),
         receiveTimeout: Duration(seconds: AppConstants.receiveTimeout),
         contentType: 'application/json',
-        responseType: ResponseType.json,
+        responseType: dio.ResponseType.json,
       ),
     );
 
     // Add interceptors
     _dio.interceptors.add(
-      InterceptorsWrapper(
+      dio.InterceptorsWrapper(
         onRequest: _onRequest,
         onResponse: _onResponse,
         onError: _onError,
@@ -33,8 +33,8 @@ class ApiClient {
   }
 
   Future<void> _onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
+    dio.RequestOptions options,
+    dio.RequestInterceptorHandler handler,
   ) async {
     try {
       // Get access token from secure storage
@@ -55,16 +55,16 @@ class ApiClient {
   }
 
   Future<void> _onResponse(
-    Response response,
-    ResponseInterceptorHandler handler,
+    dio.Response response,
+    dio.ResponseInterceptorHandler handler,
   ) async {
     print('[API Response] ${response.statusCode} ${response.requestOptions.path}');
     return handler.next(response);
   }
 
   Future<void> _onError(
-    DioException error,
-    ErrorInterceptorHandler handler,
+    dio.DioException error,
+    dio.ErrorInterceptorHandler handler,
   ) async {
     print('[API Error] ${error.response?.statusCode} ${error.message}');
 
@@ -76,7 +76,7 @@ class ApiClient {
         // Retry the request
         return handler.resolve(await _dio.request(
           error.requestOptions.path,
-          options: Options(
+          options: dio.Options(
             method: error.requestOptions.method,
             headers: error.requestOptions.headers,
           ),
@@ -121,10 +121,10 @@ class ApiClient {
   }
 
   // GET request
-  Future<Response> get(
+  Future<dio.Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
-    Options? options,
+    dio.Options? options,
   }) async {
     try {
       final response = await _dio.get(
@@ -139,11 +139,11 @@ class ApiClient {
   }
 
   // POST request
-  Future<Response> post(
+  Future<dio.Response> post(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
-    Options? options,
+    dio.Options? options,
   }) async {
     try {
       final response = await _dio.post(
@@ -159,11 +159,11 @@ class ApiClient {
   }
 
   // PUT request
-  Future<Response> put(
+  Future<dio.Response> put(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
-    Options? options,
+    dio.Options? options,
   }) async {
     try {
       final response = await _dio.put(
@@ -179,10 +179,10 @@ class ApiClient {
   }
 
   // DELETE request
-  Future<Response> delete(
+  Future<dio.Response> delete(
     String path, {
     Map<String, dynamic>? queryParameters,
-    Options? options,
+    dio.Options? options,
   }) async {
     try {
       final response = await _dio.delete(
@@ -197,11 +197,11 @@ class ApiClient {
   }
 
   // PATCH request
-  Future<Response> patch(
+  Future<dio.Response> patch(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
-    Options? options,
+    dio.Options? options,
   }) async {
     try {
       final response = await _dio.patch(
