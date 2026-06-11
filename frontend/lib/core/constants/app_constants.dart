@@ -1,6 +1,6 @@
 class AppConstants {
   // API Configuration
-  static const String apiBaseUrl = 'https://gemstone-app-1nmd.onrender.com/api';
+  static const String apiBaseUrl = 'https://gemstone-backendkst.onrender.com/api';
   static const String apiTimeout = '30';
   
   // API Endpoints
