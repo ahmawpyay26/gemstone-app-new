@@ -24,7 +24,7 @@ dependencies:
   # Local Storage & Database
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  drift: ^2.14.0
+  drift: ^2.10.0
   
   # Authentication & Security
   flutter_secure_storage: ^4.2.1
