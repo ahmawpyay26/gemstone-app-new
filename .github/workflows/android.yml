@@ -31,6 +31,10 @@ jobs:
         working-directory: ./frontend
         run: flutter create . --platforms android
 
+      - name: Clean Flutter
+        working-directory: ./frontend
+        run: flutter clean
+
       - name: Run Flutter tests
         working-directory: ./frontend
         run: flutter test --no-pub
