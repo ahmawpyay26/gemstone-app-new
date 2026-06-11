@@ -42,7 +42,6 @@ dependencies:
   
   # QR Code
   qr_flutter: ^4.1.0
-  mobile_scanner: ^3.5.0
   
   # Navigation
   go_router: ^14.0.0
