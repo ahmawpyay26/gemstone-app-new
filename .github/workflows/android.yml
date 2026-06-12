@@ -36,6 +36,8 @@ jobs:
         run: |
           rm -rf android/
           flutter create . --platforms android
+          # Set the app display name to "KST Jade"
+          sed -i 's/android:label="frontend"/android:label="KST Jade"/' android/app/src/main/AndroidManifest.xml
           # Enable Android Embedding v2 and AndroidX
           if [ -f android/gradle.properties ]; then
             echo "android.useAndroidX=true" >> android/gradle.properties
