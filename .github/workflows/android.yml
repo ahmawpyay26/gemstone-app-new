@@ -63,57 +63,37 @@ jobs:
           path: frontend/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
-      - name: Create Release
+      - name: Create Release Notes
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        id: create_release
-        uses: actions/create-release@v1.1.4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
-          body: |
-            ## Gemstone Management App - Android Release
-            
-            **Build Number:** ${{ github.run_number }}
-            **Commit:** ${{ github.sha }}
-            **Branch:** main
-            
-            ### Download APK
-            The APK file is available in the artifacts section.
-            
-            ### Installation Instructions
-            1. Download the `app-release.apk` file
-            2. Transfer to your Android device
-            3. Enable "Unknown Sources" in Settings > Security
-            4. Open the APK file and tap Install
-            5. Launch the app and login with your credentials
-            
-            ### Features
-            - ✅ Gemstone Inventory Management
-            - ✅ Sales & Expense Tracking
-            - ✅ Worker Management
-            - ✅ Branch Operations
-            - ✅ Offline-first Architecture
-            - ✅ Real-time Synchronization
-            
-            ### System Requirements
-            - Android 5.0 (API 21) or higher
-            - Minimum 100MB free storage
-            - Internet connection for sync
-          draft: false
-          prerelease: false
-
-      - name: Upload APK to Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./frontend/build/app/outputs/flutter-apk/app-release.apk
-          asset_name: gemstone-app-v${{ github.run_number }}.apk
-          asset_content_type: application/vnd.android.package-archive
+        run: |
+          echo "## Gemstone Management App - Android Release" > release_notes.txt
+          echo "" >> release_notes.txt
+          echo "**Build Number:** ${{ github.run_number }}" >> release_notes.txt
+          echo "**Commit:** ${{ github.sha }}" >> release_notes.txt
+          echo "**Branch:** main" >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "### Download APK" >> release_notes.txt
+          echo "The APK file is available in the artifacts section." >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "### Installation Instructions" >> release_notes.txt
+          echo "1. Download the app-release.apk file from artifacts" >> release_notes.txt
+          echo "2. Transfer to your Android device" >> release_notes.txt
+          echo "3. Enable 'Unknown Sources' in Settings > Security" >> release_notes.txt
+          echo "4. Open the APK file and tap Install" >> release_notes.txt
+          echo "5. Launch the app and login with your credentials" >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "### Features" >> release_notes.txt
+          echo "- ✅ Gemstone Inventory Management" >> release_notes.txt
+          echo "- ✅ Sales & Expense Tracking" >> release_notes.txt
+          echo "- ✅ Worker Management" >> release_notes.txt
+          echo "- ✅ Branch Operations" >> release_notes.txt
+          echo "- ✅ Offline-first Architecture" >> release_notes.txt
+          echo "- ✅ Real-time Synchronization" >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "### System Requirements" >> release_notes.txt
+          echo "- Android 5.0 (API 21) or higher" >> release_notes.txt
+          echo "- Minimum 100MB free storage" >> release_notes.txt
+          echo "- Internet connection for sync" >> release_notes.txt
 
       - name: Notify Build Status
         if: always()
