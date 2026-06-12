@@ -15,10 +15,10 @@ class AppConstants {
   
   // Offline Mode - ENABLED WITH SYNC
   static const bool OFFLINE_MODE_ENABLED = true;
-  static const bool REQUIRE_BACKEND_ON_STARTUP = false;
+  static const bool REQUIRE_BACKEND_ON_STARTUP = true;
   
   // Backend API Configuration
-  static const String API_BASE_URL = 'https://gemstone-backend-xxxxx.onrender.com/api';
+  static const String API_BASE_URL = 'https://gemstone-backendkst.onrender.com/api';
   static const String API_TIMEOUT = '30';
   
   // Sync Configuration - ENABLED
