@@ -13,15 +13,19 @@ class AppConstants {
   static const String DATABASE_NAME = 'gemstone_app.db';
   static const int DATABASE_VERSION = 1;
   
-  // Offline Mode - ALWAYS ENABLED
+  // Offline Mode - ENABLED WITH SYNC
   static const bool OFFLINE_MODE_ENABLED = true;
   static const bool REQUIRE_BACKEND_ON_STARTUP = false;
   
-  // Sync Configuration - DISABLED
-  static const bool AUTO_SYNC_ENABLED = false;
-  static const int SYNC_INTERVAL_MINUTES = 0;
-  static const int MAX_SYNC_RETRIES = 0;
-  static const int SYNC_TIMEOUT_SECONDS = 0;
+  // Backend API Configuration
+  static const String API_BASE_URL = 'https://gemstone-backend-xxxxx.onrender.com/api';
+  static const String API_TIMEOUT = '30';
+  
+  // Sync Configuration - ENABLED
+  static const bool AUTO_SYNC_ENABLED = true;
+  static const int SYNC_INTERVAL_MINUTES = 15;
+  static const int MAX_SYNC_RETRIES = 3;
+  static const int SYNC_TIMEOUT_SECONDS = 30;
   
   // Security Configuration
   static const bool REQUIRE_AUTHENTICATION = true;
@@ -34,7 +38,7 @@ class AppConstants {
   static const String PRIMARY_COLOR = '#FFD700'; // Gold
   static const String SECONDARY_COLOR = '#1A1A1A'; // Dark
   
-  // Feature Flags - All Local Only
+  // Feature Flags - Local with Cloud Sync
   static const bool FEATURE_INVENTORY = true;
   static const bool FEATURE_SALES = true;
   static const bool FEATURE_EXPENSES = true;
@@ -42,7 +46,7 @@ class AppConstants {
   static const bool FEATURE_WORKERS = true;
   static const bool FEATURE_QR_TRACKING = true;
   static const bool FEATURE_NOTIFICATIONS = true;
-  static const bool FEATURE_SYNC = false; // Disabled in offline mode
+  static const bool FEATURE_SYNC = true; // Enabled with backend
   
   // Logging Configuration
   static const bool DEBUG_LOGGING = true;
