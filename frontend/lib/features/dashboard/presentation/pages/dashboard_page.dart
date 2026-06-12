@@ -153,7 +153,7 @@ class _DashboardPageState extends State<DashboardPage> {
               builder: (context, __3, ____) {
                 final sales = LocalDb.totalSales();
                 final expenses = LocalDb.totalExpenses();
-                final profit = LocalDb.profit();
+                final profit = LocalDb.netProfit();
                 final invValue = LocalDb.inventoryValue();
                 return Column(
                   children: [

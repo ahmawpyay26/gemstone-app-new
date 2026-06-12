@@ -166,7 +166,8 @@ class Sale {
   String gemstoneId; // ဆက်စပ်ကျောက်မျက် id (ဗလာဖြစ်နိုင်)
   String gemstoneName; // ရောင်းသည့်ကျောက်
   String customerName; // ဝယ်သူအမည်
-  double amount; // ရောင်းရငွေ
+  double amount; // ရောင်းရငွေ (gross revenue)
+  double costPrice; // ရောင်းသည့်ပစ္စည်း၏ စုစုပေါင်းအရင်း (cost of goods sold)
   int quantity;
   double weightCarat; // အလေးချိန် တန်ဖိုး (ယူနစ်ပေါ်မူတည်)
   String paymentMethod; // cash | bank | credit
@@ -179,6 +180,7 @@ class Sale {
     required this.gemstoneName,
     required this.customerName,
     required this.amount,
+    this.costPrice = 0,
     required this.quantity,
     this.weightCarat = 0,
     required this.paymentMethod,
@@ -208,13 +210,14 @@ class SaleAdapter extends TypeAdapter<Sale> {
       saleDate: fields[7] as int,
       gemstoneId: (fields[8] as String?) ?? '',
       weightCarat: fields[9] == null ? 0 : (fields[9] as num).toDouble(),
+      costPrice: fields[10] == null ? 0 : (fields[10] as num).toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -234,7 +237,9 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(8)
       ..write(obj.gemstoneId)
       ..writeByte(9)
-      ..write(obj.weightCarat);
+      ..write(obj.weightCarat)
+      ..writeByte(10)
+      ..write(obj.costPrice);
   }
 }
 

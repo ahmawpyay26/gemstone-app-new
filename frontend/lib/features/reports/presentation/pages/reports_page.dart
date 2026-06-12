@@ -34,7 +34,10 @@ class ReportsPage extends StatelessWidget {
                     builder: (context, _______, ________) {
                       final sales = LocalDb.totalSales();
                       final expenses = LocalDb.totalExpenses();
-                      final profit = LocalDb.profit();
+                      final cogs = LocalDb.totalCostOfGoodsSold();
+                      final grossProfit = LocalDb.grossProfit();
+                      final netProfit = LocalDb.netProfit();
+                      final profit = netProfit;
                       final invValue = LocalDb.inventoryValue();
                       final invCount = LocalDb.inventoryCount();
                       final salary = LocalDb.totalSalary();
@@ -47,7 +50,7 @@ class ReportsPage extends StatelessWidget {
                         children: [
                           _section('ဘဏ္ဍာရေး အကျဉ်းချုပ်'),
                           _bigCard(
-                            'အသားတင် အမြတ်/အရှုံး',
+                            'အသားတင် အမြတ်/အရှုံး (အဆုံးသတ်)',
                             '${_money.format(profit)} ကျပ်',
                             profit >= 0
                                 ? AppTheme.successColor
@@ -60,9 +63,25 @@ class ReportsPage extends StatelessWidget {
                           Row(children: [
                             Expanded(
                                 child: _miniCard(
-                                    'အရောင်း',
+                                    'အရောင်း (ရောင်းရငွေ)',
                                     _money.format(sales),
                                     AppTheme.successColor)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                                child: _miniCard(
+                                    'အရင်း (COGS)',
+                                    _money.format(cogs),
+                                    Colors.orangeAccent)),
+                          ]),
+                          const SizedBox(height: 12),
+                          Row(children: [
+                            Expanded(
+                                child: _miniCard(
+                                    'ကုန်သည်အမြတ် (အရင်းနုတ်)',
+                                    _money.format(grossProfit),
+                                    grossProfit >= 0
+                                        ? AppTheme.primaryAccent
+                                        : AppTheme.errorColor)),
                             const SizedBox(width: 12),
                             Expanded(
                                 child: _miniCard(

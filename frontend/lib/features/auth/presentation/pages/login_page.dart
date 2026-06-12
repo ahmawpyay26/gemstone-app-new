@@ -12,8 +12,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'admin@gemstone.com');
-  final _passwordController = TextEditingController(text: 'admin123');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   String? _errorMessage;
@@ -193,42 +193,6 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceDark,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color: AppTheme.primaryAccent.withOpacity(0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.info_outline,
-                            color: AppTheme.primaryAccent, size: 18),
-                        const SizedBox(width: 6),
-                        Text('ပုံသေ အကောင့်',
-                            style: TextStyle(
-                                color: AppTheme.primaryAccent,
-                                fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text('အီမေးလ်: admin@gemstone.com',
-                        style: TextStyle(color: Colors.grey[300])),
-                    Text('စကားဝှက်: admin123',
-                        style: TextStyle(color: Colors.grey[300])),
-                    const SizedBox(height: 6),
-                    Text('* အင်တာနက်မလို၊ offline အသုံးပြုနိုင်သည်',
-                        style: TextStyle(
-                            color: Colors.grey[500], fontSize: 12)),
                   ],
                 ),
               ),

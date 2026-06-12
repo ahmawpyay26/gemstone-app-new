@@ -249,6 +249,22 @@ class LocalDb {
     return t;
   }
 
+  /// ရောင်းချမှု အားလုံး၏ စုစုပေါင်း အရင်းတန်ဖိုး (COGS).
+  static double totalCostOfGoodsSold() {
+    double t = 0;
+    for (final s in sales().values) {
+      t += s.costPrice;
+    }
+    return t;
+  }
+
+  /// ကုန်သည်အမြတ် (ရောင်းရငွေ - အရင်း) — အသုံးစရိတ် မပါဝင်သေး၏ အမြတ်
+  static double grossProfit() => totalSales() - totalCostOfGoodsSold();
+
+  /// အဆုံးသတ် အမြတ်စစ် (ရောင်းရငွေ - အရင်း - အသုံးစရိတ်)
+  static double netProfit() =>
+      totalSales() - totalCostOfGoodsSold() - totalExpenses();
+
   static double profit() => totalSales() - totalExpenses();
 
   static int inventoryCount() {

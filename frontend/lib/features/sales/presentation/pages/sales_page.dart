@@ -78,30 +78,28 @@ class _SalesPageState extends State<SalesPage> {
         valueListenable: LocalDb.sales().listenable(),
         builder: (context, Box<Sale> box, _) {
           final total = LocalDb.totalSales();
+          final cogs = LocalDb.totalCostOfGoodsSold();
+          final grossProfit = total - cogs;
+          final isProfit = grossProfit >= 0;
           return Column(
             children: [
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.all(12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.successColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: AppTheme.successColor.withOpacity(0.4)),
-                ),
-                child: Column(
-                  children: [
-                    Text('စုစုပေါင်း အရောင်း',
-                        style: TextStyle(color: Colors.grey[300])),
-                    const SizedBox(height: 4),
-                    Text('${_money.format(total)} ကျပ်',
-                        style: const TextStyle(
-                            color: AppTheme.successColor,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold)),
-                  ],
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _summaryCard(
+                      'စုစုပေါင်း အရောင်း',
+                      '${_money.format(total)} ကျပ်',
+                      AppTheme.successColor,
+                    ),
+                  ),
+                  Expanded(
+                    child: _summaryCard(
+                      isProfit ? 'စုစုပေါင်း အမြတ်' : 'စုစုပေါင်း အရှုံး',
+                      '${_money.format(grossProfit.abs())} ကျပ်',
+                      isProfit ? AppTheme.primaryAccent : AppTheme.errorColor,
+                    ),
+                  ),
+                ],
               ),
               Expanded(
                 child: box.isEmpty
@@ -152,6 +150,7 @@ class _SalesPageState extends State<SalesPage> {
                                       style: const TextStyle(
                                           color: AppTheme.successColor,
                                           fontWeight: FontWeight.bold)),
+                                  if (s.costPrice > 0) _profitBadge(s),
                                   InkWell(
                                     onTap: () => _delete(key),
                                     child: const Icon(Icons.delete_outline,
@@ -168,6 +167,48 @@ class _SalesPageState extends State<SalesPage> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _summaryCard(String label, String value, Color color) {
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: Column(
+        children: [
+          Text(label,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[300], fontSize: 12)),
+          const SizedBox(height: 4),
+          Text(value,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  color: color,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _profitBadge(Sale s) {
+    final p = s.amount - s.costPrice;
+    final isProfit = p >= 0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Text(
+        '${isProfit ? 'အမြတ်' : 'အရှုံး'} ${_money.format(p.abs())}',
+        style: TextStyle(
+          color: isProfit ? AppTheme.successColor : AppTheme.errorColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -221,6 +262,7 @@ class _SaleFormState extends State<_SaleForm> {
   late final TextEditingController _weight;
   late final TextEditingController _note;
   late final TextEditingController _manualName; // when no gemstone selected
+  late final TextEditingController _cost; // optional manual cost override
   String _payment = 'cash';
   late DateTime _saleDate;
 
@@ -241,6 +283,8 @@ class _SaleFormState extends State<_SaleForm> {
         TextEditingController(text: e != null && e.weightCarat > 0 ? _trim(e.weightCarat) : '');
     _note = TextEditingController(text: e?.note ?? '');
     _manualName = TextEditingController(text: e?.gemstoneName ?? '');
+    _cost = TextEditingController(
+        text: e != null && e.costPrice > 0 ? _trim(e.costPrice) : '');
     _payment = e?.paymentMethod ?? 'cash';
     _saleDate = e != null
         ? DateTime.fromMillisecondsSinceEpoch(e.saleDate)
@@ -258,7 +302,7 @@ class _SaleFormState extends State<_SaleForm> {
 
   @override
   void dispose() {
-    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName]) {
+    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost]) {
       c.dispose();
     }
     super.dispose();
@@ -275,9 +319,56 @@ class _SaleFormState extends State<_SaleForm> {
           if (_amount.text.trim().isEmpty) {
             _amount.text = _trim(g.sellPrice);
           }
+          // Auto-fill cost (per-unit) so profit shows immediately.
+          _cost.text = _trim(g.costPrice);
         }
+      } else {
+        _cost.clear();
       }
     });
+  }
+
+  /// Live profit/loss preview based on currently entered amount and cost.
+  Widget _profitPreview() {
+    final amount = double.tryParse(_amount.text.trim()) ?? 0;
+    final qty = int.tryParse(_qty.text.trim()) ?? 1;
+    double cost = double.tryParse(_cost.text.trim()) ?? 0;
+    // Mirror the same costing logic used in _save for the preview.
+    if (_selectedGemId != null && cost > 0) {
+      cost = cost * qty;
+    }
+    if (amount <= 0 && cost <= 0) return const SizedBox.shrink();
+    final p = amount - cost;
+    final isProfit = p >= 0;
+    final m = NumberFormat('#,##0');
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: (isProfit ? AppTheme.successColor : AppTheme.errorColor)
+            .withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(isProfit ? 'ခန့်မှန်းအမြတ်' : 'ခန့်မှန်းအရှုံး',
+              style: TextStyle(
+                  color: isProfit
+                      ? AppTheme.successColor
+                      : AppTheme.errorColor,
+                  fontWeight: FontWeight.w600)),
+          Text('${m.format(p.abs())} ကျပ်',
+              style: TextStyle(
+                  color: isProfit
+                      ? AppTheme.successColor
+                      : AppTheme.errorColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -291,6 +382,19 @@ class _SaleFormState extends State<_SaleForm> {
     final name = gemId.isNotEmpty
         ? (LocalDb.gemstoneById(gemId)?.name ?? _manualName.text.trim())
         : _manualName.text.trim();
+
+    // --- Compute cost of goods sold (COGS) for this sale ---
+    // The cost field holds the per-unit cost (auto-filled from the linked
+    // gemstone, but the user may override it). Total COGS = per-unit × qty.
+    // For manual entries (no linked gemstone) the field is taken as the total
+    // cost as typed.
+    final perUnitCost = double.tryParse(_cost.text.trim()) ?? 0;
+    double cost;
+    if (gemId.isNotEmpty) {
+      cost = perUnitCost * qty;
+    } else {
+      cost = perUnitCost;
+    }
 
     // Stock validation when linked to an inventory item and auto-deduct is on.
     if (gemId.isNotEmpty && _autoDeduct) {
@@ -337,6 +441,7 @@ class _SaleFormState extends State<_SaleForm> {
       s.gemstoneName = name;
       s.customerName = _customer.text.trim();
       s.amount = amount;
+      s.costPrice = cost;
       s.quantity = qty;
       s.weightCarat = weight;
       s.paymentMethod = _payment;
@@ -350,6 +455,7 @@ class _SaleFormState extends State<_SaleForm> {
         gemstoneName: name,
         customerName: _customer.text.trim(),
         amount: amount,
+        costPrice: cost,
         quantity: qty,
         weightCarat: weight,
         paymentMethod: _payment,
@@ -553,6 +659,9 @@ class _SaleFormState extends State<_SaleForm> {
                     ),
                   ),
                 ),
+                _field(_cost, 'အရင်းတန်ဖိုး (ကျပ်) — အလိုအလျောက်တွက်ပြီး၊ ပြင်လို့ရ',
+                    number: true),
+                _profitPreview(),
                 _field(_note, 'မှတ်ချက်'),
                 const SizedBox(height: 20),
                 SizedBox(
@@ -586,6 +695,7 @@ class _SaleFormState extends State<_SaleForm> {
             : TextInputType.text,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(labelText: label),
+        onChanged: (_) => setState(() {}),
         validator: required
             ? (v) => (v == null || v.trim().isEmpty) ? 'ဖြည့်ပါ' : null
             : null,
