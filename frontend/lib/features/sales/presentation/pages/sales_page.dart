@@ -27,12 +27,14 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   Future<void> _delete(dynamic key) async {
+    final sale = LocalDb.sales().get(key);
     final ok = await showDialog<bool>(
           context: context,
           builder: (c) => AlertDialog(
             backgroundColor: AppTheme.surfaceDark,
             title: const Text('အတည်ပြုရန်'),
-            content: const Text('ဤအရောင်းမှတ်တမ်းကို ဖျက်မှာလား။'),
+            content: const Text(
+                'ဤအရောင်းမှတ်တမ်းကို ဖျက်မှာလား။ ပစ္စည်းစာရင်းသို့ stock ပြန်ပေါင်းပေးပါမည်။'),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(c, false),
@@ -45,7 +47,14 @@ class _SalesPageState extends State<SalesPage> {
           ),
         ) ??
         false;
-    if (ok) await LocalDb.sales().delete(key);
+    if (ok) {
+      // Restore stock that was deducted by this sale.
+      if (sale != null && sale.gemstoneId.isNotEmpty) {
+        await LocalDb.adjustStock(
+            sale.gemstoneId, -sale.quantity, -sale.weightCarat);
+      }
+      await LocalDb.sales().delete(key);
+    }
   }
 
   @override
@@ -120,11 +129,16 @@ class _SalesPageState extends State<SalesPage> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Text(
+                                      'အရေအတွက်: ${s.quantity}'
+                                      '${s.weightCarat > 0 ? ' • ${s.weightCarat} ကာရက်' : ''}',
+                                      style:
+                                          TextStyle(color: Colors.grey[400])),
                                   Text('ဝယ်သူ: ${s.customerName}',
                                       style:
                                           TextStyle(color: Colors.grey[400])),
                                   Text(
-                                      '${_date.format(DateTime.fromMillisecondsSinceEpoch(s.saleDate))} • ${s.paymentMethod}',
+                                      '${_date.format(DateTime.fromMillisecondsSinceEpoch(s.saleDate))} • ${_payLabel(s.paymentMethod)}',
                                       style: TextStyle(
                                           color: Colors.grey[500],
                                           fontSize: 12)),
@@ -158,6 +172,17 @@ class _SalesPageState extends State<SalesPage> {
     );
   }
 
+  String _payLabel(String m) {
+    switch (m) {
+      case 'bank':
+        return 'ဘဏ်';
+      case 'credit':
+        return 'အကြွေး';
+      default:
+        return 'ငွေသား';
+    }
+  }
+
   Widget _empty() => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -182,46 +207,130 @@ class _SaleForm extends StatefulWidget {
 
 class _SaleFormState extends State<_SaleForm> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _gem;
   late final TextEditingController _customer;
   late final TextEditingController _amount;
   late final TextEditingController _qty;
+  late final TextEditingController _weight;
   late final TextEditingController _note;
+  late final TextEditingController _manualName; // when no gemstone selected
   String _payment = 'cash';
   late DateTime _saleDate;
+
+  String? _selectedGemId; // null => manual entry
+  bool _autoDeduct = true;
+
+  bool get _isEdit => widget.existing != null && widget.hiveKey != null;
 
   @override
   void initState() {
     super.initState();
     final e = widget.existing;
-    _gem = TextEditingController(text: e?.gemstoneName ?? '');
     _customer = TextEditingController(text: e?.customerName ?? '');
-    _amount = TextEditingController(text: e?.amount.toString() ?? '');
+    _amount =
+        TextEditingController(text: e != null ? _trim(e.amount) : '');
     _qty = TextEditingController(text: e?.quantity.toString() ?? '1');
+    _weight =
+        TextEditingController(text: e != null && e.weightCarat > 0 ? _trim(e.weightCarat) : '');
     _note = TextEditingController(text: e?.note ?? '');
+    _manualName = TextEditingController(text: e?.gemstoneName ?? '');
     _payment = e?.paymentMethod ?? 'cash';
     _saleDate = e != null
         ? DateTime.fromMillisecondsSinceEpoch(e.saleDate)
         : DateTime.now();
+
+    // Preselect gemstone if the sale was linked to one and it still exists.
+    if (e != null && e.gemstoneId.isNotEmpty &&
+        LocalDb.gemstoneById(e.gemstoneId) != null) {
+      _selectedGemId = e.gemstoneId;
+    }
   }
+
+  static String _trim(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 
   @override
   void dispose() {
-    for (final c in [_gem, _customer, _amount, _qty, _note]) {
+    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName]) {
       c.dispose();
     }
     super.dispose();
   }
 
+  void _onSelectGem(String? id) {
+    setState(() {
+      _selectedGemId = id;
+      if (id != null) {
+        final g = LocalDb.gemstoneById(id);
+        if (g != null) {
+          // Auto-fill suggested values from inventory.
+          _manualName.text = g.name;
+          if (_amount.text.trim().isEmpty) {
+            _amount.text = _trim(g.sellPrice);
+          }
+        }
+      }
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final qty = int.tryParse(_qty.text.trim()) ?? 1;
+    final weight = double.tryParse(_weight.text.trim()) ?? 0;
+    final amount = double.tryParse(_amount.text.trim()) ?? 0;
+
+    final gemId = _selectedGemId ?? '';
+    final name = gemId.isNotEmpty
+        ? (LocalDb.gemstoneById(gemId)?.name ?? _manualName.text.trim())
+        : _manualName.text.trim();
+
+    // Stock validation when linked to an inventory item and auto-deduct is on.
+    if (gemId.isNotEmpty && _autoDeduct) {
+      final g = LocalDb.gemstoneById(gemId)!;
+      // Account for what this sale previously held (edit case).
+      final prevQty = (_isEdit && widget.existing!.gemstoneId == gemId)
+          ? widget.existing!.quantity
+          : 0;
+      final prevWeight = (_isEdit && widget.existing!.gemstoneId == gemId)
+          ? widget.existing!.weightCarat
+          : 0;
+      final availableQty = g.quantity + prevQty;
+      final availableWeight = g.weightCarat + prevWeight;
+      if (qty > availableQty) {
+        _toast('Stock မလောက်ပါ — ကျန် $availableQty ခုသာ ရှိသည်');
+        return;
+      }
+      if (weight > 0 && weight > availableWeight) {
+        _toast(
+            'အလေးချိန် မလောက်ပါ — ကျန် ${_trim(availableWeight.toDouble())} ကာရက်သာ ရှိသည်');
+        return;
+      }
+    }
+
     final box = LocalDb.sales();
-    if (widget.existing != null && widget.hiveKey != null) {
+
+    // --- First, undo the previous sale's stock impact (edit case) ---
+    if (_isEdit) {
+      final old = widget.existing!;
+      if (old.gemstoneId.isNotEmpty) {
+        await LocalDb.adjustStock(
+            old.gemstoneId, -old.quantity, -old.weightCarat);
+      }
+    }
+
+    // --- Apply the new sale's stock deduction ---
+    if (gemId.isNotEmpty && _autoDeduct) {
+      await LocalDb.adjustStock(gemId, qty, weight);
+    }
+
+    if (_isEdit) {
       final s = widget.existing!;
-      s.gemstoneName = _gem.text.trim();
+      s.gemstoneId = gemId;
+      s.gemstoneName = name;
       s.customerName = _customer.text.trim();
-      s.amount = double.tryParse(_amount.text.trim()) ?? 0;
-      s.quantity = int.tryParse(_qty.text.trim()) ?? 1;
+      s.amount = amount;
+      s.quantity = qty;
+      s.weightCarat = weight;
       s.paymentMethod = _payment;
       s.note = _note.text.trim();
       s.saleDate = _saleDate.millisecondsSinceEpoch;
@@ -229,10 +338,12 @@ class _SaleFormState extends State<_SaleForm> {
     } else {
       await box.add(Sale(
         id: LocalDb.genId(),
-        gemstoneName: _gem.text.trim(),
+        gemstoneId: gemId,
+        gemstoneName: name,
         customerName: _customer.text.trim(),
-        amount: double.tryParse(_amount.text.trim()) ?? 0,
-        quantity: int.tryParse(_qty.text.trim()) ?? 1,
+        amount: amount,
+        quantity: qty,
+        weightCarat: weight,
         paymentMethod: _payment,
         note: _note.text.trim(),
         saleDate: _saleDate.millisecondsSinceEpoch,
@@ -241,8 +352,22 @@ class _SaleFormState extends State<_SaleForm> {
     if (mounted) Navigator.pop(context);
   }
 
+  void _toast(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: AppTheme.errorColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final gems = LocalDb.gemstones().values.toList();
+    final selectedGem =
+        _selectedGemId != null ? LocalDb.gemstoneById(_selectedGemId!) : null;
+
     return Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -275,17 +400,103 @@ class _SaleFormState extends State<_SaleForm> {
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
-                _field(_gem, 'ကျောက်မျက်အမည်', required: true),
+
+                // --- Gemstone picker from inventory ---
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: DropdownButtonFormField<String?>(
+                    value: _selectedGemId,
+                    isExpanded: true,
+                    dropdownColor: AppTheme.surfaceLight,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                        labelText: 'ပစ္စည်းစာရင်းမှ ကျောက်မျက်ရွေးပါ'),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('— လက်ဖြင့်ရိုက်ထည့်မည် —'),
+                      ),
+                      ...gems.map((g) => DropdownMenuItem<String?>(
+                            value: g.id,
+                            child: Text(
+                              '${g.name} (ကျန် ${g.quantity}'
+                              '${g.weightCarat > 0 ? ' • ${_trim(g.weightCarat)}ct' : ''})',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )),
+                    ],
+                    onChanged: _onSelectGem,
+                  ),
+                ),
+
+                // Available stock hint
+                if (selectedGem != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryAccent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.inventory_2_outlined,
+                              color: AppTheme.primaryAccent, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'လက်ကျန်: ${selectedGem.quantity} ခု'
+                              '${selectedGem.weightCarat > 0 ? ' • ${_trim(selectedGem.weightCarat)} ကာရက်' : ''}'
+                              ' • ရောင်းဈေး ${NumberFormat('#,##0').format(selectedGem.sellPrice)}',
+                              style: const TextStyle(
+                                  color: AppTheme.primaryAccent, fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // Manual name (editable; auto-filled when a gem is selected)
+                _field(_manualName, 'ကျောက်မျက်အမည်', required: true),
+
                 _field(_customer, 'ဝယ်သူအမည်'),
                 Row(children: [
                   Expanded(
-                      child: _field(_amount, 'ရောင်းရငွေ',
+                      child: _field(_amount, 'ရောင်းရငွေ (ကျပ်)',
                           number: true, required: true)),
                   const SizedBox(width: 12),
-                  Expanded(child: _field(_qty, 'အရေအတွက်', number: true)),
+                  Expanded(
+                      child: _field(_qty, 'အရေအတွက်',
+                          number: true, required: true)),
                 ]),
+                _field(_weight, 'အလေးချိန် (ကာရက်) — မဖြည့်လည်းရ',
+                    number: true),
+
+                // Auto-deduct toggle (only meaningful when linked to inventory)
+                if (_selectedGemId != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      activeColor: AppTheme.primaryAccent,
+                      value: _autoDeduct,
+                      onChanged: (v) => setState(() => _autoDeduct = v),
+                      title: const Text(
+                        'ပစ္စည်းစာရင်းမှ အလိုအလျောက် နှုတ်မည်',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        'အရေအတွက်နှင့် အလေးချိန်ကို inventory မှ နုတ်ပေးပါမည်',
+                        style:
+                            TextStyle(color: Colors.grey[500], fontSize: 11),
+                      ),
+                    ),
+                  ),
+
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(top: 8, bottom: 12),
                   child: DropdownButtonFormField<String>(
                     value: _payment,
                     dropdownColor: AppTheme.surfaceLight,

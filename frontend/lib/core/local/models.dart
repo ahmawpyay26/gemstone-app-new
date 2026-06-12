@@ -158,20 +158,24 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
 // ---------------------------------------------------------------------------
 class Sale {
   String id;
+  String gemstoneId; // ဆက်စပ်ကျောက်မျက် id (ဗလာဖြစ်နိုင်)
   String gemstoneName; // ရောင်းသည့်ကျောက်
   String customerName; // ဝယ်သူအမည်
   double amount; // ရောင်းရငွေ
   int quantity;
+  double weightCarat; // ရောင်းသည့် အလေးချိန် (ကာရက်)
   String paymentMethod; // cash | bank | credit
   String note;
   int saleDate;
 
   Sale({
     required this.id,
+    this.gemstoneId = '',
     required this.gemstoneName,
     required this.customerName,
     required this.amount,
     required this.quantity,
+    this.weightCarat = 0,
     required this.paymentMethod,
     required this.note,
     required this.saleDate,
@@ -197,13 +201,15 @@ class SaleAdapter extends TypeAdapter<Sale> {
       paymentMethod: fields[5] as String,
       note: fields[6] as String,
       saleDate: fields[7] as int,
+      gemstoneId: (fields[8] as String?) ?? '',
+      weightCarat: fields[9] == null ? 0 : (fields[9] as num).toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -219,7 +225,11 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(6)
       ..write(obj.note)
       ..writeByte(7)
-      ..write(obj.saleDate);
+      ..write(obj.saleDate)
+      ..writeByte(8)
+      ..write(obj.gemstoneId)
+      ..writeByte(9)
+      ..write(obj.weightCarat);
   }
 }
 

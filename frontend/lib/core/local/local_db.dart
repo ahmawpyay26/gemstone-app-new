@@ -157,6 +157,49 @@ class LocalDb {
   static Box<AppUser> users() => Hive.box<AppUser>(usersBox);
 
   // -------------------------------------------------------------------------
+  // Inventory stock helpers (auto deduction on sale)
+  // -------------------------------------------------------------------------
+
+  /// Find a gemstone by its business id. Returns null if not found.
+  static Gemstone? gemstoneById(String id) {
+    if (id.isEmpty) return null;
+    for (final g in gemstones().values) {
+      if (g.id == id) return g;
+    }
+    return null;
+  }
+
+  /// Find the Hive key of a gemstone by its business id.
+  static dynamic gemstoneKeyById(String id) {
+    final box = gemstones();
+    for (final k in box.keys) {
+      if (box.get(k)?.id == id) return k;
+    }
+    return null;
+  }
+
+  /// Deduct quantity and weight from a gemstone's stock.
+  /// Pass negative values to restore (e.g., when a sale is deleted/edited).
+  static Future<void> adjustStock(
+      String gemstoneId, int qtyDelta, double weightDelta) async {
+    final key = gemstoneKeyById(gemstoneId);
+    if (key == null) return;
+    final box = gemstones();
+    final g = box.get(key);
+    if (g == null) return;
+    g.quantity = (g.quantity - qtyDelta).clamp(0, 1 << 31);
+    g.weightCarat = (g.weightCarat - weightDelta);
+    if (g.weightCarat < 0) g.weightCarat = 0;
+    // Auto-mark as sold-out when nothing remains.
+    if (g.quantity <= 0) {
+      g.status = 'sold';
+    } else if (g.status == 'sold') {
+      g.status = 'in_stock';
+    }
+    await box.put(key, g);
+  }
+
+  // -------------------------------------------------------------------------
   // Statistics for dashboard / reports
   // -------------------------------------------------------------------------
   static double totalSales() {
