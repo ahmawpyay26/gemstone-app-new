@@ -16,7 +16,19 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  bool _rememberMe = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill credentials only if the user previously chose "remember me".
+    if (LocalDb.rememberMe()) {
+      _rememberMe = true;
+      _emailController.text = LocalDb.savedEmail();
+      _passwordController.text = LocalDb.savedPassword();
+    }
+  }
 
   @override
   void dispose() {
@@ -42,6 +54,13 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     if (user != null) {
       LocalDb.saveSession(user);
+      // Persist or clear credentials based on the remember-me choice.
+      if (_rememberMe) {
+        LocalDb.saveRememberedCredentials(
+            _emailController.text.trim(), _passwordController.text);
+      } else {
+        LocalDb.clearRememberedCredentials();
+      }
       context.go('/dashboard');
     } else {
       setState(() {
@@ -160,7 +179,35 @@ class _LoginPageState extends State<LoginPage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 8),
+                    // Remember-me toggle
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          activeColor: AppTheme.primaryAccent,
+                          checkColor: Colors.black,
+                          side: BorderSide(color: Colors.grey[500]!),
+                          onChanged: _isLoading
+                              ? null
+                              : (v) => setState(() => _rememberMe = v ?? false),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: _isLoading
+                                ? null
+                                : () => setState(
+                                    () => _rememberMe = !_rememberMe),
+                            child: Text(
+                              'အကောင့်အချက်အလက် မှတ်ထားမည်',
+                              style: TextStyle(
+                                  color: Colors.grey[300], fontSize: 14),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
                       height: 52,

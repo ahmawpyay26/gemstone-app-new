@@ -170,6 +170,36 @@ class LocalDb {
     s.put('loggedIn', false);
   }
 
+  // ----- Remember me (saved login credentials) -----
+  static void saveRememberedCredentials(String email, String password) {
+    final s = Hive.box(sessionBox);
+    s.put('rememberMe', true);
+    s.put('savedEmail', email);
+    s.put('savedPassword', password);
+  }
+
+  static void clearRememberedCredentials() {
+    final s = Hive.box(sessionBox);
+    s.put('rememberMe', false);
+    s.delete('savedEmail');
+    s.delete('savedPassword');
+  }
+
+  static bool rememberMe() {
+    final s = Hive.box(sessionBox);
+    return s.get('rememberMe', defaultValue: false) as bool;
+  }
+
+  static String savedEmail() {
+    final s = Hive.box(sessionBox);
+    return s.get('savedEmail', defaultValue: '') as String;
+  }
+
+  static String savedPassword() {
+    final s = Hive.box(sessionBox);
+    return s.get('savedPassword', defaultValue: '') as String;
+  }
+
   // -------------------------------------------------------------------------
   // Box accessors
   // -------------------------------------------------------------------------
