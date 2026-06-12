@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/services/auth_service.dart';
-import '../../../../core/di/injection_container.dart';
+import '../../../../core/local/local_db.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({Key? key}) : super(key: key);
@@ -12,247 +13,243 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  late AuthService _authService;
-  Map<String, dynamic>? _currentUser;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _authService = getIt<AuthService>();
-    _checkAuthenticationAndLoad();
-  }
-
-  Future<void> _checkAuthenticationAndLoad() async {
-    try {
-      final isAuthenticated = await _authService.isAuthenticated();
-      if (!isAuthenticated) {
-        // Redirect to login if not authenticated
-        if (mounted) {
-          context.go('/login');
-        }
-        return;
-      }
-      // Load user info if authenticated
-      await _loadUserInfo();
-    } catch (e) {
-      if (mounted) {
-        context.go('/login');
-      }
-    }
-  }
-
-  Future<void> _loadUserInfo() async {
-    try {
-      final user = await _authService.getCurrentUser();
-      if (mounted) {
-        setState(() {
-          _currentUser = user;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
+  final _money = NumberFormat('#,##0', 'en_US');
 
   Future<void> _handleLogout() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
         title: const Text('ထွက်ခွာခြင်း'),
-        content: const Text('အကောင့်မှ ထွက်ခွာလိုသည်သည် သေချာပါသလား။'),
+        content: const Text('အကောင့်မှ ထွက်ခွာလိုပါသလား။'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('ပယ်ဖျက်ခြင်း'),
+            child: const Text('မလုပ်တော့ပါ'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('ထွက်ခွာခြင်း'),
+            child: const Text('ထွက်မည်',
+                style: TextStyle(color: AppTheme.errorColor)),
           ),
         ],
       ),
     );
-
     if (confirmed == true) {
-      await _authService.logout();
-      if (mounted) {
-        context.go('/login');
-      }
+      LocalDb.logout();
+      if (mounted) context.go('/login');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppTheme.primaryDark,
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
+    final user = LocalDb.currentUser();
     return Scaffold(
       backgroundColor: AppTheme.primaryDark,
       appBar: AppBar(
-        title: const Text('အမြတ်သည့်ကျောင်း စုစုပေါင်း စီမံခန့်ခွဲမှု'),
-        backgroundColor: AppTheme.primaryDark,
-        elevation: 0,
+        title: const Text('ကျောက်မျက် စီမံခန့်ခွဲမှု'),
         actions: [
-          PopupMenuButton(
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                child: const Text('ထွက်ခွာခြင်း'),
-                onTap: _handleLogout,
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'ထွက်ရန်',
+            onPressed: _handleLogout,
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // User Info Card
-            Card(
-              color: Colors.grey[900],
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'ကြိုဆိုပါသည်',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _currentUser?['email'] ?? 'User',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppTheme.primaryAccent,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Module Grid
-            Text(
-              'အဓိကလုပ်ဆောင်ချက်များ',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
+      body: ValueListenableBuilder(
+        valueListenable: Hive.box(LocalDb.sessionBox).listenable(),
+        builder: (context, _, __) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildModuleCard(
-                  context,
-                  icon: Icons.diamond,
-                  title: 'ကျောင်းအုပ်စုများ',
-                  subtitle: 'ကျောင်းအုပ်စုများ စီမံခန့်ခွဲခြင်း',
-                  onTap: () => context.go('/inventory'),
+                // Welcome
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.primaryAccent.withOpacity(0.25),
+                        AppTheme.surfaceDark,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ကြိုဆိုပါသည်',
+                          style: TextStyle(color: Colors.grey[300])),
+                      const SizedBox(height: 4),
+                      Text(
+                        user['name'] ?? 'Admin',
+                        style: const TextStyle(
+                          color: AppTheme.primaryAccent,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(user['email'] ?? '',
+                          style: TextStyle(
+                              color: Colors.grey[400], fontSize: 13)),
+                    ],
+                  ),
                 ),
-                _buildModuleCard(
-                  context,
-                  icon: Icons.shopping_cart,
-                  title: 'ရောင်းချမှု',
-                  subtitle: 'ရောင်းချမှုများ မှတ်တမ်းတင်ခြင်း',
-                  onTap: () => context.go('/sales'),
-                ),
-                _buildModuleCard(
-                  context,
-                  icon: Icons.money_off,
-                  title: 'အသုံးစရိတ်များ',
-                  subtitle: 'အသုံးစရိတ်များ ခွဲခြားခြင်း',
-                  onTap: () => context.go('/expenses'),
-                ),
-                _buildModuleCard(
-                  context,
-                  icon: Icons.people,
-                  title: 'အလုပ်သမားများ',
-                  subtitle: 'အလုပ်သမားများ စီမံခန့်ခွဲခြင်း',
-                  onTap: () => context.go('/workers'),
-                ),
-                _buildModuleCard(
-                  context,
-                  icon: Icons.store,
-                  title: 'ခွဲခြင်းများ',
-                  subtitle: 'ခွဲခြင်းများ စီမံခန့်ခွဲခြင်း',
-                  onTap: () => context.go('/branches'),
-                ),
-                _buildModuleCard(
-                  context,
-                  icon: Icons.assessment,
-                  title: 'အစီရင်ခံစာများ',
-                  subtitle: 'အစီရင်ခံစာများ ကြည့်ရှုခြင်း',
-                  onTap: () => context.go('/reports'),
+                const SizedBox(height: 20),
+
+                // Stat cards (live)
+                _buildStats(),
+                const SizedBox(height: 24),
+
+                Text('အဓိက လုပ်ဆောင်ချက်များ',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  childAspectRatio: 1.05,
+                  children: [
+                    _moduleCard(Icons.diamond, 'ပစ္စည်းစာရင်း',
+                        'ကျောက်မျက် စာရင်း', () => context.go('/inventory')),
+                    _moduleCard(Icons.shopping_cart, 'ရောင်းချမှု',
+                        'အရောင်း မှတ်တမ်း', () => context.go('/sales')),
+                    _moduleCard(Icons.receipt_long, 'အသုံးစရိတ်',
+                        'ကုန်ကျစရိတ်', () => context.go('/expenses')),
+                    _moduleCard(Icons.people, 'အလုပ်သမား',
+                        'ဝန်ထမ်း စီမံ', () => context.go('/workers')),
+                    _moduleCard(Icons.store, 'ဆိုင်ခွဲ', 'ဆိုင်ခွဲ အချက်အလက်',
+                        () => context.go('/branches')),
+                    _moduleCard(Icons.bar_chart, 'အစီရင်ခံစာ',
+                        'စာရင်းချုပ်', () => context.go('/reports')),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildModuleCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
+  Widget _buildStats() {
+    // Rebuild whenever any data box changes.
+    return ValueListenableBuilder(
+      valueListenable: LocalDb.sales().listenable(),
+      builder: (context, _, __) {
+        return ValueListenableBuilder(
+          valueListenable: LocalDb.expenses().listenable(),
+          builder: (context, __2, ___) {
+            return ValueListenableBuilder(
+              valueListenable: LocalDb.gemstones().listenable(),
+              builder: (context, __3, ____) {
+                final sales = LocalDb.totalSales();
+                final expenses = LocalDb.totalExpenses();
+                final profit = LocalDb.profit();
+                final invValue = LocalDb.inventoryValue();
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                            child: _statCard('စုစုပေါင်း အရောင်း',
+                                _money.format(sales), AppTheme.successColor,
+                                Icons.trending_up)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: _statCard('အသုံးစရိတ်',
+                                _money.format(expenses), AppTheme.errorColor,
+                                Icons.trending_down)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                            child: _statCard('အသားတင်အမြတ်',
+                                _money.format(profit),
+                                profit >= 0
+                                    ? AppTheme.primaryAccent
+                                    : AppTheme.errorColor,
+                                Icons.account_balance_wallet)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: _statCard('ပစ္စည်းတန်ဖိုး',
+                                _money.format(invValue),
+                                AppTheme.secondaryAccent, Icons.diamond)),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _statCard(String label, String value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 10),
+          Text(value,
+              style: TextStyle(
+                  color: color, fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 2),
+          Text(label,
+              style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+          Text('ကျပ်', style: TextStyle(color: Colors.grey[600], fontSize: 10)),
+        ],
+      ),
+    );
+  }
+
+  Widget _moduleCard(
+      IconData icon, String title, String subtitle, VoidCallback onTap) {
+    return InkWell(
       onTap: onTap,
-      child: Card(
-        color: Colors.grey[900],
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 40,
-                color: AppTheme.primaryAccent,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceDark,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.2)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 38, color: AppTheme.primaryAccent),
+            const SizedBox(height: 12),
+            Text(title,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15)),
+            const SizedBox(height: 4),
+            Text(subtitle,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[400],
-                ),
-              ),
-            ],
-          ),
+                style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+          ],
         ),
       ),
     );

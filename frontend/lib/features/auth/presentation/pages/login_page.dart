@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/services/auth_service.dart';
-import '../../../../core/di/injection_container.dart';
+import '../../../../core/local/local_db.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -14,19 +12,11 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailController = TextEditingController(text: 'admin@gemstone.com');
+  final _passwordController = TextEditingController(text: 'admin123');
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   String? _errorMessage;
-
-  late AuthService _authService;
-
-  @override
-  void initState() {
-    super.initState();
-    _authService = getIt<AuthService>();
-  }
 
   @override
   void dispose() {
@@ -36,39 +26,28 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // Offline login — no network required.
+    await Future.delayed(const Duration(milliseconds: 300));
+    final user = LocalDb.login(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+
+    if (!mounted) return;
+    if (user != null) {
+      LocalDb.saveSession(user);
+      context.go('/dashboard');
+    } else {
       setState(() {
-        _isLoading = true;
-        _errorMessage = null;
+        _errorMessage = 'အီမေးလ် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည်';
+        _isLoading = false;
       });
-
-      try {
-        final result = await _authService.login(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
-
-        if (mounted) {
-          if (result['success']) {
-            // Navigate to dashboard
-            if (mounted) {
-              context.go('/dashboard');
-            }
-          } else {
-            setState(() {
-              _errorMessage = result['message'] ?? 'Login failed';
-              _isLoading = false;
-            });
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          setState(() {
-            _errorMessage = 'Error: ${e.toString()}';
-            _isLoading = false;
-          });
-        }
-      }
     }
   }
 
@@ -80,201 +59,176 @@ class _LoginPageState extends State<LoginPage> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 50),
 
-              // Header
-              Text(
-                'ဝင်ရောက်ခြင်း',
-                style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  color: AppTheme.primaryAccent,
-                  fontWeight: FontWeight.bold,
+              // Logo / Icon
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryAccent.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.primaryAccent, width: 2),
                 ),
+                child: const Icon(Icons.diamond,
+                    color: AppTheme.primaryAccent, size: 48),
+              ),
+              const SizedBox(height: 24),
+
+              Text(
+                'ကျောက်မျက် စီမံခန့်ခွဲမှု',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      color: AppTheme.primaryAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const SizedBox(height: 8),
               Text(
-                'သင်၏ အကောင်းအကျ အကောင့်သို့ ဝင်ရောက်ပါ',
+                'အကောင့်ဝင်ရန် အချက်အလက်ဖြည့်ပါ',
+                textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[400],
-                ),
+                      color: Colors.grey[400],
+                    ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 40),
 
-              // Error Message
               if (_errorMessage != null)
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withOpacity(0.12),
                     border: Border.all(color: Colors.red, width: 1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(
-                      color: Colors.red,
-                      fontSize: 14,
-                    ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: Colors.red, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(_errorMessage!,
+                            style: const TextStyle(color: Colors.red)),
+                      ),
+                    ],
                   ),
                 ),
 
-              // Login Form
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    // Email Field
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       enabled: !_isLoading,
-                      decoration: InputDecoration(
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
                         labelText: 'အီမေးလ်',
-                        hintText: 'admin@example.com',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: AppTheme.primaryAccent,
-                            width: 2,
-                          ),
-                        ),
+                        hintText: 'admin@gemstone.com',
+                        prefixIcon: Icon(Icons.email_outlined),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'အီမေးလ်ကို ထည့်သွင်းပါ';
-                        }
-                        if (!value.contains('@')) {
-                          return 'အဆင့်မြင့်မှန်ကန်သည့် အီမေးလ်ကို ထည့်သွင်းပါ';
-                        }
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'အီမေးလ်ထည့်ပါ';
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
-
-                    // Password Field
                     TextFormField(
                       controller: _passwordController,
                       obscureText: !_isPasswordVisible,
                       enabled: !_isLoading,
+                      style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         labelText: 'စကားဝှက်',
                         hintText: '••••••••',
                         prefixIcon: const Icon(Icons.lock_outlined),
                         suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isPasswordVisible = !_isPasswordVisible;
-                            });
-                          },
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: AppTheme.primaryAccent,
-                            width: 2,
-                          ),
+                          icon: Icon(_isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off),
+                          onPressed: () => setState(
+                              () => _isPasswordVisible = !_isPasswordVisible),
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'စကားဝှက်ကို ထည့်သွင်းပါ';
-                        }
-                        if (value.length < 6) {
-                          return 'စကားဝှက်သည် အနည်းဆုံး ၆ လုံးရှိရမည်';
-                        }
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'စကားဝှက်ထည့်ပါ';
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
-
-                    // Login Button
+                    const SizedBox(height: 28),
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 52,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryAccent,
-                          disabledBackgroundColor: Colors.grey[600],
+                          disabledBackgroundColor: Colors.grey[700],
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         child: _isLoading
                             ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                            strokeWidth: 2,
-                          ),
-                        )
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.black),
+                                  strokeWidth: 2,
+                                ),
+                              )
                             : const Text(
-                          'ဝင်ရောက်ခြင်း',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+                                'ဝင်ရောက်မည်',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
                       ),
                     ),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 32),
-
-              // Demo Credentials
+              const SizedBox(height: 28),
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  border: Border.all(
-                    color: Colors.blue.withOpacity(0.3),
-                    width: 1,
-                  ),
+                  color: AppTheme.surfaceDark,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: AppTheme.primaryAccent.withOpacity(0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'စမ်းသပ်ရန် အကောင့်များ',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.blue[300],
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            color: AppTheme.primaryAccent, size: 18),
+                        const SizedBox(width: 6),
+                        Text('ပုံသေ အကောင့်',
+                            style: TextStyle(
+                                color: AppTheme.primaryAccent,
+                                fontWeight: FontWeight.bold)),
+                      ],
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'အီမေးလ်: admin@example.com',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[300],
-                      ),
-                    ),
-                    Text(
-                      'စကားဝှက်: password123',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[300],
-                      ),
-                    ),
+                    Text('အီမေးလ်: admin@gemstone.com',
+                        style: TextStyle(color: Colors.grey[300])),
+                    Text('စကားဝှက်: admin123',
+                        style: TextStyle(color: Colors.grey[300])),
+                    const SizedBox(height: 6),
+                    Text('* အင်တာနက်မလို၊ offline အသုံးပြုနိုင်သည်',
+                        style: TextStyle(
+                            color: Colors.grey[500], fontSize: 12)),
                   ],
                 ),
               ),

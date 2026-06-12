@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../local/local_db.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/inventory/presentation/pages/inventory_page.dart';
@@ -11,6 +12,13 @@ import '../../features/reports/presentation/pages/reports_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
+  redirect: (context, state) {
+    final loggedIn = LocalDb.isLoggedIn();
+    final goingToLogin = state.matchedLocation == '/login';
+    if (!loggedIn && !goingToLogin) return '/login';
+    if (loggedIn && goingToLogin) return '/dashboard';
+    return null;
+  },
   errorBuilder: (context, state) => Scaffold(
     body: Center(
       child: Text('Error: ${state.error}'),
@@ -55,7 +63,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/reports',
       name: 'reports',
-      builder: (context, state) => const ReportsPage(),
+      builder: (context, state) => ReportsPage(),
     ),
   ],
 );

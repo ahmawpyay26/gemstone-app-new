@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'core/di/injection_container.dart' as di;
 import 'core/router/app_router.dart';
+import 'core/local/local_db.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Dependency Injection
-  await di.init();
-  
+  try {
+    await LocalDb.init();
+  } catch (e) {
+    debugPrint('LocalDb init error: $e');
+  }
   runApp(const GemstoneManagementApp());
 }
 
