@@ -1,12 +1,11 @@
 class AppConstants {
   // API Configuration
-  // Update this URL after deploying backend to Render.com
-  static const String apiBaseUrl = 'https://gemstone-backend-xxxxx.onrender.com/api';
+  // Backend deployed to Render.com
+  static const String apiBaseUrl = 'https://gemstone-backendkst.onrender.com/api';
   static const String apiTimeout = '30';
   
   // Alternative: Use environment-specific URLs
   // static const String apiBaseUrl = 'http://localhost:3001/api'; // For local development
-  // static const String apiBaseUrl = 'https://gemstone-backend.onrender.com/api'; // For production
   
   // API Endpoints
   static const String authRegister = '/auth/register';
