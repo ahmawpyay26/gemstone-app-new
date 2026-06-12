@@ -27,16 +27,20 @@ jobs:
         working-directory: ./frontend
         run: flutter pub get
 
-      - name: Regenerate Android Project
-        working-directory: ./frontend
-        run: |
-          flutter create . --platforms android
-          # Enable Android Embedding v2
-          sed -i 's/org.gradle.jvmargs=-Xmx1536m/org.gradle.jvmargs=-Xmx1536m\nandroid.useAndroidX=true\nandroid.enableJetifier=true/' android/gradle.properties || true
-
       - name: Clean Flutter
         working-directory: ./frontend
         run: flutter clean
+
+      - name: Regenerate Android Project
+        working-directory: ./frontend
+        run: |
+          rm -rf android/
+          flutter create . --platforms android
+          # Enable Android Embedding v2 and AndroidX
+          if [ -f android/gradle.properties ]; then
+            echo "android.useAndroidX=true" >> android/gradle.properties
+            echo "android.enableJetifier=true" >> android/gradle.properties
+          fi
 
       - name: Run Flutter tests
         working-directory: ./frontend
