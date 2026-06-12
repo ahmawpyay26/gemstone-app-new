@@ -33,6 +33,26 @@ class LocalDb {
     await _seedDefaults();
   }
 
+  /// Supported weight units. value => Burmese display label.
+  static const Map<String, String> weightUnits = {
+    'carat': 'ကာရက်',
+    'kg': 'ကီလို (kg)',
+    'viss': 'ပိဿာ',
+  };
+
+  /// Short label used inline next to numbers.
+  static String unitLabel(String unit) {
+    switch (unit) {
+      case 'kg':
+        return 'kg';
+      case 'viss':
+        return 'ပိဿာ';
+      case 'carat':
+      default:
+        return 'ကာရက်';
+    }
+  }
+
   static String genId() {
     final r = Random();
     return '${DateTime.now().millisecondsSinceEpoch}-${r.nextInt(99999)}';
@@ -63,6 +83,7 @@ class LocalDb {
           name: 'ပတ္တမြား နီ',
           type: 'ပတ္တမြား (Ruby)',
           weightCarat: 3.5,
+          weightUnit: 'kg',
           costPrice: 1500000,
           sellPrice: 2200000,
           quantity: 2,
@@ -77,6 +98,7 @@ class LocalDb {
           name: 'နီလာ ပြာ',
           type: 'နီလာ (Sapphire)',
           weightCarat: 5.2,
+          weightUnit: 'viss',
           costPrice: 1200000,
           sellPrice: 1800000,
           quantity: 1,
@@ -91,6 +113,7 @@ class LocalDb {
           name: 'ကျောက်စိမ်း',
           type: 'ကျောက်စိမ်း (Jade)',
           weightCarat: 50,
+          weightUnit: 'kg',
           costPrice: 3000000,
           sellPrice: 4500000,
           quantity: 3,

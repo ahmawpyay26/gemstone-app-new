@@ -70,7 +70,8 @@ class Gemstone {
   String id;
   String name; // ကျောက်အမည်
   String type; // အမျိုးအစား (e.g., Ruby, Sapphire, Jade)
-  double weightCarat; // အလေးချိန် (ကာရက်)
+  double weightCarat; // အလေးချိန် တန်ဖိုး (ယူနစ်ပေါ်မူတည်)
+  String weightUnit; // carat | kg | viss
   double costPrice; // ဝယ်ဈေး
   double sellPrice; // ရောင်းဈေး
   int quantity; // အရေအတွက်
@@ -85,6 +86,7 @@ class Gemstone {
     required this.name,
     required this.type,
     required this.weightCarat,
+    this.weightUnit = 'carat',
     required this.costPrice,
     required this.sellPrice,
     required this.quantity,
@@ -119,13 +121,14 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       status: fields[9] as String,
       note: fields[10] as String,
       createdAt: fields[11] as int,
+      weightUnit: (fields[12] as String?) ?? 'carat',
     );
   }
 
   @override
   void write(BinaryWriter writer, Gemstone obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -149,7 +152,9 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       ..writeByte(10)
       ..write(obj.note)
       ..writeByte(11)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(12)
+      ..write(obj.weightUnit);
   }
 }
 
@@ -163,7 +168,7 @@ class Sale {
   String customerName; // ဝယ်သူအမည်
   double amount; // ရောင်းရငွေ
   int quantity;
-  double weightCarat; // ရောင်းသည့် အလေးချိန် (ကာရက်)
+  double weightCarat; // အလေးချိန် တန်ဖိုး (ယူနစ်ပေါ်မူတည်)
   String paymentMethod; // cash | bank | credit
   String note;
   int saleDate;

@@ -16,6 +16,9 @@ class InventoryPage extends StatefulWidget {
 class _InventoryPageState extends State<InventoryPage> {
   final _money = NumberFormat('#,##0', 'en_US');
 
+  static String _trim(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+
   void _openForm({Gemstone? existing, dynamic key}) {
     showModalBottomSheet(
       context: context,
@@ -99,7 +102,8 @@ class _InventoryPageState extends State<InventoryPage> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${g.type} • ${g.weightCarat} ကာရက်',
+                      Text(
+                          '${g.type} • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}',
                           style: TextStyle(color: Colors.grey[400])),
                       Text(
                           'ရောင်းဈေး: ${_money.format(g.sellPrice)} ကျပ် • အရေအတွက်: ${g.quantity}',
@@ -164,6 +168,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _color;
   late final TextEditingController _origin;
   late final TextEditingController _note;
+  String _weightUnit = 'kg';
 
   @override
   void initState() {
@@ -172,6 +177,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
     _name = TextEditingController(text: e?.name ?? '');
     _type = TextEditingController(text: e?.type ?? '');
     _weight = TextEditingController(text: e?.weightCarat.toString() ?? '');
+    _weightUnit = e?.weightUnit ?? 'kg';
     _cost = TextEditingController(text: e?.costPrice.toString() ?? '');
     _sell = TextEditingController(text: e?.sellPrice.toString() ?? '');
     _qty = TextEditingController(text: e?.quantity.toString() ?? '1');
@@ -209,6 +215,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       g.name = _name.text.trim();
       g.type = _type.text.trim();
       g.weightCarat = _d(_weight.text);
+      g.weightUnit = _weightUnit;
       g.costPrice = _d(_cost.text);
       g.sellPrice = _d(_sell.text);
       g.quantity = _i(_qty.text);
@@ -222,6 +229,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         name: _name.text.trim(),
         type: _type.text.trim(),
         weightCarat: _d(_weight.text),
+        weightUnit: _weightUnit,
         costPrice: _d(_cost.text),
         sellPrice: _d(_sell.text),
         quantity: _i(_qty.text),
@@ -275,11 +283,33 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                 _field(_type, 'အမျိုးအစား (ဥပမာ - ပတ္တမြား)'),
                 Row(children: [
                   Expanded(
-                      child: _field(_weight, 'အလေးချိန် (ကာရက်)',
-                          number: true)),
+                      flex: 2,
+                      child: _field(_weight, 'အလေးချိန်', number: true)),
                   const SizedBox(width: 12),
-                  Expanded(child: _field(_qty, 'အရေအတွက်', number: true)),
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: DropdownButtonFormField<String>(
+                        value: _weightUnit,
+                        isExpanded: true,
+                        dropdownColor: AppTheme.surfaceLight,
+                        style: const TextStyle(color: Colors.white),
+                        decoration:
+                            const InputDecoration(labelText: 'ယူနစ်'),
+                        items: LocalDb.weightUnits.entries
+                            .map((e) => DropdownMenuItem(
+                                  value: e.key,
+                                  child: Text(e.value),
+                                ))
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _weightUnit = v ?? 'kg'),
+                      ),
+                    ),
+                  ),
                 ]),
+                _field(_qty, 'အရေအတွက်', number: true),
                 Row(children: [
                   Expanded(child: _field(_cost, 'ဝယ်ဈေး', number: true)),
                   const SizedBox(width: 12),

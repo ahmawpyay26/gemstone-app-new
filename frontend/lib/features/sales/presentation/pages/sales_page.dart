@@ -131,7 +131,7 @@ class _SalesPageState extends State<SalesPage> {
                                 children: [
                                   Text(
                                       'အရေအတွက်: ${s.quantity}'
-                                      '${s.weightCarat > 0 ? ' • ${s.weightCarat} ကာရက်' : ''}',
+                                      '${s.weightCarat > 0 ? ' • ${s.weightCarat} ${_saleUnit(s)}' : ''}',
                                       style:
                                           TextStyle(color: Colors.grey[400])),
                                   Text('ဝယ်သူ: ${s.customerName}',
@@ -170,6 +170,14 @@ class _SalesPageState extends State<SalesPage> {
         },
       ),
     );
+  }
+
+  String _saleUnit(Sale s) {
+    if (s.gemstoneId.isNotEmpty) {
+      final g = LocalDb.gemstoneById(s.gemstoneId);
+      if (g != null) return LocalDb.unitLabel(g.weightUnit);
+    }
+    return '';
   }
 
   String _payLabel(String m) {
@@ -302,7 +310,7 @@ class _SaleFormState extends State<_SaleForm> {
       }
       if (weight > 0 && weight > availableWeight) {
         _toast(
-            'အလေးချိန် မလောက်ပါ — ကျန် ${_trim(availableWeight.toDouble())} ကာရက်သာ ရှိသည်');
+            'အလေးချိန် မလောက်ပါ — ကျန် ${_trim(availableWeight.toDouble())} ${LocalDb.unitLabel(g.weightUnit)}သာ ရှိသည်');
         return;
       }
     }
@@ -420,7 +428,7 @@ class _SaleFormState extends State<_SaleForm> {
                             value: g.id,
                             child: Text(
                               '${g.name} (ကျန် ${g.quantity}'
-                              '${g.weightCarat > 0 ? ' • ${_trim(g.weightCarat)}ct' : ''})',
+                              '${g.weightCarat > 0 ? ' • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}' : ''})',
                               overflow: TextOverflow.ellipsis,
                             ),
                           )),
@@ -447,7 +455,7 @@ class _SaleFormState extends State<_SaleForm> {
                           Expanded(
                             child: Text(
                               'လက်ကျန်: ${selectedGem.quantity} ခု'
-                              '${selectedGem.weightCarat > 0 ? ' • ${_trim(selectedGem.weightCarat)} ကာရက်' : ''}'
+                              '${selectedGem.weightCarat > 0 ? ' • ${_trim(selectedGem.weightCarat)} ${LocalDb.unitLabel(selectedGem.weightUnit)}' : ''}'
                               ' • ရောင်းဈေး ${NumberFormat('#,##0').format(selectedGem.sellPrice)}',
                               style: const TextStyle(
                                   color: AppTheme.primaryAccent, fontSize: 12),
@@ -471,7 +479,11 @@ class _SaleFormState extends State<_SaleForm> {
                       child: _field(_qty, 'အရေအတွက်',
                           number: true, required: true)),
                 ]),
-                _field(_weight, 'အလေးချိန် (ကာရက်) — မဖြည့်လည်းရ',
+                _field(
+                    _weight,
+                    selectedGem != null
+                        ? 'အလေးချိန် (${LocalDb.unitLabel(selectedGem.weightUnit)}) — မဖြည့်လည်းရ'
+                        : 'အလေးချိန် — မဖြည့်လည်းရ',
                     number: true),
 
                 // Auto-deduct toggle (only meaningful when linked to inventory)
