@@ -113,7 +113,8 @@ class _SalesPageState extends State<SalesPage> {
                         padding: const EdgeInsets.fromLTRB(12, 0, 12, 90),
                         itemCount: box.keys.length,
                         itemBuilder: (context, i) {
-                          final key = box.keys.toList()[i];
+                          final keys = box.keys.toList().reversed.toList(); // Show newest first
+                          final key = keys[i];
                           final s = box.get(key)!;
                           return Card(
                             color: AppTheme.surfaceDark,

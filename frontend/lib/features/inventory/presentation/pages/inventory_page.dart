@@ -77,7 +77,7 @@ class _InventoryPageState extends State<InventoryPage> {
           if (box.isEmpty) {
             return _empty();
           }
-          final keys = box.keys.toList();
+          final keys = box.keys.toList().reversed.toList(); // Show newest first
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
             itemCount: keys.length,
