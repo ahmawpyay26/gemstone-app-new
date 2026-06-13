@@ -29,7 +29,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('အဓိကစာမျက်နှာ'),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: AppTheme.primaryAccent,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -158,12 +158,12 @@ class _DashboardPageState extends State<DashboardPage> {
         decoration: BoxDecoration(
           color: AppTheme.surfaceDark,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+          border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: AppTheme.primaryColor, size: 32),
+            Icon(icon, color: AppTheme.primaryAccent, size: 32),
             const SizedBox(height: 12),
             Text(title,
                 style: const TextStyle(
