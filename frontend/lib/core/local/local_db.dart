@@ -288,14 +288,24 @@ class LocalDb {
     return t;
   }
 
+  /// ရောင်းချမှုအားလုံး၏ ရောင်းပွဲခ စုစုပေါင်း။
+  static double totalSalesCommission() {
+    double t = 0;
+    for (final s in sales().values) {
+      t += s.commissionFee;
+    }
+    return t;
+  }
+
   /// ကုန်သည်အမြတ် (ရောင်းရငွေ - အရင်း) — အသုံးစရိတ် မပါဝင်သေး၏ အမြတ်
-  static double grossProfit() => totalSales() - totalCostOfGoodsSold();
+  static double grossProfit() =>
+      totalSales() - totalSalesCommission() - totalCostOfGoodsSold();
 
   /// အဆုံးသတ် အမြတ်စစ် (ရောင်းရငွေ - အရင်း - အသုံးစရိတ်)
-  static double netProfit() =>
-      totalSales() - totalCostOfGoodsSold() - totalExpenses();
+  static double netProfit() => grossProfit() - totalExpenses();
 
-  static double profit() => totalSales() - totalExpenses();
+  static double profit() =>
+      totalSales() - totalSalesCommission() - totalExpenses();
 
   static int inventoryCount() {
     int t = 0;

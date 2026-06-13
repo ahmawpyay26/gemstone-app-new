@@ -73,6 +73,7 @@ class Gemstone {
   double weightCarat; // အလေးချိန် တန်ဖိုး (ယူနစ်ပေါ်မူတည်)
   String weightUnit; // carat | kg | viss
   double costPrice; // ဝယ်ဈေး
+  double commissionFee; // ပွဲခ (ဝယ်ယူစဉ် ပေးရသည့်ပွဲခ)
   double sellPrice; // ရောင်းဈေး
   int quantity; // အရေအတွက်
   String color;
@@ -88,6 +89,7 @@ class Gemstone {
     required this.weightCarat,
     this.weightUnit = 'carat',
     required this.costPrice,
+    this.commissionFee = 0,
     required this.sellPrice,
     required this.quantity,
     required this.color,
@@ -122,13 +124,15 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       note: fields[10] as String,
       createdAt: fields[11] as int,
       weightUnit: (fields[12] as String?) ?? 'carat',
+      commissionFee:
+          fields[13] == null ? 0 : (fields[13] as num).toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Gemstone obj) {
     writer
-      ..writeByte(13)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -154,7 +158,9 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       ..writeByte(11)
       ..write(obj.createdAt)
       ..writeByte(12)
-      ..write(obj.weightUnit);
+      ..write(obj.weightUnit)
+      ..writeByte(13)
+      ..write(obj.commissionFee);
   }
 }
 
@@ -167,7 +173,8 @@ class Sale {
   String gemstoneName; // ရောင်းသည့်ကျောက်
   String customerName; // ဝယ်သူအမည်
   double amount; // ရောင်းရငွေ (gross revenue)
-  double costPrice; // ရောင်းသည့်ပစ္စည်း၏ စုစုပေါင်းအရင်း (cost of goods sold)
+  double costPrice; // ရောင်းသည့်ပစ္စည်း ၏ စုစုပေါင်းအရင်း (cost of goods sold)
+  double commissionFee; // ပွဲခ (ရောင်းစဉ် ပေးရသည့်ပွဲခ)
   int quantity;
   double weightCarat; // အလေးချိန် တန်ဖိုး (ယူနစ်ပေါ်မူတည်)
   String paymentMethod; // cash | bank | credit
@@ -181,6 +188,7 @@ class Sale {
     required this.customerName,
     required this.amount,
     this.costPrice = 0,
+    this.commissionFee = 0,
     required this.quantity,
     this.weightCarat = 0,
     required this.paymentMethod,
@@ -211,13 +219,15 @@ class SaleAdapter extends TypeAdapter<Sale> {
       gemstoneId: (fields[8] as String?) ?? '',
       weightCarat: fields[9] == null ? 0 : (fields[9] as num).toDouble(),
       costPrice: fields[10] == null ? 0 : (fields[10] as num).toDouble(),
+      commissionFee:
+          fields[11] == null ? 0 : (fields[11] as num).toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -239,7 +249,9 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(9)
       ..write(obj.weightCarat)
       ..writeByte(10)
-      ..write(obj.costPrice);
+      ..write(obj.costPrice)
+      ..writeByte(11)
+      ..write(obj.commissionFee);
   }
 }
 

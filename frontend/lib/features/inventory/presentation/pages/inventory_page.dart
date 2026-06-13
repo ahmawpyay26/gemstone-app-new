@@ -163,6 +163,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _type;
   late final TextEditingController _weight;
   late final TextEditingController _cost;
+  late final TextEditingController _commission;
   late final TextEditingController _sell;
   late final TextEditingController _qty;
   late final TextEditingController _color;
@@ -179,6 +180,10 @@ class _GemstoneFormState extends State<_GemstoneForm> {
     _weight = TextEditingController(text: e?.weightCarat.toString() ?? '');
     _weightUnit = e?.weightUnit ?? 'kg';
     _cost = TextEditingController(text: e?.costPrice.toString() ?? '');
+    _commission = TextEditingController(
+        text: (e != null && e.commissionFee > 0)
+            ? e.commissionFee.toString()
+            : '');
     _sell = TextEditingController(text: e?.sellPrice.toString() ?? '');
     _qty = TextEditingController(text: e?.quantity.toString() ?? '1');
     _color = TextEditingController(text: e?.color ?? '');
@@ -193,6 +198,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       _type,
       _weight,
       _cost,
+      _commission,
       _sell,
       _qty,
       _color,
@@ -217,6 +223,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       g.weightCarat = _d(_weight.text);
       g.weightUnit = _weightUnit;
       g.costPrice = _d(_cost.text);
+      g.commissionFee = _d(_commission.text);
       g.sellPrice = _d(_sell.text);
       g.quantity = _i(_qty.text);
       g.color = _color.text.trim();
@@ -231,6 +238,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         weightCarat: _d(_weight.text),
         weightUnit: _weightUnit,
         costPrice: _d(_cost.text),
+        commissionFee: _d(_commission.text),
         sellPrice: _d(_sell.text),
         quantity: _i(_qty.text),
         color: _color.text.trim(),
@@ -315,6 +323,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                   const SizedBox(width: 12),
                   Expanded(child: _field(_sell, 'ရောင်းဈေး', number: true)),
                 ]),
+                _field(_commission, 'ဝယ်ယူစဉ် ပွဲခ (အရင်းထဲ ထပ်ထည့်)', number: true),
                 Row(children: [
                   Expanded(child: _field(_color, 'အရောင်')),
                   const SizedBox(width: 12),

@@ -78,8 +78,7 @@ class _SalesPageState extends State<SalesPage> {
         valueListenable: LocalDb.sales().listenable(),
         builder: (context, Box<Sale> box, _) {
           final total = LocalDb.totalSales();
-          final cogs = LocalDb.totalCostOfGoodsSold();
-          final grossProfit = total - cogs;
+          final grossProfit = LocalDb.grossProfit();
           final isProfit = grossProfit >= 0;
           return Column(
             children: [
@@ -198,7 +197,7 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   Widget _profitBadge(Sale s) {
-    final p = s.amount - s.costPrice;
+    final p = (s.amount - s.commissionFee) - s.costPrice;
     final isProfit = p >= 0;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -263,6 +262,7 @@ class _SaleFormState extends State<_SaleForm> {
   late final TextEditingController _note;
   late final TextEditingController _manualName; // when no gemstone selected
   late final TextEditingController _cost; // optional manual cost override
+  late final TextEditingController _commission; // sell-side commission (ပွဲခ)
   String _payment = 'cash';
   late DateTime _saleDate;
 
@@ -285,6 +285,8 @@ class _SaleFormState extends State<_SaleForm> {
     _manualName = TextEditingController(text: e?.gemstoneName ?? '');
     _cost = TextEditingController(
         text: e != null && e.costPrice > 0 ? _trim(e.costPrice) : '');
+    _commission = TextEditingController(
+        text: e != null && e.commissionFee > 0 ? _trim(e.commissionFee) : '');
     _payment = e?.paymentMethod ?? 'cash';
     _saleDate = e != null
         ? DateTime.fromMillisecondsSinceEpoch(e.saleDate)
@@ -302,7 +304,7 @@ class _SaleFormState extends State<_SaleForm> {
 
   @override
   void dispose() {
-    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost]) {
+    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission]) {
       c.dispose();
     }
     super.dispose();
@@ -332,13 +334,15 @@ class _SaleFormState extends State<_SaleForm> {
   Widget _profitPreview() {
     final amount = double.tryParse(_amount.text.trim()) ?? 0;
     final qty = int.tryParse(_qty.text.trim()) ?? 1;
+    final sellCommission = double.tryParse(_commission.text.trim()) ?? 0;
     double cost = double.tryParse(_cost.text.trim()) ?? 0;
     // Mirror the same costing logic used in _save for the preview.
     if (_selectedGemId != null && cost > 0) {
       cost = cost * qty;
     }
     if (amount <= 0 && cost <= 0) return const SizedBox.shrink();
-    final p = amount - cost;
+    // Sell commission is deducted from revenue.
+    final p = (amount - sellCommission) - cost;
     final isProfit = p >= 0;
     final m = NumberFormat('#,##0');
     return Container(
@@ -377,6 +381,7 @@ class _SaleFormState extends State<_SaleForm> {
     final qty = int.tryParse(_qty.text.trim()) ?? 1;
     final weight = double.tryParse(_weight.text.trim()) ?? 0;
     final amount = double.tryParse(_amount.text.trim()) ?? 0;
+    final sellCommission = double.tryParse(_commission.text.trim()) ?? 0;
 
     final gemId = _selectedGemId ?? '';
     final name = gemId.isNotEmpty
@@ -442,6 +447,7 @@ class _SaleFormState extends State<_SaleForm> {
       s.customerName = _customer.text.trim();
       s.amount = amount;
       s.costPrice = cost;
+      s.commissionFee = sellCommission;
       s.quantity = qty;
       s.weightCarat = weight;
       s.paymentMethod = _payment;
@@ -456,6 +462,7 @@ class _SaleFormState extends State<_SaleForm> {
         customerName: _customer.text.trim(),
         amount: amount,
         costPrice: cost,
+        commissionFee: sellCommission,
         quantity: qty,
         weightCarat: weight,
         paymentMethod: _payment,
@@ -660,6 +667,8 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
                 _field(_cost, 'အရင်းတန်ဖိုး (ကျပ်) — အလိုအလျောက်တွက်ပြီး၊ ပြင်လို့ရ',
+                    number: true),
+                _field(_commission, 'ရောင်းပွဲခ (ဝင်ငွေထဲမှ နှုတ်)',
                     number: true),
                 _profitPreview(),
                 _field(_note, 'မှတ်ချက်'),
