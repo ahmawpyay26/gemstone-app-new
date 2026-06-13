@@ -421,6 +421,7 @@ class LocalDb {
 
   /// Deduct cost from a gemstone's total cost (for partial sales).
   /// costDelta: amount to deduct from total cost (positive value)
+  /// Deducts proportionally from all cost components (purchase price + all fees)
   static Future<void> adjustCost(
       String gemstoneId, double costDelta) async {
     final key = gemstoneKeyById(gemstoneId);
@@ -428,24 +429,27 @@ class LocalDb {
     final box = gemstones();
     final g = box.get(key);
     if (g == null) return;
-    // Deduct the cost proportionally from costPrice
-    g.costPrice = (g.costPrice - costDelta).clamp(0, double.infinity);
+    
+    // Calculate the total cost of this gemstone
+    final totalCost = gemstoneTotalCost(g);
+    if (totalCost <= 0) return; // Nothing to deduct
+    
+    // Calculate the proportion to deduct (costDelta / totalCost)
+    final proportion = costDelta / totalCost;
+    
+    // Deduct proportionally from each component
+    g.costPrice = (g.costPrice - (g.costPrice * proportion)).clamp(0, double.infinity);
+    g.commissionFee = (g.commissionFee - (g.commissionFee * proportion)).clamp(0, double.infinity);
+    g.processingFee = (g.processingFee - (g.processingFee * proportion)).clamp(0, double.infinity);
+    g.repairFee = (g.repairFee - (g.repairFee * proportion)).clamp(0, double.infinity);
+    g.breakageFee = (g.breakageFee - (g.breakageFee * proportion)).clamp(0, double.infinity);
+    g.bloodFee = (g.bloodFee - (g.bloodFee * proportion)).clamp(0, double.infinity);
+    g.laborFee = (g.laborFee - (g.laborFee * proportion)).clamp(0, double.infinity);
+    g.miscFee = (g.miscFee - (g.miscFee * proportion)).clamp(0, double.infinity);
+    
     await box.put(key, g);
   }
 
-  /// Record profit/loss from a sale to expenses box.
-  /// If profit > 0, records as income (negative expense).
-  /// If loss > 0, records as loss (positive expense).
-  static Future<void> recordProfitLoss(
-      String saleId, double profitOrLoss, String description) async {
-    final exp = Expense(
-      id: genId(),
-      title: description,
-      category: profitOrLoss > 0 ? 'income' : 'loss',
-      amount: profitOrLoss.abs(),
-      note: saleId,
-      expenseDate: DateTime.now().millisecondsSinceEpoch,
-    );
-    await expenses().add(exp);
-  }
+  // recordProfitLoss removed - profit/loss is now calculated directly from sales records
+  // without creating separate expense entries to avoid double-counting
 }

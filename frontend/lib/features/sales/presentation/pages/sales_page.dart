@@ -328,8 +328,9 @@ class _SaleFormState extends State<_SaleForm> {
           if (_amount.text.trim().isEmpty) {
             _amount.text = _trim(g.sellPrice);
           }
-          // Auto-fill cost (per-unit) so profit shows immediately.
-          _cost.text = _trim(g.costPrice);
+          // Auto-fill cost (per-unit) - use total cost including all expenses
+          final totalCostPerUnit = LocalDb.gemstoneTotalCost(g);
+          _cost.text = _trim(totalCostPerUnit);
         }
       } else {
         _cost.clear();
@@ -449,21 +450,11 @@ class _SaleFormState extends State<_SaleForm> {
       await LocalDb.adjustCost(gemId, cost);
     }
 
-    // --- Calculate and record profit/loss ---
-    final totalCost = cost; // Total cost of goods sold
-    final netRevenue = amount - sellCommission; // Revenue after commission
-    final profitOrLoss = netRevenue - totalCost;
-    
-    // If profit exceeds cost, record excess as income
-    // If loss, record as loss
-    final saleId = _isEdit ? widget.existing!.id : LocalDb.genId();
-    if (profitOrLoss != 0) {
-      await LocalDb.recordProfitLoss(
-        saleId,
-        profitOrLoss,
-        '${profitOrLoss > 0 ? "အမြတ်" : "အရှုံး"}: $name ရောင်းချမှု',
-      );
-    }
+    // --- Profit/loss is calculated automatically based on:
+    // Net Revenue = amount - sellCommission
+    // Total Cost = proportional cost deducted from inventory
+    // Profit/Loss = Net Revenue - Total Cost
+    // No need to record separately; it's computed in reports ---
 
     if (_isEdit) {
       final s = widget.existing!;
