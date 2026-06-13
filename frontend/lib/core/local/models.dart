@@ -74,6 +74,12 @@ class Gemstone {
   String weightUnit; // carat | kg | viss
   double costPrice; // ဝယ်ဈေး
   double commissionFee; // ပွဲခ (ဝယ်ယူစဉ် ပေးရသည့်ပွဲခ)
+  double processingFee; // ဆီဖိုး
+  double repairFee; // ပြုပြင်ခ
+  double breakageFee; // ဖျက်ခ
+  double bloodFee; // သွေးခ
+  double laborFee; // အလုပ်သမားခ
+  double miscFee; // အထွေထွေ
   double sellPrice; // ရောင်းဈေး
   int quantity; // အရေအတွက်
   String color;
@@ -90,6 +96,12 @@ class Gemstone {
     this.weightUnit = 'carat',
     required this.costPrice,
     this.commissionFee = 0,
+    this.processingFee = 0,
+    this.repairFee = 0,
+    this.breakageFee = 0,
+    this.bloodFee = 0,
+    this.laborFee = 0,
+    this.miscFee = 0,
     this.sellPrice = 0,
     required this.quantity,
     required this.color,
@@ -126,13 +138,25 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       weightUnit: (fields[12] as String?) ?? 'carat',
       commissionFee:
           fields[13] == null ? 0 : (fields[13] as num).toDouble(),
+      processingFee:
+          fields[14] == null ? 0 : (fields[14] as num).toDouble(),
+      repairFee:
+          fields[15] == null ? 0 : (fields[15] as num).toDouble(),
+      breakageFee:
+          fields[16] == null ? 0 : (fields[16] as num).toDouble(),
+      bloodFee:
+          fields[17] == null ? 0 : (fields[17] as num).toDouble(),
+      laborFee:
+          fields[18] == null ? 0 : (fields[18] as num).toDouble(),
+      miscFee:
+          fields[19] == null ? 0 : (fields[19] as num).toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Gemstone obj) {
     writer
-      ..writeByte(14)
+      ..writeByte(20)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -160,7 +184,19 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       ..writeByte(12)
       ..write(obj.weightUnit)
       ..writeByte(13)
-      ..write(obj.commissionFee);
+      ..write(obj.commissionFee)
+      ..writeByte(14)
+      ..write(obj.processingFee)
+      ..writeByte(15)
+      ..write(obj.repairFee)
+      ..writeByte(16)
+      ..write(obj.breakageFee)
+      ..writeByte(17)
+      ..write(obj.bloodFee)
+      ..writeByte(18)
+      ..write(obj.laborFee)
+      ..writeByte(19)
+      ..write(obj.miscFee);
   }
 }
 

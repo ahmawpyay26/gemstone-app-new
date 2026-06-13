@@ -164,6 +164,12 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _weight;
   late final TextEditingController _cost;
   late final TextEditingController _commission;
+  late final TextEditingController _processingFee;
+  late final TextEditingController _repairFee;
+  late final TextEditingController _breakageFee;
+  late final TextEditingController _bloodFee;
+  late final TextEditingController _laborFee;
+  late final TextEditingController _miscFee;
   late final TextEditingController _qty;
   late final TextEditingController _color;
   late final TextEditingController _origin;
@@ -183,6 +189,22 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         text: (e != null && e.commissionFee > 0)
             ? e.commissionFee.toString()
             : '');
+    _processingFee = TextEditingController(
+        text: (e != null && e.processingFee > 0)
+            ? e.processingFee.toString()
+            : '');
+    _repairFee = TextEditingController(
+        text: (e != null && e.repairFee > 0) ? e.repairFee.toString() : '');
+    _breakageFee = TextEditingController(
+        text: (e != null && e.breakageFee > 0)
+            ? e.breakageFee.toString()
+            : '');
+    _bloodFee = TextEditingController(
+        text: (e != null && e.bloodFee > 0) ? e.bloodFee.toString() : '');
+    _laborFee = TextEditingController(
+        text: (e != null && e.laborFee > 0) ? e.laborFee.toString() : '');
+    _miscFee = TextEditingController(
+        text: (e != null && e.miscFee > 0) ? e.miscFee.toString() : '');
     _qty = TextEditingController(text: e?.quantity.toString() ?? '1');
     _color = TextEditingController(text: e?.color ?? '');
     _origin = TextEditingController(text: e?.origin ?? '');
@@ -197,6 +219,12 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       _weight,
       _cost,
       _commission,
+      _processingFee,
+      _repairFee,
+      _breakageFee,
+      _bloodFee,
+      _laborFee,
+      _miscFee,
       _qty,
       _color,
       _origin,
@@ -221,6 +249,12 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       g.weightUnit = _weightUnit;
       g.costPrice = _d(_cost.text);
       g.commissionFee = _d(_commission.text);
+      g.processingFee = _d(_processingFee.text);
+      g.repairFee = _d(_repairFee.text);
+      g.breakageFee = _d(_breakageFee.text);
+      g.bloodFee = _d(_bloodFee.text);
+      g.laborFee = _d(_laborFee.text);
+      g.miscFee = _d(_miscFee.text);
       g.quantity = _i(_qty.text);
       g.color = _color.text.trim();
       g.origin = _origin.text.trim();
@@ -235,6 +269,12 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         weightUnit: _weightUnit,
         costPrice: _d(_cost.text),
         commissionFee: _d(_commission.text),
+        processingFee: _d(_processingFee.text),
+        repairFee: _d(_repairFee.text),
+        breakageFee: _d(_breakageFee.text),
+        bloodFee: _d(_bloodFee.text),
+        laborFee: _d(_laborFee.text),
+        miscFee: _d(_miscFee.text),
         quantity: _i(_qty.text),
         color: _color.text.trim(),
         origin: _origin.text.trim(),
@@ -314,7 +354,22 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                 ]),
                 _field(_qty, 'အရေအတွက်', number: true),
                 _field(_cost, 'ဝယ်ဈေး', number: true),
-                _field(_commission, 'ဝယ်ယူစဉ် ပွဲခ (အရင်းထဲ ထပ်ထည့်)', number: true),
+                const Divider(color: Colors.grey),
+                const SizedBox(height: 8),
+                Text('ကုန်ကျစရိတ်များ',
+                    style: TextStyle(
+                        color: Colors.grey[300],
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                _field(_commission, 'ဝယ်ယူစဉ် ပွဲခ', number: true),
+                _field(_processingFee, 'ဆီဖိုး', number: true),
+                _field(_repairFee, 'ပြုပြင်ခ', number: true),
+                _field(_breakageFee, 'ဖျက်ခ', number: true),
+                _field(_bloodFee, 'သွေးခ', number: true),
+                _field(_laborFee, 'အလုပ်သမားခ', number: true),
+                _field(_miscFee, 'အထွေထွေ', number: true),
+                const SizedBox(height: 12),
                 Row(children: [
                   Expanded(child: _field(_color, 'အရောင်')),
                   const SizedBox(width: 12),
