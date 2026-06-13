@@ -306,16 +306,40 @@ class LocalDb {
     return t;
   }
 
-  /// ကုန်သည်အမြတ် (ရောင်းရငွေ - အရင်း) — အသုံးစရိတ် မပါဝင်သေး၏ အမြတ်
-  /// Logic: If (စုစုပေါင်း ရောင်းရငွေ < မူလဝယ်ဈေး) အရှုံး, else အမြတ်
-  static double grossProfit() {
-    final totalRevenue = totalSales() - totalSalesCommission();
-    final capitalInvested = totalCapitalInvested() + totalCostOfGoodsSold();
-    return totalRevenue - capitalInvested;
+  /// စုစုပေါင်း မူလအရင်း (fixed pool):
+  /// ကျန်ရှိနေသေးသော ပစ္စည်းအရင်း + ရောင်းပြီးသား ပစ္စည်းအရင်း
+  /// ဤပမာဏသည် ရောင်းရောင်း/မရောင်းရောင်း မပြောင်းလဲသော စုစုပေါင်းအရင်းပမာဏ ဖြစ်သည်။
+  static double totalOriginalCapital() {
+    return totalCapitalInvested() + totalCostOfGoodsSold();
   }
 
-  /// အဆုံးသတ် အမြတ်စစ် (ရောင်းရငွေ - အရင်း - အသုံးစရိတ်)
-  static double netProfit() => grossProfit() - totalExpenses();
+  /// အသားတင် အရောင်းရငွေ (ပွဲခ နှုတ်ပြီး)
+  static double netRevenue() => totalSales() - totalSalesCommission();
+
+  /// ကျန်ရှိသော လက်ကျန်အရင်း:
+  /// မူလစုစုပေါင်းအရင်း ထဲမှ အသားတင် အရောင်းရငွေကို နှုတ်ပြီး ကျန်အရင်းပမာဏ
+  /// အရင်းကျေသွားပါက 0 (သုည) ဖြစ်သည်။ ဘယ်တော့မှ အနှုတ် မဖြစ်ပါ။
+  static double remainingCapital() {
+    final r = totalOriginalCapital() - netRevenue();
+    return r > 0 ? r : 0;
+  }
+
+  /// ကုန်သည်အမြတ် (capital recoupment logic):
+  /// အသားတင် အရောင်းရငွေသည် မူလစုစုပေါင်းအရင်းထက် မကျော်မချင်း အမြတ် = 0 (သုည)။
+  /// ကျော်လွန်မှသာ ကျော်လွန်သည့်ပမာဏကို အမြတ်အဖြစ် ပြသည်။ အရှုံး ဘယ်တော့မှ မပြပါ။
+  static double grossProfit() {
+    final p = netRevenue() - totalOriginalCapital();
+    return p > 0 ? p : 0;
+  }
+
+  /// အဆုံးသတ် အမြတ်စစ် (အမြတ် - အသုံးစရိတ်)
+  /// အရင်းမကျေသေးပါက (grossProfit == 0) အသားတင်အမြတ်ကို 0 အဖြစ်ထားသည်။
+  static double netProfit() {
+    final gp = grossProfit();
+    if (gp <= 0) return 0;
+    final np = gp - totalExpenses();
+    return np > 0 ? np : 0;
+  }
 
   static double profit() =>
       totalSales() - totalSalesCommission() - totalExpenses();

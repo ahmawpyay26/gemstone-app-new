@@ -79,9 +79,8 @@ class _SalesPageState extends State<SalesPage> {
         builder: (context, Box<Sale> box, _) {
           final totalCommission = LocalDb.totalSalesCommission();
           final netSales = LocalDb.totalSales() - totalCommission; // Deduct commission
-          final grossProfit = LocalDb.grossProfit();
-          final totalLoss = grossProfit < 0 ? grossProfit.abs() : 0.0;
-          final totalGain = grossProfit >= 0 ? grossProfit : 0.0;
+          final totalGain = LocalDb.grossProfit(); // 0 until capital recouped
+          final remainingCapital = LocalDb.remainingCapital(); // capital left to recoup
           return Column(
             children: [
               SingleChildScrollView(
@@ -94,9 +93,9 @@ class _SalesPageState extends State<SalesPage> {
                       AppTheme.successColor,
                     ),
                     _summaryCard(
-                      'စုစုပေါင်း အရှုံး',
-                      '${_money.format(totalLoss)} ကျပ်',
-                      AppTheme.errorColor,
+                      'ကျန်ရှိသော လက်ကျန်အရင်း',
+                      '${_money.format(remainingCapital)} ကျပ်',
+                      Colors.green,
                     ),
                     _summaryCard(
                       'စုစုပေါင်း အမြတ်',
@@ -204,14 +203,20 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   Widget _profitBadge(Sale s) {
-    final p = (s.amount - s.commissionFee) - s.costPrice;
-    final isProfit = p >= 0;
+    // ရောင်းရငွေ (ပွဲခ နှုတ်ပြီး) - ဤပစ္စည်း၏ အရင်း
+    final net = s.amount - s.commissionFee;
+    final diff = net - s.costPrice;
+    // အရင်းထက် မကျော်ရသေးသော့ အရှုံးမပြပါ။ ကျန်အရင်းကိုသာ ပြပါ။
+    final isProfit = diff > 0;
+    final label = isProfit
+        ? 'အမြတ် ${_money.format(diff)}'
+        : 'ကျန်အရင်း ${_money.format((diff).abs())}';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Text(
-        '${isProfit ? 'အမြတ်' : 'အရှုံး'} ${_money.format(p.abs())}',
+        label,
         style: TextStyle(
-          color: isProfit ? AppTheme.successColor : AppTheme.errorColor,
+          color: isProfit ? AppTheme.successColor : Colors.green,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
@@ -351,31 +356,29 @@ class _SaleFormState extends State<_SaleForm> {
     if (amount <= 0 && cost <= 0) return const SizedBox.shrink();
     // Sell commission is deducted from revenue.
     final p = (amount - sellCommission) - cost;
-    final isProfit = p >= 0;
+    // အရင်းထက် မကျော်ရသေးသော့ အရှုံးမပြပါ။ ကျန်အရင်းကိုသာ ပြပါ။
+    final isProfit = p > 0;
     final m = NumberFormat('#,##0');
+    final label = isProfit ? 'ခန့်မှန်းအမြတ်' : 'ကျန်ရှိမည့်အရင်း';
+    final color = isProfit ? AppTheme.successColor : Colors.green;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: (isProfit ? AppTheme.successColor : AppTheme.errorColor)
-            .withOpacity(0.12),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(isProfit ? 'ခန့်မှန်းအမြတ်' : 'ခန့်မှန်းအရှုံး',
+          Text(label,
               style: TextStyle(
-                  color: isProfit
-                      ? AppTheme.successColor
-                      : AppTheme.errorColor,
+                  color: color,
                   fontWeight: FontWeight.w600)),
           Text('${m.format(p.abs())} ကျပ်',
               style: TextStyle(
-                  color: isProfit
-                      ? AppTheme.successColor
-                      : AppTheme.errorColor,
+                  color: color,
                   fontSize: 16,
                   fontWeight: FontWeight.bold)),
         ],

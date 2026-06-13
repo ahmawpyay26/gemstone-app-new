@@ -60,16 +60,12 @@ class _DashboardPageState extends State<DashboardPage> {
             return ValueListenableBuilder(
               valueListenable: LocalDb.gemstones().listenable(),
               builder: (context, __3, ____) {
-                final sales = LocalDb.totalSales();
-                final capitalInvested = LocalDb.totalCapitalInvested();
+                final sales = LocalDb.netRevenue(); // ပွဲခ နှုတ်ပြီး အသားတင် အရောင်းရငွေ
+                final originalCapital = LocalDb.totalOriginalCapital(); // မူလစုစုပေါင်းအရင်း (fixed)
                 final commissions = LocalDb.totalSalesCommission();
                 final expenses = LocalDb.totalExpenses();
-                final profit = LocalDb.netProfit();
-                final invCostTotal = LocalDb.inventoryCostTotal() +
-                    LocalDb.inventoryExtraCostTotal();
-                
-                final displayProfit = sales < capitalInvested ? 0.0 : profit;
-                final remainingCapital = capitalInvested - sales;
+                final displayProfit = LocalDb.netProfit(); // အရင်းကျေမှ +စိမ်း
+                final remainingCapital = LocalDb.remainingCapital(); // ကျန်အရင်း (အနှုတ်မရှိ)
                 return Column(
                   children: [
                     Row(
@@ -81,7 +77,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(width: 12),
                         Expanded(
                             child: _statCard('မူလစုစုပေါင်းအရင်း',
-                                _money.format(capitalInvested), AppTheme.errorColor,
+                                _money.format(originalCapital), AppTheme.errorColor,
                                 Icons.shopping_bag)),
                       ],
                     ),
@@ -107,13 +103,13 @@ class _DashboardPageState extends State<DashboardPage> {
                                 _money.format(displayProfit),
                                 displayProfit > 0
                                     ? AppTheme.primaryAccent
-                                    : AppTheme.errorColor,
+                                    : Colors.grey,
                                 Icons.account_balance_wallet)),
                         const SizedBox(width: 12),
                         Expanded(
                             child: _statCard(
                                 'ကျန်ရှိသော လက်ကျန်အရင်း',
-                                _money.format(remainingCapital > 0 ? remainingCapital : 0),
+                                _money.format(remainingCapital),
                                 remainingCapital > 0 ? Colors.green : Colors.grey,
                                 Icons.savings)),
                       ],
