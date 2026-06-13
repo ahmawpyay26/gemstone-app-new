@@ -1,0 +1,104 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter (Perfect Version Match)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.6'
+
+      - name: Hard Fix V2 Embedding & Global SDK Override
+        working-directory: ./frontend
+        run: |
+          flutter config --no-analytics
+
+          # V2 Embedding အမှားအတွက် အခြေခံဖိုင်များကို ပြုပြင်ခြင်း
+          flutter create . --platforms=android --overwrite
+
+          # App display name ကို "KST Jade" အဖြစ် သတ်မှတ်ခြင်း
+          sed -i 's/android:label="frontend"/android:label="KST Jade"/' android/app/src/main/AndroidManifest.xml || true
+
+          # SDK 35 အမှားအား နှိမ်နင်းရန် Gradle properties ထည့်သွင်းခြင်း
+          mkdir -p ~/.gradle
+          echo "android.lifecycle.compileSdkVersion=34" >> ~/.gradle/gradle.properties
+          echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
+          echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
+
+          echo "flutter.compileSdkVersion=34" >> android/local.properties
+          echo "flutter.targetSdkVersion=34" >> android/local.properties
+
+      - name: Get Flutter dependencies
+        working-directory: ./frontend
+        run: |
+          flutter pub get
+
+      - name: Generate Code and Build APK
+        working-directory: ./frontend
+        run: |
+          echo "Starting Flutter build process..."
+          flutter pub run build_runner build --delete-conflicting-outputs || true
+          echo "Building APK..."
+          flutter build apk --release
+          echo "Build completed. Checking APK location..."
+          find . -name "*.apk" -type f || echo "No APK found"
+          ls -la build/app/outputs/flutter-apk/ || echo "flutter-apk directory not found"
+
+      - name: Upload APK to artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: app-release
+          path: |
+            frontend/build/app/outputs/flutter-apk/app-release.apk
+            frontend/build/app/outputs/apk/release/app-release.apk
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Create Release Notes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "## Gemstone Management App - Android Release" > release_notes.txt
+          echo "" >> release_notes.txt
+          echo "**Build Number:** ${{ github.run_number }}" >> release_notes.txt
+          echo "**Commit:** ${{ github.sha }}" >> release_notes.txt
+          echo "**Branch:** main" >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "### Download APK" >> release_notes.txt
+          echo "The APK file is available in the artifacts section (app-release)." >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "### Installation Instructions" >> release_notes.txt
+          echo "1. Download the app-release artifact from this run" >> release_notes.txt
+          echo "2. Unzip and transfer app-release.apk to your Android device" >> release_notes.txt
+          echo "3. Enable 'Unknown Sources' in Settings > Security" >> release_notes.txt
+          echo "4. Open the APK file and tap Install" >> release_notes.txt
+          echo "5. Launch the app and login with your credentials" >> release_notes.txt
+
+      - name: Notify Build Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ APK build completed successfully!"
+          else
+            echo "❌ APK build failed. Check logs for details."
+          fi
