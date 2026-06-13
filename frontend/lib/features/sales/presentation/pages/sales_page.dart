@@ -443,6 +443,19 @@ class _SaleFormState extends State<_SaleForm> {
     // --- Apply the new sale's stock deduction ---
     if (gemId.isNotEmpty && _autoDeduct) {
       await LocalDb.adjustStock(gemId, qty, weight);
+      // Also deduct the cost from inventory
+      await LocalDb.adjustCost(gemId, cost);
+    }
+
+    // --- Calculate and record profit/loss ---
+    final profitOrLoss = (amount - sellCommission) - cost;
+    final saleId = _isEdit ? widget.existing!.id : LocalDb.genId();
+    if (profitOrLoss != 0) {
+      await LocalDb.recordProfitLoss(
+        saleId,
+        profitOrLoss,
+        '${profitOrLoss > 0 ? "အမြတ်" : "အရှုံး"}: $name ရောင်းချမှု',
+      );
     }
 
     if (_isEdit) {

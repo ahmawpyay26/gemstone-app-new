@@ -418,4 +418,34 @@ class LocalDb {
   static int activeWorkers() {
     return workers().values.where((w) => w.status == 'active').length;
   }
+
+  /// Deduct cost from a gemstone's total cost (for partial sales).
+  /// costDelta: amount to deduct from total cost (positive value)
+  static Future<void> adjustCost(
+      String gemstoneId, double costDelta) async {
+    final key = gemstoneKeyById(gemstoneId);
+    if (key == null) return;
+    final box = gemstones();
+    final g = box.get(key);
+    if (g == null) return;
+    // Deduct the cost proportionally from costPrice
+    g.costPrice = (g.costPrice - costDelta).clamp(0, double.infinity);
+    await box.put(key, g);
+  }
+
+  /// Record profit/loss from a sale to expenses box.
+  /// If profit > 0, records as income (negative expense).
+  /// If loss > 0, records as loss (positive expense).
+  static Future<void> recordProfitLoss(
+      String saleId, double profitOrLoss, String description) async {
+    final exp = Expense(
+      id: genId(),
+      title: description,
+      category: profitOrLoss > 0 ? 'income' : 'loss',
+      amount: profitOrLoss.abs(),
+      note: saleId,
+      expenseDate: DateTime.now().millisecondsSinceEpoch,
+    );
+    await expenses().add(exp);
+  }
 }
