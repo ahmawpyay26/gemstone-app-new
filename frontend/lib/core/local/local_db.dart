@@ -297,9 +297,22 @@ class LocalDb {
     return t;
   }
 
+  /// ပစ္စည်းစာရင်းအတွင်း ကျန်ရှိသည့် စုစုပေါင်းအရင်း
+  static double totalCapitalInvested() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      t += gemstoneTotalCost(g);
+    }
+    return t;
+  }
+
   /// ကုန်သည်အမြတ် (ရောင်းရငွေ - အရင်း) — အသုံးစရိတ် မပါဝင်သေး၏ အမြတ်
-  static double grossProfit() =>
-      totalSales() - totalSalesCommission() - totalCostOfGoodsSold();
+  /// Logic: If (စုစုပေါင်း ရောင်းရငွေ < မူလဝယ်ဈေး) အရှုံး, else အမြတ်
+  static double grossProfit() {
+    final totalRevenue = totalSales() - totalSalesCommission();
+    final capitalInvested = totalCapitalInvested() + totalCostOfGoodsSold();
+    return totalRevenue - capitalInvested;
+  }
 
   /// အဆုံးသတ် အမြတ်စစ် (ရောင်းရငွေ - အရင်း - အသုံးစရိတ်)
   static double netProfit() => grossProfit() - totalExpenses();
