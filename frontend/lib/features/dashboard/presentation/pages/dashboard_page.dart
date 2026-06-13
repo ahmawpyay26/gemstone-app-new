@@ -157,7 +157,7 @@ class _DashboardPageState extends State<DashboardPage> {
               valueListenable: LocalDb.gemstones().listenable(),
               builder: (context, __3, ____) {
                 final sales = LocalDb.totalSales();
-                final cogs = LocalDb.totalCostOfGoodsSold();
+                final capitalInvested = LocalDb.totalCapitalInvested();
                 final commissions = LocalDb.totalSalesCommission();
                 final expenses = LocalDb.totalExpenses();
                 final profit = LocalDb.netProfit();
@@ -173,8 +173,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                 Icons.trending_up)),
                         const SizedBox(width: 12),
                         Expanded(
-                            child: _statCard('အရင်း (COGS)',
-                                _money.format(cogs), AppTheme.errorColor,
+                            child: _statCard('မူလစုစုပေါင်းအရင်း',
+                                _money.format(capitalInvested), AppTheme.errorColor,
                                 Icons.shopping_bag)),
                       ],
                     ),
