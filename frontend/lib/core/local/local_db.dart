@@ -323,6 +323,98 @@ class LocalDb {
     return t;
   }
 
+  /// ပစ္စည်းစာရင်းအတွင်း ဝယ်ဈေး စုစုပေါင်း (cost basis).
+  static double inventoryCostTotal() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      t += g.costPrice;
+    }
+    return t;
+  }
+
+  /// ပစ္စည်းစာရင်းအတွင်း ထည့်သွင်းထားသော ကုန်ကျစရိတ် အမျိုးအစားအလိုက် စုစုပေါင်း။
+  static double inventoryCommissionTotal() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      t += g.commissionFee;
+    }
+    return t;
+  }
+
+  static double inventoryProcessingTotal() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      t += g.processingFee;
+    }
+    return t;
+  }
+
+  static double inventoryRepairTotal() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      t += g.repairFee;
+    }
+    return t;
+  }
+
+  static double inventoryBreakageTotal() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      t += g.breakageFee;
+    }
+    return t;
+  }
+
+  static double inventoryBloodTotal() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      t += g.bloodFee;
+    }
+    return t;
+  }
+
+  static double inventoryLaborTotal() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      t += g.laborFee;
+    }
+    return t;
+  }
+
+  static double inventoryMiscTotal() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      t += g.miscFee;
+    }
+    return t;
+  }
+
+  /// ပစ္စည်းစာရင်းအတွင်းရှိ ကုန်ကျစရိတ် (ဝယ်ဈေး မပါ) အားလုံး စုစုပေါင်း။
+  static double inventoryExtraCostTotal() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      t += g.commissionFee +
+          g.processingFee +
+          g.repairFee +
+          g.breakageFee +
+          g.bloodFee +
+          g.laborFee +
+          g.miscFee;
+    }
+    return t;
+  }
+
+  /// ပစ္စည်းတစ်ခုချင်းစီ၏ စုစုပေါင်း အရင်းအနှီး (ဝယ်ဈေး + ကုန်ကျစရိတ်များ).
+  static double gemstoneTotalCost(Gemstone g) =>
+      g.costPrice +
+      g.commissionFee +
+      g.processingFee +
+      g.repairFee +
+      g.breakageFee +
+      g.bloodFee +
+      g.laborFee +
+      g.miscFee;
+
   static int activeWorkers() {
     return workers().values.where((w) => w.status == 'active').length;
   }

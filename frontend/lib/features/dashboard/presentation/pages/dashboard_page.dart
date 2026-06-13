@@ -161,6 +161,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 final commissions = LocalDb.totalSalesCommission();
                 final expenses = LocalDb.totalExpenses();
                 final profit = LocalDb.netProfit();
+                final invCostTotal = LocalDb.inventoryCostTotal() +
+                    LocalDb.inventoryExtraCostTotal();
                 return Column(
                   children: [
                     Row(
@@ -202,15 +204,11 @@ class _DashboardPageState extends State<DashboardPage> {
                                 Icons.account_balance_wallet)),
                         const SizedBox(width: 12),
                         Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: AppTheme.surfaceDark,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.transparent),
-                              ),
-                              child: const SizedBox.shrink(),
-                            )),
+                            child: _statCard(
+                                'ပစ္စည်း ကုန်ကျစရိတ်',
+                                _money.format(invCostTotal),
+                                Colors.orangeAccent,
+                                Icons.inventory_2)),
                       ],
                     ),
                   ],

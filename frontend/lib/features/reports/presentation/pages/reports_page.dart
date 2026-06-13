@@ -44,6 +44,18 @@ class ReportsPage extends StatelessWidget {
                       final activeWorkers = LocalDb.activeWorkers();
                       final salesCount = LocalDb.sales().length;
                       final expenseCount = LocalDb.expenses().length;
+                      final invCost = LocalDb.inventoryCostTotal();
+                      final invCommission =
+                          LocalDb.inventoryCommissionTotal();
+                      final invProcessing =
+                          LocalDb.inventoryProcessingTotal();
+                      final invRepair = LocalDb.inventoryRepairTotal();
+                      final invBreakage = LocalDb.inventoryBreakageTotal();
+                      final invBlood = LocalDb.inventoryBloodTotal();
+                      final invLabor = LocalDb.inventoryLaborTotal();
+                      final invMisc = LocalDb.inventoryMiscTotal();
+                      final invExtraCost = LocalDb.inventoryExtraCostTotal();
+                      final invGrandTotal = invCost + invExtraCost;
 
                       return ListView(
                         padding: const EdgeInsets.all(16),
@@ -92,8 +104,34 @@ class ReportsPage extends StatelessWidget {
                           const SizedBox(height: 20),
                           _section('ပစ္စည်းစာရင်း'),
                           _row('ကျောက်မျက် အရေအတွက်', '$invCount ခု'),
-                          _row('စုစုပေါင်း တန်ဖိုး',
-                              '${_money.format(invValue)} ကျပ်'),
+                          if (invValue > 0)
+                            _row('ရောင်းဆေး စုစုပေါင်း',
+                                '${_money.format(invValue)} ကျပ်'),
+                          const SizedBox(height: 20),
+                          _section('ပစ္စည်း ကုန်ကျစရိတ် အကျဥ်းချုပ်'),
+                          _bigCard(
+                            'စုစုပေါင်း အရင်းအနှီး (ဝယ်ဈေး + ကုန်ကျစရိတ်)',
+                            '${_money.format(invGrandTotal)} ကျပ်',
+                            AppTheme.primaryAccent,
+                            Icons.account_balance_wallet,
+                          ),
+                          const SizedBox(height: 12),
+                          _row('ဝယ်ဈေး (အရင်း)',
+                              '${_money.format(invCost)} ကျပ်'),
+                          _row('ပွဲခ',
+                              '${_money.format(invCommission)} ကျပ်'),
+                          _row('ဆီဖိုး',
+                              '${_money.format(invProcessing)} ကျပ်'),
+                          _row('ပြုပြင်ခ',
+                              '${_money.format(invRepair)} ကျပ်'),
+                          _row('ဖျက်ခ',
+                              '${_money.format(invBreakage)} ကျပ်'),
+                          _row('သွေးခ',
+                              '${_money.format(invBlood)} ကျပ်'),
+                          _row('အလုပ်သမားခ',
+                              '${_money.format(invLabor)} ကျပ်'),
+                          _row('အထွေထွေ',
+                              '${_money.format(invMisc)} ကျပ်'),
                           const SizedBox(height: 20),
                           _section('လုပ်ငန်းဆောင်ရွက်မှု'),
                           _row('အရောင်း မှတ်တမ်း', '$salesCount ကြိမ်'),
