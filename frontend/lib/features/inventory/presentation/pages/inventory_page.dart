@@ -110,7 +110,7 @@ class _InventoryPageState extends State<InventoryPage> {
                           style: const TextStyle(
                               color: AppTheme.primaryAccent, fontSize: 12)),
                       Builder(builder: (c) {
-                        final totalCost = LocalDb.gemstoneTotalCost(g) * g.quantity;
+                        final totalCost = LocalDb.gemstoneTotalCost(g); // Per unit cost, not multiplied by quantity
                         return Text(
                             'စုစုပေါင်း အရင်း: ${_money.format(totalCost.clamp(0, double.infinity))} ကျပ်',
                             style: TextStyle(
