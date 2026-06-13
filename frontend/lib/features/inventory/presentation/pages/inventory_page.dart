@@ -106,7 +106,7 @@ class _InventoryPageState extends State<InventoryPage> {
                           '${g.type} • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}',
                           style: TextStyle(color: Colors.grey[400])),
                       Text(
-                          'ရောင်းဈေး: ${_money.format(g.sellPrice)} ကျပ် • အရေအတွက်: ${g.quantity}',
+                          'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • အရေအတွက်: ${g.quantity}',
                           style: const TextStyle(
                               color: AppTheme.primaryAccent, fontSize: 12)),
                     ],
@@ -164,7 +164,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _weight;
   late final TextEditingController _cost;
   late final TextEditingController _commission;
-  late final TextEditingController _sell;
   late final TextEditingController _qty;
   late final TextEditingController _color;
   late final TextEditingController _origin;
@@ -184,7 +183,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         text: (e != null && e.commissionFee > 0)
             ? e.commissionFee.toString()
             : '');
-    _sell = TextEditingController(text: e?.sellPrice.toString() ?? '');
     _qty = TextEditingController(text: e?.quantity.toString() ?? '1');
     _color = TextEditingController(text: e?.color ?? '');
     _origin = TextEditingController(text: e?.origin ?? '');
@@ -199,7 +197,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       _weight,
       _cost,
       _commission,
-      _sell,
       _qty,
       _color,
       _origin,
@@ -224,7 +221,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       g.weightUnit = _weightUnit;
       g.costPrice = _d(_cost.text);
       g.commissionFee = _d(_commission.text);
-      g.sellPrice = _d(_sell.text);
       g.quantity = _i(_qty.text);
       g.color = _color.text.trim();
       g.origin = _origin.text.trim();
@@ -239,7 +235,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         weightUnit: _weightUnit,
         costPrice: _d(_cost.text),
         commissionFee: _d(_commission.text),
-        sellPrice: _d(_sell.text),
         quantity: _i(_qty.text),
         color: _color.text.trim(),
         origin: _origin.text.trim(),
@@ -318,11 +313,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                   ),
                 ]),
                 _field(_qty, 'အရေအတွက်', number: true),
-                Row(children: [
-                  Expanded(child: _field(_cost, 'ဝယ်ဈေး', number: true)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _field(_sell, 'ရောင်းဈေး', number: true)),
-                ]),
+                _field(_cost, 'ဝယ်ဈေး', number: true),
                 _field(_commission, 'ဝယ်ယူစဉ် ပွဲခ (အရင်းထဲ ထပ်ထည့်)', number: true),
                 Row(children: [
                   Expanded(child: _field(_color, 'အရောင်')),

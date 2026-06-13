@@ -50,6 +50,11 @@ class _DashboardPageState extends State<DashboardPage> {
         title: const Text('ကျောက်မျက် စီမံခန့်ခွဲမှု'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'ဆက်တင်',
+            onPressed: () => context.go('/settings'),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'ထွက်ရန်',
             onPressed: _handleLogout,
@@ -152,9 +157,10 @@ class _DashboardPageState extends State<DashboardPage> {
               valueListenable: LocalDb.gemstones().listenable(),
               builder: (context, __3, ____) {
                 final sales = LocalDb.totalSales();
+                final cogs = LocalDb.totalCostOfGoodsSold();
+                final commissions = LocalDb.totalSalesCommission();
                 final expenses = LocalDb.totalExpenses();
                 final profit = LocalDb.netProfit();
-                final invValue = LocalDb.inventoryValue();
                 return Column(
                   children: [
                     Row(
@@ -163,6 +169,20 @@ class _DashboardPageState extends State<DashboardPage> {
                             child: _statCard('စုစုပေါင်း အရောင်း',
                                 _money.format(sales), AppTheme.successColor,
                                 Icons.trending_up)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: _statCard('အရင်း (COGS)',
+                                _money.format(cogs), AppTheme.errorColor,
+                                Icons.shopping_bag)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                            child: _statCard('ပွဲခ စုစုပေါင်း',
+                                _money.format(commissions), AppTheme.errorColor,
+                                Icons.money_off)),
                         const SizedBox(width: 12),
                         Expanded(
                             child: _statCard('အသုံးစရိတ်',
@@ -182,9 +202,15 @@ class _DashboardPageState extends State<DashboardPage> {
                                 Icons.account_balance_wallet)),
                         const SizedBox(width: 12),
                         Expanded(
-                            child: _statCard('ပစ္စည်းတန်ဖိုး',
-                                _money.format(invValue),
-                                AppTheme.secondaryAccent, Icons.diamond)),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppTheme.surfaceDark,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.transparent),
+                              ),
+                              child: const SizedBox.shrink(),
+                            )),
                       ],
                     ),
                   ],

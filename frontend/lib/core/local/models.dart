@@ -90,7 +90,7 @@ class Gemstone {
     this.weightUnit = 'carat',
     required this.costPrice,
     this.commissionFee = 0,
-    required this.sellPrice,
+    this.sellPrice = 0,
     required this.quantity,
     required this.color,
     required this.origin,

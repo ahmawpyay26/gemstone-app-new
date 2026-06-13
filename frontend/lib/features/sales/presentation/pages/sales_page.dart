@@ -79,26 +79,31 @@ class _SalesPageState extends State<SalesPage> {
         builder: (context, Box<Sale> box, _) {
           final total = LocalDb.totalSales();
           final grossProfit = LocalDb.grossProfit();
-          final isProfit = grossProfit >= 0;
+          final totalLoss = grossProfit < 0 ? grossProfit.abs() : 0.0;
+          final totalGain = grossProfit >= 0 ? grossProfit : 0.0;
           return Column(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _summaryCard(
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _summaryCard(
                       'စုစုပေါင်း အရောင်း',
                       '${_money.format(total)} ကျပ်',
                       AppTheme.successColor,
                     ),
-                  ),
-                  Expanded(
-                    child: _summaryCard(
-                      isProfit ? 'စုစုပေါင်း အမြတ်' : 'စုစုပေါင်း အရှုံး',
-                      '${_money.format(grossProfit.abs())} ကျပ်',
-                      isProfit ? AppTheme.primaryAccent : AppTheme.errorColor,
+                    _summaryCard(
+                      'စုစုပေါင်း အရှုံး',
+                      '${_money.format(totalLoss)} ကျပ်',
+                      AppTheme.errorColor,
                     ),
-                  ),
-                ],
+                    _summaryCard(
+                      'စုစုပေါင်း အမြတ်',
+                      '${_money.format(totalGain)} ကျပ်',
+                      AppTheme.primaryAccent,
+                    ),
+                  ],
+                ),
               ),
               Expanded(
                 child: box.isEmpty
