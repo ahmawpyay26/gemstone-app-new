@@ -448,7 +448,12 @@ class _SaleFormState extends State<_SaleForm> {
     }
 
     // --- Calculate and record profit/loss ---
-    final profitOrLoss = (amount - sellCommission) - cost;
+    final totalCost = cost; // Total cost of goods sold
+    final netRevenue = amount - sellCommission; // Revenue after commission
+    final profitOrLoss = netRevenue - totalCost;
+    
+    // If profit exceeds cost, record excess as income
+    // If loss, record as loss
     final saleId = _isEdit ? widget.existing!.id : LocalDb.genId();
     if (profitOrLoss != 0) {
       await LocalDb.recordProfitLoss(

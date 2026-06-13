@@ -109,10 +109,14 @@ class _InventoryPageState extends State<InventoryPage> {
                           'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • အရေအတွက်: ${g.quantity}',
                           style: const TextStyle(
                               color: AppTheme.primaryAccent, fontSize: 12)),
-                      Text(
-                          'စုစုပေါင်း အရင်း: ${_money.format(LocalDb.gemstoneTotalCost(g))} ကျပ်',
-                          style: TextStyle(
-                              color: Colors.orangeAccent, fontSize: 11)),
+                      Builder(builder: (c) {
+                        final totalCost = LocalDb.gemstoneTotalCost(g) * g.quantity;
+                        return Text(
+                            'စုစုပေါင်း အရင်း: ${_money.format(totalCost.clamp(0, double.infinity))} ကျပ်',
+                            style: TextStyle(
+                                color: totalCost > 0 ? Colors.orangeAccent : Colors.grey,
+                                fontSize: 11));
+                      }),
                     ],
                   ),
                   trailing: PopupMenuButton<String>(
