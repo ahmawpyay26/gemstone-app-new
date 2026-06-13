@@ -421,7 +421,7 @@ class LocalDb {
 
   /// Deduct cost from a gemstone's total cost (for partial sales).
   /// costDelta: amount to deduct from total cost (positive value)
-  /// Deducts proportionally from all cost components (purchase price + all fees)
+  /// Deducts directly from each cost component proportionally
   static Future<void> adjustCost(
       String gemstoneId, double costDelta) async {
     final key = gemstoneKeyById(gemstoneId);
@@ -438,14 +438,23 @@ class LocalDb {
     final proportion = costDelta / totalCost;
     
     // Deduct proportionally from each component
-    g.costPrice = (g.costPrice - (g.costPrice * proportion)).clamp(0, double.infinity);
-    g.commissionFee = (g.commissionFee - (g.commissionFee * proportion)).clamp(0, double.infinity);
-    g.processingFee = (g.processingFee - (g.processingFee * proportion)).clamp(0, double.infinity);
-    g.repairFee = (g.repairFee - (g.repairFee * proportion)).clamp(0, double.infinity);
-    g.breakageFee = (g.breakageFee - (g.breakageFee * proportion)).clamp(0, double.infinity);
-    g.bloodFee = (g.bloodFee - (g.bloodFee * proportion)).clamp(0, double.infinity);
-    g.laborFee = (g.laborFee - (g.laborFee * proportion)).clamp(0, double.infinity);
-    g.miscFee = (g.miscFee - (g.miscFee * proportion)).clamp(0, double.infinity);
+    final costPriceDelta = g.costPrice * proportion;
+    final commissionFeeDelta = g.commissionFee * proportion;
+    final processingFeeDelta = g.processingFee * proportion;
+    final repairFeeDelta = g.repairFee * proportion;
+    final breakageFeeDelta = g.breakageFee * proportion;
+    final bloodFeeDelta = g.bloodFee * proportion;
+    final laborFeeDelta = g.laborFee * proportion;
+    final miscFeeDelta = g.miscFee * proportion;
+    
+    g.costPrice = (g.costPrice - costPriceDelta).clamp(0, double.infinity);
+    g.commissionFee = (g.commissionFee - commissionFeeDelta).clamp(0, double.infinity);
+    g.processingFee = (g.processingFee - processingFeeDelta).clamp(0, double.infinity);
+    g.repairFee = (g.repairFee - repairFeeDelta).clamp(0, double.infinity);
+    g.breakageFee = (g.breakageFee - breakageFeeDelta).clamp(0, double.infinity);
+    g.bloodFee = (g.bloodFee - bloodFeeDelta).clamp(0, double.infinity);
+    g.laborFee = (g.laborFee - laborFeeDelta).clamp(0, double.infinity);
+    g.miscFee = (g.miscFee - miscFeeDelta).clamp(0, double.infinity);
     
     await box.put(key, g);
   }
