@@ -32,7 +32,8 @@ class ReportsPage extends StatelessWidget {
                   return ValueListenableBuilder(
                     valueListenable: LocalDb.workers().listenable(),
                     builder: (context, _______, ________) {
-                      final sales = LocalDb.totalSales();
+                      final totalCommission = LocalDb.totalSalesCommission();
+                      final sales = LocalDb.totalSales() - totalCommission; // Deduct commission
                       final expenses = LocalDb.totalExpenses();
                       final cogs = LocalDb.totalCostOfGoodsSold();
                       final grossProfit = LocalDb.grossProfit();

@@ -77,7 +77,8 @@ class _SalesPageState extends State<SalesPage> {
       body: ValueListenableBuilder(
         valueListenable: LocalDb.sales().listenable(),
         builder: (context, Box<Sale> box, _) {
-          final total = LocalDb.totalSales();
+          final totalCommission = LocalDb.totalSalesCommission();
+          final netSales = LocalDb.totalSales() - totalCommission; // Deduct commission
           final grossProfit = LocalDb.grossProfit();
           final totalLoss = grossProfit < 0 ? grossProfit.abs() : 0.0;
           final totalGain = grossProfit >= 0 ? grossProfit : 0.0;
@@ -89,7 +90,7 @@ class _SalesPageState extends State<SalesPage> {
                   children: [
                     _summaryCard(
                       'စုစုပေါင်း အရောင်း',
-                      '${_money.format(total)} ကျပ်',
+                      '${_money.format(netSales)} ကျပ်',
                       AppTheme.successColor,
                     ),
                     _summaryCard(
