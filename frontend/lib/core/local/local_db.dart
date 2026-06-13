@@ -419,44 +419,14 @@ class LocalDb {
     return workers().values.where((w) => w.status == 'active').length;
   }
 
-  /// Deduct cost from a gemstone's total cost (for partial sales).
-  /// costDelta: amount to deduct from total cost (positive value)
-  /// Deducts directly from each cost component proportionally
+  /// Placeholder for cost adjustment - NOT USED
+  /// The inventory cost should NOT be modified when a sale is recorded.
+  /// The remaining quantity keeps its original unit cost.
+  /// Cost tracking is done through the Sale record, not by modifying inventory.
   static Future<void> adjustCost(
       String gemstoneId, double costDelta) async {
-    final key = gemstoneKeyById(gemstoneId);
-    if (key == null) return;
-    final box = gemstones();
-    final g = box.get(key);
-    if (g == null) return;
-    
-    // Calculate the total cost of this gemstone
-    final totalCost = gemstoneTotalCost(g);
-    if (totalCost <= 0) return; // Nothing to deduct
-    
-    // Calculate the proportion to deduct (costDelta / totalCost)
-    final proportion = costDelta / totalCost;
-    
-    // Deduct proportionally from each component
-    final costPriceDelta = g.costPrice * proportion;
-    final commissionFeeDelta = g.commissionFee * proportion;
-    final processingFeeDelta = g.processingFee * proportion;
-    final repairFeeDelta = g.repairFee * proportion;
-    final breakageFeeDelta = g.breakageFee * proportion;
-    final bloodFeeDelta = g.bloodFee * proportion;
-    final laborFeeDelta = g.laborFee * proportion;
-    final miscFeeDelta = g.miscFee * proportion;
-    
-    g.costPrice = (g.costPrice - costPriceDelta).clamp(0, double.infinity);
-    g.commissionFee = (g.commissionFee - commissionFeeDelta).clamp(0, double.infinity);
-    g.processingFee = (g.processingFee - processingFeeDelta).clamp(0, double.infinity);
-    g.repairFee = (g.repairFee - repairFeeDelta).clamp(0, double.infinity);
-    g.breakageFee = (g.breakageFee - breakageFeeDelta).clamp(0, double.infinity);
-    g.bloodFee = (g.bloodFee - bloodFeeDelta).clamp(0, double.infinity);
-    g.laborFee = (g.laborFee - laborFeeDelta).clamp(0, double.infinity);
-    g.miscFee = (g.miscFee - miscFeeDelta).clamp(0, double.infinity);
-    
-    await box.put(key, g);
+    // Do nothing - inventory costs should remain unchanged
+    // This prevents the bug where all costs become 0 after a partial sale
   }
 
   // recordProfitLoss removed - profit/loss is now calculated directly from sales records
