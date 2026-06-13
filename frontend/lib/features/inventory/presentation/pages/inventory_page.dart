@@ -109,6 +109,10 @@ class _InventoryPageState extends State<InventoryPage> {
                           'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • အရေအတွက်: ${g.quantity}',
                           style: const TextStyle(
                               color: AppTheme.primaryAccent, fontSize: 12)),
+                      Text(
+                          'စုစုပေါင်း အရင်း: ${_money.format(LocalDb.gemstoneTotalCost(g))} ကျပ်',
+                          style: TextStyle(
+                              color: Colors.orangeAccent, fontSize: 11)),
                     ],
                   ),
                   trailing: PopupMenuButton<String>(
