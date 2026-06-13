@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/local/local_db.dart';
+import 'package:gemstone_app/core/local/local_db.dart';
+import 'package:gemstone_app/core/theme/app_theme.dart';
+import 'package:gemstone_app/features/inventory/presentation/pages/inventory_page.dart';
+import 'package:gemstone_app/features/sales/presentation/pages/sales_page.dart';
+import 'package:gemstone_app/features/expenses/presentation/pages/expenses_page.dart';
+import 'package:gemstone_app/features/workers/presentation/pages/workers_page.dart';
+import 'package:gemstone_app/features/branches/presentation/pages/branches_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({Key? key}) : super(key: key);
@@ -13,145 +16,46 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final _money = NumberFormat('#,##0', 'en_US');
+  late final NumberFormat _money;
 
-  Future<void> _handleLogout() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        title: const Text('ထွက်ခွာခြင်း'),
-        content: const Text('အကောင့်မှ ထွက်ခွာလိုပါသလား။'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('မလုပ်တော့ပါ'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('ထွက်မည်',
-                style: TextStyle(color: AppTheme.errorColor)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      LocalDb.logout();
-      if (mounted) context.go('/login');
-    }
+  @override
+  void initState() {
+    super.initState();
+    _money = NumberFormat('#,##0', 'my_MM');
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = LocalDb.currentUser();
     return Scaffold(
-      backgroundColor: AppTheme.primaryDark,
       appBar: AppBar(
-        title: const Text('ကျောက်မျက် စီမံခန့်ခွဲမှု'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'ဆက်တင်',
-            onPressed: () => context.go('/settings'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'ထွက်ရန်',
-            onPressed: _handleLogout,
-          ),
-        ],
+        title: const Text('အဓိကစာမျက်နှာ'),
+        backgroundColor: AppTheme.primaryColor,
+        elevation: 0,
       ),
-      body: ValueListenableBuilder(
-        valueListenable: Hive.box(LocalDb.sessionBox).listenable(),
-        builder: (context, _, __) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Welcome
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppTheme.primaryAccent.withOpacity(0.25),
-                        AppTheme.surfaceDark,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('ကြိုဆိုပါသည်',
-                          style: TextStyle(color: Colors.grey[300])),
-                      const SizedBox(height: 4),
-                      Text(
-                        user['name'] ?? 'Admin',
-                        style: const TextStyle(
-                          color: AppTheme.primaryAccent,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(user['email'] ?? '',
-                          style: TextStyle(
-                              color: Colors.grey[400], fontSize: 13)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Stat cards (live)
-                _buildStats(),
-                const SizedBox(height: 24),
-
-                Text('အဓိက လုပ်ဆောင်ချက်များ',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  childAspectRatio: 1.05,
-                  children: [
-                    _moduleCard(Icons.diamond, 'ပစ္စည်းစာရင်း',
-                        'ကျောက်မျက် စာရင်း', () => context.go('/inventory')),
-                    _moduleCard(Icons.shopping_cart, 'ရောင်းချမှု',
-                        'အရောင်း မှတ်တမ်း', () => context.go('/sales')),
-                    _moduleCard(Icons.receipt_long, 'အသုံးစရိတ်',
-                        'ကုန်ကျစရိတ်', () => context.go('/expenses')),
-                    _moduleCard(Icons.people, 'အလုပ်သမား',
-                        'ဝန်ထမ်း စီမံ', () => context.go('/workers')),
-                    _moduleCard(Icons.store, 'ဆိုင်ခွဲ', 'ဆိုင်ခွဲ အချက်အလက်',
-                        () => context.go('/branches')),
-                    _moduleCard(Icons.bar_chart, 'အစီရင်ခံစာ',
-                        'စာရင်းချုပ်', () => context.go('/reports')),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Dashboard Stats
+              _buildStatsSection(),
+              const SizedBox(height: 24),
+              // Module Cards
+              _buildModuleSection(),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildStats() {
-    // Rebuild whenever any data box changes.
+  Widget _buildStatsSection() {
     return ValueListenableBuilder(
-      valueListenable: LocalDb.sales().listenable(),
-      builder: (context, _, __) {
+      valueListenable: LocalDb.expenses().listenable(),
+      builder: (context, __1, ___) {
         return ValueListenableBuilder(
-          valueListenable: LocalDb.expenses().listenable(),
+          valueListenable: LocalDb.sales().listenable(),
           builder: (context, __2, ___) {
             return ValueListenableBuilder(
               valueListenable: LocalDb.gemstones().listenable(),
@@ -163,6 +67,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 final profit = LocalDb.netProfit();
                 final invCostTotal = LocalDb.inventoryCostTotal() +
                     LocalDb.inventoryExtraCostTotal();
+                
+                final displayProfit = sales < capitalInvested ? 0.0 : profit;
+                final remainingCapital = capitalInvested - sales;
                 return Column(
                   children: [
                     Row(
@@ -197,18 +104,18 @@ class _DashboardPageState extends State<DashboardPage> {
                       children: [
                         Expanded(
                             child: _statCard('အသားတင်အမြတ်',
-                                _money.format(profit),
-                                profit >= 0
+                                _money.format(displayProfit),
+                                displayProfit > 0
                                     ? AppTheme.primaryAccent
                                     : AppTheme.errorColor,
                                 Icons.account_balance_wallet)),
                         const SizedBox(width: 12),
                         Expanded(
                             child: _statCard(
-                                'ပစ္စည်း ကုန်ကျစရိတ်',
-                                _money.format(invCostTotal),
-                                Colors.orangeAccent,
-                                Icons.inventory_2)),
+                                'ကျန်ရှိသော လက်ကျန်အရင်း',
+                                _money.format(remainingCapital > 0 ? remainingCapital : 0),
+                                remainingCapital > 0 ? Colors.green : Colors.grey,
+                                Icons.savings)),
                       ],
                     ),
                   ],
@@ -248,34 +155,69 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _moduleCard(
       IconData icon, String title, String subtitle, VoidCallback onTap) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppTheme.surfaceDark,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.2)),
+          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 38, color: AppTheme.primaryAccent),
+            Icon(icon, color: AppTheme.primaryColor, size: 32),
             const SizedBox(height: 12),
             Text(title,
-                textAlign: TextAlign.center,
                 style: const TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15)),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text(subtitle,
-                textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey[400], fontSize: 12)),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildModuleSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('အဓိကလုပ်ဆောင်ချက်များ',
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            _moduleCard(Icons.diamond, 'ပစ္စည်းများ', 'စာရင်းကိုင်တွယ်ခြင်း',
+                () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const InventoryPage()))),
+            _moduleCard(Icons.shopping_cart, 'အရောင်းများ', 'အရောင်းစာရင်း',
+                () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const SalesPage()))),
+            _moduleCard(Icons.receipt, 'အသုံးစရိတ်များ', 'အသုံးစရိတ်စာရင်း',
+                () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const ExpensesPage()))),
+            _moduleCard(Icons.people, 'အလုပ်သမားများ', 'အလုပ်သမားစာရင်း',
+                () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const WorkersPage()))),
+            _moduleCard(Icons.location_city, 'ခွဲခြင်းများ', 'ခွဲခြင်းစာရင်း',
+                () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const BranchesPage()))),
+          ],
+        ),
+      ],
     );
   }
 }
