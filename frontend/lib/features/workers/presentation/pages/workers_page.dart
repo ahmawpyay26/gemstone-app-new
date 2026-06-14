@@ -55,7 +55,8 @@ class _WorkersPageState extends State<WorkersPage> {
         title: const Text('အလုပ်သမားများ'),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/dashboard')),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/dashboard')),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppTheme.primaryAccent,

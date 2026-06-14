@@ -104,7 +104,8 @@ class _SettingsPageState extends State<SettingsPage> {
         title: const Text('အကောင့် ဆက်တင်'),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/dashboard')),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/dashboard')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

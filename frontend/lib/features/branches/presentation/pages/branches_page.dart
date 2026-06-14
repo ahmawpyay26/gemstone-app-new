@@ -13,7 +13,8 @@ class BranchesPage extends StatelessWidget {
         title: const Text('ဆိုင်ခွဲ'),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/dashboard')),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/dashboard')),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

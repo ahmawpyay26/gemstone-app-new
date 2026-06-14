@@ -65,7 +65,8 @@ class _SalesPageState extends State<SalesPage> {
         title: const Text('ရောင်းချမှု'),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/dashboard')),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/dashboard')),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppTheme.primaryAccent,

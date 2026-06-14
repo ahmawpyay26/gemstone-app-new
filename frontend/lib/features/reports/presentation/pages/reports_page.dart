@@ -18,7 +18,8 @@ class ReportsPage extends StatelessWidget {
         title: const Text('အစီရင်ခံစာ'),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/dashboard')),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/dashboard')),
       ),
       body: ValueListenableBuilder(
         valueListenable: LocalDb.sales().listenable(),

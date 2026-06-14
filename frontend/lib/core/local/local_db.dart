@@ -452,6 +452,27 @@ class LocalDb {
       g.laborFee +
       g.miscFee;
 
+  /// ဤကျောက်မျက် (id) နှင့် ဆက်စပ်သော အရောင်းများ၏ အသားတင် အရောင်းရငွေ
+  /// (ရောင်းရငွေ စုစုပေါင်း ထဲမှ ရောင်းပွဲခ နှုတ်ပြီး).
+  static double netRevenueForGemstone(String gemstoneId) {
+    if (gemstoneId.isEmpty) return 0;
+    double t = 0;
+    for (final s in sales().values) {
+      if (s.gemstoneId == gemstoneId) {
+        t += (s.amount - s.commissionFee);
+      }
+    }
+    return t;
+  }
+
+  /// ပစ္စည်းတစ်ခုချင်းစီ၏ ကျန်ရှိအရင်း:
+  /// မူလစုစုပေါင်းအရင်း ထဲမှ ဤကျောက်နှင့်ဆက်စပ်သော အသားတင် အရောင်းရငွေကို နှုတ်ပြီး
+  /// ကျန်အရင်းပမာဏ။ အရင်းကျေသွားပါက 0 (သုည)။ အနှုတ် ဘယ်တော့မှ မဖြစ်ပါ။
+  static double gemstoneRemainingCapital(Gemstone g) {
+    final remaining = gemstoneTotalCost(g) - netRevenueForGemstone(g.id);
+    return remaining > 0 ? remaining : 0;
+  }
+
   static int activeWorkers() {
     return workers().values.where((w) => w.status == 'active').length;
   }

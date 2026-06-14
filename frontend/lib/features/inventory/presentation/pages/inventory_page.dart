@@ -62,7 +62,8 @@ class _InventoryPageState extends State<InventoryPage> {
         title: const Text('ပစ္စည်းစာရင်း'),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/dashboard')),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/dashboard')),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppTheme.primaryAccent,
@@ -72,8 +73,11 @@ class _InventoryPageState extends State<InventoryPage> {
         onPressed: () => _openForm(),
       ),
       body: ValueListenableBuilder(
-        valueListenable: LocalDb.gemstones().listenable(),
-        builder: (context, Box<Gemstone> box, _) {
+        valueListenable: LocalDb.sales().listenable(),
+        builder: (context, _, __) =>
+            ValueListenableBuilder(
+          valueListenable: LocalDb.gemstones().listenable(),
+          builder: (context, Box<Gemstone> box, _) {
           if (box.isEmpty) {
             return _empty();
           }
@@ -110,12 +114,32 @@ class _InventoryPageState extends State<InventoryPage> {
                           style: const TextStyle(
                               color: AppTheme.primaryAccent, fontSize: 12)),
                       Builder(builder: (c) {
-                        final totalCost = LocalDb.gemstoneTotalCost(g); // Per unit cost, not multiplied by quantity
-                        return Text(
-                            'စုစုပေါင်း အရင်း: ${_money.format(totalCost.clamp(0, double.infinity))} ကျပ်',
-                            style: TextStyle(
-                                color: totalCost > 0 ? Colors.orangeAccent : Colors.grey,
-                                fontSize: 11));
+                        final totalCost =
+                            LocalDb.gemstoneTotalCost(g); // စုစုပေါင်းအရင်း (ဝယ်ဈေး + ကုန်ကျစရိတ်)
+                        final remaining = LocalDb.gemstoneRemainingCapital(
+                            g); // ရောင်းပြီးသား နှုတ်ပြီး ကျန်အရင်း
+                        final sold = totalCost - remaining; // ပြန်ရပြီးသား အရင်းပမာဏ
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                'စုစုပေါင်း အရင်း: ${_money.format(totalCost.clamp(0, double.infinity))} ကျပ်',
+                                style: TextStyle(
+                                    color: totalCost > 0
+                                        ? Colors.orangeAccent
+                                        : Colors.grey,
+                                    fontSize: 11)),
+                            if (sold > 0)
+                              Text(
+                                  'ကျန်ရှိအရင်း: ${_money.format(remaining)} ကျပ်',
+                                  style: TextStyle(
+                                      color: remaining > 0
+                                          ? Colors.green
+                                          : Colors.grey,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600)),
+                          ],
+                        );
                       }),
                     ],
                   ),
@@ -136,6 +160,7 @@ class _InventoryPageState extends State<InventoryPage> {
             },
           );
         },
+        ),
       ),
     );
   }

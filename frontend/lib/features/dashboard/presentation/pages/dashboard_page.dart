@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:gemstone_management/core/local/local_db.dart';
 import 'package:gemstone_management/core/theme/app_theme.dart';
-import 'package:gemstone_management/features/inventory/presentation/pages/inventory_page.dart';
-import 'package:gemstone_management/features/sales/presentation/pages/sales_page.dart';
-import 'package:gemstone_management/features/expenses/presentation/pages/expenses_page.dart';
-import 'package:gemstone_management/features/workers/presentation/pages/workers_page.dart';
-import 'package:gemstone_management/features/branches/presentation/pages/branches_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({Key? key}) : super(key: key);
@@ -198,20 +194,15 @@ class _DashboardPageState extends State<DashboardPage> {
           physics: const NeverScrollableScrollPhysics(),
           children: [
             _moduleCard(Icons.diamond, 'ပစ္စည်းများ', 'စာရင်းကိုင်တွယ်ခြင်း',
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const InventoryPage()))),
+                () => context.push('/inventory')),
             _moduleCard(Icons.shopping_cart, 'အရောင်းများ', 'အရောင်းစာရင်း',
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const SalesPage()))),
+                () => context.push('/sales')),
             _moduleCard(Icons.receipt, 'အသုံးစရိတ်များ', 'အသုံးစရိတ်စာရင်း',
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const ExpensesPage()))),
+                () => context.push('/expenses')),
             _moduleCard(Icons.people, 'အလုပ်သမားများ', 'အလုပ်သမားစာရင်း',
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const WorkersPage()))),
+                () => context.push('/workers')),
             _moduleCard(Icons.location_city, 'ခွဲခြင်းများ', 'ခွဲခြင်းစာရင်း',
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const BranchesPage()))),
+                () => context.push('/branches')),
           ],
         ),
       ],

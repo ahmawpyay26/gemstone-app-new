@@ -56,7 +56,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
         title: const Text('အသုံးစရိတ်'),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/dashboard')),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/dashboard')),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppTheme.primaryAccent,
