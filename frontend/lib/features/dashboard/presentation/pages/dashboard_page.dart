@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:gemstone_app/core/local/local_db.dart';
-import 'package:gemstone_app/core/theme/app_theme.dart';
-import 'package:gemstone_app/features/inventory/presentation/pages/inventory_page.dart';
-import 'package:gemstone_app/features/sales/presentation/pages/sales_page.dart';
-import 'package:gemstone_app/features/expenses/presentation/pages/expenses_page.dart';
-import 'package:gemstone_app/features/workers/presentation/pages/workers_page.dart';
-import 'package:gemstone_app/features/branches/presentation/pages/branches_page.dart';
+import 'package:gemstone_management/core/local/local_db.dart';
+import 'package:gemstone_management/core/theme/app_theme.dart';
+import 'package:gemstone_management/features/inventory/presentation/pages/inventory_page.dart';
+import 'package:gemstone_management/features/sales/presentation/pages/sales_page.dart';
+import 'package:gemstone_management/features/expenses/presentation/pages/expenses_page.dart';
+import 'package:gemstone_management/features/workers/presentation/pages/workers_page.dart';
+import 'package:gemstone_management/features/branches/presentation/pages/branches_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({Key? key}) : super(key: key);
