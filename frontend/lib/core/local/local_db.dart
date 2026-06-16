@@ -92,6 +92,11 @@ class LocalDb {
           status: 'in_stock',
           note: 'အရည်အသွေးမြင့်',
           createdAt: now,
+          totalCost: 1500000,
+          remainingCost: 1500000,
+          totalProfit: 0,
+          remainingQuantity: 2,
+          soldQuantity: 0,
         ),
         Gemstone(
           id: genId(),
@@ -107,6 +112,11 @@ class LocalDb {
           status: 'in_stock',
           note: '',
           createdAt: now,
+          totalCost: 1200000,
+          remainingCost: 1200000,
+          totalProfit: 0,
+          remainingQuantity: 1,
+          soldQuantity: 0,
         ),
         Gemstone(
           id: genId(),
@@ -122,6 +132,11 @@ class LocalDb {
           status: 'in_stock',
           note: 'Imperial Jade',
           createdAt: now,
+          totalCost: 3000000,
+          remainingCost: 3000000,
+          totalProfit: 0,
+          remainingQuantity: 3,
+          soldQuantity: 0,
         ),
       ]);
     }
@@ -471,6 +486,92 @@ class LocalDb {
   static double gemstoneRemainingCapital(Gemstone g) {
     final remaining = gemstoneTotalCost(g) - netRevenueForGemstone(g.id);
     return remaining > 0 ? remaining : 0;
+  }
+
+  // -------------------------------------------------------------------------
+  // Product-wise Independent Ledger Logic
+  // -------------------------------------------------------------------------
+
+  /// ပစ္စည်းတစ်ခုချင်းစီ၏ စုစုပေါင်းအမြတ်:
+  /// အသားတင်အရောင်းရငွေ > မူလစုစုပေါင်းအရင်း ဖြစ်သည့်အခါ၊
+  /// (အသားတင်အရောင်းရငွေ - မူလစုစုပေါင်းအရင်း) = အမြတ်
+  static double gemstoneTotalProfit(Gemstone g) {
+    final totalCost = gemstoneTotalCost(g);
+    final netRevenue = netRevenueForGemstone(g.id);
+    if (netRevenue > totalCost) {
+      return netRevenue - totalCost;
+    }
+    return 0;
+  }
+
+  /// ပစ္စည်းတစ်ခုချင်းစီ၏ ရောင်းပြီးအရေအတွက်
+  static int gemstoneSoldQuantity(String gemstoneId) {
+    int total = 0;
+    for (final s in sales().values) {
+      if (s.gemstoneId == gemstoneId) {
+        total += s.quantity;
+      }
+    }
+    return total;
+  }
+
+  /// ပစ္စည်းတစ်ခုချင်းစီ၏ ကျန်ရှိအရေအတွက်
+  static int gemstoneRemainingQuantity(Gemstone g) {
+    return g.quantity - gemstoneSoldQuantity(g.id);
+  }
+
+  /// ပစ္စည်းတစ်ခုချင်းစီ၏ အရောင်းအကြိမ်အရေအတွက် (ဘယ်နှစ်ကြိမ် ရောင်းခဲ့သည်)
+  static int gemstoneSaleCount(String gemstoneId) {
+    int count = 0;
+    for (final s in sales().values) {
+      if (s.gemstoneId == gemstoneId) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /// ပစ္စည်းတစ်ခုချင်းစီ၏ ပထမအကြိမ်ရောင်းချမှုအတွက် အရင်းတန်ဖိုး (Auto-fill)
+  /// ပထမအကြိမ်: totalCost
+  /// နောက်အကြိမ်များ: remainingCost
+  /// remainingCost = 0 ဖြစ်လျှင်: 0
+  static double getSalesFormAutoCost(Gemstone g) {
+    final saleCount = gemstoneSaleCount(g.id);
+    if (saleCount == 0) {
+      // ပထမအကြိမ်: totalCost
+      return gemstoneTotalCost(g);
+    } else {
+      // နောက်အကြိမ်များ: remainingCost
+      return gemstoneRemainingCapital(g);
+    }
+  }
+
+  /// ပစ္စည်းတစ်ခုချင်းစီ၏ Ledger အချက်အလက် အားလုံး update လုပ်ပြီး save
+  static Future<void> updateGemstoneProductLedger(String gemstoneId) async {
+    final key = gemstoneKeyById(gemstoneId);
+    if (key == null) return;
+    final box = gemstones();
+    final g = box.get(key);
+    if (g == null) return;
+
+    // Update ledger fields
+    g.totalCost = gemstoneTotalCost(g);
+    g.remainingCost = gemstoneRemainingCapital(g);
+    g.totalProfit = gemstoneTotalProfit(g);
+    g.remainingQuantity = gemstoneRemainingQuantity(g);
+    g.soldQuantity = gemstoneSoldQuantity(g.id);
+
+    // Auto-update quantity based on sales
+    g.quantity = g.remainingQuantity + g.soldQuantity;
+
+    await box.put(key, g);
+  }
+
+  /// All gemstones' product-wise ledger ကို update လုပ်ပြီး save
+  static Future<void> updateAllGemstoneProductLedgers() async {
+    for (final g in gemstones().values) {
+      await updateGemstoneProductLedger(g.id);
+    }
   }
 
   static int activeWorkers() {

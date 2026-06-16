@@ -87,6 +87,13 @@ class Gemstone {
   String status; // in_stock | sold | reserved
   String note;
   int createdAt;
+  
+  // Product-wise Independent Ledger Fields
+  double totalCost; // စုစုပေါင်းအရင်း (costPrice + fees)
+  double remainingCost; // ကျန်ရှိအရင်း (ရောင်းချတိုင်း နှုတ်ပြီး)
+  double totalProfit; // စုစုပေါင်းအမြတ်
+  int remainingQuantity; // ကျန်ရှိအရေအတွက်
+  int soldQuantity; // ရောင်းပြီးအရေအတွက်
 
   Gemstone({
     required this.id,
@@ -109,6 +116,11 @@ class Gemstone {
     required this.status,
     required this.note,
     required this.createdAt,
+    this.totalCost = 0,
+    this.remainingCost = 0,
+    this.totalProfit = 0,
+    this.remainingQuantity = 0,
+    this.soldQuantity = 0,
   });
 }
 
@@ -150,13 +162,18 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
           fields[18] == null ? 0 : (fields[18] as num).toDouble(),
       miscFee:
           fields[19] == null ? 0 : (fields[19] as num).toDouble(),
+      totalCost: fields[20] == null ? 0 : (fields[20] as num).toDouble(),
+      remainingCost: fields[21] == null ? 0 : (fields[21] as num).toDouble(),
+      totalProfit: fields[22] == null ? 0 : (fields[22] as num).toDouble(),
+      remainingQuantity: fields[23] == null ? 0 : (fields[23] as int),
+      soldQuantity: fields[24] == null ? 0 : (fields[24] as int),
     );
   }
 
   @override
   void write(BinaryWriter writer, Gemstone obj) {
     writer
-      ..writeByte(20)
+      ..writeByte(25)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -196,7 +213,17 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       ..writeByte(18)
       ..write(obj.laborFee)
       ..writeByte(19)
-      ..write(obj.miscFee);
+      ..write(obj.miscFee)
+      ..writeByte(20)
+      ..write(obj.totalCost)
+      ..writeByte(21)
+      ..write(obj.remainingCost)
+      ..writeByte(22)
+      ..write(obj.totalProfit)
+      ..writeByte(23)
+      ..write(obj.remainingQuantity)
+      ..writeByte(24)
+      ..write(obj.soldQuantity);
   }
 }
 
@@ -216,6 +243,13 @@ class Sale {
   String paymentMethod; // cash | bank | credit
   String note;
   int saleDate;
+  
+  // Detailed Transaction History Fields
+  double netSale; // Selling Price - Commission
+  double costUsed; // ဒီအကြိမ်ရောင်းချမှာ သုံးစွဲတဲ့ အရင်း
+  double remainingCostAfterSale; // ရောင်းပြီးနောက် ကျန်ရှိအရင်း
+  double profitGenerated; // ဒီအကြိမ်ရောင်းချမှ ရရှိတဲ့ အမြတ်
+  double accumulatedProfit; // စုစုပေါင်းအမြတ် (ယခုအထိ)
 
   Sale({
     required this.id,
@@ -230,6 +264,11 @@ class Sale {
     required this.paymentMethod,
     required this.note,
     required this.saleDate,
+    this.netSale = 0,
+    this.costUsed = 0,
+    this.remainingCostAfterSale = 0,
+    this.profitGenerated = 0,
+    this.accumulatedProfit = 0,
   });
 }
 
@@ -257,13 +296,18 @@ class SaleAdapter extends TypeAdapter<Sale> {
       costPrice: fields[10] == null ? 0 : (fields[10] as num).toDouble(),
       commissionFee:
           fields[11] == null ? 0 : (fields[11] as num).toDouble(),
+      netSale: fields[12] == null ? 0 : (fields[12] as num).toDouble(),
+      costUsed: fields[13] == null ? 0 : (fields[13] as num).toDouble(),
+      remainingCostAfterSale: fields[14] == null ? 0 : (fields[14] as num).toDouble(),
+      profitGenerated: fields[15] == null ? 0 : (fields[15] as num).toDouble(),
+      accumulatedProfit: fields[16] == null ? 0 : (fields[16] as num).toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(17)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -287,7 +331,17 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(10)
       ..write(obj.costPrice)
       ..writeByte(11)
-      ..write(obj.commissionFee);
+      ..write(obj.commissionFee)
+      ..writeByte(12)
+      ..write(obj.netSale)
+      ..writeByte(13)
+      ..write(obj.costUsed)
+      ..writeByte(14)
+      ..write(obj.remainingCostAfterSale)
+      ..writeByte(15)
+      ..write(obj.profitGenerated)
+      ..writeByte(16)
+      ..write(obj.accumulatedProfit);
   }
 }
 

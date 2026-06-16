@@ -334,9 +334,12 @@ class _SaleFormState extends State<_SaleForm> {
           if (_amount.text.trim().isEmpty) {
             _amount.text = _trim(g.sellPrice);
           }
-          // Auto-fill cost (per-unit) - use total cost including all expenses
-          final totalCostPerUnit = LocalDb.gemstoneTotalCost(g);
-          _cost.text = _trim(totalCostPerUnit);
+          // Auto-fill cost based on product state (Product-wise Independent Ledger)
+          // ပထမအကြိမ်: totalCost
+          // နောက်အကြိမ်များ: remainingCost
+          // remainingCost = 0 ဖြစ်လျှင်: 0
+          final autoCost = LocalDb.getSalesFormAutoCost(g);
+          _cost.text = _trim(autoCost);
         }
       } else {
         _cost.clear();
@@ -454,11 +457,35 @@ class _SaleFormState extends State<_SaleForm> {
       await LocalDb.adjustCost(gemId, cost);
     }
 
-    // --- Profit/loss is calculated automatically based on:
-    // Net Revenue = amount - sellCommission
-    // Total Cost = proportional cost deducted from inventory
-    // Profit/Loss = Net Revenue - Total Cost
-    // No need to record separately; it's computed in reports ---
+    // --- Calculate transaction history fields for Product-wise Independent Ledger ---
+    final netSale = amount - sellCommission;
+    final g = gemId.isNotEmpty ? LocalDb.gemstoneById(gemId) : null;
+    
+    double costUsed = 0;
+    double profitGenerated = 0;
+    double remainingCostAfterSale = 0;
+    double accumulatedProfit = 0;
+    
+    if (g != null) {
+      final totalCostBefore = LocalDb.gemstoneTotalCost(g);
+      final netRevenueBefore = LocalDb.netRevenueForGemstone(gemId);
+      final remainingCostBefore = totalCostBefore - netRevenueBefore;
+      
+      if (netSale < remainingCostBefore) {
+        costUsed = netSale;
+        profitGenerated = 0;
+        remainingCostAfterSale = remainingCostBefore - netSale;
+      } else {
+        costUsed = remainingCostBefore;
+        profitGenerated = netSale - remainingCostBefore;
+        remainingCostAfterSale = 0;
+      }
+      accumulatedProfit = LocalDb.gemstoneTotalProfit(g) + profitGenerated;
+    } else {
+      costUsed = cost;
+      profitGenerated = netSale - cost;
+      accumulatedProfit = profitGenerated;
+    }
 
     if (_isEdit) {
       final s = widget.existing!;
@@ -473,6 +500,11 @@ class _SaleFormState extends State<_SaleForm> {
       s.paymentMethod = _payment;
       s.note = _note.text.trim();
       s.saleDate = _saleDate.millisecondsSinceEpoch;
+      s.netSale = netSale;
+      s.costUsed = costUsed;
+      s.remainingCostAfterSale = remainingCostAfterSale;
+      s.profitGenerated = profitGenerated;
+      s.accumulatedProfit = accumulatedProfit;
       await box.put(widget.hiveKey, s);
     } else {
       await box.add(Sale(
@@ -488,8 +520,18 @@ class _SaleFormState extends State<_SaleForm> {
         paymentMethod: _payment,
         note: _note.text.trim(),
         saleDate: _saleDate.millisecondsSinceEpoch,
+        netSale: netSale,
+        costUsed: costUsed,
+        remainingCostAfterSale: remainingCostAfterSale,
+        profitGenerated: profitGenerated,
+        accumulatedProfit: accumulatedProfit,
       ));
     }
+    
+    if (gemId.isNotEmpty) {
+      await LocalDb.updateGemstoneProductLedger(gemId);
+    }
+    
     if (mounted) Navigator.pop(context);
   }
 
