@@ -459,33 +459,12 @@ class _SaleFormState extends State<_SaleForm> {
 
     // --- Calculate transaction history fields for Product-wise Independent Ledger ---
     final netSale = amount - sellCommission;
-    final g = gemId.isNotEmpty ? LocalDb.gemstoneById(gemId) : null;
     
+    // These will be recalculated from sales records after save
     double costUsed = 0;
     double profitGenerated = 0;
     double remainingCostAfterSale = 0;
     double accumulatedProfit = 0;
-    
-    if (g != null) {
-      final totalCostBefore = LocalDb.gemstoneTotalCost(g);
-      final netRevenueBefore = LocalDb.netRevenueForGemstone(gemId);
-      final remainingCostBefore = totalCostBefore - netRevenueBefore;
-      
-      if (netSale < remainingCostBefore) {
-        costUsed = netSale;
-        profitGenerated = 0;
-        remainingCostAfterSale = remainingCostBefore - netSale;
-      } else {
-        costUsed = remainingCostBefore;
-        profitGenerated = netSale - remainingCostBefore;
-        remainingCostAfterSale = 0;
-      }
-      accumulatedProfit = LocalDb.gemstoneTotalProfit(g) + profitGenerated;
-    } else {
-      costUsed = cost;
-      profitGenerated = netSale - cost;
-      accumulatedProfit = profitGenerated;
-    }
 
     if (_isEdit) {
       final s = widget.existing!;
@@ -528,6 +507,7 @@ class _SaleFormState extends State<_SaleForm> {
       ));
     }
     
+    // Recalculate profit from all sales records for this gemstone
     if (gemId.isNotEmpty) {
       await LocalDb.updateGemstoneProductLedger(gemId);
     }

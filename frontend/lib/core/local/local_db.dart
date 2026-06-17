@@ -94,7 +94,6 @@ class LocalDb {
           createdAt: now,
           totalCost: 1500000,
           remainingCost: 1500000,
-          totalProfit: 0,
           remainingQuantity: 2,
           soldQuantity: 0,
         ),
@@ -114,7 +113,6 @@ class LocalDb {
           createdAt: now,
           totalCost: 1200000,
           remainingCost: 1200000,
-          totalProfit: 0,
           remainingQuantity: 1,
           soldQuantity: 0,
         ),
@@ -134,7 +132,6 @@ class LocalDb {
           createdAt: now,
           totalCost: 3000000,
           remainingCost: 3000000,
-          totalProfit: 0,
           remainingQuantity: 3,
           soldQuantity: 0,
         ),
@@ -556,8 +553,12 @@ class LocalDb {
 
     // Update ledger fields
     g.totalCost = gemstoneTotalCost(g);
-    g.remainingCost = gemstoneRemainingCapital(g);
-    g.totalProfit = gemstoneTotalProfit(g);
+    
+    // Calculate remaining cost and profit from sales records
+    final profitData = calculateRemainingCostAndProfit(gemstoneId);
+    g.remainingCost = profitData['remainingCost'] ?? 0;
+    // totalProfit is NOT stored - it's calculated on-the-fly
+    
     g.remainingQuantity = gemstoneRemainingQuantity(g);
     g.soldQuantity = gemstoneSoldQuantity(g.id);
 
@@ -572,6 +573,44 @@ class LocalDb {
     for (final g in gemstones().values) {
       await updateGemstoneProductLedger(g.id);
     }
+  }
+
+  /// Calculate remaining cost and total profit from sales records
+  /// Returns {remainingCost, totalProfit}
+  static Map<String, double> calculateRemainingCostAndProfit(String gemstoneId) {
+    final g = gemstoneById(gemstoneId);
+    if (g == null) return {'remainingCost': 0, 'totalProfit': 0};
+
+    final initialCost = g.totalCost;
+    double remainingCost = initialCost;
+    double totalProfit = 0;
+
+    // Get all sales for this gemstone, sorted by date (oldest first)
+    final salesForGem = sales()
+        .values
+        .where((s) => s.gemstoneId == gemstoneId)
+        .toList()
+      ..sort((a, b) => a.saleDate.compareTo(b.saleDate));
+
+    // Process each sale in chronological order
+    for (final sale in salesForGem) {
+      final netSale = sale.amount - sale.commissionFee;
+
+      if (netSale < remainingCost) {
+        // Cost not fully recouped
+        remainingCost -= netSale;
+        // profitGenerated = 0
+      } else {
+        // Cost fully recouped, excess is profit
+        totalProfit += netSale - remainingCost;
+        remainingCost = 0;
+      }
+    }
+
+    return {
+      'remainingCost': remainingCost.clamp(0, double.infinity),
+      'totalProfit': totalProfit.clamp(0, double.infinity),
+    };
   }
 
   static int activeWorkers() {

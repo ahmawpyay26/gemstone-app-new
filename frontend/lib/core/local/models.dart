@@ -91,7 +91,7 @@ class Gemstone {
   // Product-wise Independent Ledger Fields
   double totalCost; // စုစုပေါင်းအရင်း (costPrice + fees)
   double remainingCost; // ကျန်ရှိအရင်း (ရောင်းချတိုင်း နှုတ်ပြီး)
-  double totalProfit; // စုစုပေါင်းအမြတ်
+  // totalProfit is CALCULATED from Sales records, not stored
   int remainingQuantity; // ကျန်ရှိအရေအတွက်
   int soldQuantity; // ရောင်းပြီးအရေအတွက်
 
@@ -118,7 +118,6 @@ class Gemstone {
     required this.createdAt,
     this.totalCost = 0,
     this.remainingCost = 0,
-    this.totalProfit = 0,
     this.remainingQuantity = 0,
     this.soldQuantity = 0,
   });
@@ -164,16 +163,15 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
           fields[19] == null ? 0 : (fields[19] as num).toDouble(),
       totalCost: fields[20] == null ? 0 : (fields[20] as num).toDouble(),
       remainingCost: fields[21] == null ? 0 : (fields[21] as num).toDouble(),
-      totalProfit: fields[22] == null ? 0 : (fields[22] as num).toDouble(),
-      remainingQuantity: fields[23] == null ? 0 : (fields[23] as int),
-      soldQuantity: fields[24] == null ? 0 : (fields[24] as int),
+      remainingQuantity: fields[22] == null ? 0 : (fields[22] as int),
+      soldQuantity: fields[23] == null ? 0 : (fields[23] as int),
     );
   }
 
   @override
   void write(BinaryWriter writer, Gemstone obj) {
     writer
-      ..writeByte(25)
+      ..writeByte(24)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -219,10 +217,8 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       ..writeByte(21)
       ..write(obj.remainingCost)
       ..writeByte(22)
-      ..write(obj.totalProfit)
-      ..writeByte(23)
       ..write(obj.remainingQuantity)
-      ..writeByte(24)
+      ..writeByte(23)
       ..write(obj.soldQuantity);
   }
 }
