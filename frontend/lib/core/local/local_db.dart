@@ -130,8 +130,11 @@ class LocalDb {
           status: 'in_stock',
           note: 'Imperial Jade',
           createdAt: now,
-          totalCost: 3000000,
-          remainingCost: 3000000,
+          laborFee: 100000,
+          miscFee: 90000,
+          // totalCost = costPrice + laborFee + miscFee = 3,000,000 + 100,000 + 90,000 = 3,190,000
+          totalCost: 3190000,
+          remainingCost: 3190000,
           remainingQuantity: 3,
           soldQuantity: 0,
         ),
