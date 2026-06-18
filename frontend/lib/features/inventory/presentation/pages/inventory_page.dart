@@ -116,9 +116,9 @@ class _InventoryPageState extends State<InventoryPage> {
                       Builder(builder: (c) {
                         final totalCost = LocalDb.gemstoneTotalCost(g);
                         final result = LocalDb.calculateRemainingCostAndProfit(g.id);
-                        final remainingCost = result['remainingCost'] as double? ?? 0;
+                        final remainingCost = result['remainingCost'] as double? ?? totalCost;
                         final totalProfit = result['totalProfit'] as double? ?? 0;
-                        final currentProfit = result['currentProfit'] as double? ?? 0;
+                        final currentProfit = 0.0; // Current profit shown in sales records
                         
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
