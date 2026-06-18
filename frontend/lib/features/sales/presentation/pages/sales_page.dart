@@ -54,6 +54,11 @@ class _SalesPageState extends State<SalesPage> {
             sale.gemstoneId, -sale.quantity, -sale.weightCarat);
       }
       await LocalDb.sales().delete(key);
+      
+      // Recalculate remaining cost and profit after deletion
+      if (sale != null && sale.gemstoneId.isNotEmpty) {
+        await LocalDb.updateGemstoneProductLedger(sale.gemstoneId);
+      }
     }
   }
 
@@ -419,6 +424,13 @@ class _SaleFormState extends State<_SaleForm> {
     // Stock validation when linked to an inventory item and auto-deduct is on.
     if (gemId.isNotEmpty && _autoDeduct) {
       final g = LocalDb.gemstoneById(gemId)!;
+      
+      // Check if product is sold out
+      if (g.quantity <= 0) {
+        _toast('ဤပစ္စည်းသည် အရောင်းအဆုံးဖြစ်နေပါသည်။');
+        return;
+      }
+      
       // Account for what this sale previously held (edit case).
       final prevQty = (_isEdit && widget.existing!.gemstoneId == gemId)
           ? widget.existing!.quantity
