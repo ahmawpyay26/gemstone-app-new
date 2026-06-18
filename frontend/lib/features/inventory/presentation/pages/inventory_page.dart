@@ -114,30 +114,39 @@ class _InventoryPageState extends State<InventoryPage> {
                           style: const TextStyle(
                               color: AppTheme.primaryAccent, fontSize: 12)),
                       Builder(builder: (c) {
-                        final totalCost =
-                            LocalDb.gemstoneTotalCost(g); // စုစုပေါင်းအရင်း (ဝယ်ဈေး + ကုန်ကျစရိတ်)
-                        final remaining = LocalDb.gemstoneRemainingCapital(
-                            g); // ရောင်းပြီးသား နှုတ်ပြီး ကျန်အရင်း
-                        final sold = totalCost - remaining; // ပြန်ရပြီးသား အရင်းပမာဏ
+                        final totalCost = LocalDb.gemstoneTotalCost(g);
+                        final result = LocalDb.calculateRemainingCostAndProfit(g.id);
+                        final remainingCost = result['remainingCost'] as double? ?? 0;
+                        final totalProfit = result['totalProfit'] as double? ?? 0;
+                        final currentProfit = result['currentProfit'] as double? ?? 0;
+                        
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                                'စုစုပေါင်း အရင်း: ${_money.format(totalCost.clamp(0, double.infinity))} ကျပ်',
-                                style: TextStyle(
-                                    color: totalCost > 0
-                                        ? Colors.orangeAccent
-                                        : Colors.grey,
+                                'စုစုပေါင်း အရင်း: ${_money.format(totalCost)} ကျပ်',
+                                style: const TextStyle(
+                                    color: Colors.orangeAccent,
                                     fontSize: 11)),
-                            if (sold > 0)
+                            Text(
+                                'ကျန်ရှိအရင်း: ${_money.format(remainingCost)} ကျပ်',
+                                style: TextStyle(
+                                    color: remainingCost > 0 ? Colors.yellow : Colors.green,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600)),
+                            if (currentProfit > 0)
                               Text(
-                                  'ကျန်ရှိအရင်း: ${_money.format(remaining)} ကျပ်',
-                                  style: TextStyle(
-                                      color: remaining > 0
-                                          ? Colors.green
-                                          : Colors.grey,
+                                  'လက်ရှိအမြတ်: ${_money.format(currentProfit)} ကျပ်',
+                                  style: const TextStyle(
+                                      color: Colors.lightGreen,
+                                      fontSize: 11)),
+                            if (totalProfit > 0)
+                              Text(
+                                  'စုစုပေါင်းအမြတ်: ${_money.format(totalProfit)} ကျပ်',
+                                  style: const TextStyle(
+                                      color: Colors.lightGreen,
                                       fontSize: 11,
-                                      fontWeight: FontWeight.w600)),
+                                      fontWeight: FontWeight.bold)),
                           ],
                         );
                       }),
