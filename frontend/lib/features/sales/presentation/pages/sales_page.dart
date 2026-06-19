@@ -209,23 +209,33 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   Widget _profitBadge(Sale s) {
-    // ရောင်းရငွေ (ပွဲခ နှုတ်ပြီး) - ဤပစ္စည်း၏ အရင်း
-    final net = s.amount - s.commissionFee;
-    final diff = net - s.costPrice;
-    // အရင်းထက် မကျော်ရသေးသော့ အရှုံးမပြပါ။ ကျန်အရင်းကိုသာ ပြပါ။
-    final isProfit = diff > 0;
-    final label = isProfit
-        ? 'အမြတ် ${_money.format(diff)}'
-        : 'ကျန်အရင်း ${_money.format((diff).abs())}';
+    final profitGenerated = s.profitGenerated > 0 ? s.profitGenerated : 0;
+    final accumulatedProfit = s.accumulatedProfit > 0 ? s.accumulatedProfit : 0;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isProfit ? AppTheme.successColor : Colors.green,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (profitGenerated > 0)
+            Text(
+              'ယခု အမြတ်: ${_money.format(profitGenerated)}',
+              style: const TextStyle(
+                color: AppTheme.successColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          if (accumulatedProfit > 0)
+            Text(
+              'စုစုပေါင်း: ${_money.format(accumulatedProfit)}',
+              style: const TextStyle(
+                color: Colors.lightGreen,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+        ],
       ),
     );
   }
