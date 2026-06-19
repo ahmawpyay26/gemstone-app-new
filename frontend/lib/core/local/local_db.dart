@@ -321,6 +321,12 @@ class LocalDb {
     return t;
   }
 
+  /// Main Dashboard Total Capital
+  /// Formula: Sum(All Products Total Cost) + Total Expenses
+  static double mainDashboardTotalCapital() {
+    return totalCapitalInvested() + totalExpenses();
+  }
+
   /// စုစုပေါင်း မူလအရင်း (fixed pool):
   /// ကျန်ရှိနေသေးသော ပစ္စည်းအရင်း + ရောင်းပြီးသား ပစ္စည်းအရင်း
   /// ဤပမာဏသည် ရောင်းရောင်း/မရောင်းရောင်း မပြောင်းလဲသော စုစုပေါင်းအရင်းပမာဏ ဖြစ်သည်။
@@ -330,6 +336,18 @@ class LocalDb {
 
   /// အသားတင် အရောင်းရငွေ (ပွဲခ နှုတ်ပြီး)
   static double netRevenue() => totalSales() - totalSalesCommission();
+
+  /// Main Dashboard Remaining Capital
+  /// Formula: Sum(All Products Remaining Cost)
+  static double mainDashboardRemainingCapital() {
+    double t = 0;
+    for (final g in gemstones().values) {
+      final result = calculateRemainingCostAndProfit(g.id);
+      final remainingCost = result['remainingCost'] as double? ?? 0;
+      t += remainingCost;
+    }
+    return t;
+  }
 
   /// ကျန်ရှိသော လက်ကျန်အရင်း:
   /// မူလစုစုပေါင်းအရင်း ထဲမှ အသားတင် အရောင်းရငွေကို နှုတ်ပြီး ကျန်အရင်းပမာဏ

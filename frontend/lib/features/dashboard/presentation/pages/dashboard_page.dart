@@ -58,11 +58,11 @@ class _DashboardPageState extends State<DashboardPage> {
               valueListenable: LocalDb.gemstones().listenable(),
               builder: (context, __3, ____) {
                 final sales = LocalDb.netRevenue(); // ပွဲခ နှုတ်ပြီး အသားတင် အရောင်းရငွေ
-                final originalCapital = LocalDb.totalOriginalCapital(); // မူလစုစုပေါင်းအရင်း (fixed)
+                final mainDashboardTotalCapital = LocalDb.mainDashboardTotalCapital();
                 final commissions = LocalDb.totalSalesCommission();
                 final expenses = LocalDb.totalExpenses();
-                final displayProfit = LocalDb.netProfit(); // အရင်းကျေမှ +စိမ်း
-                final remainingCapital = LocalDb.remainingCapital(); // ကျန်အရင်း (အနှုတ်မရှိ)
+                final displayProfit = LocalDb.netProfit();
+                final mainDashboardRemainingCapital = LocalDb.mainDashboardRemainingCapital();
                 return Column(
                   children: [
                     Row(
@@ -74,7 +74,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(width: 12),
                         Expanded(
                             child: _statCard('မူလစုစုပေါင်းအရင်း',
-                                _money.format(originalCapital), AppTheme.errorColor,
+                                _money.format(mainDashboardTotalCapital), AppTheme.errorColor,
                                 Icons.shopping_bag)),
                       ],
                     ),
@@ -106,8 +106,8 @@ class _DashboardPageState extends State<DashboardPage> {
                         Expanded(
                             child: _statCard(
                                 'ကျန်ရှိသော လက်ကျန်အရင်း',
-                                _money.format(remainingCapital),
-                                remainingCapital > 0 ? Colors.green : Colors.grey,
+                                _money.format(mainDashboardRemainingCapital),
+                                mainDashboardRemainingCapital > 0 ? Colors.green : Colors.grey,
                                 Icons.savings)),
                       ],
                     ),
