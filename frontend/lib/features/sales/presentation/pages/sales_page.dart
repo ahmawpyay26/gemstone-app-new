@@ -211,8 +211,8 @@ class _SalesPageState extends State<SalesPage> {
   Widget _profitBadge(Sale s) {
     final profitGenerated = s.profitGenerated > 0 ? s.profitGenerated : 0;
     final accumulatedProfit = s.accumulatedProfit > 0 ? s.accumulatedProfit : 0;
+    final remainingCost = s.remainingCostAfterSale > 0 ? s.remainingCostAfterSale : 0;
     
-    // အမြတ်ရှိနေလျှင် (accumulatedProfit > 0) နှစ်ခုစလုံး ပြပါ
     if (accumulatedProfit > 0) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
@@ -240,7 +240,20 @@ class _SalesPageState extends State<SalesPage> {
       );
     }
     
-    // အမြတ်မရှိသေးလျှင် ပြမည်မဟုတ်ပါ
+    if (remainingCost > 0) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Text(
+          'ကျန်အရင်း: ${_money.format(remainingCost)}',
+          style: const TextStyle(
+            color: Colors.amber,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+    
     return const SizedBox.shrink();
   }
 
@@ -439,11 +452,12 @@ class _SaleFormState extends State<_SaleForm> {
     if (gemId.isNotEmpty && _autoDeduct) {
       final g = LocalDb.gemstoneById(gemId)!;
       
-      // Check if product is sold out
-      if (g.quantity <= 0) {
-        _toast('ဤပစ္စည်းသည် အရောင်းအဆုံးဖြစ်နေပါသည်။');
-        return;
-      }
+                      // Sold out check is already done in dropdown filter
+                      // This is a safety check
+                      if (g.quantity <= 0) {
+                        _toast('ဤပစ္စည်းသည် အရောင်းအဆုံးဖြစ်နေပါသည်။');
+                        return;
+                      }
       
       // Account for what this sale previously held (edit case).
       final prevQty = (_isEdit && widget.existing!.gemstoneId == gemId)
@@ -553,7 +567,8 @@ class _SaleFormState extends State<_SaleForm> {
 
   @override
   Widget build(BuildContext context) {
-    final gems = LocalDb.gemstones().values.toList();
+    // Filter out sold out products (quantity <= 0)
+    final gems = LocalDb.gemstones().values.where((g) => g.quantity > 0).toList();
     final selectedGem =
         _selectedGemId != null ? LocalDb.gemstoneById(_selectedGemId!) : null;
 
@@ -612,7 +627,7 @@ class _SaleFormState extends State<_SaleForm> {
                               '${g.weightCarat > 0 ? ' • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}' : ''})',
                               overflow: TextOverflow.ellipsis,
                             ),
-                          )),
+                          )).toList(),
                     ],
                     onChanged: _onSelectGem,
                   ),

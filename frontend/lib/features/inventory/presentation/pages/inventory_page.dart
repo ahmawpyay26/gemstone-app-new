@@ -109,10 +109,32 @@ class _InventoryPageState extends State<InventoryPage> {
                       Text(
                           '${g.type} • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}',
                           style: TextStyle(color: Colors.grey[400])),
-                      Text(
-                          'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • အရေအတွက်: ${g.quantity}',
-                          style: const TextStyle(
-                              color: AppTheme.primaryAccent, fontSize: 12)),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                                'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • အရေအတွက်: ${g.quantity}',
+                                style: const TextStyle(
+                                    color: AppTheme.primaryAccent, fontSize: 12)),
+                          ),
+                          if (g.quantity <= 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.errorColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'အရောင်းအဆုံး',
+                                style: TextStyle(
+                                  color: AppTheme.errorColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                       Builder(builder: (c) {
                         final totalCost = LocalDb.gemstoneTotalCost(g);
                         final result = LocalDb.calculateRemainingCostAndProfit(g.id);
@@ -147,6 +169,12 @@ class _InventoryPageState extends State<InventoryPage> {
                                       color: Colors.lightGreen,
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold)),
+                            if (g.quantity <= 0 && totalProfit <= 0)
+                              Text(
+                                  'အမြတ်မရှိသေးပါ',
+                                  style: TextStyle(
+                                      color: Colors.grey[400],
+                                      fontSize: 11))
                           ],
                         );
                       }),
