@@ -569,6 +569,52 @@ class LocalDb {
     g.quantity = g.remainingQuantity + g.soldQuantity;
 
     await box.put(key, g);
+    
+    // --- Update transaction history fields for each sale ---
+    final salesBox = sales();
+    final initialCost = gemstoneTotalCost(g);
+    double remainingCost = initialCost;
+    double accumulatedProfit = 0;
+    
+    // Get all sales for this gemstone, sorted by date (oldest first)
+    final salesForGem = salesBox.values
+        .where((s) => s.gemstoneId == gemstoneId)
+        .toList()
+      ..sort((a, b) => a.saleDate.compareTo(b.saleDate));
+    
+    // Process each sale in chronological order
+    for (final sale in salesForGem) {
+      final netSale = sale.amount - sale.commissionFee;
+      double costUsed = 0;
+      double profitGenerated = 0;
+      
+      if (netSale < remainingCost) {
+        // Cost not fully recouped
+        costUsed = netSale;
+        profitGenerated = 0;
+        remainingCost -= netSale;
+      } else {
+        // Cost fully recouped, excess is profit
+        costUsed = remainingCost;
+        profitGenerated = netSale - remainingCost;
+        accumulatedProfit += profitGenerated;
+        remainingCost = 0;
+      }
+      
+      // Update sale record with transaction history
+      sale.costUsed = costUsed;
+      sale.profitGenerated = profitGenerated;
+      sale.remainingCostAfterSale = remainingCost;
+      sale.accumulatedProfit = accumulatedProfit;
+      
+      // Find the Hive key for this sale and update it
+      for (final k in salesBox.keys) {
+        if (salesBox.get(k)?.id == sale.id) {
+          await salesBox.put(k, sale);
+          break;
+        }
+      }
+    }
   }
 
   /// All gemstones' product-wise ledger ကို update လုပ်ပြီး save
