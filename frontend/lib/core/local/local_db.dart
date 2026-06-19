@@ -584,7 +584,7 @@ class LocalDb {
     final g = gemstoneById(gemstoneId);
     if (g == null) return {'remainingCost': 0, 'totalProfit': 0};
 
-    final initialCost = g.totalCost;
+    final initialCost = gemstoneTotalCost(g);
     double remainingCost = initialCost;
     double totalProfit = 0;
 
