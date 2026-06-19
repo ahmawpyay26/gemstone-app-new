@@ -212,12 +212,13 @@ class _SalesPageState extends State<SalesPage> {
     final profitGenerated = s.profitGenerated > 0 ? s.profitGenerated : 0;
     final accumulatedProfit = s.accumulatedProfit > 0 ? s.accumulatedProfit : 0;
     
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (profitGenerated > 0)
+    // အမြတ်ရှိနေလျှင် (accumulatedProfit > 0) နှစ်ခုစလုံး ပြပါ
+    if (accumulatedProfit > 0) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
             Text(
               'ယခု အမြတ်: ${_money.format(profitGenerated)}',
               style: const TextStyle(
@@ -226,7 +227,6 @@ class _SalesPageState extends State<SalesPage> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-          if (accumulatedProfit > 0)
             Text(
               'စုစုပေါင်း: ${_money.format(accumulatedProfit)}',
               style: const TextStyle(
@@ -235,9 +235,13 @@ class _SalesPageState extends State<SalesPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    }
+    
+    // အမြတ်မရှိသေးလျှင် ပြမည်မဟုတ်ပါ
+    return const SizedBox.shrink();
   }
 
   String _saleUnit(Sale s) {
