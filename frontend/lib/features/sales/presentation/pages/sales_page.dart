@@ -216,13 +216,27 @@ class _SalesPageState extends State<SalesPage> {
     if (accumulatedProfit > 0) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Text(
-          'စုစုပေါင်း: ${_money.format(accumulatedProfit)}',
-          style: const TextStyle(
-            color: Colors.lightGreen,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (profitGenerated > 0)
+              Text(
+                'ယခု အမြတ်: ${_money.format(profitGenerated)}',
+                style: const TextStyle(
+                  color: AppTheme.successColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            Text(
+              'စုစုပေါင်း: ${_money.format(accumulatedProfit)}',
+              style: const TextStyle(
+                color: Colors.lightGreen,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       );
     }
