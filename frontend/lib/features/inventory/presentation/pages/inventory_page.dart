@@ -644,32 +644,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         ),
       ),
     );
-  }      ),
-      ),
-    );
-  }
-
-  /// Build period filter button
-  Widget _buildPeriodButton(String label, String value) {
-    final isSelected = _selectedPeriod == value;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedPeriod = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryAccent : AppTheme.surfaceLight,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.black : Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _field(TextEditingController c, String label,
