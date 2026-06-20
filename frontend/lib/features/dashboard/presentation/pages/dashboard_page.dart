@@ -193,7 +193,7 @@ class _DashboardPageState extends State<DashboardPage> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
-            _moduleCard(Icons.diamond, 'ပစ္စည်းများ', 'စာရင်းကိုင်တွယ်ခြင်း',
+            _moduleCard(Icons.diamond, 'အဝယ် စာရင်းများ', 'ဝယ်ယူမှုများ',
                 () => context.push('/inventory')),
             _moduleCard(Icons.shopping_cart, 'အရောင်းများ', 'အရောင်းစာရင်း',
                 () => context.push('/sales')),

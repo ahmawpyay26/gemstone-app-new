@@ -6,6 +6,10 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 
+extension DateTimeExtension on DateTime {
+  DateTime toDateOnly() => DateTime(year, month, day);
+}
+
 class InventoryPage extends StatefulWidget {
   const InventoryPage({Key? key}) : super(key: key);
 
@@ -15,9 +19,56 @@ class InventoryPage extends StatefulWidget {
 
 class _InventoryPageState extends State<InventoryPage> {
   final _money = NumberFormat('#,##0', 'en_US');
+  String _selectedPeriod = 'all'; // all, daily, weekly, monthly, yearly
 
   static String _trim(double v) =>
       v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+
+  /// Get start date based on selected period
+  DateTime _getStartDate() {
+    final now = DateTime.now();
+    switch (_selectedPeriod) {
+      case 'daily':
+        return DateTime(now.year, now.month, now.day);
+      case 'weekly':
+        final daysToSubtract = now.weekday - 1; // Monday = 1
+        return now.subtract(Duration(days: daysToSubtract)).toDateOnly();
+      case 'monthly':
+        return DateTime(now.year, now.month, 1);
+      case 'yearly':
+        return DateTime(now.year, 1, 1);
+      default:
+        return DateTime(1970); // all time
+    }
+  }
+
+  /// Filter gemstones by period
+  List<Gemstone> _filterGemstonesByPeriod(List<Gemstone> gemstones) {
+    if (_selectedPeriod == 'all') return gemstones;
+    final startDate = _getStartDate();
+    return gemstones.where((g) {
+      final createdDate = DateTime.fromMillisecondsSinceEpoch(g.createdAt).toDateOnly();
+      return createdDate.isAtSameMomentAs(startDate) || createdDate.isAfter(startDate);
+    }).toList();
+  }
+
+  /// Calculate total stone count for filtered period
+  int _calculateTotalStoneCount(List<Gemstone> gemstones) {
+    int total = 0;
+    for (final g in gemstones) {
+      total += g.quantity;
+    }
+    return total;
+  }
+
+  /// Calculate total remaining stock for filtered period
+  int _calculateTotalRemainingStock(List<Gemstone> gemstones) {
+    int total = 0;
+    for (final g in gemstones) {
+      total += LocalDb.gemstoneRemainingQuantity(g);
+    }
+    return total;
+  }
 
   void _openForm({Gemstone? existing, dynamic key}) {
     showModalBottomSheet(
@@ -59,7 +110,7 @@ class _InventoryPageState extends State<InventoryPage> {
     return Scaffold(
       backgroundColor: AppTheme.primaryDark,
       appBar: AppBar(
-        title: const Text('ပစ္စည်းစာရင်း'),
+        title: const Text('အဝယ် စာရင်းများ'),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () =>
@@ -72,17 +123,115 @@ class _InventoryPageState extends State<InventoryPage> {
         label: const Text('အသစ်ထည့်ရန်'),
         onPressed: () => _openForm(),
       ),
-      body: ValueListenableBuilder(
-        valueListenable: LocalDb.sales().listenable(),
-        builder: (context, _, __) =>
-            ValueListenableBuilder(
-          valueListenable: LocalDb.gemstones().listenable(),
-          builder: (context, Box<Gemstone> box, _) {
-          if (box.isEmpty) {
-            return _empty();
-          }
-          final keys = box.keys.toList().reversed.toList(); // Show newest first
-          return ListView.builder(
+      body: Column(
+        children: [
+          // Summary Filter Section
+          Container(
+            color: AppTheme.surfaceDark,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ပစ္စည်းစာရင်းအချုပ် အလျင်းအလျ',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildPeriodButton('အားလုံး', 'all'),
+                      const SizedBox(width: 8),
+                      _buildPeriodButton('တစ်ရက်ချုပ်', 'daily'),
+                      const SizedBox(width: 8),
+                      _buildPeriodButton('တစ်ပတ်ချုပ်', 'weekly'),
+                      const SizedBox(width: 8),
+                      _buildPeriodButton('တစ်လချုပ်', 'monthly'),
+                      const SizedBox(width: 8),
+                      _buildPeriodButton('တစ်နှစ်ချုပ်', 'yearly'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Summary Statistics
+          ValueListenableBuilder(
+            valueListenable: LocalDb.gemstones().listenable(),
+            builder: (context, Box<Gemstone> box, _) {
+              final filteredGems = _filterGemstonesByPeriod(box.values.toList());
+              final totalStones = _calculateTotalStoneCount(filteredGems);
+              final totalRemaining = _calculateTotalRemainingStock(filteredGems);
+              return Container(
+                color: AppTheme.surfaceLight,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ကျောက်အလုံးရေ စုစုပေါင်း',
+                            style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                          ),
+                          Text(
+                            '$totalStones အလုံး',
+                            style: const TextStyle(
+                              color: AppTheme.primaryAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'လက်ကျန်စုစုပေါင်း အားလုံး',
+                            style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                          ),
+                          Text(
+                            '$totalRemaining အလုံး',
+                            style: const TextStyle(
+                              color: Colors.lightGreen,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          // Gemstone List
+          Expanded(
+            child: ValueListenableBuilder(
+              valueListenable: LocalDb.sales().listenable(),
+              builder: (context, _, __) =>
+                  ValueListenableBuilder(
+                valueListenable: LocalDb.gemstones().listenable(),
+                builder: (context, Box<Gemstone> box, _) {
+                if (box.isEmpty) {
+                  return _empty();
+                }
+                final allGems = box.values.toList();
+                final filteredGems = _filterGemstonesByPeriod(allGems);
+                if (filteredGems.isEmpty) {
+                  return _empty();
+                }
+                final keys = filteredGems.map((g) => box.keys.firstWhere(
+                  (k) => box.get(k)?.id == g.id,
+                  orElse: () => null,
+                )).where((k) => k != null).toList().reversed.toList();
+                return ListView.builder(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
             itemCount: keys.length,
             itemBuilder: (context, i) {
@@ -208,8 +357,12 @@ class _InventoryPageState extends State<InventoryPage> {
           children: [
             Icon(Icons.diamond, size: 70, color: Colors.grey[700]),
             const SizedBox(height: 12),
-            Text('ကျောက်မျက်စာရင်း မရှိသေးပါ',
-                style: TextStyle(color: Colors.grey[500])),
+            Text(
+              _selectedPeriod == 'all'
+                  ? 'ကျောက်မျက်စာရင်း မရှိသေးပါ'
+                  : 'ရွေးချယ်ထားသည့် ကာလတွင် ကျောက်မျက် မရှိပါ',
+              style: TextStyle(color: Colors.grey[500]),
+            ),
             const SizedBox(height: 4),
             Text('အောက်က ခလုတ်ဖြင့် ထည့်ပါ',
                 style: TextStyle(color: Colors.grey[600], fontSize: 12)),
@@ -460,7 +613,59 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                 ),
                 const SizedBox(height: 8),
               ],
+                },
+              ),
             ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build period filter button
+  Widget _buildPeriodButton(String label, String value) {
+    final isSelected = _selectedPeriod == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedPeriod = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryAccent : AppTheme.surfaceLight,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }      ),
+      ),
+    );
+  }
+
+  /// Build period filter button
+  Widget _buildPeriodButton(String label, String value) {
+    final isSelected = _selectedPeriod == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedPeriod = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryAccent : AppTheme.surfaceLight,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
