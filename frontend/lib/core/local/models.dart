@@ -10,18 +10,24 @@ class AppUser {
   String id;
   String name;
   String email;
-  String password; // stored locally (plain for offline demo accounts)
+  String username; // username for login (unique)
+  String passwordHash; // hashed password (never plaintext)
+  String password; // DEPRECATED: kept for backward compatibility only
   String role; // owner | admin | user
   int createdAt;
+  int updatedAt; // timestamp of last update
 
   AppUser({
     required this.id,
     required this.name,
     required this.email,
-    required this.password,
+    this.username = '',
+    this.passwordHash = '',
+    this.password = '', // DEPRECATED
     required this.role,
     required this.createdAt,
-  });
+    int? updatedAt,
+  }) : updatedAt = updatedAt ?? createdAt;
 }
 
 class AppUserAdapter extends TypeAdapter<AppUser> {
@@ -38,16 +44,19 @@ class AppUserAdapter extends TypeAdapter<AppUser> {
       id: fields[0] as String,
       name: fields[1] as String,
       email: fields[2] as String,
-      password: fields[3] as String,
+      password: (fields[3] as String?) ?? '',
       role: fields[4] as String,
       createdAt: fields[5] as int,
+      username: (fields[6] as String?) ?? '',
+      passwordHash: (fields[7] as String?) ?? '',
+      updatedAt: (fields[8] as int?) ?? fields[5] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppUser obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -59,7 +68,13 @@ class AppUserAdapter extends TypeAdapter<AppUser> {
       ..writeByte(4)
       ..write(obj.role)
       ..writeByte(5)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(6)
+      ..write(obj.username)
+      ..writeByte(7)
+      ..write(obj.passwordHash)
+      ..writeByte(8)
+      ..write(obj.updatedAt);
   }
 }
 

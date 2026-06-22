@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
+import '../../../../core/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -12,7 +13,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
@@ -22,17 +23,12 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill credentials only if the user previously chose "remember me".
-    if (LocalDb.rememberMe()) {
-      _rememberMe = true;
-      _emailController.text = LocalDb.savedEmail();
-      _passwordController.text = LocalDb.savedPassword();
-    }
+    // Do not pre-fill credentials for security/privacy reasons
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -46,25 +42,20 @@ class _LoginPageState extends State<LoginPage> {
 
     // Offline login — no network required.
     await Future.delayed(const Duration(milliseconds: 300));
-    final user = LocalDb.login(
-      _emailController.text.trim(),
+    final user = AuthService.login(
+      _usernameController.text.trim(),
       _passwordController.text,
     );
 
     if (!mounted) return;
     if (user != null) {
       LocalDb.saveSession(user);
-      // Persist or clear credentials based on the remember-me choice.
-      if (_rememberMe) {
-        LocalDb.saveRememberedCredentials(
-            _emailController.text.trim(), _passwordController.text);
-      } else {
-        LocalDb.clearRememberedCredentials();
-      }
+      // Do not save credentials for security reasons
+      LocalDb.clearRememberedCredentials();
       context.go('/dashboard');
     } else {
       setState(() {
-        _errorMessage = 'အီမေးလ် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည်';
+        _errorMessage = 'အသုံးပြုသူအမည် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည်';
         _isLoading = false;
       });
     }
@@ -142,17 +133,17 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   children: [
                     TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
+                      controller: _usernameController,
+                      keyboardType: TextInputType.text,
                       enabled: !_isLoading,
                       style: const TextStyle(color: Colors.white),
                       decoration: const InputDecoration(
-                        labelText: 'အီမေးလ်',
-                        hintText: 'admin@gemstone.com',
-                        prefixIcon: Icon(Icons.email_outlined),
+                        labelText: 'အသုံးပြုသူအမည်',
+                        hintText: 'admin',
+                        prefixIcon: Icon(Icons.person_outlined),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'အီမေးလ်ထည့်ပါ';
+                        if (v == null || v.isEmpty) return 'အသုံးပြုသူအမည်ထည့်ပါ';
                         return null;
                       },
                     ),
@@ -179,35 +170,7 @@ class _LoginPageState extends State<LoginPage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 8),
-                    // Remember-me toggle
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _rememberMe,
-                          activeColor: AppTheme.primaryAccent,
-                          checkColor: Colors.black,
-                          side: BorderSide(color: Colors.grey[500]!),
-                          onChanged: _isLoading
-                              ? null
-                              : (v) => setState(() => _rememberMe = v ?? false),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: _isLoading
-                                ? null
-                                : () => setState(
-                                    () => _rememberMe = !_rememberMe),
-                            child: Text(
-                              'အကောင့်အချက်အလက် မှတ်ထားမည်',
-                              style: TextStyle(
-                                  color: Colors.grey[300], fontSize: 14),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
                       height: 52,

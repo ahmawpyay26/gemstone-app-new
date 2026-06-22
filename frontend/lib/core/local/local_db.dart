@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../services/password_service.dart';
 import 'models.dart';
 
 /// Central offline-first data store backed by Hive.
@@ -64,13 +65,17 @@ class LocalDb {
   static Future<void> _seedDefaults() async {
     final users = Hive.box<AppUser>(usersBox);
     if (users.isEmpty) {
+      final now = DateTime.now().millisecondsSinceEpoch;
       await users.add(AppUser(
         id: genId(),
         name: 'Admin',
         email: 'admin@gemstone.com',
-        password: 'admin123',
+        username: 'admin',
+        passwordHash: PasswordService.hashPassword('admin123'),
+        password: '', // empty for new users
         role: 'owner',
-        createdAt: DateTime.now().millisecondsSinceEpoch,
+        createdAt: now,
+        updatedAt: now,
       ));
     }
 
@@ -145,9 +150,31 @@ class LocalDb {
   // -------------------------------------------------------------------------
   // Auth
   // -------------------------------------------------------------------------
+  /// Login with username and password (NEW METHOD)
+  /// Returns the user if credentials are valid, null otherwise
+  static AppUser? loginWithUsername(String username, String password) {
+    final users = Hive.box<AppUser>(usersBox);
+    for (final u in users.values) {
+      if (u.username.toLowerCase() == username.toLowerCase() &&
+          PasswordService.verifyPassword(password, u.passwordHash)) {
+        return u;
+      }
+    }
+    return null;
+  }
+
+  /// Legacy login method (for backward compatibility)
+  /// Tries to login with email and password
   static AppUser? login(String email, String password) {
     final users = Hive.box<AppUser>(usersBox);
     for (final u in users.values) {
+      // Try new hash-based verification first
+      if (u.email.toLowerCase() == email.toLowerCase() &&
+          u.passwordHash.isNotEmpty &&
+          PasswordService.verifyPassword(password, u.passwordHash)) {
+        return u;
+      }
+      // Fall back to plaintext for old data
       if (u.email.toLowerCase() == email.toLowerCase() &&
           u.password == password) {
         return u;
@@ -156,11 +183,52 @@ class LocalDb {
     return null;
   }
 
+  /// Get user by username
+  static AppUser? getUserByUsername(String username) {
+    final users = Hive.box<AppUser>(usersBox);
+    for (final u in users.values) {
+      if (u.username.toLowerCase() == username.toLowerCase()) {
+        return u;
+      }
+    }
+    return null;
+  }
+
+  /// Get user by ID
+  static AppUser? getUserById(String id) {
+    final users = Hive.box<AppUser>(usersBox);
+    for (final u in users.values) {
+      if (u.id == id) {
+        return u;
+      }
+    }
+    return null;
+  }
+
+  /// Update user (for username/password changes)
+  static Future<bool> updateUser(AppUser user) async {
+    try {
+      final users = Hive.box<AppUser>(usersBox);
+      for (final key in users.keys) {
+        final u = users.get(key);
+        if (u != null && u.id == user.id) {
+          user.updatedAt = DateTime.now().millisecondsSinceEpoch;
+          await users.put(key, user);
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   static void saveSession(AppUser user) {
     final s = Hive.box(sessionBox);
     s.put('userId', user.id);
     s.put('userName', user.name);
     s.put('userEmail', user.email);
+    s.put('userUsername', user.username);
     s.put('userRole', user.role);
     s.put('loggedIn', true);
   }
@@ -176,6 +244,7 @@ class LocalDb {
       'id': s.get('userId', defaultValue: ''),
       'name': s.get('userName', defaultValue: 'Admin'),
       'email': s.get('userEmail', defaultValue: ''),
+      'username': s.get('userUsername', defaultValue: ''),
       'role': s.get('userRole', defaultValue: 'owner'),
     };
   }

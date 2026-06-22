@@ -10,6 +10,7 @@ import '../../features/workers/presentation/pages/workers_page.dart';
 import '../../features/branches/presentation/pages/branches_page.dart';
 import '../../features/reports/presentation/pages/reports_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/account_settings/presentation/pages/account_settings_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -70,6 +71,11 @@ final GoRouter appRouter = GoRouter(
       path: '/settings',
       name: 'settings',
       builder: (context, state) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: '/account-settings',
+      name: 'account-settings',
+      builder: (context, state) => const AccountSettingsPage(),
     ),
   ],
 );
