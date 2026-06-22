@@ -28,6 +28,13 @@ class _DashboardPageState extends State<DashboardPage> {
         title: const Text('အဓိကစာမျက်နှာ'),
         backgroundColor: AppTheme.primaryAccent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => context.go('/account-settings'),
+            tooltip: 'အကောင့် ဆက်တင်',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
