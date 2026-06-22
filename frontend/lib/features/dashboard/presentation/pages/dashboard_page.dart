@@ -30,7 +30,7 @@ class _DashboardPageState extends State<DashboardPage> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () => context.go('/account-settings'),
             tooltip: 'အကောင့် ဆက်တင်',
           ),
