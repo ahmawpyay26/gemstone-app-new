@@ -47,8 +47,10 @@ class _InventoryPageState extends State<InventoryPage> {
     if (_selectedPeriod == 'all') return gemstones;
     final startDate = _getStartDate();
     return gemstones.where((g) {
-      final createdDate = DateTime.fromMillisecondsSinceEpoch(g.createdAt).toDateOnly();
-      return createdDate.isAtSameMomentAs(startDate) || createdDate.isAfter(startDate);
+      final createdDate =
+          DateTime.fromMillisecondsSinceEpoch(g.createdAt).toDateOnly();
+      return createdDate.isAtSameMomentAs(startDate) ||
+          createdDate.isAfter(startDate);
     }).toList();
   }
 
@@ -160,12 +162,15 @@ class _InventoryPageState extends State<InventoryPage> {
           ValueListenableBuilder(
             valueListenable: LocalDb.gemstones().listenable(),
             builder: (context, Box<Gemstone> box, _) {
-              final filteredGems = _filterGemstonesByPeriod(box.values.toList());
+              final filteredGems =
+                  _filterGemstonesByPeriod(box.values.toList());
               final totalStones = _calculateTotalStoneCount(filteredGems);
-              final totalRemaining = _calculateTotalRemainingStock(filteredGems);
+              final totalRemaining =
+                  _calculateTotalRemainingStock(filteredGems);
               return Container(
                 color: AppTheme.surfaceLight,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 child: Row(
                   children: [
                     Expanded(
@@ -174,7 +179,8 @@ class _InventoryPageState extends State<InventoryPage> {
                         children: [
                           Text(
                             'ကျောက်အလုံးရေ စုစုပေါင်း',
-                            style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                            style: TextStyle(
+                                color: Colors.grey[400], fontSize: 11),
                           ),
                           Text(
                             '$totalStones အလုံး',
@@ -193,7 +199,8 @@ class _InventoryPageState extends State<InventoryPage> {
                         children: [
                           Text(
                             'လက်ကျန်စုစုပေါင်း အားလုံး',
-                            style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                            style: TextStyle(
+                                color: Colors.grey[400], fontSize: 11),
                           ),
                           Text(
                             '$totalRemaining အလုံး',
@@ -215,138 +222,158 @@ class _InventoryPageState extends State<InventoryPage> {
           Expanded(
             child: ValueListenableBuilder(
               valueListenable: LocalDb.sales().listenable(),
-              builder: (context, _, __) =>
-                  ValueListenableBuilder(
+              builder: (context, _, __) => ValueListenableBuilder(
                 valueListenable: LocalDb.gemstones().listenable(),
                 builder: (context, Box<Gemstone> box, _) {
-                if (box.isEmpty) {
-                  return _empty();
-                }
-                final allGems = box.values.toList();
-                final filteredGems = _filterGemstonesByPeriod(allGems);
-                if (filteredGems.isEmpty) {
-                  return _empty();
-                }
-                final keys = filteredGems.map((g) => box.keys.firstWhere(
-                  (k) => box.get(k)?.id == g.id,
-                  orElse: () => null,
-                )).where((k) => k != null).toList().reversed.toList();
-                return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
-            itemCount: keys.length,
-            itemBuilder: (context, i) {
-              final key = keys[i];
-              final g = box.get(key)!;
-              return Card(
-                color: AppTheme.surfaceDark,
-                margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: CircleAvatar(
-                    backgroundColor: AppTheme.primaryAccent.withOpacity(0.2),
-                    child: const Icon(Icons.diamond,
-                        color: AppTheme.primaryAccent),
-                  ),
-                  title: Text(g.name,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold)),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                          '${g.type} • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}',
-                          style: TextStyle(color: Colors.grey[400])),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                                'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • အရေအတွက်: ${g.quantity}',
-                                style: const TextStyle(
-                                    color: AppTheme.primaryAccent, fontSize: 12)),
+                  if (box.isEmpty) {
+                    return _empty();
+                  }
+                  final allGems = box.values.toList();
+                  final filteredGems = _filterGemstonesByPeriod(allGems);
+                  if (filteredGems.isEmpty) {
+                    return _empty();
+                  }
+                  final keys = filteredGems
+                      .map((g) => box.keys.firstWhere(
+                            (k) => box.get(k)?.id == g.id,
+                            orElse: () => null,
+                          ))
+                      .where((k) => k != null)
+                      .toList()
+                      .reversed
+                      .toList();
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
+                    itemCount: keys.length,
+                    itemBuilder: (context, i) {
+                      final key = keys[i];
+                      final g = box.get(key)!;
+                      return Card(
+                        color: AppTheme.surfaceDark,
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                AppTheme.primaryAccent.withOpacity(0.2),
+                            child: const Icon(Icons.diamond,
+                                color: AppTheme.primaryAccent),
                           ),
-                          if (g.quantity <= 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppTheme.errorColor.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(4),
+                          title: Text(g.name,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  '${g.type} • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}',
+                                  style: TextStyle(color: Colors.grey[400])),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                        'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • အရေအတွက်: ${g.quantity}',
+                                        style: const TextStyle(
+                                            color: AppTheme.primaryAccent,
+                                            fontSize: 12)),
+                                  ),
+                                  if (g.quantity <= 0)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.errorColor
+                                            .withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'အရောင်းအဆုံး',
+                                        style: TextStyle(
+                                          color: AppTheme.errorColor,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                              child: const Text(
-                                'အရောင်းအဆုံး',
-                                style: TextStyle(
-                                  color: AppTheme.errorColor,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      Builder(builder: (c) {
-                        final totalCost = LocalDb.gemstoneTotalCost(g);
-                        final result = LocalDb.calculateRemainingCostAndProfit(g.id);
-                        final remainingCost = result['remainingCost'] as double? ?? 0;
-                        final totalProfit = result['totalProfit'] as double? ?? 0;
-                        final currentProfit = 0.0; // Current profit shown in sales records
-                        
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                'စုစုပေါင်း အရင်း: ${_money.format(totalCost)} ကျပ်',
-                                style: const TextStyle(
-                                    color: Colors.orangeAccent,
-                                    fontSize: 11)),
-                            Text(
-                                'ကျန်ရှိအရင်း: ${_money.format(remainingCost)} ကျပ်',
-                                style: TextStyle(
-                                    color: remainingCost > 0 ? Colors.yellow : Colors.green,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600)),
-                            if (currentProfit > 0)
-                              Text(
-                                  'လက်ရှိအမြတ်: ${_money.format(currentProfit)} ကျပ်',
-                                  style: const TextStyle(
-                                      color: Colors.lightGreen,
-                                      fontSize: 11)),
-                            if (totalProfit > 0)
-                              Text(
-                                  'စုစုပေါင်းအမြတ်: ${_money.format(totalProfit)} ကျပ်',
-                                  style: const TextStyle(
-                                      color: Colors.lightGreen,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold)),
-                            if (g.quantity <= 0 && totalProfit <= 0)
-                              Text(
-                                  'အမြတ်မရှိသေးပါ',
-                                  style: TextStyle(
-                                      color: Colors.grey[400],
-                                      fontSize: 11))
-                          ],
-                        );
-                      }),
-                    ],
-                  ),
-                  trailing: PopupMenuButton<String>(
-                    color: AppTheme.surfaceLight,
-                    icon: const Icon(Icons.more_vert, color: Colors.white),
-                    onSelected: (v) {
-                      if (v == 'edit') _openForm(existing: g, key: key);
-                      if (v == 'delete') _delete(key);
+                              Builder(builder: (c) {
+                                final totalCost = LocalDb.gemstoneTotalCost(g);
+                                final result =
+                                    LocalDb.calculateRemainingCostAndProfit(
+                                        g.id);
+                                final remainingCost =
+                                    result['remainingCost'] as double? ?? 0;
+                                final totalProfit =
+                                    result['totalProfit'] as double? ?? 0;
+                                final currentProfit =
+                                    0.0; // Current profit shown in sales records
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                        'စုစုပေါင်း အရင်း: ${_money.format(totalCost)} ကျပ်',
+                                        style: const TextStyle(
+                                            color: Colors.orangeAccent,
+                                            fontSize: 11)),
+                                    Text(
+                                        'ကျန်ရှိအရင်း: ${_money.format(remainingCost)} ကျပ်',
+                                        style: TextStyle(
+                                            color: remainingCost > 0
+                                                ? Colors.yellow
+                                                : Colors.green,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600)),
+                                    if (currentProfit > 0)
+                                      Text(
+                                          'လက်ရှိအမြတ်: ${_money.format(currentProfit)} ကျပ်',
+                                          style: const TextStyle(
+                                              color: Colors.lightGreen,
+                                              fontSize: 11)),
+                                    if (totalProfit > 0)
+                                      Text(
+                                          'စုစုပေါင်းအမြတ်: ${_money.format(totalProfit)} ကျပ်',
+                                          style: const TextStyle(
+                                              color: Colors.lightGreen,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold)),
+                                    if (g.quantity <= 0 && totalProfit <= 0)
+                                      Text('အမြတ်မရှိသေးပါ',
+                                          style: TextStyle(
+                                              color: Colors.grey[400],
+                                              fontSize: 11))
+                                  ],
+                                );
+                              }),
+                            ],
+                          ),
+                          trailing: PopupMenuButton<String>(
+                            color: AppTheme.surfaceLight,
+                            icon: const Icon(Icons.more_vert,
+                                color: Colors.white),
+                            onSelected: (v) {
+                              if (v == 'edit') _openForm(existing: g, key: key);
+                              if (v == 'delete') _delete(key);
+                            },
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(
+                                  value: 'edit', child: Text('ပြင်ဆင်ရန်')),
+                              PopupMenuItem(
+                                  value: 'delete', child: Text('ဖျက်ရန်')),
+                            ],
+                          ),
+                        ),
+                      );
                     },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('ပြင်ဆင်ရန်')),
-                      PopupMenuItem(value: 'delete', child: Text('ဖျက်ရန်')),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-        ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -369,6 +396,29 @@ class _InventoryPageState extends State<InventoryPage> {
           ],
         ),
       );
+
+  /// Build period filter button
+  Widget _buildPeriodButton(String label, String value) {
+    final isSelected = _selectedPeriod == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedPeriod = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryAccent : AppTheme.surfaceLight,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _GemstoneForm extends StatefulWidget {
@@ -419,9 +469,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
     _repairFee = TextEditingController(
         text: (e != null && e.repairFee > 0) ? e.repairFee.toString() : '');
     _breakageFee = TextEditingController(
-        text: (e != null && e.breakageFee > 0)
-            ? e.breakageFee.toString()
-            : '');
+        text: (e != null && e.breakageFee > 0) ? e.breakageFee.toString() : '');
     _bloodFee = TextEditingController(
         text: (e != null && e.bloodFee > 0) ? e.bloodFee.toString() : '');
     _laborFee = TextEditingController(
@@ -513,8 +561,8 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
     return Padding(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: const BoxDecoration(
           color: AppTheme.primaryDark,
@@ -561,8 +609,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                         isExpanded: true,
                         dropdownColor: AppTheme.surfaceLight,
                         style: const TextStyle(color: Colors.white),
-                        decoration:
-                            const InputDecoration(labelText: 'ယူနစ်'),
+                        decoration: const InputDecoration(labelText: 'ယူနစ်'),
                         items: LocalDb.weightUnits.entries
                             .map((e) => DropdownMenuItem(
                                   value: e.key,
@@ -607,36 +654,12 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                     onPressed: _save,
                     child: Text(isEdit ? 'သိမ်းဆည်းမည်' : 'ထည့်သွင်းမည်',
                         style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold)),
+                            color: Colors.black, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(height: 8),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build period filter button
-  Widget _buildPeriodButton(String label, String value) {
-    final isSelected = _selectedPeriod == value;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedPeriod = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryAccent : AppTheme.surfaceLight,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.black : Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),
