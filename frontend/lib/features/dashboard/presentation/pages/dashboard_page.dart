@@ -69,18 +69,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 final commissions = LocalDb.totalSalesCommission();
                 final expenses = LocalDb.totalExpenses();
                 
-                // Calculate total remaining cost and profit from all gemstones using Sales Page logic
-                double totalRemainingCost = 0;
-                double totalProfitFromGemstones = 0;
-                for (final g in LocalDb.gemstones().values) {
-                  final result = LocalDb.calculateRemainingCostAndProfit(g.id);
-                  totalRemainingCost += result['remainingCost'] as double? ?? 0;
-                  totalProfitFromGemstones += result['totalProfit'] as double? ?? 0;
-                }
+                // Use EXACT same logic as Sales Page for 100% synchronization
+                // Remaining Capital = Total Original Capital - Net Revenue
+                final mainDashboardRemainingCapital = LocalDb.remainingCapital();
                 
-                // Net profit = profit from sales - expenses
-                final displayProfit = totalProfitFromGemstones > 0 ? (totalProfitFromGemstones - expenses).clamp(0, double.infinity) : 0;
-                final mainDashboardRemainingCapital = totalRemainingCost;
+                // Net Profit = Gross Profit - Total Expenses (but never negative)
+                final displayProfit = LocalDb.netProfit();
                 return Column(
                   children: [
                     Row(
