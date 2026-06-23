@@ -72,6 +72,12 @@ class _InventoryPageState extends State<InventoryPage> {
     return total;
   }
 
+  /// Get total stone count (reusable from LocalDb)
+  int _getTotalStoneCount() => LocalDb.totalStoneCount();
+
+  /// Get remaining stone count (reusable from LocalDb)
+  int _getRemainingStoneCount() => LocalDb.remainingStoneCount();
+
   void _openForm({Gemstone? existing, dynamic key}) {
     showModalBottomSheet(
       context: context,
@@ -160,14 +166,13 @@ class _InventoryPageState extends State<InventoryPage> {
           ),
           // Summary Statistics
           ValueListenableBuilder(
-            valueListenable: LocalDb.gemstones().listenable(),
-            builder: (context, Box<Gemstone> box, _) {
-              final filteredGems =
-                  _filterGemstonesByPeriod(box.values.toList());
-              final totalStones = _calculateTotalStoneCount(filteredGems);
-              final totalRemaining =
-                  _calculateTotalRemainingStock(filteredGems);
-              return Container(
+            valueListenable: LocalDb.sales().listenable(),
+            builder: (context, _, __) => ValueListenableBuilder(
+              valueListenable: LocalDb.gemstones().listenable(),
+              builder: (context, Box<Gemstone> box, _) {
+                final totalStones = _getTotalStoneCount();
+                final totalRemaining = _getRemainingStoneCount();
+                return Container(
                 color: AppTheme.surfaceLight,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -216,7 +221,8 @@ class _InventoryPageState extends State<InventoryPage> {
                   ],
                 ),
               );
-            },
+              },
+            ),
           ),
           // Gemstone List
           Expanded(

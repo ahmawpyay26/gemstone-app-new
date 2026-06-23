@@ -749,6 +749,24 @@ class LocalDb {
     };
   }
 
+  /// ပစ္စည်းစာရင်းအတွင်း ကျောက်အလုံးရေ စုစုပေါင်း
+  static int totalStoneCount() {
+    int total = 0;
+    for (final g in gemstones().values) {
+      total += g.quantity;
+    }
+    return total;
+  }
+
+  /// ပစ္စည်းစာရင်းအတွင်း လက်ကျန်စုစုပေါင်း အလုံး
+  static int remainingStoneCount() {
+    int total = 0;
+    for (final g in gemstones().values) {
+      total += gemstoneRemainingQuantity(g);
+    }
+    return total;
+  }
+
   static int activeWorkers() {
     return workers().values.where((w) => w.status == 'active').length;
   }
