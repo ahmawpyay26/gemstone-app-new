@@ -1002,7 +1002,6 @@ class LocalDb {
     final allSales = sales().values.toList();
     return allSales.where((s) => s.isDeleted != true).toList();
   }
-}
 
   /// Sale ကို ဖျက်နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
   static bool canDeleteSale() {
@@ -1033,3 +1032,5 @@ class LocalDb {
   static String adminOnlyErrorMessage() {
     return 'ဤလုပ်ဆောင်ချက်ကို Admin သာ ပြုလုပ်နိုင်ပါသည်။';
   }
+
+}
