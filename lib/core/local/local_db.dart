@@ -896,3 +896,140 @@ class LocalDb {
     }
   }
 }
+
+  // ---------------------------------------------------------------------------
+  // Soft Delete & Restore Sale
+  // ---------------------------------------------------------------------------
+
+  /// Soft delete a sale record (mark as deleted instead of hard delete)
+  static Future<void> softDeleteSale(dynamic saleKey, String deleteReason) async {
+    try {
+      final sale = sales().get(saleKey) as Sale?;
+      if (sale == null) return;
+
+      final currentUser = session().get('currentUser') as Map?;
+      if (currentUser == null) return;
+
+      // Mark as soft deleted
+      sale.isDeleted = true;
+      sale.deletedAt = DateTime.now().millisecondsSinceEpoch;
+      sale.deletedBy = currentUser['id'] as String;
+      sale.deleteReason = deleteReason;
+
+      await sales().put(saleKey, sale);
+
+      // Recalculate gemstone ledger (removes sale from calculations)
+      if (sale.gemstoneId.isNotEmpty) {
+        updateGemstoneProductLedger(sale.gemstoneId);
+      }
+
+      // Create audit log
+      final auditLog = AuditLog(
+        id: genId(),
+        action: 'DELETE_SALE',
+        saleId: sale.id,
+        gemstoneId: sale.gemstoneId,
+        gemstoneName: sale.gemstoneName,
+        quantity: sale.quantity,
+        amount: sale.amount,
+        userId: currentUser['id'] as String,
+        userName: currentUser['name'] as String,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        details: 'အရောင်းမှတ်တမ်း soft delete - ကျောက်: ${sale.gemstoneName}, အလုံးရေ: ${sale.quantity}',
+      );
+      await createAuditLog(auditLog);
+    } catch (e) {
+      print('Error soft deleting sale: $e');
+      rethrow;
+    }
+  }
+
+  /// Restore a soft-deleted sale record
+  static Future<void> restoreSale(dynamic saleKey) async {
+    try {
+      if (!isCurrentUserAdmin()) {
+        throw Exception('Admin အခွင့်အရည်အချက် လိုအပ်ပါသည်။');
+      }
+
+      final sale = sales().get(saleKey) as Sale?;
+      if (sale == null) return;
+
+      final currentUser = session().get('currentUser') as Map?;
+      if (currentUser == null) return;
+
+      // Restore the sale
+      sale.isDeleted = false;
+      sale.deletedAt = null;
+      sale.deletedBy = null;
+      sale.deleteReason = null;
+
+      await sales().put(saleKey, sale);
+
+      // Recalculate gemstone ledger (adds sale back to calculations)
+      if (sale.gemstoneId.isNotEmpty) {
+        updateGemstoneProductLedger(sale.gemstoneId);
+      }
+
+      // Create audit log
+      final auditLog = AuditLog(
+        id: genId(),
+        action: 'RESTORE_SALE',
+        saleId: sale.id,
+        gemstoneId: sale.gemstoneId,
+        gemstoneName: sale.gemstoneName,
+        quantity: sale.quantity,
+        amount: sale.amount,
+        userId: currentUser['id'] as String,
+        userName: currentUser['name'] as String,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        details: 'Deleted sale restored successfully - ကျောက်: ${sale.gemstoneName}, အလုံးရေ: ${sale.quantity}',
+      );
+      await createAuditLog(auditLog);
+    } catch (e) {
+      print('Error restoring sale: $e');
+      rethrow;
+    }
+  }
+
+  /// Get all deleted sales
+  static List<Sale> getDeletedSales() {
+    final allSales = sales().values.toList();
+    return allSales.where((s) => s.isDeleted == true).toList();
+  }
+
+  /// Get all active (non-deleted) sales
+  static List<Sale> getActiveSales() {
+    final allSales = sales().values.toList();
+    return allSales.where((s) => s.isDeleted != true).toList();
+  }
+}
+
+  /// Sale ကို ဖျက်နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
+  static bool canDeleteSale() {
+    return isCurrentUserAdmin();
+  }
+
+  /// Sale ကို Restore နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
+  static bool canRestoreSale() {
+    return isCurrentUserAdmin();
+  }
+
+  /// Sale ကို Edit နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
+  static bool canEditSale() {
+    return isCurrentUserAdmin();
+  }
+
+  /// Purchase ကို ဖျက်နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
+  static bool canDeletePurchase() {
+    return isCurrentUserAdmin();
+  }
+
+  /// Purchase ကို Edit နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
+  static bool canEditPurchase() {
+    return isCurrentUserAdmin();
+  }
+
+  /// လုပ်ဆောင်ချက်ကို Admin သာ ပြုလုပ်နိုင်သည်ဆိုသည့် Error message
+  static String adminOnlyErrorMessage() {
+    return 'ဤလုပ်ဆောင်ချက်ကို Admin သာ ပြုလုပ်နိုင်ပါသည်။';
+  }

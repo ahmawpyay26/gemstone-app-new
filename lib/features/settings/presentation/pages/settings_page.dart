@@ -30,7 +30,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
     _currentPassword = TextEditingController();
     _newPassword = TextEditingController();
     _confirmPassword = TextEditingController();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -140,10 +140,11 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                 context.canPop() ? context.pop() : context.go('/dashboard')),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'အကောင့် အချက်အလက်'),
-            Tab(text: 'အကျင့်စာရင်း'),
-          ],
+        tabs: const [
+          Tab(text: 'အကောင့် အချက်အလက်'),
+          Tab(text: 'အကျင့်စာရင်း'),
+          Tab(text: 'ဖျက်ထားသော အရောင်း'),
+        ],
         ),
       ),
       body: TabBarView(
@@ -450,6 +451,148 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                             ),
                           ),
                       ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          
+          // Tab 3: Deleted Sales
+          ValueListenableBuilder(
+            valueListenable: LocalDb.sales().listenable(),
+            builder: (context, Box<Sale> box, _) {
+              final deletedSales = LocalDb.getDeletedSales();
+              final sortedSales = deletedSales.toList()..sort((a, b) => (b.deletedAt ?? 0).compareTo(a.deletedAt ?? 0));
+              
+              if (sortedSales.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.delete_outline, size: 48, color: Colors.grey[600]),
+                      const SizedBox(height: 16),
+                      Text('ဖျက်ထားသော အရောင်း မရှိသေးပါ',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 16),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              
+              return ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: sortedSales.length,
+                itemBuilder: (context, index) {
+                  final sale = sortedSales[index];
+                  final isAdmin = LocalDb.currentUser()['role'] == 'admin' || LocalDb.currentUser()['role'] == 'owner';
+                  
+                  return Card(
+                    color: AppTheme.surfaceDark,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header with gemstone name and delete date
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      sale.gemstoneName,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'ဖျက်သည့်နေ့: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.fromMillisecondsSinceEpoch(sale.deletedAt ?? 0))}',
+                                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isAdmin)
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    final ok = await showDialog<bool>(
+                                      context: context,
+                                      builder: (c) => AlertDialog(
+                                        backgroundColor: AppTheme.surfaceDark,
+                                        title: const Text('အရောင်းမှတ်တမ်း ပြန်လည်ရယူမည်'),
+                                        content: const Text('ဤအရောင်းမှတ်တမ်းကို ပြန်လည်ရယူမှာ သေချာပါသလား?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(c, false),
+                                            child: const Text('မလုပ်တော့ပါ'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(c, true),
+                                            child: const Text('ပြန်လည်ရယူမည်',
+                                              style: TextStyle(color: AppTheme.successColor),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ) ?? false;
+                                    
+                                    if (ok) {
+                                      try {
+                                        final key = box.keys.firstWhere((k) => box.get(k)?.id == sale.id);
+                                        await LocalDb.restoreSale(key);
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('အရောင်းမှတ်တမ်း ပြန်လည်ရယူပြီးပါပြီ')),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('အမှားအယွင်း: $e')),
+                                          );
+                                        }
+                                      }
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.successColor,
+                                    foregroundColor: Colors.black,
+                                  ),
+                                  icon: const Icon(Icons.restore, size: 16),
+                                  label: const Text('ပြန်လည်ရယူ', style: TextStyle(fontSize: 12)),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          
+                          // Details
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('အလုံးရေ: ${sale.quantity}', style: TextStyle(color: Colors.grey[300])),
+                              Text('အငွေ: ${NumberFormat('#,##0', 'en_US').format(sale.amount)} ကျပ်', style: TextStyle(color: Colors.grey[300])),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          
+                          // Deleted by and reason
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('ဖျက်သူ: ${sale.deletedBy ?? 'Unknown'}', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                              if (sale.deleteReason != null && sale.deleteReason!.isNotEmpty)
+                                Text('ကြောင့်: ${sale.deleteReason}', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },

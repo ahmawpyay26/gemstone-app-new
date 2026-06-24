@@ -261,6 +261,12 @@ class Sale {
   double remainingCostAfterSale; // ရောင်းပြီးနောက် ကျန်ရှိအရင်း
   double profitGenerated; // ဒီအကြိမ်ရောင်းချမှ ရရှိတဲ့ အမြတ်
   double accumulatedProfit; // စုစုပေါင်းအမြတ် (ယခုအထိ)
+  
+  // Soft Delete Fields
+  bool isDeleted; // Soft delete flag
+  int? deletedAt; // Deletion timestamp
+  String? deletedBy; // User who deleted
+  String? deleteReason; // Reason for deletion
 
   Sale({
     required this.id,
@@ -280,6 +286,10 @@ class Sale {
     this.remainingCostAfterSale = 0,
     this.profitGenerated = 0,
     this.accumulatedProfit = 0,
+    this.isDeleted = false,
+    this.deletedAt,
+    this.deletedBy,
+    this.deleteReason,
   });
 }
 
@@ -312,13 +322,17 @@ class SaleAdapter extends TypeAdapter<Sale> {
       remainingCostAfterSale: fields[14] == null ? 0 : (fields[14] as num).toDouble(),
       profitGenerated: fields[15] == null ? 0 : (fields[15] as num).toDouble(),
       accumulatedProfit: fields[16] == null ? 0 : (fields[16] as num).toDouble(),
+      isDeleted: (fields[17] as bool?) ?? false,
+      deletedAt: fields[18] as int?,
+      deletedBy: fields[19] as String?,
+      deleteReason: fields[20] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(21)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -352,7 +366,15 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(15)
       ..write(obj.profitGenerated)
       ..writeByte(16)
-      ..write(obj.accumulatedProfit);
+      ..write(obj.accumulatedProfit)
+      ..writeByte(17)
+      ..write(obj.isDeleted)
+      ..writeByte(18)
+      ..write(obj.deletedAt)
+      ..writeByte(19)
+      ..write(obj.deletedBy)
+      ..writeByte(20)
+      ..write(obj.deleteReason);
   }
 }
 

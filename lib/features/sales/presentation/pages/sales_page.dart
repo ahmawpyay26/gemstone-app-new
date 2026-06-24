@@ -18,6 +18,17 @@ class _SalesPageState extends State<SalesPage> {
   final _date = DateFormat('yyyy-MM-dd');
 
   void _openForm({Sale? existing, dynamic key}) {
+    // Check edit permission
+    if (existing != null && !LocalDb.canEditSale()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(LocalDb.adminOnlyErrorMessage()),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -27,6 +38,19 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   Future<void> _delete(dynamic key) async {
+    // Check admin permission
+    if (!LocalDb.canDeleteSale()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(LocalDb.adminOnlyErrorMessage()),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+      return;
+    }
+
     final sale = LocalDb.sales().get(key);
     final ok = await showDialog<bool>(
           context: context,
@@ -48,32 +72,21 @@ class _SalesPageState extends State<SalesPage> {
         ) ??
         false;
     if (ok && sale != null) {
-      // Delete the sale record
-      await LocalDb.sales().delete(key);
-      
-      // Recalculate remaining cost and profit after deletion
-      // This will automatically update soldQuantity and remainingQuantity
-      // based on the remaining sales records
-      if (sale.gemstoneId.isNotEmpty) {
-        await LocalDb.updateGemstoneProductLedger(sale.gemstoneId);
+      try {
+        // Soft delete the sale record
+        await LocalDb.softDeleteSale(key, 'User deleted');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('အရောင်းမှတ်တမ်း ဖျက်ပြီးပါပြီ')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('အမှားအယွင်း: $e')),
+          );
+        }
       }
-      
-      // Create Audit Log
-      final currentUser = LocalDb.currentUser();
-      final auditLog = AuditLog(
-        id: LocalDb.genId(),
-        action: 'DELETE_SALE',
-        saleId: sale.id,
-        gemstoneId: sale.gemstoneId,
-        gemstoneName: sale.gemstoneName,
-        quantity: sale.quantity,
-        amount: sale.amount,
-        userId: currentUser['id'] as String,
-        userName: currentUser['name'] as String,
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-        details: 'ရောင်းချမှု မှတ်တမ်း ဖျက်ခြင်း - အငွေ: \${sale.amount}, အလုံးရေ: \${sale.quantity}',
-      );
-      await LocalDb.createAuditLog(auditLog);
     }
   }
 
@@ -136,6 +149,9 @@ class _SalesPageState extends State<SalesPage> {
                           final keys = box.keys.toList().reversed.toList(); // Show newest first
                           final key = keys[i];
                           final s = box.get(key)!;
+                          
+                          // Skip deleted sales
+                          if (s.isDeleted == true) return const SizedBox.shrink();
                           return Card(
                             color: AppTheme.surfaceDark,
                             margin: const EdgeInsets.only(bottom: 10),
@@ -178,9 +194,9 @@ class _SalesPageState extends State<SalesPage> {
                                           fontWeight: FontWeight.bold)),
                                   if (s.costPrice > 0) _profitBadge(s),
                                   InkWell(
-                                    onTap: () => _delete(key),
-                                    child: const Icon(Icons.delete_outline,
-                                        color: AppTheme.errorColor, size: 20),
+                                    onTap: LocalDb.canDeleteSale() ? () => _delete(key) : null,
+                                    child: Icon(Icons.delete_outline,
+                                        color: LocalDb.canDeleteSale() ? AppTheme.errorColor : Colors.grey[600], size: 20),
                                   ),
                                 ],
                               ),

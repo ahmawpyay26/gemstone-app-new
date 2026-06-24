@@ -79,6 +79,12 @@ class _InventoryPageState extends State<InventoryPage> {
   int _getRemainingStoneCount() => LocalDb.remainingStoneCount();
 
   void _openForm({Gemstone? existing, dynamic key}) {
+    // Check edit permission
+    if (existing != null && !LocalDb.canEditPurchase()) {
+      _showError(LocalDb.adminOnlyErrorMessage());
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -89,8 +95,8 @@ class _InventoryPageState extends State<InventoryPage> {
 
   Future<void> _delete(dynamic key) async {
     // Check admin permission
-    if (!LocalDb.isCurrentUserAdmin()) {
-      _showError('Admin အခွင့်အရည်အချက် လိုအပ်ပါသည်။');
+    if (!LocalDb.canDeletePurchase()) {
+      _showError(LocalDb.adminOnlyErrorMessage());
       return;
     }
 
@@ -421,17 +427,18 @@ class _InventoryPageState extends State<InventoryPage> {
                           ),
                           trailing: PopupMenuButton<String>(
                             color: AppTheme.surfaceLight,
-                            icon: const Icon(Icons.more_vert,
-                                color: Colors.white),
+                            icon: Icon(Icons.more_vert,
+                                color: LocalDb.canEditPurchase() ? Colors.white : Colors.grey[600]),
+                            enabled: LocalDb.canEditPurchase(),
                             onSelected: (v) {
                               if (v == 'edit') _openForm(existing: g, key: key);
                               if (v == 'delete') _delete(key);
                             },
-                            itemBuilder: (_) => const [
+                            itemBuilder: (_) => [
                               PopupMenuItem(
-                                  value: 'edit', child: Text('ပြင်ဆင်ရန်')),
+                                  value: 'edit', child: const Text('ပြင်ဆင်ရန်'), enabled: LocalDb.canEditPurchase()),
                               PopupMenuItem(
-                                  value: 'delete', child: Text('ဖျက်ရန်')),
+                                  value: 'delete', child: const Text('ဖျက်ရန်'), enabled: LocalDb.canDeletePurchase()),
                             ],
                           ),
                         ),
