@@ -38,29 +38,25 @@ jobs:
       
       # Step 4: Get Flutter dependencies
       - name: Get Flutter dependencies
-        run: |
-          cd frontend
-          flutter pub get
+        run: flutter pub get
+        working-directory: frontend
       
       # Step 5: Run Flutter analysis
       - name: Run Flutter analysis
-        run: |
-          cd frontend
-          flutter analyze
+        run: flutter analyze
+        working-directory: frontend
         continue-on-error: true
       
-      # Step 6: Run tests (if any)
+      # Step 6: Run Flutter tests
       - name: Run Flutter tests
-        run: |
-          cd frontend
-          flutter test
+        run: flutter test
+        working-directory: frontend
         continue-on-error: true
       
       # Step 7: Build release APK only
       - name: Build release APK
-        run: |
-          cd frontend
-          flutter build apk --release
+        run: flutter build apk --release
+        working-directory: frontend
       
       # Step 8: Upload release APK as artifact
       - name: Upload release APK

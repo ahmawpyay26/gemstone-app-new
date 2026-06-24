@@ -33,17 +33,13 @@ jobs:
       
       # Step 4: Get Flutter dependencies
       - name: Get Flutter dependencies
-        run: |
-          cd frontend
-          flutter pub get
+        run: flutter pub get
+        working-directory: frontend
       
       # Step 5: Build release APK (unsigned)
       - name: Build release APK
-        run: |
-          cd frontend
-          flutter build apk --release \
-            --target-platform android-arm64 \
-            --split-per-abi
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
+        working-directory: frontend
       
       # Step 6: Upload APK artifacts
       - name: Upload release APK
