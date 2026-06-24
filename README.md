@@ -1,392 +1,206 @@
-# 💎 Gemstone Trading & Processing Management System
+# Gemstone Management Mobile App
 
-Professional Mobile Application for Gemstone Business Management
+Professional Gemstone Trading and Processing Management Mobile Application built with Flutter.
 
-**Language:** Burmese (Myanmar) | **Design:** Dark Luxury | **Platform:** Flutter + Node.js + PostgreSQL
+## Features
 
----
+- **Offline-First Architecture**: Full SQLite database for offline functionality
+- **Inventory Management**: Track gemstones, lots, and stock
+- **Sales Module**: Record and manage sales transactions
+- **Expense Tracking**: Monitor business expenses
+- **Profit/Loss Reports**: Generate financial reports
+- **Worker Management**: Manage team and payroll
+- **QR Code Tracking**: Track gemstones with QR codes
+- **Notifications**: Real-time alerts and updates
+- **Sync Engine**: Hybrid offline-online synchronization (when backend is available)
 
-## 🌟 Features
+## Requirements
 
-### Core Functionality
-- ✅ **User Authentication** - Secure login/register with JWT
-- ✅ **Gemstone Inventory** - Track individual stones with QR codes
-- ✅ **Lot Management** - Manage bulk gemstone lots
-- ✅ **Processing Workflows** - Track polishing, cutting, and modifications
-- ✅ **Expense Tracking** - Record worker costs, machine maintenance, tools
-- ✅ **Sales Management** - Record sales transactions with broker commissions
-- ✅ **Profit/Loss Calculation** - Automatic financial calculations
-- ✅ **Offline Support** - Work without internet connection
-- ✅ **Cloud Synchronization** - Sync data when online
-- ✅ **QR Code Tracking** - Generate and scan QR codes for stones
-- ✅ **Multi-user Roles** - Owner, Accountant, Worker, Broker
+- Flutter SDK 3.0.0 or higher
+- Dart SDK 3.0.0 or higher
+- Android SDK 21 or higher
+- Java 11 or higher
 
-### Technical Features
-- Clean Architecture (Presentation, Domain, Data layers)
-- BLoC State Management
-- RESTful API with JWT authentication
-- PostgreSQL database with Sequelize ORM
-- Drift for offline SQLite storage
-- Dark luxury UI theme with Poppins font
-- Responsive mobile design
-- Error handling and validation
+## Installation
 
----
-
-## 🏗️ Project Structure
-
-```
-gemstone-app/
-├── backend/                    # Node.js + Express + PostgreSQL
-│   ├── config/                # Database configuration
-│   ├── controllers/           # Business logic
-│   ├── models/                # Sequelize models
-│   ├── routes/                # API endpoints
-│   ├── middleware/            # Auth middleware
-│   ├── utils/                 # Utility functions
-│   ├── database/              # SQL schema
-│   └── server.js              # Main server
-│
-├── frontend/                  # Flutter application
-│   ├── lib/
-│   │   ├── core/             # Shared components
-│   │   ├── features/         # Feature modules
-│   │   └── main.dart         # Entry point
-│   └── pubspec.yaml          # Dependencies
-│
-└── Documentation
-    ├── PHASE_1_SETUP.md
-    ├── PHASE_2_DATABASE_AUTH.md
-    ├── PHASE_3_FLUTTER_AUTH_UI.md
-    ├── PROJECT_SUMMARY.md
-    └── README.md
-```
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- **Node.js** v14+ (we have v22.13.0 ✅)
-- **npm** v6+ (we have v10.9.2 ✅)
-- **Flutter** 3.0+ (needs installation)
-- **PostgreSQL** 12+ (needs installation)
-- **Git** (for version control)
-
-### Backend Setup
-
-1. **Navigate to backend directory:**
-   ```bash
-   cd gemstone-app/backend
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Create environment file:**
-   ```bash
-   cp .env.example .env
-   ```
-
-4. **Update .env with your PostgreSQL credentials:**
-   ```
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=gemstone_db
-   DB_USER=gemstone_user
-   DB_PASSWORD=your_secure_password
-   JWT_SECRET=your_jwt_secret_key
-   ```
-
-5. **Create PostgreSQL database:**
-   ```bash
-   psql -U postgres
-   CREATE DATABASE gemstone_db;
-   CREATE USER gemstone_user WITH PASSWORD 'your_password';
-   GRANT ALL PRIVILEGES ON DATABASE gemstone_db TO gemstone_user;
-   \q
-   ```
-
-6. **Run database schema:**
-   ```bash
-   psql -U gemstone_user -d gemstone_db -f database/schema.sql
-   ```
-
-7. **Start backend server:**
-   ```bash
-   npm start
-   # or for development with auto-reload
-   npm run dev
-   ```
-
-Backend will be running at: `http://localhost:3000`
-
-### Frontend Setup
-
-1. **Navigate to frontend directory:**
-   ```bash
-   cd gemstone-app/frontend
-   ```
-
-2. **Get Flutter dependencies:**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Generate code (for Hive, Drift, Retrofit):**
-   ```bash
-   flutter pub run build_runner build
-   ```
-
-4. **Run on Android emulator:**
-   ```bash
-   flutter run
-   ```
-
-5. **Or build APK:**
-   ```bash
-   flutter build apk --release
-   ```
-
----
-
-## 🔐 Authentication
-
-### Register
+### 1. Clone the Repository
 ```bash
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "password123",
-    "first_name": "John",
-    "last_name": "Doe",
-    "role": "owner"
-  }'
+git clone https://github.com/yourusername/gemstone-management.git
+cd gemstone-management/frontend
 ```
 
-### Login
+### 2. Install Dependencies
 ```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "password123"
-  }'
+flutter pub get
 ```
 
-### Response
-```json
-{
-  "status": "success",
-  "message": "Login successful",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": "uuid",
-      "email": "user@example.com",
-      "first_name": "John",
-      "last_name": "Doe",
-      "role": "owner"
-    }
-  }
-}
-```
-
----
-
-## 🎨 Design System
-
-### Color Palette
-- **Primary Dark:** #1a1a1a (Deep Black)
-- **Accent Gold:** #d4af37 (Premium Gold)
-- **Secondary Bronze:** #8b7355 (Bronze)
-- **Surface Dark:** #2d2d2d (Dark Gray)
-- **Text Primary:** #ffffff (White)
-- **Text Secondary:** #b0b0b0 (Light Gray)
-
-### Typography
-- **Font Family:** Poppins
-- **Weights:** Regular (400), Medium (500), Semi-Bold (600), Bold (700)
-
-### Components
-- Rounded corners (8px for inputs, 12px for cards)
-- Elevation (8px for cards)
-- Gold accents for interactive elements
-- Consistent spacing and padding
-
----
-
-## 📊 Database Schema
-
-### Main Tables
-1. **users** - User authentication and roles
-2. **gemstones** - Individual stone inventory
-3. **lots** - Bulk gemstone lots
-4. **lot_splits** - Lot splitting operations
-5. **processing_records** - Polishing/cutting workflows
-6. **workers** - Worker management
-7. **machines** - Machine inventory
-8. **expenses** - Cost tracking
-9. **sales** - Sales transactions
-10. **sale_items** - Items in each sale
-11. **brokers** - Broker management
-12. **waste_stones** - Waste/damaged tracking
-
-See `backend/database/schema.sql` for complete schema.
-
----
-
-## 📱 User Roles
-
-| Role | Permissions |
-|------|------------|
-| **Owner** | Full system access, financial reports |
-| **Accountant** | Expense tracking, financial reports |
-| **Worker** | Process stones, record expenses |
-| **Broker** | View sales, commission tracking |
-
----
-
-## 🔄 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/refresh-token` - Refresh access token
-- `GET /api/auth/me` - Get current user
-- `POST /api/auth/logout` - Logout user
-
-### Gemstones (Phase 4)
-- `GET /api/gemstones` - List all gemstones
-- `POST /api/gemstones` - Create gemstone
-- `GET /api/gemstones/:id` - Get gemstone details
-- `PUT /api/gemstones/:id` - Update gemstone
-- `DELETE /api/gemstones/:id` - Delete gemstone
-
-### Lots (Phase 4)
-- `GET /api/lots` - List all lots
-- `POST /api/lots` - Create lot
-- `POST /api/lots/:id/split` - Split lot
-
-### Sales (Phase 6)
-- `GET /api/sales` - List sales
-- `POST /api/sales` - Create sale
-- `GET /api/sales/:id/profit-loss` - Calculate profit/loss
-
-### Reports (Phase 6)
-- `GET /api/reports/profit-loss` - Profit/Loss report
-- `GET /api/reports/inventory-valuation` - Inventory report
-- `GET /api/reports/expenses-summary` - Expenses report
-
----
-
-## 🧪 Testing
-
-### Backend Testing
+### 3. Generate Code (if needed)
 ```bash
-cd backend
-npm test
+flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
-### Frontend Testing
+### 4. Run Development App
 ```bash
-cd frontend
-flutter test
+flutter run
 ```
 
----
+## Building
 
-## 📦 Building for Production
-
-### APK Build
+### Build Debug APK
 ```bash
-cd frontend
+flutter build apk --debug
+```
+
+### Build Release APK
+```bash
 flutter build apk --release
 ```
 
-APK will be generated at: `frontend/build/app/outputs/apk/release/app-release.apk`
+The APK will be available at: `build/app/outputs/flutter-apk/app-release.apk`
 
-### Backend Deployment
-```bash
-# Build Docker image
-docker build -t gemstone-api .
+## Project Structure
 
-# Run container
-docker run -p 3000:3000 gemstone-api
+```
+lib/
+├── main.dart                 # App entry point
+├── models/                   # Data models
+├── screens/                  # UI screens
+├── services/                 # Business logic services
+│   ├── database/            # SQLite database service
+│   ├── sync/                # Sync engine service
+│   └── api/                 # API client
+├── widgets/                 # Reusable widgets
+├── utils/                   # Utility functions
+└── constants/               # App constants
+
+assets/
+├── images/                  # Image assets
+├── icons/                   # Icon assets
+└── fonts/                   # Custom fonts
 ```
 
+## Database
+
+The app uses SQLite for local data storage with the following tables:
+- gemstones
+- sales
+- expenses
+- workers
+- lots
+- sync_metadata
+- sync_queue
+- sync_conflicts
+
+See `OFFLINE_DATABASE_SCHEMA.sql` for complete schema.
+
+## Offline Mode
+
+The app works completely offline with SQLite. All data is stored locally and synced to the backend when internet is available.
+
+### Offline Features
+- Create, read, update, delete gemstones
+- Record sales and expenses
+- Manage workers
+- Generate reports
+- Track inventory
+
+### Sync Features (when online)
+- Automatic sync in background
+- Manual sync with sync button
+- Conflict resolution
+- Data validation
+
+## Configuration
+
+### API Base URL
+
+Set the API base URL in `lib/constants/app_constants.dart`:
+
+```dart
+const String API_BASE_URL = 'https://api.gemstone-app.com';
+```
+
+### App Version
+
+Update version in `pubspec.yaml`:
+
+```yaml
+version: 1.0.0+1
+```
+
+Format: `major.minor.patch+buildNumber`
+
+## Testing
+
+Run tests with:
+```bash
+flutter test
+```
+
+## Troubleshooting
+
+### Build Errors
+
+1. **Flutter not found**
+   ```bash
+   flutter pub get
+   flutter clean
+   flutter pub get
+   ```
+
+2. **Android build errors**
+   ```bash
+   flutter clean
+   cd android
+   ./gradlew clean
+   cd ..
+   flutter build apk --release
+   ```
+
+3. **Dependency conflicts**
+   ```bash
+   flutter pub upgrade
+   flutter pub get
+   ```
+
+### Runtime Issues
+
+1. **Database errors**: Clear app data and restart
+2. **Sync issues**: Check internet connection and API endpoint
+3. **UI issues**: Run `flutter clean` and rebuild
+
+## Performance Optimization
+
+- Lazy loading of data
+- Image caching
+- Database indexing
+- Batch operations
+- Efficient state management
+
+## Security
+
+- JWT authentication
+- Encrypted local storage
+- HTTPS for API calls
+- Input validation
+- Secure token storage
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+This project is proprietary software. All rights reserved.
+
+## Support
+
+For support, email support@gemstone-app.com
+
 ---
 
-## 🐛 Troubleshooting
-
-### Backend Issues
-- **Database connection error:** Check PostgreSQL is running and credentials are correct
-- **Port already in use:** Change PORT in .env file
-- **JWT errors:** Ensure JWT_SECRET is set in .env
-
-### Frontend Issues
-- **Flutter not found:** Install Flutter SDK
-- **Build errors:** Run `flutter clean` then `flutter pub get`
-- **Android build fails:** Update Android SDK in Android Studio
-
----
-
-## 📚 Documentation
-
-- **Phase 1:** [Backend Initialization](PHASE_1_SETUP.md)
-- **Phase 2:** [Database & Authentication](PHASE_2_DATABASE_AUTH.md)
-- **Phase 3:** [Flutter UI & Theme](PHASE_3_FLUTTER_AUTH_UI.md)
-- **Summary:** [Project Overview](PROJECT_SUMMARY.md)
-
----
-
-## 🤝 Contributing
-
-1. Create a feature branch: `git checkout -b feature/your-feature`
-2. Commit changes: `git commit -m 'Add your feature'`
-3. Push to branch: `git push origin feature/your-feature`
-4. Submit pull request
-
----
-
-## 📄 License
-
-This project is proprietary software for Gemstone Trading Management.
-
----
-
-## 📞 Support
-
-For issues or questions:
-1. Check the documentation files
-2. Review the code comments
-3. Check error logs in console
-
----
-
-## 🎯 Roadmap
-
-- [x] Phase 1: Backend initialization
-- [x] Phase 2: Database & authentication
-- [x] Phase 3: Flutter UI & theme
-- [ ] Phase 4: Gemstone & lot management
-- [ ] Phase 5: Processing & expenses
-- [ ] Phase 6: Sales & reports
-- [ ] Phase 7: Offline sync & QR integration
-- [ ] Production deployment
-
----
-
-**Version:** 1.0.0-alpha
-
-**Last Updated:** May 27, 2026
-
-**Status:** 🟡 In Development (Phase 3 Complete)
-
----
-
-Made with 💎 by Gemstone Development Team
+**Version**: 1.0.0
+**Last Updated**: May 31, 2026
