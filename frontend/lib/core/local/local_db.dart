@@ -789,6 +789,20 @@ class LocalDb {
   // without creating separate expense entries to avoid double-counting
 
   // -------------------------------------------------------------------------
+  // Admin & Permission Helpers
+  // -------------------------------------------------------------------------
+
+  /// လက်ရှိ User သည် Admin ဖြစ်သည်ကို စစ်ဆေးခြင်း
+  static bool isCurrentUserAdmin() {
+    try {
+      final user = currentUser();
+      return user['role'] == 'admin';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Audit Log Methods
   // -------------------------------------------------------------------------
 
@@ -833,6 +847,51 @@ class LocalDb {
       await auditLogs().clear();
     } catch (e) {
       print('Error clearing audit logs: $e');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Purchase Delete Methods
+  // -------------------------------------------------------------------------
+
+  /// ဝယ်ယူမှတ်တမ်း ဖျက်ခြင်း (Admin-only)
+  /// Total Stone Count ကျဆင်းခြင်း (Sale Delete နှင့် ကွဲပြားသည်)
+  static Future<void> deletePurchaseRecord(
+    String gemstoneId,
+    dynamic hiveKey,
+    String gemstoneName,
+    int quantity,
+  ) async {
+    try {
+      // Check admin permission
+      if (!isCurrentUserAdmin()) {
+        throw Exception('Admin permission required');
+      }
+
+      // Delete the gemstone record
+      await gemstones().delete(hiveKey);
+
+      // Recalculate ledger (though gemstone is deleted, this is for consistency)
+      // Note: totalStoneCount() and remainingStoneCount() will automatically
+      // reflect the deletion since they iterate over current gemstones
+
+      // Create Audit Log
+      final currentUser = LocalDb.currentUser();
+      final auditLog = AuditLog(
+        id: genId(),
+        action: 'DELETE_PURCHASE',
+        gemstoneId: gemstoneId,
+        gemstoneName: gemstoneName,
+        quantity: quantity,
+        userId: currentUser['id'] as String,
+        userName: currentUser['name'] as String,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        details: 'ဝယ်ယူမှတ်တမ်း ဖျက်ခြင်း - ကျောက်: $gemstoneName, အလုံးရေ: $quantity',
+      );
+      await createAuditLog(auditLog);
+    } catch (e) {
+      print('Error deleting purchase record: $e');
+      rethrow;
     }
   }
 }

@@ -88,8 +88,68 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Future<void> _delete(dynamic key) async {
-    final ok = await _confirm('ဤကျောက်မျက်ကို ဖျက်မှာ သေချာပါသလား။');
-    if (ok) await LocalDb.gemstones().delete(key);
+    // Check admin permission
+    if (!LocalDb.isCurrentUserAdmin()) {
+      _showError('Admin အခွင့်အရည်အချက် လိုအပ်ပါသည်။');
+      return;
+    }
+
+    final gemstone = LocalDb.gemstones().get(key);
+    if (gemstone == null) return;
+
+    final ok = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: const Text('ဝယ်ယူမှတ်တမ်း ဖျက်မည်'),
+            content: const Text(
+                'ဤဝယ်ယူမှတ်တမ်းကို ဖျက်မှာ သေချာပါသလား?'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(c, false),
+                  child: const Text('မဖျက်တော့ပါ')),
+              TextButton(
+                  onPressed: () => Navigator.pop(c, true),
+                  child: const Text('ဖျက်မည်',
+                      style: TextStyle(color: AppTheme.errorColor))),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (ok) {
+      try {
+        await LocalDb.deletePurchaseRecord(
+          gemstone.id,
+          key,
+          gemstone.name,
+          gemstone.quantity,
+        );
+        _showSuccess('ဝယ်ယူမှတ်တမ်း အောင်မြင်စွာ ဖျက်ပြီးပါပြီ။');
+      } catch (e) {
+        _showError('အမှားအယွင်းတစ်ခု ကျေးဇူးပြု၍ ထပ်မံကြိုးစားပါ');
+      }
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.errorColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.successColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<bool> _confirm(String msg) async {
