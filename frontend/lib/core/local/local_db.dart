@@ -656,8 +656,9 @@ class LocalDb {
     g.remainingQuantity = gemstoneRemainingQuantity(g);
     g.soldQuantity = gemstoneSoldQuantity(g.id);
 
-    // Auto-update quantity based on sales
-    g.quantity = g.remainingQuantity + g.soldQuantity;
+    // NOTE: g.quantity (purchase quantity) is NEVER modified
+    // It remains the source of truth for purchased quantities
+    // Only remainingQuantity and soldQuantity are derived from sales
 
     await box.put(key, g);
     

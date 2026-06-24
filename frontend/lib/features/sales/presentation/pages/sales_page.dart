@@ -48,16 +48,12 @@ class _SalesPageState extends State<SalesPage> {
         ) ??
         false;
     if (ok && sale != null) {
-      // Restore stock that was deducted by this sale.
-      if (sale.gemstoneId.isNotEmpty) {
-        await LocalDb.adjustStock(
-            sale.gemstoneId, -sale.quantity, -sale.weightCarat);
-      }
-      
       // Delete the sale record
       await LocalDb.sales().delete(key);
       
       // Recalculate remaining cost and profit after deletion
+      // This will automatically update soldQuantity and remainingQuantity
+      // based on the remaining sales records
       if (sale.gemstoneId.isNotEmpty) {
         await LocalDb.updateGemstoneProductLedger(sale.gemstoneId);
       }
@@ -473,19 +469,21 @@ class _SaleFormState extends State<_SaleForm> {
       
                       // Sold out check is already done in dropdown filter
                       // This is a safety check
-                      if (g.quantity <= 0) {
-                        _toast('ဤပစ္စည်းသည် အရောင်းအဆုံးဖြစ်နေပါသည်။');
-                        return;
-                      }
+      // Check remaining quantity (not purchase quantity)
+      final remaining = LocalDb.gemstoneRemainingQuantity(g);
+      if (remaining <= 0) {
+        _toast('ဤပစ္စည်းသည် အရောင်းအဆုံးဖြစ်နေပါသည်။');
+        return;
+      }
       
-      // Account for what this sale previously held (edit case).
+      // For edit: account for the previous sale quantity being re-released
       final prevQty = (_isEdit && widget.existing!.gemstoneId == gemId)
           ? widget.existing!.quantity
           : 0;
       final prevWeight = (_isEdit && widget.existing!.gemstoneId == gemId)
           ? widget.existing!.weightCarat
           : 0;
-      final availableQty = g.quantity + prevQty;
+      final availableQty = remaining + prevQty;
       final availableWeight = g.weightCarat + prevWeight;
       if (qty > availableQty) {
         _toast('Stock မလောက်ပါ — ကျန် $availableQty ခုသာ ရှိသည်');
@@ -500,21 +498,10 @@ class _SaleFormState extends State<_SaleForm> {
 
     final box = LocalDb.sales();
 
-    // --- First, undo the previous sale's stock impact (edit case) ---
-    if (_isEdit) {
-      final old = widget.existing!;
-      if (old.gemstoneId.isNotEmpty) {
-        await LocalDb.adjustStock(
-            old.gemstoneId, -old.quantity, -old.weightCarat);
-      }
-    }
-
-    // --- Apply the new sale's stock deduction ---
-    if (gemId.isNotEmpty && _autoDeduct) {
-      await LocalDb.adjustStock(gemId, qty, weight);
-      // Also deduct the cost from inventory
-      await LocalDb.adjustCost(gemId, cost);
-    }
+    // NOTE: Stock is NO LONGER deducted from g.quantity
+    // Purchase quantity (g.quantity) remains immutable
+    // Sales only affect soldQuantity and remainingQuantity (derived fields)
+    // Cost tracking is handled via updateGemstoneProductLedger()
 
     // --- Calculate transaction history fields for Product-wise Independent Ledger ---
     final netSale = amount - sellCommission;
@@ -642,7 +629,7 @@ class _SaleFormState extends State<_SaleForm> {
                       ...gems.map((g) => DropdownMenuItem<String?>(
                             value: g.id,
                             child: Text(
-                              '${g.name} (ကျန် ${g.quantity}'
+                              '${g.name} (ကျန် ${LocalDb.gemstoneRemainingQuantity(g)}'
                               '${g.weightCarat > 0 ? ' • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}' : ''})',
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -669,7 +656,7 @@ class _SaleFormState extends State<_SaleForm> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'လက်ကျန်: ${selectedGem.quantity} ခု'
+                              'လက်ကျန်: ${LocalDb.gemstoneRemainingQuantity(selectedGem)} ခု'
                               '${selectedGem.weightCarat > 0 ? ' • ${_trim(selectedGem.weightCarat)} ${LocalDb.unitLabel(selectedGem.weightUnit)}' : ''}'
                               ' • ရောင်းဈေး ${NumberFormat('#,##0').format(selectedGem.sellPrice)}',
                               style: const TextStyle(
