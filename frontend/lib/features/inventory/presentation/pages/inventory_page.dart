@@ -203,7 +203,7 @@ class _InventoryPageState extends State<InventoryPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'လက်ကျန်စုစုပေါင်း အားလုံး',
+                            'လက်ကျန်စုစုပေါင်း အလုံး',
                             style: TextStyle(
                                 color: Colors.grey[400], fontSize: 11),
                           ),
