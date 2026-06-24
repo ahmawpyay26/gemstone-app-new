@@ -32,13 +32,13 @@ class _SalesPageState extends State<SalesPage> {
           context: context,
           builder: (c) => AlertDialog(
             backgroundColor: AppTheme.surfaceDark,
-            title: const Text('အတည်ပြုရန်'),
+            title: const Text('အရောင်းမှတ်တမ်း ဖျက်မည်'),
             content: const Text(
-                'ဤအရောင်းမှတ်တမ်းကို ဖျက်မှာလား။ ပစ္စည်းစာရင်းသို့ stock ပြန်ပေါင်းပေးပါမည်။'),
+                'ဤအရောင်းမှတ်တမ်းကို ဖျက်မှာ သေချာပါသလား?'),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(c, false),
-                  child: const Text('မလုပ်တော့ပါ')),
+                  child: const Text('မဖျက်တော့ပါ')),
               TextButton(
                   onPressed: () => Navigator.pop(c, true),
                   child: const Text('ဖျက်မည်',
@@ -47,18 +47,37 @@ class _SalesPageState extends State<SalesPage> {
           ),
         ) ??
         false;
-    if (ok) {
+    if (ok && sale != null) {
       // Restore stock that was deducted by this sale.
-      if (sale != null && sale.gemstoneId.isNotEmpty) {
+      if (sale.gemstoneId.isNotEmpty) {
         await LocalDb.adjustStock(
             sale.gemstoneId, -sale.quantity, -sale.weightCarat);
       }
+      
+      // Delete the sale record
       await LocalDb.sales().delete(key);
       
       // Recalculate remaining cost and profit after deletion
-      if (sale != null && sale.gemstoneId.isNotEmpty) {
+      if (sale.gemstoneId.isNotEmpty) {
         await LocalDb.updateGemstoneProductLedger(sale.gemstoneId);
       }
+      
+      // Create Audit Log
+      final currentUser = LocalDb.currentUser();
+      final auditLog = AuditLog(
+        id: LocalDb.genId(),
+        action: 'DELETE_SALE',
+        saleId: sale.id,
+        gemstoneId: sale.gemstoneId,
+        gemstoneName: sale.gemstoneName,
+        quantity: sale.quantity,
+        amount: sale.amount,
+        userId: currentUser['id'] as String,
+        userName: currentUser['name'] as String,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        details: 'ရောင်းချမှု မှတ်တမ်း ဖျက်ခြင်း - အငွေ: \${sale.amount}, အလုံးရေ: \${sale.quantity}',
+      );
+      await LocalDb.createAuditLog(auditLog);
     }
   }
 

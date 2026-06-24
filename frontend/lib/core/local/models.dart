@@ -485,3 +485,88 @@ class WorkerAdapter extends TypeAdapter<Worker> {
       ..write(obj.createdAt);
   }
 }
+
+// ---------------------------------------------------------------------------
+// AuditLog (အကျင့်စာရင်း)
+// ---------------------------------------------------------------------------
+class AuditLog {
+  String id;
+  String action; // DELETE_SALE, ADD_SALE, EDIT_SALE, ADD_PURCHASE, EDIT_PURCHASE, DELETE_PURCHASE
+  String? saleId; // ဆက်စပ်သော Sale Record ID
+  String? gemstoneId; // ဆက်စပ်သော Gemstone ID
+  String? gemstoneName; // ကျောက်အမည်
+  int? quantity; // အလုံးရေ
+  double? amount; // အငွေ
+  String userId; // User ID
+  String userName; // User အမည်
+  int timestamp; // ပြုလုပ်ချိန် (milliseconds since epoch)
+  String details; // အသေးစိတ်အချက်အလက်
+
+  AuditLog({
+    required this.id,
+    required this.action,
+    this.saleId,
+    this.gemstoneId,
+    this.gemstoneName,
+    this.quantity,
+    this.amount,
+    required this.userId,
+    required this.userName,
+    required this.timestamp,
+    required this.details,
+  });
+}
+
+class AuditLogAdapter extends TypeAdapter<AuditLog> {
+  @override
+  final int typeId = 6;
+
+  @override
+  AuditLog read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return AuditLog(
+      id: fields[0] as String,
+      action: fields[1] as String,
+      saleId: (fields[2] as String?),
+      gemstoneId: (fields[3] as String?),
+      gemstoneName: (fields[4] as String?),
+      quantity: (fields[5] as int?),
+      amount: fields[6] == null ? null : (fields[6] as num).toDouble(),
+      userId: fields[7] as String,
+      userName: fields[8] as String,
+      timestamp: fields[9] as int,
+      details: fields[10] as String,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, AuditLog obj) {
+    writer
+      ..writeByte(11)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.action)
+      ..writeByte(2)
+      ..write(obj.saleId)
+      ..writeByte(3)
+      ..write(obj.gemstoneId)
+      ..writeByte(4)
+      ..write(obj.gemstoneName)
+      ..writeByte(5)
+      ..write(obj.quantity)
+      ..writeByte(6)
+      ..write(obj.amount)
+      ..writeByte(7)
+      ..write(obj.userId)
+      ..writeByte(8)
+      ..write(obj.userName)
+      ..writeByte(9)
+      ..write(obj.timestamp)
+      ..writeByte(10)
+      ..write(obj.details);
+  }
+}

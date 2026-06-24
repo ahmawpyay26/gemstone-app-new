@@ -13,6 +13,7 @@ class LocalDb {
   static const String expensesBox = 'expenses';
   static const String workersBox = 'workers';
   static const String sessionBox = 'session';
+  static const String auditLogsBox = 'auditLogs';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -23,6 +24,7 @@ class LocalDb {
     if (!Hive.isAdapterRegistered(3)) Hive.registerAdapter(SaleAdapter());
     if (!Hive.isAdapterRegistered(4)) Hive.registerAdapter(ExpenseAdapter());
     if (!Hive.isAdapterRegistered(5)) Hive.registerAdapter(WorkerAdapter());
+    if (!Hive.isAdapterRegistered(6)) Hive.registerAdapter(AuditLogAdapter());
 
     await Hive.openBox<AppUser>(usersBox);
     await Hive.openBox<Gemstone>(gemstonesBox);
@@ -30,6 +32,7 @@ class LocalDb {
     await Hive.openBox<Expense>(expensesBox);
     await Hive.openBox<Worker>(workersBox);
     await Hive.openBox(sessionBox);
+    await Hive.openBox<AuditLog>(auditLogsBox);
 
     await _seedDefaults();
   }
@@ -292,6 +295,7 @@ class LocalDb {
   static Box<Expense> expenses() => Hive.box<Expense>(expensesBox);
   static Box<Worker> workers() => Hive.box<Worker>(workersBox);
   static Box<AppUser> users() => Hive.box<AppUser>(usersBox);
+  static Box<AuditLog> auditLogs() => Hive.box<AuditLog>(auditLogsBox);
 
   // -------------------------------------------------------------------------
   // Inventory stock helpers (auto deduction on sale)
@@ -783,4 +787,52 @@ class LocalDb {
 
   // recordProfitLoss removed - profit/loss is now calculated directly from sales records
   // without creating separate expense entries to avoid double-counting
+
+  // -------------------------------------------------------------------------
+  // Audit Log Methods
+  // -------------------------------------------------------------------------
+
+  /// အကျင့်စာရင်းတစ်ခု သိမ်းဆည်းခြင်း
+  static Future<void> createAuditLog(AuditLog log) async {
+    try {
+      await auditLogs().add(log);
+    } catch (e) {
+      print('Error creating audit log: $e');
+    }
+  }
+
+  /// အကျင့်စာရင်းအားလုံး ရယူခြင်း (အနောက်ဆုံးအရင်း)
+  static List<AuditLog> getAllAuditLogs() {
+    final logs = auditLogs().values.toList();
+    // Sort by timestamp descending (newest first)
+    logs.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return logs;
+  }
+
+  /// Action အလိုက် အကျင့်စာရင်းများ ရယူခြင်း
+  static List<AuditLog> getAuditLogsByAction(String action) {
+    final logs = auditLogs().values
+        .where((log) => log.action == action)
+        .toList();
+    logs.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return logs;
+  }
+
+  /// User အလိုက် အကျင့်စာရင်းများ ရယူခြင်း
+  static List<AuditLog> getAuditLogsByUser(String userId) {
+    final logs = auditLogs().values
+        .where((log) => log.userId == userId)
+        .toList();
+    logs.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return logs;
+  }
+
+  /// အကျင့်စာရင်းအားလုံး ဖျက်ခြင်း (Admin အတွက်)
+  static Future<void> clearAllAuditLogs() async {
+    try {
+      await auditLogs().clear();
+    } catch (e) {
+      print('Error clearing audit logs: $e');
+    }
+  }
 }
