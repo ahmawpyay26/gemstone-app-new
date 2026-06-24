@@ -339,13 +339,16 @@ class _InventoryPageState extends State<InventoryPage> {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: Text(
-                                        'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • အရေအတွက်: ${g.quantity}',
-                                        style: const TextStyle(
-                                            color: AppTheme.primaryAccent,
-                                            fontSize: 12)),
+                                    child: Builder(builder: (c) {
+                                      final remaining = LocalDb.gemstoneRemainingQuantity(g);
+                                      return Text(
+                                          'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • ဝယ်ထားသော: ${g.quantity} • ကျန်ရှိ: $remaining',
+                                          style: const TextStyle(
+                                              color: AppTheme.primaryAccent,
+                                              fontSize: 12));
+                                    }),
                                   ),
-                                  if (g.quantity <= 0)
+                                  if (LocalDb.gemstoneRemainingQuantity(g) <= 0)
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 2),
