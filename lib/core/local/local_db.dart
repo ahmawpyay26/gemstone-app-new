@@ -285,7 +285,10 @@ class LocalDb {
     s.put('userName', user.name);
     s.put('userEmail', user.email);
     s.put('userUsername', user.username);
-    s.put('userRole', user.role);
+    // AppUser မှန်သမျှ Super Admin ဖြစ်သည်။ role string မည်သည့်ပုံစံ
+    // ဖြစ်စေကာမူ (super_admin/owner/empty) ၏ဟုတ် 'admin' အဖြစ် normalize လုပ်
+    // ခြင်းဖြင့် downstream permission စစ်ဆေးမှုများ တည်မှန်စေသည်။
+    s.put('userRole', 'admin');
     s.put('userType', 'AppUser');
     s.put('loggedIn', true);
   }
@@ -861,11 +864,51 @@ class LocalDb {
   // Admin & Permission Helpers
   // -------------------------------------------------------------------------
 
-  /// လက်ရှိ User သည် Admin ဖြစ်သည်ကို စစ်ဆေးခြင်း
+  /// လက်ရှိ User သည် Admin (Super Admin) ဖြစ်သည်ကို စစ်ဆေးခြင်း
+  ///
+  /// Super Admin သည် AppUser ဖြစ်ပြီး အမြဲတမ်း ကန့်သတ်မှုမရှိ ဝင်ရောက်ခွင့်ရှိရမည်။
+  /// Session ၏ `userType` သည် 'AppUser' ဖြစ်ပါက (သို့မဟုတ် role သည်
+  /// admin/super_admin/owner တစ်ခုခုဖြစ်ပါက) admin အဖြစ် သတ်မှတ်သည်။
+  /// ဤနည်းဖြင့် role string မကိုက်ညီမှု (admin vs super_admin vs owner)
+  /// ကြောင့် Super Admin ကန့်သတ်ခံရခြင်းကို လုံးဝ ကာကွယ်သည်။
   static bool isCurrentUserAdmin() {
     try {
-      final user = currentUser();
-      return user['role'] == 'admin';
+      final s = Hive.box(sessionBox);
+      // Primary check: any logged-in AppUser is a Super Admin.
+      final userType = s.get('userType', defaultValue: '') as String;
+      if (userType == 'AppUser') return true;
+
+      // Fallback check: role string indicates an administrator/owner.
+      final role = (s.get('userRole', defaultValue: '') as String).toLowerCase();
+      if (role == 'admin' || role == 'super_admin' || role == 'owner') {
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// လက်ရှိ login ဝင်သူသည် default Super Admin ဖြစ်မှ မဖြစ် စစ်ဆေးခြင်း။
+  ///
+  /// Rule: `username == "admin"` သို့မဟုတ် `role == "super_admin"` ဖြစ်ပါက
+  /// Super Admin အဖြစ် သတ်မှတ်ပြီး permission စစ်ဆေးမှုအားလုံး ချက်ခြင်း TRUE ဖြစ်သည်။
+  static bool isCurrentUserSuperAdmin() {
+    try {
+      final s = Hive.box(sessionBox);
+      final username =
+          (s.get('userUsername', defaultValue: '') as String).toLowerCase();
+      final role =
+          (s.get('userRole', defaultValue: '') as String).toLowerCase();
+      final userType = s.get('userType', defaultValue: '') as String;
+
+      if (username == 'admin') return true;
+      if (role == 'super_admin' || role == 'admin' || role == 'owner') {
+        return true;
+      }
+      if (userType == 'AppUser') return true;
+      return false;
     } catch (e) {
       return false;
     }
@@ -1072,26 +1115,31 @@ class LocalDb {
 
   /// Sale ကို ဖျက်နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
   static bool canDeleteSale() {
+    if (isCurrentUserSuperAdmin()) return true;
     return isCurrentUserAdmin();
   }
 
   /// Sale ကို Restore နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
   static bool canRestoreSale() {
+    if (isCurrentUserSuperAdmin()) return true;
     return isCurrentUserAdmin();
   }
 
   /// Sale ကို Edit နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
   static bool canEditSale() {
+    if (isCurrentUserSuperAdmin()) return true;
     return isCurrentUserAdmin();
   }
 
   /// Purchase ကို ဖျက်နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
   static bool canDeletePurchase() {
+    if (isCurrentUserSuperAdmin()) return true;
     return isCurrentUserAdmin();
   }
 
   /// Purchase ကို Edit နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
   static bool canEditPurchase() {
+    if (isCurrentUserSuperAdmin()) return true;
     return isCurrentUserAdmin();
   }
 
