@@ -25,16 +25,16 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
       
-      - name: Clear Flutter cache
-        run: |
-          flutter clean
-          rm -rf ~/.pub-cache
-          rm -rf ~/.gradle
-      
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
           channel: 'stable'
+      
+      - name: Clean Flutter cache
+        run: |
+          flutter clean
+          rm -rf ~/.pub-cache || true
+          rm -rf ~/.gradle || true
       
       - name: Get Flutter dependencies
         run: flutter pub get
