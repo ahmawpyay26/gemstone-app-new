@@ -66,6 +66,27 @@ class _SalesPageState extends State<SalesPage> {
     }
   }
 
+  Future<void> _printSale(Sale sale) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ပရင့်ထုတ်မှု: ${sale.gemstoneName}'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
+      // TODO: Implement actual print functionality
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('အမှားအယွင်း: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _delete(dynamic key) async {
     // Check admin permission
     if (!LocalDb.canDeleteSale()) {
@@ -222,20 +243,55 @@ class _SalesPageState extends State<SalesPage> {
                                           color: AppTheme.successColor,
                                           fontWeight: FontWeight.bold)),
                                   if (s.costPrice > 0) _profitBadge(s),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      InkWell(
-                                        onTap: () => _exportVoucher(s),
-                                        child: const Icon(Icons.file_download_outlined,
-                                            color: Colors.blue, size: 20),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      InkWell(
-                                        onTap: LocalDb.canDeleteSale() ? () => _delete(key) : null,
-                                        child: Icon(Icons.delete_outline,
-                                            color: LocalDb.canDeleteSale() ? AppTheme.errorColor : Colors.grey[600], size: 20),
-                                      ),
+                                  PopupMenuButton<String>(
+                                    icon: Icon(Icons.more_vert,
+                                        color: LocalDb.canEditSale() ? Colors.white : Colors.grey[600]),
+                                    enabled: LocalDb.canEditSale(),
+                                    onSelected: (v) {
+                                      if (v == 'edit') _openForm(existing: s, key: key);
+                                      if (v == 'delete') _delete(key);
+                                      if (v == 'print') _printSale(s);
+                                      if (v == 'pdf') _exportVoucher(s);
+                                    },
+                                    itemBuilder: (_) => [
+                                      PopupMenuItem(
+                                          value: 'edit',
+                                          enabled: LocalDb.canEditSale(),
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.edit, size: 18, color: Colors.white),
+                                              SizedBox(width: 8),
+                                              Text('ပြုပြင်ရန်'),
+                                            ],
+                                          )),
+                                      PopupMenuItem(
+                                          value: 'delete',
+                                          enabled: LocalDb.canDeleteSale(),
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.delete, size: 18, color: AppTheme.errorColor),
+                                              SizedBox(width: 8),
+                                              Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
+                                            ],
+                                          )),
+                                      PopupMenuItem(
+                                          value: 'print',
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.print, size: 18, color: Colors.white),
+                                              SizedBox(width: 8),
+                                              Text('ပရင့်ထုတ်ရန်'),
+                                            ],
+                                          )),
+                                      PopupMenuItem(
+                                          value: 'pdf',
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.picture_as_pdf, size: 18, color: Colors.white),
+                                              SizedBox(width: 8),
+                                              Text('PDF ထုတ်ရန်'),
+                                            ],
+                                          )),
                                     ],
                                   ),
                                 ],
