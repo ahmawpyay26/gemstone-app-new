@@ -59,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gemstone-app-release
-          path: frontend/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
       
       # Step 9: Create GitHub Release (on tag push)
@@ -67,7 +67,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: frontend/build/app/outputs/flutter-apk/app-release.apk
+          files: build/app/outputs/flutter-apk/app-release.apk
           body: |
             # Gemstone Management App - Release ${{ github.ref_name }}
             
@@ -105,5 +105,5 @@ jobs:
         if: success()
         run: |
           echo "✅ APK built successfully!"
-          echo "📦 Release APK: frontend/build/app/outputs/flutter-apk/app-release.apk"
+          echo "📦 Release APK: build/app/outputs/flutter-apk/app-release.apk"
           echo "📥 Download from GitHub Actions Artifacts or GitHub Releases"

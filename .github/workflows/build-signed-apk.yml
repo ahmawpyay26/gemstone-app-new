@@ -44,7 +44,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gemstone-app-release-${{ github.event.inputs.version }}
-          path: frontend/build/app/outputs/flutter-apk/
+          path: build/app/outputs/flutter-apk/
           retention-days: 30
       
       # Step 7: Create release notes
