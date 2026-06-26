@@ -604,3 +604,194 @@ class AuditLogAdapter extends TypeAdapter<AuditLog> {
       ..write(obj.details);
   }
 }
+
+
+// ---------------------------------------------------------------------------
+// RBAC: Permission
+// ---------------------------------------------------------------------------
+class Permission {
+  String id;
+  String name; // e.g., "Dashboard", "Inventory", "Sales", "Delete", "Export"
+  String description;
+
+  Permission({
+    required this.id,
+    required this.name,
+    this.description = '',
+  });
+}
+
+class PermissionAdapter extends TypeAdapter<Permission> {
+  @override
+  final int typeId = 7;
+
+  @override
+  Permission read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return Permission(
+      id: fields[0] as String,
+      name: fields[1] as String,
+      description: (fields[2] as String?) ?? '',
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Permission obj) {
+    writer
+      ..writeByte(3)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.description);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RBAC: Role
+// ---------------------------------------------------------------------------
+class Role {
+  String id;
+  String name; // e.g., "Super Admin", "Staff", "Viewer"
+  List<String> permissionIds; // list of permission IDs
+  String description;
+
+  Role({
+    required this.id,
+    required this.name,
+    this.permissionIds = const [],
+    this.description = '',
+  });
+}
+
+class RoleAdapter extends TypeAdapter<Role> {
+  @override
+  final int typeId = 8;
+
+  @override
+  Role read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return Role(
+      id: fields[0] as String,
+      name: fields[1] as String,
+      permissionIds: (fields[2] as List?)?.cast<String>() ?? [],
+      description: (fields[3] as String?) ?? '',
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Role obj) {
+    writer
+      ..writeByte(4)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.permissionIds)
+      ..writeByte(3)
+      ..write(obj.description);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RBAC: StaffUser
+// ---------------------------------------------------------------------------
+class StaffUser {
+  String id;
+  String fullName;
+  String username; // unique
+  String passwordHash; // hashed password
+  String phoneNumber;
+  String position; // e.g., "Sales Manager", "Inventory Staff"
+  String roleId; // reference to Role
+  List<String> permissionIds; // direct permission list (can override role permissions)
+  bool isActive; // Active / Disabled
+  int createdAt;
+  int updatedAt;
+  String createdBy; // user ID who created this staff
+  int? lastLoginAt; // timestamp of last login
+
+  StaffUser({
+    required this.id,
+    required this.fullName,
+    required this.username,
+    required this.passwordHash,
+    required this.phoneNumber,
+    required this.position,
+    required this.roleId,
+    this.permissionIds = const [],
+    this.isActive = true,
+    required this.createdAt,
+    int? updatedAt,
+    required this.createdBy,
+    this.lastLoginAt,
+  }) : updatedAt = updatedAt ?? createdAt;
+}
+
+class StaffUserAdapter extends TypeAdapter<StaffUser> {
+  @override
+  final int typeId = 9;
+
+  @override
+  StaffUser read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return StaffUser(
+      id: fields[0] as String,
+      fullName: fields[1] as String,
+      username: fields[2] as String,
+      passwordHash: fields[3] as String,
+      phoneNumber: fields[4] as String,
+      position: fields[5] as String,
+      roleId: fields[6] as String,
+      permissionIds: (fields[7] as List?)?.cast<String>() ?? [],
+      isActive: (fields[8] as bool?) ?? true,
+      createdAt: fields[9] as int,
+      updatedAt: (fields[10] as int?) ?? fields[9] as int,
+      createdBy: fields[11] as String,
+      lastLoginAt: fields[12] as int?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, StaffUser obj) {
+    writer
+      ..writeByte(13)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.fullName)
+      ..writeByte(2)
+      ..write(obj.username)
+      ..writeByte(3)
+      ..write(obj.passwordHash)
+      ..writeByte(4)
+      ..write(obj.phoneNumber)
+      ..writeByte(5)
+      ..write(obj.position)
+      ..writeByte(6)
+      ..write(obj.roleId)
+      ..writeByte(7)
+      ..write(obj.permissionIds)
+      ..writeByte(8)
+      ..write(obj.isActive)
+      ..writeByte(9)
+      ..write(obj.createdAt)
+      ..writeByte(10)
+      ..write(obj.updatedAt)
+      ..writeByte(11)
+      ..write(obj.createdBy)
+      ..writeByte(12)
+      ..write(obj.lastLoginAt);
+  }
+}

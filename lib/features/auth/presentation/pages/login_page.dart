@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
+import '../../../../core/local/models.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/password_service.dart';
+import '../../../../core/services/permission_service.dart';
+import '../../../../core/services/audit_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -40,22 +45,91 @@ class _LoginPageState extends State<LoginPage> {
       _errorMessage = null;
     });
 
-    // Offline login — no network required.
-    await Future.delayed(const Duration(milliseconds: 300));
-    final user = AuthService.login(
-      _usernameController.text.trim(),
-      _passwordController.text,
-    );
+    try {
+      final username = _usernameController.text.trim();
+      final password = _passwordController.text;
 
-    if (!mounted) return;
-    if (user != null) {
-      LocalDb.saveSession(user);
-      // Do not save credentials for security reasons
-      LocalDb.clearRememberedCredentials();
-      context.go('/dashboard');
-    } else {
+      // Try AppUser (Super Admin) first
+      final userBox = Hive.box<AppUser>(LocalDb.usersBox);
+      AppUser? appUser;
+      for (final user in userBox.values) {
+        if (user.username == username) {
+          appUser = user;
+          break;
+        }
+      }
+
+      if (appUser != null && PasswordService.verifyPassword(password, appUser.passwordHash)) {
+        // Super Admin login successful
+        await PermissionService.setCurrentUser(appUser, 'AppUser');
+        await AuditService.log(action: AuditService.login);
+        LocalDb.saveSession(appUser);
+
+        if (mounted) {
+          context.go('/dashboard');
+        }
+        return;
+      }
+
+      // Try StaffUser
+      final staffBox = Hive.box<StaffUser>(LocalDb.staffUsersBox);
+      StaffUser? staff;
+      for (final s in staffBox.values) {
+        if (s.username == username) {
+          staff = s;
+          break;
+        }
+      }
+
+      if (staff != null) {
+        if (!staff.isActive) {
+          setState(() {
+            _errorMessage = 'ဤအကောင့် ပိတ်ထားသည်';
+            _isLoading = false;
+          });
+          return;
+        }
+
+        if (PasswordService.verifyPassword(password, staff.passwordHash)) {
+          // Staff login successful
+          await PermissionService.setCurrentUser(staff, 'StaffUser');
+          await AuditService.log(action: AuditService.login);
+
+          // Update last login time
+          final index = staffBox.values.toList().indexOf(staff);
+          final updated = StaffUser(
+            id: staff.id,
+            fullName: staff.fullName,
+            username: staff.username,
+            passwordHash: staff.passwordHash,
+            phoneNumber: staff.phoneNumber,
+            position: staff.position,
+            roleId: staff.roleId,
+            permissionIds: staff.permissionIds,
+            isActive: staff.isActive,
+            createdAt: staff.createdAt,
+            updatedAt: staff.updatedAt,
+            createdBy: staff.createdBy,
+            lastLoginAt: DateTime.now().millisecondsSinceEpoch,
+          );
+          await staffBox.putAt(index, updated);
+          LocalDb.saveSession(staff);
+
+          if (mounted) {
+            context.go('/dashboard');
+          }
+          return;
+        }
+      }
+
+      // Login failed
       setState(() {
         _errorMessage = 'အသုံးပြုသူအမည် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည်';
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Login error: $e';
         _isLoading = false;
       });
     }

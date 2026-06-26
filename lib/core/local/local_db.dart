@@ -14,6 +14,9 @@ class LocalDb {
   static const String workersBox = 'workers';
   static const String sessionBox = 'session';
   static const String auditLogsBox = 'auditLogs';
+  static const String staffUsersBox = 'staffUsers';
+  static const String permissionsBox = 'permissions';
+  static const String rolesBox = 'roles';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -25,6 +28,9 @@ class LocalDb {
     if (!Hive.isAdapterRegistered(4)) Hive.registerAdapter(ExpenseAdapter());
     if (!Hive.isAdapterRegistered(5)) Hive.registerAdapter(WorkerAdapter());
     if (!Hive.isAdapterRegistered(6)) Hive.registerAdapter(AuditLogAdapter());
+    if (!Hive.isAdapterRegistered(7)) Hive.registerAdapter(PermissionAdapter());
+    if (!Hive.isAdapterRegistered(8)) Hive.registerAdapter(RoleAdapter());
+    if (!Hive.isAdapterRegistered(9)) Hive.registerAdapter(StaffUserAdapter());
 
     await Hive.openBox<AppUser>(usersBox);
     await Hive.openBox<Gemstone>(gemstonesBox);
@@ -33,6 +39,9 @@ class LocalDb {
     await Hive.openBox<Worker>(workersBox);
     await Hive.openBox(sessionBox);
     await Hive.openBox<AuditLog>(auditLogsBox);
+    await Hive.openBox<StaffUser>(staffUsersBox);
+    await Hive.openBox<Permission>(permissionsBox);
+    await Hive.openBox<Role>(rolesBox);
 
     await _seedDefaults();
   }
@@ -76,9 +85,53 @@ class LocalDb {
         username: 'admin',
         passwordHash: PasswordService.hashPassword('admin123'),
         password: '', // empty for new users
-        role: 'owner',
+        role: 'super_admin',
         createdAt: now,
         updatedAt: now,
+      ));
+    }
+
+    // Initialize default permissions if not exists
+    final permissions = Hive.box<Permission>(permissionsBox);
+    if (permissions.isEmpty) {
+      final defaultPermissions = [
+        'Dashboard',
+        'Inventory',
+        'Purchase Records',
+        'Sales',
+        'Expenses',
+        'Workers',
+        'Customers',
+        'Reports',
+        'Audit Log',
+        'Settings',
+        'Export',
+        'Delete',
+        'Restore',
+        'Edit Purchase',
+        'Edit Sale',
+        'Delete Purchase',
+        'Delete Sale',
+      ];
+      for (final perm in defaultPermissions) {
+        await permissions.add(Permission(
+          id: genId(),
+          name: perm,
+          description: perm,
+        ));
+      }
+    }
+
+    // Initialize Super Admin role with all permissions if not exists
+    final roles = Hive.box<Role>(rolesBox);
+    if (roles.isEmpty) {
+      final perms = Hive.box<Permission>(permissionsBox);
+      final allPermissionIds = perms.values.map((p) => p.id).toList();
+      await roles.add(Role(
+        id: genId(),
+        name: 'Super Admin',
+        permissionIds: allPermissionIds,
+        description: 'Full access to all features',
       ));
     }
 
