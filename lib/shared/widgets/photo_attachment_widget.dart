@@ -146,7 +146,7 @@ class _PhotoAttachmentWidgetState extends State<PhotoAttachmentWidget> {
                 onPressed: _addPhotoFromCamera,
                 icon: const Icon(Icons.camera_alt),
                 label: Text(
-                  'ကင်မရာ',
+                  '📷 ကင်မရာ',
                   style: const TextStyle(
                     fontFamily: 'NotoSansMyammer',
                     fontSize: 14,
@@ -161,7 +161,7 @@ class _PhotoAttachmentWidgetState extends State<PhotoAttachmentWidget> {
                 onPressed: _addPhotoFromGallery,
                 icon: const Icon(Icons.photo_library),
                 label: Text(
-                  'ဂ္ယာလารီ',
+                  '🖼 ပြခန်း',
                   style: const TextStyle(
                     fontFamily: 'NotoSansMyammer',
                     fontSize: 14,

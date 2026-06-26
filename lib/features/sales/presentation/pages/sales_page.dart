@@ -296,7 +296,7 @@ class _SalesPageState extends State<SalesPage> {
                                   ),
                                 ],
                               ),
-                              onTap: () => _openForm(existing: s, key: key),
+                              onTap: () => _showDetails(s),
                             ),
                           );
                         },
@@ -414,6 +414,37 @@ class _SalesPageState extends State<SalesPage> {
           ],
         ),
       );
+
+  void _showDetails(Sale sale) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(sale.gemstoneName),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('အရေအတွက်: ${sale.quantity}'),
+              if (sale.weightCarat > 0)
+                Text('အလေးချိန်: ${sale.weightCarat} ${_saleUnit(sale)}'),
+              Text('ဝယ်သူ: ${sale.customerName}'),
+              Text('ငွေပမာဏ: ${_money.format(sale.amount)}'),
+              Text('ငွေပေးချေမှု: ${_payLabel(sale.paymentMethod)}'),
+              Text('နေ့စွဲ: ${_date.format(DateTime.fromMillisecondsSinceEpoch(sale.saleDate))}'),
+              if (sale.note.isNotEmpty) Text('မှတ်ချက်: ${sale.note}'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ပိတ်ရန်'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SaleForm extends StatefulWidget {
