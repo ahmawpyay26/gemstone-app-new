@@ -160,38 +160,10 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            set -x
-            adb wait-for-device
-            # Wait for full boot (max ~5 min)
-            boot=""
-            for i in $(seq 1 60); do
-              boot=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-              if [ "$boot" = "1" ]; then echo "Device booted"; break; fi
-              echo "waiting for boot ($i)"; sleep 5
-            done
-            adb shell input keyevent 82 || true
-
-            echo "=== Installing APK ==="
-            adb install -r artifact/app-release.apk
-
-            echo "=== Launching app (monkey) ==="
-            adb shell monkey -p com.gemstone.management -c android.intent.category.LAUNCHER 1 || true
-            sleep 8
-
-            echo "=== Crash check ==="
-            if adb logcat -d | grep -i "FATAL EXCEPTION\|AndroidRuntime"; then
-              echo "❌ Crash detected in logcat"
-              exit 1
-            fi
-
-            echo "=== Process check ==="
-            if adb shell pidof com.gemstone.management > /dev/null; then
-              echo "✅ App process is running"
-            else
-              echo "⚠️ App process not detected (may have finished launch activity)"
-            fi
-            echo "✅ Smoke test finished"
+          # The action already waits for full boot before running this script.
+          # Keep the script as simple sequential commands (no shell loops) to
+          # avoid the runner's sh wrapper mis-parsing multiline constructs.
+          script: bash smoke_test.sh
 
   # ---------------------------------------------------------------------------
   # PAT summary: gates ONLY on the mandatory build + verify jobs.
