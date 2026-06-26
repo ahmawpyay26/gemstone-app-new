@@ -17,6 +17,9 @@ adb shell getprop sys.boot_completed || true
 adb shell input keyevent 82 || true
 sleep 2
 
+# Clear logcat so we only inspect events from THIS test run.
+adb logcat -c || true
+
 echo "=== Installing APK: $APK ==="
 if ! adb install -r "$APK"; then
   echo "❌ APK installation failed"
@@ -27,24 +30,53 @@ echo "✅ APK installed"
 
 echo "=== Launching app via monkey ==="
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 || true
-sleep 10
+sleep 12
 
-echo "=== Crash check ==="
-if adb logcat -d | grep -i "FATAL EXCEPTION"; then
-  echo "❌ Fatal crash detected in logcat"
-  adb logcat -d | tail -120 || true
+# Resolve our app's PID (if running).
+APP_PID="$(adb shell pidof "$PKG" 2>/dev/null | tr -d '\r')"
+echo "App PID: '${APP_PID:-<none>}'"
+
+echo "=== Crash check (scoped to our package only) ==="
+# Pull the full logcat dump, then look for a FATAL EXCEPTION block that is
+# attributable to OUR application. We deliberately ignore FATAL exceptions
+# raised by unrelated system/Google services (e.g. UiThreadHelper in the
+# Google app), which are background noise on GitHub-hosted emulators.
+adb logcat -d > full_logcat.txt 2>/dev/null || true
+
+CRASH=0
+# Case 1: an AndroidRuntime crash block that names our package directly.
+if grep -A 30 "FATAL EXCEPTION" full_logcat.txt | grep -q "$PKG"; then
+  CRASH=1
+fi
+# Case 2: a crash line emitted by our PID.
+if [ -n "${APP_PID:-}" ]; then
+  if grep "FATAL EXCEPTION" full_logcat.txt | grep -qw "$APP_PID"; then
+    CRASH=1
+  fi
+fi
+
+if [ "$CRASH" = "1" ]; then
+  echo "❌ Fatal crash detected for $PKG"
+  grep -B2 -A40 "FATAL EXCEPTION" full_logcat.txt | tail -120 || true
   exit 1
 fi
-echo "✅ No fatal crash detected"
+echo "✅ No fatal crash attributable to $PKG"
 
 echo "=== Process check ==="
-if adb shell pidof "$PKG" >/dev/null 2>&1; then
-  echo "✅ App process is running"
+if [ -n "${APP_PID:-}" ]; then
+  echo "✅ App process is running (pid $APP_PID)"
 else
-  echo "⚠️ App process not detected after launch (non-fatal)"
+  # Re-check once more; the launcher activity may still be settling.
+  sleep 3
+  APP_PID="$(adb shell pidof "$PKG" 2>/dev/null | tr -d '\r')"
+  if [ -n "${APP_PID:-}" ]; then
+    echo "✅ App process is running (pid $APP_PID)"
+  else
+    echo "⚠️ App process not detected after launch (non-fatal signal)"
+  fi
 fi
 
-echo "=== Final logcat tail ==="
-adb logcat -d | tail -40 || true
+echo "=== App-scoped logcat tail ==="
+grep -i "$PKG\|flutter" full_logcat.txt | tail -30 || true
 
 echo "✅ Smoke test finished successfully"
