@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
+import '../../../../shared/widgets/photo_attachment_widget.dart';
 
 extension DateTimeExtension on DateTime {
   DateTime toDateOnly() => DateTime(year, month, day);
@@ -524,11 +525,13 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _origin;
   late final TextEditingController _note;
   String _weightUnit = 'kg';
+  late List<String> _photoPaths;
 
   @override
   void initState() {
     super.initState();
     final e = widget.existing;
+    _photoPaths = List.from(e?.photoPaths ?? []);
     _name = TextEditingController(text: e?.name ?? '');
     _type = TextEditingController(text: e?.type ?? '');
     _weight = TextEditingController(text: e?.weightCarat.toString() ?? '');
@@ -606,6 +609,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       g.color = _color.text.trim();
       g.origin = _origin.text.trim();
       g.note = _note.text.trim();
+      g.photoPaths = _photoPaths;
       await box.put(widget.hiveKey, g);
     } else {
       await box.add(Gemstone(
@@ -628,6 +632,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         status: 'in_stock',
         note: _note.text.trim(),
         createdAt: DateTime.now().millisecondsSinceEpoch,
+        photoPaths: _photoPaths,
       ));
     }
     if (mounted) Navigator.pop(context);
@@ -722,6 +727,14 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                   Expanded(child: _field(_origin, 'မူရင်းနေရာ')),
                 ]),
                 _field(_note, 'မှတ်ချက်'),
+                const SizedBox(height: 20),
+                PhotoAttachmentWidget(
+                  photoPaths: _photoPaths,
+                  onPhotosChanged: (photos) {
+                    setState(() => _photoPaths = photos);
+                  },
+                  recordType: 'purchase',
+                ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,

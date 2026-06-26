@@ -109,6 +109,7 @@ class Gemstone {
   // totalProfit is CALCULATED from Sales records, not stored
   int remainingQuantity; // ကျန်ရှိအရေအတွက်
   int soldQuantity; // ရောင်းပြီးအရေအတွက်
+  List<String> photoPaths; // ဓာတ်ပုံ file paths
 
   Gemstone({
     required this.id,
@@ -135,6 +136,7 @@ class Gemstone {
     this.remainingCost = 0,
     this.remainingQuantity = 0,
     this.soldQuantity = 0,
+    this.photoPaths = const [],
   });
 }
 
@@ -180,13 +182,14 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       remainingCost: fields[21] == null ? 0 : (fields[21] as num).toDouble(),
       remainingQuantity: fields[22] == null ? 0 : (fields[22] as int),
       soldQuantity: fields[23] == null ? 0 : (fields[23] as int),
+      photoPaths: (fields[24] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
 
   @override
   void write(BinaryWriter writer, Gemstone obj) {
     writer
-      ..writeByte(24)
+      ..writeByte(25)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -234,12 +237,14 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       ..writeByte(22)
       ..write(obj.remainingQuantity)
       ..writeByte(23)
-      ..write(obj.soldQuantity);
+      ..write(obj.soldQuantity)
+      ..writeByte(24)
+      ..write(obj.photoPaths);
   }
 }
 
 // ---------------------------------------------------------------------------
-// Sale (ရောင်းချမှု)
+// Expense (အစ်တွချပ်မရေအ)
 // ---------------------------------------------------------------------------
 class Sale {
   String id;
@@ -267,6 +272,9 @@ class Sale {
   int? deletedAt; // Deletion timestamp
   String? deletedBy; // User who deleted
   String? deleteReason; // Reason for deletion
+  
+  // Photo Attachments
+  List<String> photoPaths; // ဓာတ်ပုံ file paths
 
   Sale({
     required this.id,
@@ -290,6 +298,7 @@ class Sale {
     this.deletedAt,
     this.deletedBy,
     this.deleteReason,
+    this.photoPaths = const [],
   });
 }
 
@@ -326,13 +335,14 @@ class SaleAdapter extends TypeAdapter<Sale> {
       deletedAt: fields[18] as int?,
       deletedBy: fields[19] as String?,
       deleteReason: fields[20] as String?,
+      photoPaths: (fields[21] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(21)
+      ..writeByte(22)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -374,7 +384,9 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(19)
       ..write(obj.deletedBy)
       ..writeByte(20)
-      ..write(obj.deleteReason);
+      ..write(obj.deleteReason)
+      ..writeByte(21)
+      ..write(obj.photoPaths);
   }
 }
 

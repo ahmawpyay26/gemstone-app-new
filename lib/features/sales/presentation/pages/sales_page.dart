@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
+import '../../../../shared/widgets/photo_attachment_widget.dart';
+import '../../../../core/services/voucher_export_service.dart';
+import 'package:share_plus/share_plus.dart';
 
 class SalesPage extends StatefulWidget {
   const SalesPage({Key? key}) : super(key: key);
@@ -35,6 +38,32 @@ class _SalesPageState extends State<SalesPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => _SaleForm(existing: existing, hiveKey: key),
     );
+  }
+
+  Future<void> _exportVoucher(Sale sale) async {
+    try {
+      final voucherService = VoucherExportService();
+      final file = await voucherService.generatePdfVoucher(sale);
+      if (file != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('လက်ခြင်း PDF သိမ်းဆည်းပြီးပါပြီ'),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+        // Optionally share the file
+        await Share.shareXFiles([XFile(file.path)], text: 'ရောင်းချခြင်းလက်ခြင်း');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('အမှားအယွင်း: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _delete(dynamic key) async {
@@ -193,10 +222,21 @@ class _SalesPageState extends State<SalesPage> {
                                           color: AppTheme.successColor,
                                           fontWeight: FontWeight.bold)),
                                   if (s.costPrice > 0) _profitBadge(s),
-                                  InkWell(
-                                    onTap: LocalDb.canDeleteSale() ? () => _delete(key) : null,
-                                    child: Icon(Icons.delete_outline,
-                                        color: LocalDb.canDeleteSale() ? AppTheme.errorColor : Colors.grey[600], size: 20),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      InkWell(
+                                        onTap: () => _exportVoucher(s),
+                                        child: const Icon(Icons.file_download_outlined,
+                                            color: Colors.blue, size: 20),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      InkWell(
+                                        onTap: LocalDb.canDeleteSale() ? () => _delete(key) : null,
+                                        child: Icon(Icons.delete_outline,
+                                            color: LocalDb.canDeleteSale() ? AppTheme.errorColor : Colors.grey[600], size: 20),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -341,6 +381,7 @@ class _SaleFormState extends State<_SaleForm> {
   late final TextEditingController _commission; // sell-side commission (ပွဲခ)
   String _payment = 'cash';
   late DateTime _saleDate;
+  late List<String> _photoPaths;
 
   String? _selectedGemId; // null => manual entry
   bool _autoDeduct = true;
@@ -351,6 +392,7 @@ class _SaleFormState extends State<_SaleForm> {
   void initState() {
     super.initState();
     final e = widget.existing;
+    _photoPaths = List.from(e?.photoPaths ?? []);
     _customer = TextEditingController(text: e?.customerName ?? '');
     _amount =
         TextEditingController(text: e != null ? _trim(e.amount) : '');
@@ -546,6 +588,7 @@ class _SaleFormState extends State<_SaleForm> {
       s.remainingCostAfterSale = remainingCostAfterSale;
       s.profitGenerated = profitGenerated;
       s.accumulatedProfit = accumulatedProfit;
+      s.photoPaths = _photoPaths;
       await box.put(widget.hiveKey, s);
     } else {
       await box.add(Sale(
@@ -566,6 +609,7 @@ class _SaleFormState extends State<_SaleForm> {
         remainingCostAfterSale: remainingCostAfterSale,
         profitGenerated: profitGenerated,
         accumulatedProfit: accumulatedProfit,
+        photoPaths: _photoPaths,
       ));
     }
     
@@ -777,6 +821,14 @@ class _SaleFormState extends State<_SaleForm> {
                     number: true),
                 _profitPreview(),
                 _field(_note, 'မှတ်ချက်'),
+                const SizedBox(height: 20),
+                PhotoAttachmentWidget(
+                  photoPaths: _photoPaths,
+                  onPhotosChanged: (photos) {
+                    setState(() => _photoPaths = photos);
+                  },
+                  recordType: 'sale',
+                ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,

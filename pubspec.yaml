@@ -26,6 +26,16 @@ dependencies:
   intl: ^0.19.0
   crypto: ^3.0.3
 
+  # Photo & File Management
+  image_picker: ^1.0.0
+  path_provider: ^2.1.0
+  uuid: ^4.0.0
+
+  # PDF & Export
+  pdf: ^3.10.0
+  printing: ^5.11.0
+  share_plus: ^7.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
