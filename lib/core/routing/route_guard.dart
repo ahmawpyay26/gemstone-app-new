@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/permission_service.dart';
 import '../../shared/widgets/access_denied_widget.dart';

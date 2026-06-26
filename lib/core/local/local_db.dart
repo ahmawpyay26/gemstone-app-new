@@ -286,6 +286,21 @@ class LocalDb {
     s.put('userEmail', user.email);
     s.put('userUsername', user.username);
     s.put('userRole', user.role);
+    s.put('userType', 'AppUser');
+    s.put('loggedIn', true);
+  }
+
+  /// Save session for a StaffUser (RBAC staff accounts).
+  /// StaffUser has a different shape than AppUser, so map fields explicitly.
+  static void saveStaffSession(StaffUser staff) {
+    final s = Hive.box(sessionBox);
+    s.put('userId', staff.id);
+    s.put('userName', staff.fullName);
+    s.put('userEmail', '');
+    s.put('userUsername', staff.username);
+    s.put('userRole', 'staff');
+    s.put('userType', 'StaffUser');
+    s.put('staffRoleId', staff.roleId);
     s.put('loggedIn', true);
   }
 

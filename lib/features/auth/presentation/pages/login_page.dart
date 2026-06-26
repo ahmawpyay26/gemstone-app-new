@@ -113,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
             lastLoginAt: DateTime.now().millisecondsSinceEpoch,
           );
           await staffBox.putAt(index, updated);
-          LocalDb.saveSession(staff);
+          LocalDb.saveStaffSession(updated);
 
           if (mounted) {
             context.go('/dashboard');
