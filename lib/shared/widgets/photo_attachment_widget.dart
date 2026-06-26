@@ -62,16 +62,28 @@ class _PhotoAttachmentWidgetState extends State<PhotoAttachmentWidget> {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('ဓာတ်ပုံ ဖျက်ရန်'),
-        content: const Text('ဤဓာတ်ပုံကို ဖျက်ရန် သေချာပါသလား?'),
+        title: const Text(
+          'ဓာတ်ပုံ ဖျက်ရန်',
+          style: TextStyle(fontFamily: 'NotoSansMyammer'),
+        ),
+        content: const Text(
+          'ဤဓာတ်ပုံကို ဖျက်ရန် သေချာပါသလား?',
+          style: TextStyle(fontFamily: 'NotoSansMyammer'),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('ပယ်ဖျက်ရန်'),
+            child: const Text(
+              'ပယ်ဖျက်ရန်',
+              style: TextStyle(fontFamily: 'NotoSansMyammer'),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('ဖျက်ရန်'),
+            child: const Text(
+              'ဖျက်ရန်',
+              style: TextStyle(fontFamily: 'NotoSansMyammer'),
+            ),
           ),
         ],
       ),
@@ -96,7 +108,10 @@ class _PhotoAttachmentWidgetState extends State<PhotoAttachmentWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               AppBar(
-                title: const Text('ဓာတ်ပုံ အစမ်း'),
+                title: const Text(
+                'ဓာတ်ပုံ အစမ်း',
+                style: TextStyle(fontFamily: 'NotoSansMyammer'),
+              ),
                 automaticallyImplyLeading: true,
               ),
               Expanded(
@@ -126,16 +141,34 @@ class _PhotoAttachmentWidgetState extends State<PhotoAttachmentWidget> {
         // Photo action buttons
         Row(
           children: [
-            ElevatedButton.icon(
-              onPressed: _addPhotoFromCamera,
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('ကင်မရာ'),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _addPhotoFromCamera,
+                icon: const Icon(Icons.camera_alt),
+                label: Text(
+                  'ကင်မရာ',
+                  style: const TextStyle(
+                    fontFamily: 'NotoSansMyammer',
+                    fontSize: 14,
+                  ),
+                  textScaleFactor: 1.0,
+                ),
+              ),
             ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: _addPhotoFromGallery,
-              icon: const Icon(Icons.photo_library),
-              label: const Text('ဂ္ယာလারီ'),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _addPhotoFromGallery,
+                icon: const Icon(Icons.photo_library),
+                label: Text(
+                  'ဂ္ယာလารီ',
+                  style: const TextStyle(
+                    fontFamily: 'NotoSansMyammer',
+                    fontSize: 14,
+                  ),
+                  textScaleFactor: 1.0,
+                ),
+              ),
             ),
           ],
         ),
@@ -149,9 +182,11 @@ class _PhotoAttachmentWidgetState extends State<PhotoAttachmentWidget> {
               Text(
                 'ဓာတ်ပုံများ (${_currentPhotos.length})',
                 style: const TextStyle(
+                  fontFamily: 'NotoSansMyammer',
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
+                textScaleFactor: 1.0,
               ),
               const SizedBox(height: 8),
               SizedBox(
