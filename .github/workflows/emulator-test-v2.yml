@@ -1,0 +1,135 @@
+name: Android Emulator Runtime Test v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  emulator-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: |
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          flutter build apk --release
+
+      - name: Run emulator and test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: default
+          arch: x86
+          profile: Nexus 5
+          cores: 2
+          ram: 2048
+          disk-size: 2048M
+          emulator-options: -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            set -e
+            
+            echo "=== Emulator started ==="
+            adb devices
+            
+            # Wait for boot
+            echo "=== Waiting for device to boot ==="
+            for i in {1..30}; do
+              if adb shell getprop sys.boot_completed | grep -q 1; then
+                echo "✅ Device booted"
+                break
+              fi
+              echo "⏳ Waiting... ($i/30)"
+              sleep 2
+            done
+            
+            # Dismiss lock screen
+            adb shell input keyevent 82
+            sleep 2
+            
+            # Install APK
+            echo "=== Installing APK ==="
+            if adb install -r build/app/outputs/flutter-apk/app-release.apk; then
+              echo "✅ APK installed"
+            else
+              echo "❌ APK installation failed"
+              adb logcat -d | tail -50
+              exit 1
+            fi
+            
+            sleep 3
+            
+            # Launch app
+            echo "=== Launching app ==="
+            adb shell am start -n com.gemstone.management/.MainActivity
+            sleep 5
+            
+            # Check for crashes
+            echo "=== Checking for crashes ==="
+            if adb logcat -d | grep -i "FATAL\|AndroidRuntime.*Exception"; then
+              echo "❌ Crash detected"
+              adb logcat -d | tail -100
+              exit 1
+            fi
+            
+            # Check if app is running
+            echo "=== Verifying app is running ==="
+            if adb shell pidof com.gemstone.management > /dev/null; then
+              echo "✅ App is running"
+            else
+              echo "❌ App is not running"
+              adb logcat -d | tail -50
+              exit 1
+            fi
+            
+            sleep 2
+            
+            # Capture logcat
+            echo "=== Capturing final logcat ==="
+            adb logcat -d > /tmp/logcat.txt
+            tail -100 /tmp/logcat.txt
+            
+            echo "✅ Runtime test passed"
+
+      - name: Upload logcat on failure
+        if: failure()
+        run: |
+          adb logcat -d > /tmp/logcat_failure.txt || true
+          echo "=== Failure logcat ==="
+          tail -200 /tmp/logcat_failure.txt || true
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gemstone-app-release-verified
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Success summary
+        if: success()
+        run: |
+          echo "✅ Runtime verification PASSED"
+          echo "  - APK installed successfully"
+          echo "  - App launched without crashes"
+          echo "  - App process is running"
