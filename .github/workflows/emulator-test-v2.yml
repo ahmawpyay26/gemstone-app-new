@@ -31,9 +31,7 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
-        run: |
-          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          flutter build apk --release
+        run: flutter build apk --release
 
       - name: Run emulator and test
         uses: reactivecircus/android-emulator-runner@v2
