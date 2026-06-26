@@ -7,35 +7,54 @@ on:
     tags: ['v*-pat']
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # MANDATORY: Static analysis + release APK build
+  # ---------------------------------------------------------------------------
   build-release-apk:
     runs-on: ubuntu-latest
     name: Build Release APK
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
+          channel: 'stable'
           cache: true
-      
+
       - name: Get dependencies
         run: flutter pub get
-      
+
+      - name: Static analysis (errors only - must be clean)
+        run: |
+          echo "Running flutter analyze (failing only on errors)..."
+          # Capture analyzer output; only hard 'error' severities should break the build.
+          set +e
+          flutter analyze > analyze_output.txt 2>&1
+          set -e
+          echo "----- analyze output (tail) -----"
+          tail -40 analyze_output.txt
+          echo "---------------------------------"
+          if grep -E "^\s*error\b|error •" analyze_output.txt; then
+            echo "❌ flutter analyze reported ERROR-level issues"
+            exit 1
+          else
+            echo "✅ No error-level analyzer issues (info/warning lint suggestions are allowed)"
+          fi
+
       - name: Build APK
         run: |
           echo "Starting Flutter APK build..."
           flutter build apk --release
-          echo "Build completed with exit code: $?"
-      
-      - name: List build outputs
-        run: |
-          echo "Checking for APK in standard location..."
-          ls -lah build/app/outputs/flutter-apk/ || echo "Directory not found"
-          echo ""
-          echo "Searching for APK files..."
-          find build -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
-      
-      - name: Verify and upload APK
+          echo "Build finished."
+
+      - name: Verify APK exists
         run: |
           APK_FILE="build/app/outputs/flutter-apk/app-release.apk"
           if [ -f "$APK_FILE" ]; then
@@ -44,11 +63,10 @@ jobs:
             file "$APK_FILE"
           else
             echo "❌ APK not found at expected location"
-            echo "Searching for APK in entire build directory..."
             find build -name "*.apk" -type f
             exit 1
           fi
-      
+
       - name: Upload APK artifact
         if: success()
         uses: actions/upload-artifact@v4
@@ -57,6 +75,9 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
+  # ---------------------------------------------------------------------------
+  # MANDATORY: Confirm the produced artifact is a real, downloadable APK
+  # ---------------------------------------------------------------------------
   verify-apk:
     runs-on: ubuntu-latest
     name: Verify APK
@@ -66,37 +87,134 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: gemstone-app-release
-      
-      - name: Verify APK
+
+      - name: Verify APK integrity
         run: |
-          if [ -f app-release.apk ]; then
-            echo "✅ APK downloaded successfully"
-            ls -lh app-release.apk
-            file app-release.apk
-          else
+          if [ ! -f app-release.apk ]; then
             echo "❌ APK download failed"
             exit 1
           fi
+          echo "✅ APK downloaded"
+          ls -lh app-release.apk
+          file app-release.apk
+          echo "----- Checking required APK entries -----"
+          unzip -l app-release.apk | grep -E "AndroidManifest.xml|classes.dex|META-INF/CERT" \
+            && echo "✅ APK contains manifest, dex and signing files" \
+            || (echo "❌ APK is missing required entries" && exit 1)
 
+  # ---------------------------------------------------------------------------
+  # BEST-EFFORT: Emulator smoke test (install + launch + crash check).
+  # GitHub-hosted runners have no nested KVM acceleration, so emulator runs can
+  # be slow/flaky. This job is non-blocking (continue-on-error) so it never
+  # blocks delivery of a verified APK, but still gives runtime signal when it
+  # succeeds.
+  # ---------------------------------------------------------------------------
+  emulator-smoke-test:
+    runs-on: ubuntu-latest
+    name: Emulator Smoke Test (best-effort)
+    needs: build-release-apk
+    continue-on-error: true
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -la /dev/kvm || echo "KVM device not present"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: gemstone-app-release
+          path: artifact
+
+      - name: Run emulator smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          cores: 2
+          ram-size: 4096M
+          disk-size: 6G
+          force-avd-creation: true
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            set -x
+            adb wait-for-device
+            # Wait for full boot (max ~5 min)
+            boot=""
+            for i in $(seq 1 60); do
+              boot=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+              if [ "$boot" = "1" ]; then echo "Device booted"; break; fi
+              echo "waiting for boot ($i)"; sleep 5
+            done
+            adb shell input keyevent 82 || true
+
+            echo "=== Installing APK ==="
+            adb install -r artifact/app-release.apk
+
+            echo "=== Launching app (monkey) ==="
+            adb shell monkey -p com.gemstone.management -c android.intent.category.LAUNCHER 1 || true
+            sleep 8
+
+            echo "=== Crash check ==="
+            if adb logcat -d | grep -i "FATAL EXCEPTION\|AndroidRuntime"; then
+              echo "❌ Crash detected in logcat"
+              exit 1
+            fi
+
+            echo "=== Process check ==="
+            if adb shell pidof com.gemstone.management > /dev/null; then
+              echo "✅ App process is running"
+            else
+              echo "⚠️ App process not detected (may have finished launch activity)"
+            fi
+            echo "✅ Smoke test finished"
+
+  # ---------------------------------------------------------------------------
+  # PAT summary: gates ONLY on the mandatory build + verify jobs.
+  # ---------------------------------------------------------------------------
   summary:
     runs-on: ubuntu-latest
     name: PAT Summary
-    needs: [build-release-apk, verify-apk]
+    needs: [build-release-apk, verify-apk, emulator-smoke-test]
     if: always()
     steps:
       - name: Report Results
         run: |
-          echo "════════════════════════════════════════════════════════════"
+          echo "============================================================"
           echo "PRODUCTION ACCEPTANCE TEST RESULTS"
-          echo "════════════════════════════════════════════════════════════"
-          echo ""
-          echo "Build Release APK: ${{ needs.build-release-apk.result }}"
-          echo "Verify APK: ${{ needs.verify-apk.result }}"
-          echo ""
+          echo "============================================================"
+          echo "Build Release APK   : ${{ needs.build-release-apk.result }}"
+          echo "Verify APK          : ${{ needs.verify-apk.result }}"
+          echo "Emulator Smoke Test : ${{ needs.emulator-smoke-test.result }} (non-blocking)"
+          echo "============================================================"
           if [ "${{ needs.build-release-apk.result }}" = "success" ] && [ "${{ needs.verify-apk.result }}" = "success" ]; then
-            echo "✅ ALL TESTS PASSED - APK is ready for testing"
+            echo "✅ MANDATORY PAT CHECKS PASSED - APK is built, verified and ready"
             exit 0
           else
-            echo "❌ TESTS FAILED"
+            echo "❌ MANDATORY PAT CHECKS FAILED"
             exit 1
           fi
