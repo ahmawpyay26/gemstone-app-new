@@ -21,7 +21,15 @@ jobs:
           echo "sdk.dir=/opt/android-sdk" > android/local.properties
           echo "flutter.sdk=$FLUTTER_HOME" >> android/local.properties
       - run: flutter pub get
-      - run: flutter build apk --release
+      - run: |
+          echo "=== Flutter Info ==="
+          flutter --version
+          echo "=== Java Info ==="
+          java -version
+          echo "=== Gradle Info ==="
+          ls -la android/
+          echo "=== Building APK ==="
+          flutter build apk --release -v
       - uses: actions/upload-artifact@v4
         with:
           name: gemstone-app-release
