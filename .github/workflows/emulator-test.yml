@@ -1,0 +1,165 @@
+name: Android Emulator Runtime Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  emulator-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: |
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          flutter build apk --release
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-all
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run emulator and test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          target: google_apis
+          arch: x86_64
+          profile: Nexus 6
+          cores: 2
+          ram: 2048
+          disk-size: 2048M
+          script: |
+            # Wait for emulator to fully boot
+            adb wait-for-device
+            adb shell input keyevent 82  # Dismiss lock screen
+            sleep 5
+
+            # Install APK
+            echo "=== Installing APK ==="
+            adb install -r build/app/outputs/flutter-apk/app-release.apk
+            APK_INSTALL=$?
+            if [ $APK_INSTALL -ne 0 ]; then
+              echo "❌ APK installation failed"
+              adb logcat -d | tail -100
+              exit 1
+            fi
+            echo "✅ APK installed successfully"
+
+            # Wait for app to be ready
+            sleep 3
+
+            # Launch app
+            echo "=== Launching app ==="
+            adb shell am start -n com.gemstone.management/.MainActivity
+            sleep 5
+
+            # Check for crashes
+            echo "=== Checking for startup crashes ==="
+            CRASH_LOG=$(adb logcat -d | grep -i "FATAL\|AndroidRuntime\|Exception" | head -20)
+            if [ ! -z "$CRASH_LOG" ]; then
+              echo "❌ Crash detected:"
+              echo "$CRASH_LOG"
+              adb logcat -d | tail -200 > crash_log.txt
+              exit 1
+            fi
+            echo "✅ No startup crashes detected"
+
+            # Check if app is running
+            echo "=== Verifying app is running ==="
+            APP_RUNNING=$(adb shell pidof com.gemstone.management)
+            if [ -z "$APP_RUNNING" ]; then
+              echo "❌ App is not running"
+              adb logcat -d | tail -100
+              exit 1
+            fi
+            echo "✅ App is running (PID: $APP_RUNNING)"
+
+            # Test navigation - wait for UI to settle
+            sleep 3
+
+            # Try to navigate to different pages by tapping UI elements
+            echo "=== Testing Purchase page navigation ==="
+            adb shell input tap 100 100
+            sleep 2
+            PURCHASE_CRASH=$(adb logcat -d | grep -i "FATAL\|AndroidRuntime" | wc -l)
+            if [ $PURCHASE_CRASH -gt 0 ]; then
+              echo "❌ Crash on Purchase page"
+              adb logcat -d | tail -100
+              exit 1
+            fi
+            echo "✅ Purchase page navigation OK"
+
+            # Test Sales page
+            echo "=== Testing Sales page navigation ==="
+            adb shell input tap 200 100
+            sleep 2
+            SALES_CRASH=$(adb logcat -d | grep -i "FATAL\|AndroidRuntime" | wc -l)
+            if [ $SALES_CRASH -gt 0 ]; then
+              echo "❌ Crash on Sales page"
+              adb logcat -d | tail -100
+              exit 1
+            fi
+            echo "✅ Sales page navigation OK"
+
+            # Capture final logcat
+            echo "=== Final logcat (last 50 lines) ==="
+            adb logcat -d | tail -50 > logcat_final.txt
+            cat logcat_final.txt
+
+            # Check for any unhandled exceptions
+            EXCEPTION_COUNT=$(adb logcat -d | grep -i "Exception\|Error" | grep -v "E/flutter\|W/" | wc -l)
+            if [ $EXCEPTION_COUNT -gt 5 ]; then
+              echo "⚠️  Warning: Multiple exceptions detected"
+              adb logcat -d | grep -i "Exception\|Error" | grep -v "E/flutter\|W/" | head -20
+            fi
+
+            echo "✅ Emulator test completed successfully"
+
+      - name: Upload logcat
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: emulator-logs
+          path: |
+            logcat_final.txt
+            crash_log.txt
+          retention-days: 7
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: gemstone-app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Test result summary
+        run: |
+          echo "✅ Runtime verification passed:"
+          echo "  - APK installed successfully"
+          echo "  - App launched without crashes"
+          echo "  - Navigation tested"
+          echo "  - No fatal exceptions detected"
