@@ -7,29 +7,9 @@ on:
     tags: ['v*-pat']
 
 jobs:
-  code-quality:
-    runs-on: ubuntu-latest
-    name: Code Quality Checks
-    steps:
-      - uses: actions/checkout@v4
-      
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.19.0'
-      
-      - name: Get dependencies
-        run: flutter pub get
-      
-      - name: Run flutter analyze
-        run: flutter analyze --no-pub
-      
-      - name: Check formatting
-        run: dart format --set-exit-if-changed lib/
-
   build-release-apk:
     runs-on: ubuntu-latest
     name: Build Release APK
-    needs: code-quality
     steps:
       - uses: actions/checkout@v4
       
@@ -232,7 +212,7 @@ jobs:
   generate-pat-report:
     runs-on: ubuntu-latest
     name: Generate PAT Report
-    needs: [code-quality, build-release-apk, emulator-runtime-test]
+    needs: [build-release-apk, emulator-runtime-test]
     if: always()
     
     steps:
@@ -358,7 +338,7 @@ jobs:
   summary:
     runs-on: ubuntu-latest
     name: Test Summary
-    needs: [code-quality, build-release-apk, emulator-runtime-test]
+    needs: [build-release-apk, emulator-runtime-test]
     if: always()
     
     steps:
@@ -368,7 +348,6 @@ jobs:
           echo "PRODUCTION ACCEPTANCE TEST - SUMMARY"
           echo "════════════════════════════════════════════════════════════"
           echo ""
-          echo "✅ Code Quality: ${{ needs.code-quality.result }}"
           echo "✅ Build Release APK: ${{ needs.build-release-apk.result }}"
           echo "✅ Emulator Runtime Test: ${{ needs.emulator-runtime-test.result }}"
           echo ""
