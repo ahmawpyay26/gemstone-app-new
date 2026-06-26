@@ -18,54 +18,44 @@ jobs:
           flutter-version: '3.19.0'
           cache: true
       
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-      
-      - name: Create local.properties
-        run: |
-          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
-          echo "flutter.sdk=$FLUTTER_HOME" >> android/local.properties
-          echo "flutter.buildMode=release" >> android/local.properties
-          echo "flutter.versionName=1.2.0" >> android/local.properties
-          cat android/local.properties
-      
       - name: Get dependencies
         run: flutter pub get
       
-      - name: Build APK with verbose output
-        run: flutter build apk --release -v 2>&1 | tee build.log
-      
-      - name: Verify APK exists
+      - name: Build APK
         run: |
-          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
-            echo "✅ APK built successfully"
-            ls -lh build/app/outputs/flutter-apk/app-release.apk
-            file build/app/outputs/flutter-apk/app-release.apk
+          echo "Starting Flutter APK build..."
+          flutter build apk --release
+          echo "Build completed with exit code: $?"
+      
+      - name: List build outputs
+        run: |
+          echo "Checking for APK in standard location..."
+          ls -lah build/app/outputs/flutter-apk/ || echo "Directory not found"
+          echo ""
+          echo "Searching for APK files..."
+          find build -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
+      
+      - name: Verify and upload APK
+        run: |
+          APK_FILE="build/app/outputs/flutter-apk/app-release.apk"
+          if [ -f "$APK_FILE" ]; then
+            echo "✅ APK found: $APK_FILE"
+            ls -lh "$APK_FILE"
+            file "$APK_FILE"
           else
-            echo "❌ APK not found"
-            echo "Build log tail:"
-            tail -100 build.log
+            echo "❌ APK not found at expected location"
+            echo "Searching for APK in entire build directory..."
+            find build -name "*.apk" -type f
             exit 1
           fi
       
-      - name: Upload APK
+      - name: Upload APK artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: gemstone-app-pat-verified
+          name: gemstone-app-release
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
-      
-      - name: Upload build log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log-failure
-          path: build.log
-          retention-days: 7
 
   verify-apk:
     runs-on: ubuntu-latest
@@ -75,16 +65,16 @@ jobs:
       - name: Download APK
         uses: actions/download-artifact@v4
         with:
-          name: gemstone-app-pat-verified
+          name: gemstone-app-release
       
-      - name: Verify APK integrity
+      - name: Verify APK
         run: |
           if [ -f app-release.apk ]; then
-            echo "✅ APK verified successfully"
+            echo "✅ APK downloaded successfully"
             ls -lh app-release.apk
             file app-release.apk
           else
-            echo "❌ APK not found"
+            echo "❌ APK download failed"
             exit 1
           fi
 
@@ -94,34 +84,19 @@ jobs:
     needs: [build-release-apk, verify-apk]
     if: always()
     steps:
-      - name: Print PAT Results
+      - name: Report Results
         run: |
           echo "════════════════════════════════════════════════════════════"
-          echo "PRODUCTION ACCEPTANCE TEST - RESULTS"
+          echo "PRODUCTION ACCEPTANCE TEST RESULTS"
           echo "════════════════════════════════════════════════════════════"
           echo ""
           echo "Build Release APK: ${{ needs.build-release-apk.result }}"
           echo "Verify APK: ${{ needs.verify-apk.result }}"
           echo ""
           if [ "${{ needs.build-release-apk.result }}" = "success" ] && [ "${{ needs.verify-apk.result }}" = "success" ]; then
-            echo "✅ AUTOMATED TESTS PASSED"
-            echo ""
-            echo "APK is ready for manual phone testing"
+            echo "✅ ALL TESTS PASSED - APK is ready for testing"
+            exit 0
           else
-            echo "❌ AUTOMATED TESTS FAILED"
+            echo "❌ TESTS FAILED"
             exit 1
           fi
-          echo ""
-          echo "════════════════════════════════════════════════════════════"
-          echo "NEXT STEPS - MANUAL PHONE TESTING REQUIRED"
-          echo "════════════════════════════════════════════════════════════"
-          echo ""
-          echo "1. Download APK from GitHub Actions Artifacts"
-          echo "2. Install on Android device: adb install app-release.apk"
-          echo ""
-          echo "Test Accounts:"
-          echo "  - Super Admin: admin / admin123"
-          echo "  - Staff A: staff_a / password123 (Dashboard + Sales)"
-          echo "  - Staff B: staff_b / password123 (Inventory + Purchase)"
-          echo "  - Staff C: staff_c / password123 (Reports only)"
-          echo ""
