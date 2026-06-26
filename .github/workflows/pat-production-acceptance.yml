@@ -16,34 +16,56 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
+          cache: true
+      
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
       
       - name: Create local.properties
         run: |
-          echo "sdk.dir=/opt/android-sdk" > android/local.properties
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
           echo "flutter.sdk=$FLUTTER_HOME" >> android/local.properties
+          echo "flutter.buildMode=release" >> android/local.properties
+          echo "flutter.versionName=1.2.0" >> android/local.properties
+          cat android/local.properties
       
       - name: Get dependencies
         run: flutter pub get
       
-      - name: Build APK
-        run: flutter build apk --release
+      - name: Build APK with verbose output
+        run: flutter build apk --release -v 2>&1 | tee build.log
       
       - name: Verify APK exists
         run: |
           if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
             echo "✅ APK built successfully"
             ls -lh build/app/outputs/flutter-apk/app-release.apk
+            file build/app/outputs/flutter-apk/app-release.apk
           else
             echo "❌ APK not found"
+            echo "Build log tail:"
+            tail -100 build.log
             exit 1
           fi
       
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: gemstone-app-pat-verified
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
+      
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-failure
+          path: build.log
+          retention-days: 7
 
   verify-apk:
     runs-on: ubuntu-latest
@@ -78,8 +100,17 @@ jobs:
           echo "PRODUCTION ACCEPTANCE TEST - RESULTS"
           echo "════════════════════════════════════════════════════════════"
           echo ""
-          echo "✅ Build Release APK: ${{ needs.build-release-apk.result }}"
-          echo "✅ Verify APK: ${{ needs.verify-apk.result }}"
+          echo "Build Release APK: ${{ needs.build-release-apk.result }}"
+          echo "Verify APK: ${{ needs.verify-apk.result }}"
+          echo ""
+          if [ "${{ needs.build-release-apk.result }}" = "success" ] && [ "${{ needs.verify-apk.result }}" = "success" ]; then
+            echo "✅ AUTOMATED TESTS PASSED"
+            echo ""
+            echo "APK is ready for manual phone testing"
+          else
+            echo "❌ AUTOMATED TESTS FAILED"
+            exit 1
+          fi
           echo ""
           echo "════════════════════════════════════════════════════════════"
           echo "NEXT STEPS - MANUAL PHONE TESTING REQUIRED"
@@ -93,17 +124,4 @@ jobs:
           echo "  - Staff A: staff_a / password123 (Dashboard + Sales)"
           echo "  - Staff B: staff_b / password123 (Inventory + Purchase)"
           echo "  - Staff C: staff_c / password123 (Reports only)"
-          echo ""
-          echo "Verification Checklist:"
-          echo "  ✓ App launches without crash"
-          echo "  ✓ Login screen appears"
-          echo "  ✓ Super Admin sees all tabs"
-          echo "  ✓ Staff A sees only Dashboard + Sales"
-          echo "  ✓ Staff B sees only Inventory + Purchase"
-          echo "  ✓ Staff C sees only Reports"
-          echo "  ✓ Unauthorized pages show access denied"
-          echo "  ✓ Business logic works (Sales, Inventory, etc.)"
-          echo ""
-          echo "GitHub Actions Run:"
-          echo "  ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo ""
