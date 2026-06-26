@@ -18,58 +18,34 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      # Step 2: Set up Java
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '11'
       
-      # Step 3: Set up Android SDK
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: '34'
-          ndk-version: '26.1.10909125'
-      
-      # Step 4: Set up Flutter
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
           channel: 'stable'
       
-      # Step 5: Get Flutter dependencies
-      - name: Get Flutter dependencies
-        run: flutter pub get
+      - run: flutter pub get
       
-      # Step 6: Run Flutter analysis
-      - name: Run Flutter analysis
-        run: flutter analyze
+      - run: flutter analyze
         continue-on-error: true
       
-      # Step 7: Run Flutter tests
-      - name: Run Flutter tests
-        run: flutter test
+      - run: flutter test
         continue-on-error: true
       
-      # Step 8: Build release APK
-      - name: Build release APK
-        run: flutter build apk --release
+      - run: flutter build apk --release
       
-      # Step 9: Upload release APK as artifact
-      - name: Upload release APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: gemstone-app-release
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
       
-      # Step 10: Create GitHub Release (on tag push)
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
@@ -91,26 +67,7 @@ jobs:
             - Profit/Loss reports
             - QR code tracking
             - Myanmar language support
-            
-            ## Version Info
-            - Version: ${{ github.ref_name }}
-            - Build Date: ${{ github.event.head_commit.timestamp }}
-            
-            ## Offline Mode
-            The app works completely offline with SQLite. All data is stored locally and can be synced to the backend when internet is available.
-            
-            ## Login Credentials (Testing)
-            - Email: admin@example.com
-            - Password: password123
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Step 11: Build success message
-      - name: Build Success
-        if: success()
-        run: |
-          echo "✅ APK built successfully!"
-          echo "📦 Release APK: build/app/outputs/flutter-apk/app-release.apk"
-          echo "📥 Download from GitHub Actions Artifacts or GitHub Releases"
