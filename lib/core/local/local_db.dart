@@ -895,7 +895,6 @@ class LocalDb {
       rethrow;
     }
   }
-}
 
   // ---------------------------------------------------------------------------
   // Soft Delete & Restore Sale
@@ -907,8 +906,8 @@ class LocalDb {
       final sale = sales().get(saleKey) as Sale?;
       if (sale == null) return;
 
-      final currentUser = session().get('currentUser') as Map?;
-      if (currentUser == null) return;
+      final currentUser = LocalDb.currentUser();
+      if (currentUser.isEmpty) return;
 
       // Mark as soft deleted
       sale.isDeleted = true;
@@ -954,8 +953,8 @@ class LocalDb {
       final sale = sales().get(saleKey) as Sale?;
       if (sale == null) return;
 
-      final currentUser = session().get('currentUser') as Map?;
-      if (currentUser == null) return;
+      final currentUser = LocalDb.currentUser();
+      if (currentUser.isEmpty) return;
 
       // Restore the sale
       sale.isDeleted = false;
