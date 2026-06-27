@@ -448,39 +448,12 @@ class _InventoryPageState extends State<InventoryPage> {
                             onSelected: (v) {
                               if (v == 'edit') _openForm(existing: g, key: key);
                               if (v == 'delete') _delete(key);
-                              if (v == 'photos') _showPhotoViewer(g);
                             },
                             itemBuilder: (_) => [
                               PopupMenuItem(
-                                  value: 'edit',
-                                  enabled: LocalDb.canEditPurchase(),
-                                  child: const Row(
-                                    children: [
-                                      Text('✏️'),
-                                      SizedBox(width: 8),
-                                      Text('ပြုပြင်ရန်'),
-                                    ],
-                                  )),
+                                  value: 'edit', child: const Text('ပြင်ဆင်ရန်'), enabled: LocalDb.canEditPurchase()),
                               PopupMenuItem(
-                                  value: 'delete',
-                                  enabled: LocalDb.canDeletePurchase(),
-                                  child: const Row(
-                                    children: [
-                                      Text('🗑️'),
-                                      SizedBox(width: 8),
-                                      Text('ဖျက်ရန်'),
-                                    ],
-                                  )),
-                              const PopupMenuDivider(),
-                              PopupMenuItem(
-                                  value: 'photos',
-                                  child: const Row(
-                                    children: [
-                                      Text('🖼️'),
-                                      SizedBox(width: 8),
-                                      Text('ဓာတ်ပုံကြည့်ရန်'),
-                                    ],
-                                  )),
+                                  value: 'delete', child: const Text('ဖျက်ရန်'), enabled: LocalDb.canDeletePurchase()),
                             ],
                           ),
                         ),

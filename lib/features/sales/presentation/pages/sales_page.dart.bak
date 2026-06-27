@@ -300,9 +300,7 @@ class _SalesPageState extends State<SalesPage> {
                                       if (v == 'edit') _openForm(existing: s, key: key);
                                       if (v == 'delete') _delete(key);
                                       if (v == 'print') _printSale(s);
-                                      if (v == 'image') _exportImage(s);
                                       if (v == 'pdf') _exportVoucher(s);
-                                      if (v == 'photos') _showPhotoViewer(s);
                                     },
                                     itemBuilder: (_) => [
                                       PopupMenuItem(
@@ -310,7 +308,7 @@ class _SalesPageState extends State<SalesPage> {
                                           enabled: LocalDb.canEditSale(),
                                           child: const Row(
                                             children: [
-                                              Text('✏️'),
+                                              Icon(Icons.edit, size: 18, color: Colors.white),
                                               SizedBox(width: 8),
                                               Text('ပြုပြင်ရန်'),
                                             ],
@@ -320,47 +318,27 @@ class _SalesPageState extends State<SalesPage> {
                                           enabled: LocalDb.canDeleteSale(),
                                           child: const Row(
                                             children: [
-                                              Text('🗑️'),
+                                              Icon(Icons.delete, size: 18, color: AppTheme.errorColor),
                                               SizedBox(width: 8),
                                               Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
                                             ],
                                           )),
-                                      const PopupMenuDivider(),
                                       PopupMenuItem(
                                           value: 'print',
                                           child: const Row(
                                             children: [
-                                              Text('🖨️'),
+                                              Icon(Icons.print, size: 18, color: Colors.white),
                                               SizedBox(width: 8),
                                               Text('ပရင့်ထုတ်ရန်'),
-                                            ],
-                                          )),
-                                      PopupMenuItem(
-                                          value: 'image',
-                                          child: const Row(
-                                            children: [
-                                              Text('🖼️'),
-                                              SizedBox(width: 8),
-                                              Text('ပုံထုတ်ရန်'),
                                             ],
                                           )),
                                       PopupMenuItem(
                                           value: 'pdf',
                                           child: const Row(
                                             children: [
-                                              Text('📄'),
+                                              Icon(Icons.picture_as_pdf, size: 18, color: Colors.white),
                                               SizedBox(width: 8),
                                               Text('PDF ထုတ်ရန်'),
-                                            ],
-                                          )),
-                                      const PopupMenuDivider(),
-                                      PopupMenuItem(
-                                          value: 'photos',
-                                          child: const Row(
-                                            children: [
-                                              Text('🖼️'),
-                                              SizedBox(width: 8),
-                                              Text('ဓာတ်ပုံကြည့်ရန်'),
                                             ],
                                           )),
                                     ],
