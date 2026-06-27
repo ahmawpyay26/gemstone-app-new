@@ -87,37 +87,35 @@ class _PhotoViewerState extends State<PhotoViewer> {
       ),
       body: PageView.builder(
         controller: _pageController,
+        itemCount: widget.photoUrls.length,
         onPageChanged: (index) {
           setState(() {
             _currentIndex = index;
           });
         },
-        children: List.generate(
-          widget.photoUrls.length,
-          (index) => GestureDetector(
-            onDoubleTap: _handleDoubleTap,
-            child: InteractiveViewer(
-              minScale: 1.0,
-              maxScale: 3.0,
-              child: Image.network(
-                widget.photoUrls[index],
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.broken_image, size: 80, color: Colors.grey[600]),
-                        const SizedBox(height: 12),
-                        Text(
-                          'ဓာတ်ပုံ မဖွင့်နိုင်ပါ',
-                          style: TextStyle(color: Colors.grey[400]),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+        itemBuilder: (context, index) => GestureDetector(
+          onDoubleTap: _handleDoubleTap,
+          child: InteractiveViewer(
+            minScale: 1.0,
+            maxScale: 3.0,
+            child: Image.network(
+              widget.photoUrls[index],
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.broken_image, size: 80, color: Colors.grey[600]),
+                      const SizedBox(height: 12),
+                      Text(
+                        'ဓာတ်ပုံ မဖွင့်နိုင်ပါ',
+                        style: TextStyle(color: Colors.grey[400]),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ),
