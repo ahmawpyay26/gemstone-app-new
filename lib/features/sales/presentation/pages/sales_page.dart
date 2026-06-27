@@ -296,7 +296,7 @@ class _SalesPageState extends State<SalesPage> {
                                   ),
                                 ],
                               ),
-                              onTap: () => _showDetails(s),
+                              onTap: () => _showDetails(s, hiveKey: key),
                             ),
                           );
                         },
@@ -415,11 +415,89 @@ class _SalesPageState extends State<SalesPage> {
         ),
       );
 
-  void _showDetails(Sale sale) {
+  void _showDetails(Sale sale, {dynamic hiveKey}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(sale.gemstoneName),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(sale.gemstoneName),
+            ),
+            PopupMenuButton<String>(
+              onSelected: (value) async {
+                Navigator.pop(context); // Close dialog first
+                switch (value) {
+                  case 'edit':
+                    if (LocalDb.canEditSale()) {
+                      _openForm(existing: sale, key: hiveKey);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(LocalDb.adminOnlyErrorMessage()),
+                          backgroundColor: AppTheme.errorColor,
+                        ),
+                      );
+                    }
+                    break;
+                  case 'delete':
+                    _delete(hiveKey);
+                    break;
+                  case 'print':
+                    _printSale(sale);
+                    break;
+                  case 'pdf':
+                    _exportVoucher(sale);
+                    break;
+                }
+              },
+              itemBuilder: (BuildContext context) => [
+                const PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Text('✏️'),
+                      SizedBox(width: 8),
+                      Text('ပြုပြင်ရန်'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Text('🗑️'),
+                      SizedBox(width: 8),
+                      Text('ဖျက်ရန်'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'print',
+                  child: Row(
+                    children: [
+                      Text('🖨️'),
+                      SizedBox(width: 8),
+                      Text('ပရင့်ထုတ်ရန်'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'pdf',
+                  child: Row(
+                    children: [
+                      Text('📄'),
+                      SizedBox(width: 8),
+                      Text('PDF ထုတ်ရန်'),
+                    ],
+                  ),
+                ),
+              ],
+              child: const Text('⋮', style: TextStyle(fontSize: 20)),
+            ),
+          ],
+        ),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
