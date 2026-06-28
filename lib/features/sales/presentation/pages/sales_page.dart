@@ -325,7 +325,6 @@ class _SalesPageState extends State<SalesPage> {
                                               Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
                                             ],
                                           )),
-                                      const PopupMenuDivider(),
                                       PopupMenuItem(
                                           value: 'print',
                                           child: const Row(
@@ -353,7 +352,6 @@ class _SalesPageState extends State<SalesPage> {
                                               Text('PDF ထုတ်ရန်'),
                                             ],
                                           )),
-                                      const PopupMenuDivider(),
                                       PopupMenuItem(
                                           value: 'photos',
                                           child: const Row(
