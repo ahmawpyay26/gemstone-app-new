@@ -80,6 +80,12 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               },
             ),
             const SizedBox(height: 12),
+            if (_selectedPurchase != null)
+              Text(
+                'ရွေးချယ်ထားသည့်ဝယ်ယူမှုမှတ်တမ်း: ${_selectedPurchase!.name}',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            const SizedBox(height: 12),
             TextField(
               controller: _brokerNameCtrl,
               decoration: const InputDecoration(
