@@ -514,7 +514,6 @@ class _InventoryPageState extends State<InventoryPage> {
                                   )),
                             ],
                           ),
-                          ),
                         ),
                         // Gemstone breakdown widget
                         Padding(
