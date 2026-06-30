@@ -20,8 +20,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   // Purchase Record reference
   Gemstone? _selectedPurchase;
 
-  // Step 6.3: number of purchase records loaded from LocalDb
-  int _purchaseRecordCount = 0;
+  // Step 6.4: list of purchase records loaded from LocalDb
+  List<Gemstone> _purchaseRecords = [];
 
   @override
   void initState() {
@@ -29,7 +29,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     _brokerNameCtrl = TextEditingController();
     _brokerPhoneCtrl = TextEditingController();
     _brokerAddressCtrl = TextEditingController();
-    _purchaseRecordCount = LocalDb.gemstones().values.length;
+    _purchaseRecords = LocalDb.gemstones().values.toList();
   }
 
   @override
@@ -57,7 +57,28 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           children: [
             Text('ပွဲစားအချက်အလက်', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
-            Text('Purchase records loaded: $_purchaseRecordCount'),
+            DropdownButtonFormField<Gemstone>(
+              value: _selectedPurchase,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'ဝယ်ယူမှုမှတ်တမ်း',
+                border: OutlineInputBorder(),
+              ),
+              items: _purchaseRecords.map((g) {
+                return DropdownMenuItem<Gemstone>(
+                  value: g,
+                  child: Text(
+                    '${g.name} (${g.type}) - အရေအတွက် ${g.quantity}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+              onChanged: (g) {
+                setState(() {
+                  _selectedPurchase = g;
+                });
+              },
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _brokerNameCtrl,
