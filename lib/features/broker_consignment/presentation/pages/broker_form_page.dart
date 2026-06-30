@@ -94,6 +94,11 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                     'ဝယ်ယူမှုရက်စွဲ: ${DateFormat('dd/MM/yyyy').format(DateTime.fromMillisecondsSinceEpoch(_selectedPurchase!.createdAt))}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'ကျန်ရှိအရေအတွက်: ${_selectedPurchase!.remainingQuantity}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             const SizedBox(height: 12),
