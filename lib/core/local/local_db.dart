@@ -1394,4 +1394,57 @@ class LocalDb {
     return isCurrentUserAdmin();
   }
 
+  /// Step 9: Process broker return - restore inventory
+  static Future<void> processBrokerReturn({
+    required String brokerConsignmentId,
+    required double returnedQuantity,
+  }) async {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    final gemstones = Hive.box<Gemstone>(gemstonesBox);
+
+    // Get broker consignment
+    final bc = brokers.values.firstWhere(
+      (b) => b.id == brokerConsignmentId,
+      orElse: () => throw Exception('Broker Consignment not found'),
+    );
+
+    // Validate returned quantity
+    if (returnedQuantity > bc.remainingQuantity) {
+      throw Exception('ပြန်လည်လက်ခံသော အရေအတွက်သည် ပွဲစားထံရှိ လက်ကျန်ထက် မများရပါ။');
+    }
+
+    // Get purchase record
+    final purchase = gemstones.values.firstWhere(
+      (g) => g.id == bc.purchaseId,
+      orElse: () => throw Exception('Purchase Record not found'),
+    );
+
+    // Step 9: Update broker consignment - increase returnedQuantity
+    bc.returnedQuantity += returnedQuantity;
+    final brokerKey = brokerConsignmentKeyById(brokerConsignmentId);
+    if (brokerKey != null) {
+      await brokers.put(brokerKey, bc);
+    }
+
+    // Step 9: Restore to purchase record - increase remainingQuantity
+    purchase.remainingQuantity += returnedQuantity.toInt();
+    final purchaseKey = gemstoneKeyById(bc.purchaseId);
+    if (purchaseKey != null) {
+      await gemstones.put(purchaseKey, purchase);
+    }
+
+    // Create audit log
+    final currentUser = LocalDb.currentUser();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final auditLog = AuditLog(
+      id: genId(),
+      action: 'BROKER_CONSIGNMENT_RETURNED',
+      userId: currentUser['id'] as String,
+      userName: currentUser['name'] as String,
+      timestamp: now,
+      details: 'Returned ${returnedQuantity} from broker ${bc.brokerName} to ${purchase.name}',
+    );
+    await createAuditLog(auditLog);
+  }
+
 }

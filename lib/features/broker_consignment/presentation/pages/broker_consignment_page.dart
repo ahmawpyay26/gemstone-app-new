@@ -15,6 +15,68 @@ class BrokerConsignmentPage extends StatefulWidget {
 
 class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
   final _dateFormat = DateFormat('dd/MM/yyyy');
+  
+  // Step 9: Returned quantity tracking
+  final Map<String, TextEditingController> _returnedQtyControllers = {};
+  final Map<String, String?> _returnedQtyErrors = {};
+
+  @override
+  void dispose() {
+    for (var controller in _returnedQtyControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _validateReturnedQuantity(BrokerConsignment bc, String value) {
+    if (value.isEmpty) {
+      _returnedQtyErrors[bc.id] = null;
+      return;
+    }
+
+    final quantity = int.tryParse(value);
+    if (quantity == null || quantity <= 0) {
+      _returnedQtyErrors[bc.id] = 'အရေအတွက်သည် ၀ထက်ကြီးရမည်ဖြစ်ပါသည်။';
+      return;
+    }
+
+    if (quantity > bc.remainingQuantity) {
+      _returnedQtyErrors[bc.id] = 'ပြန်လည်လက်ခံသော အရေအတွက်သည် ပွဲစားထံရှိ လက်ကျန်ထက် မများရပါ။';
+      return;
+    }
+
+    _returnedQtyErrors[bc.id] = null;
+  }
+
+  Future<void> _processReturn(BrokerConsignment bc) async {
+    final returnedQty = int.parse(_returnedQtyControllers[bc.id]?.text ?? '0');
+    if (returnedQty <= 0) return;
+
+    try {
+      // Step 9: Restore inventory
+      await LocalDb.processBrokerReturn(
+        brokerConsignmentId: bc.id,
+        returnedQuantity: returnedQty.toDouble(),
+      );
+
+      // Clear input
+      _returnedQtyControllers[bc.id]?.clear();
+      _returnedQtyErrors[bc.id] = null;
+
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပြန်လည်လက်ခံမှု အောင်မြင်ပါသည်။')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('အမှားအယွင်း: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,34 +128,96 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
             itemCount: brokers.length,
             itemBuilder: (context, index) {
               final bc = brokers[index];
+              
+              // Initialize controller if not exists
+              if (!_returnedQtyControllers.containsKey(bc.id)) {
+                _returnedQtyControllers[bc.id] = TextEditingController();
+                _returnedQtyErrors[bc.id] = null;
+              }
 
               return Card(
                 color: AppTheme.surfaceDark,
                 margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppTheme.primaryAccent.withOpacity(0.2),
-                    child: const Icon(Icons.handshake, color: AppTheme.primaryAccent),
-                  ),
-                  title: Text(
-                    bc.brokerName,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'ကျောက်: ${bc.historicalData.purchaseName} (${bc.historicalData.gemstoneType})',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundColor: AppTheme.primaryAccent.withOpacity(0.2),
+                          child: const Icon(Icons.handshake, color: AppTheme.primaryAccent),
+                        ),
+                        title: Text(
+                          bc.brokerName,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ကျောက်: ${bc.historicalData.purchaseName} (${bc.historicalData.gemstoneType})',
+                              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                            ),
+                            Text(
+                              'အပ်ထားသော: ${bc.consignedQuantity.toInt()} • ရောင်းချ: ${bc.soldQuantity.toInt()} • ကျန်: ${bc.remainingQuantity.toInt()}',
+                              style: TextStyle(color: Colors.grey[300], fontSize: 12),
+                            ),
+                            Text(
+                              'ရက်စွဲ: ${_dateFormat.format(DateTime.fromMillisecondsSinceEpoch(bc.createdAt))}',
+                              style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                            ),
+                          ],
+                        ),
                       ),
-                      Text(
-                        'အပ်ထားသော: ${bc.consignedQuantity.toInt()} • ရောင်းချ: ${bc.soldQuantity.toInt()} • ကျန်: ${bc.remainingQuantity.toInt()}',
-                        style: TextStyle(color: Colors.grey[300], fontSize: 12),
-                      ),
-                      Text(
-                        'ရက်စွဲ: ${_dateFormat.format(DateTime.fromMillisecondsSinceEpoch(bc.createdAt))}',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                      ),
+                      // Step 9: Returned quantity input
+                      if (bc.remainingQuantity > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ပြန်လည်လက်ခံသောအရေအတွက်',
+                                style: TextStyle(color: Colors.grey[300], fontSize: 12),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _returnedQtyControllers[bc.id],
+                                      keyboardType: TextInputType.number,
+                                      style: const TextStyle(color: Colors.white),
+                                      decoration: InputDecoration(
+                                        hintText: '0',
+                                        hintStyle: TextStyle(color: Colors.grey[600]),
+                                        border: OutlineInputBorder(
+                                          borderSide: BorderSide(color: Colors.grey[700]!),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        errorText: _returnedQtyErrors[bc.id],
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _validateReturnedQuantity(bc, value);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton(
+                                    onPressed: _returnedQtyErrors[bc.id] == null && (_returnedQtyControllers[bc.id]?.text.isNotEmpty ?? false)
+                                        ? () => _processReturn(bc)
+                                        : null,
+                                    child: const Text('လက်ခံ'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
