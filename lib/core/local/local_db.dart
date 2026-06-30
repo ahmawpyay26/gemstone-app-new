@@ -1188,12 +1188,12 @@ class LocalDb {
     final historicalData = BrokerHistoricalData(
       purchaseName: purchase.name,
       purchaseDate: purchase.createdAt,
-      originalSeller: purchase.seller,
-      gemstoneType: purchase.gemstoneType,
+      originalSeller: '', // No seller field in Gemstone
+      gemstoneType: purchase.type,
       sourceType: sourceType,
       breakdownItemName: breakdownItemName,
-      originalQuantity: purchase.quantity,
-      originalWeight: purchase.weight,
+      originalQuantity: purchase.quantity.toDouble(),
+      originalWeight: purchase.weightCarat,
       capturedAt: now,
     );
 
@@ -1213,18 +1213,23 @@ class LocalDb {
     );
 
     // Deduct quantity from purchase
-    purchase.quantity -= consignedQuantity;
+    purchase.quantity -= consignedQuantity.toInt();
     await gemstones.put(purchaseId, purchase);
 
     // Save broker consignment
     await brokers.put(brokerConsignment.id, brokerConsignment);
 
     // Create audit log
-    await createAuditLog(
+    final currentUser = LocalDb.currentUser();
+    final auditLog = AuditLog(
+      id: genId(),
       action: 'CREATE_BROKER_CONSIGNMENT',
+      userId: currentUser['id'] as String,
+      userName: currentUser['name'] as String,
+      timestamp: now,
       details: 'Consigned \${consignedQuantity} from \${purchase.name} to \${brokerName}',
-      relatedId: brokerConsignment.id,
     );
+    await createAuditLog(auditLog);
 
     return brokerConsignment;
   }
@@ -1263,11 +1268,16 @@ class LocalDb {
     broker.updatedAt = DateTime.now().millisecondsSinceEpoch;
     await brokers.put(brokerId, broker);
 
-    await createAuditLog(
+    final currentUser = LocalDb.currentUser();
+    final auditLog = AuditLog(
+      id: genId(),
       action: 'BROKER_SOLD',
+      userId: currentUser['id'] as String,
+      userName: currentUser['name'] as String,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
       details: 'Sold \${soldQuantity} units',
-      relatedId: brokerId,
     );
+    await createAuditLog(auditLog);
   }
 
   /// Update broker returned quantity
@@ -1284,7 +1294,7 @@ class LocalDb {
     // Restore quantity to purchase
     final purchase = gemstones.get(broker.purchaseId);
     if (purchase != null) {
-      purchase.quantity += returnedQuantity;
+      purchase.quantity += returnedQuantity.toInt();
       await gemstones.put(broker.purchaseId, purchase);
     }
 
@@ -1292,11 +1302,16 @@ class LocalDb {
     broker.updatedAt = DateTime.now().millisecondsSinceEpoch;
     await brokers.put(brokerId, broker);
 
-    await createAuditLog(
+    final currentUser = LocalDb.currentUser();
+    final auditLog = AuditLog(
+      id: genId(),
       action: 'BROKER_RETURNED',
+      userId: currentUser['id'] as String,
+      userName: currentUser['name'] as String,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
       details: 'Returned \${returnedQuantity} units',
-      relatedId: brokerId,
     );
+    await createAuditLog(auditLog);
   }
 
   /// Delete broker consignment and restore all quantities
@@ -1316,7 +1331,7 @@ class LocalDb {
     final remainingToRestore = broker.consignedQuantity - broker.returnedQuantity;
     final purchase = gemstones.get(broker.purchaseId);
     if (purchase != null) {
-      purchase.quantity += remainingToRestore;
+      purchase.quantity += remainingToRestore.toInt();
       await gemstones.put(broker.purchaseId, purchase);
     }
 
@@ -1324,11 +1339,16 @@ class LocalDb {
     broker.deletedAt = DateTime.now().millisecondsSinceEpoch;
     await brokers.put(brokerId, broker);
 
-    await createAuditLog(
+    final currentUser = LocalDb.currentUser();
+    final auditLog = AuditLog(
+      id: genId(),
       action: 'DELETE_BROKER_CONSIGNMENT',
+      userId: currentUser['id'] as String,
+      userName: currentUser['name'] as String,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
       details: 'Deleted and restored \${remainingToRestore} units',
-      relatedId: brokerId,
     );
+    await createAuditLog(auditLog);
   }
 
   /// Check if purchase can be edited (not linked to active broker consignments)
