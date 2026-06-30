@@ -27,6 +27,15 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
           onPressed: () => context.canPop() ? context.pop() : context.go('/dashboard'),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await context.push('/broker-consignment/form');
+          if (result == true && mounted) {
+            setState(() {});
+          }
+        },
+        child: const Icon(Icons.add),
+      ),
       body: ValueListenableBuilder(
         valueListenable: Hive.box<BrokerConsignment>('brokerConsignments').listenable(),
         builder: (context, Box<BrokerConsignment> box, _) {

@@ -12,6 +12,7 @@ import '../../features/reports/presentation/pages/reports_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/account_settings/presentation/pages/account_settings_page.dart';
 import '../../features/broker_consignment/presentation/pages/broker_consignment_page.dart';
+import '../../features/broker_consignment/presentation/pages/broker_form_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -82,6 +83,15 @@ final GoRouter appRouter = GoRouter(
       path: '/broker-consignment',
       name: 'broker-consignment',
       builder: (context, state) => const BrokerConsignmentPage(),
+      routes: [
+        GoRoute(
+          path: 'form',
+          name: 'broker-form',
+          builder: (context, state) => BrokerFormPage(
+            brokerId: state.pathParameters['brokerId'],
+          ),
+        ),
+      ],
     ),
   ],
 );
