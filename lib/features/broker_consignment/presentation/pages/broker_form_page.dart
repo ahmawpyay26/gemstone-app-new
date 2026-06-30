@@ -189,7 +189,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
 
   Widget _buildPurchaseSelector() {
     return ValueListenableBuilder(
-      valueListenable: LocalDb.gemstones().listenable(),
+      valueListenable: Hive.box<Gemstone>('gemstones').listenable(),
       builder: (context, Box<Gemstone> box, _) {
         final purchases = box.values.toList();
 

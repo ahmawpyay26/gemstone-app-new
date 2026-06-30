@@ -37,7 +37,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
         ],
       ),
       body: ValueListenableBuilder(
-        valueListenable: LocalDb.brokerConsignments().listenable(),
+        valueListenable: Hive.box<BrokerConsignment>('brokerConsignments').listenable(),
         builder: (context, Box<BrokerConsignment> box, _) {
           if (box.isEmpty) {
             return Center(
