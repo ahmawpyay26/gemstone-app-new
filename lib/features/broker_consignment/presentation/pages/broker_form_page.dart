@@ -60,7 +60,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
 
     final quantity = int.tryParse(value);
     if (quantity == null || quantity <= 0) {
-      _quantityErrorMessage = 'အရေအတွက်သည် ၀ထ다ကြီးရမည်ဖြစ်ပါသည်။';
+      _quantityErrorMessage = 'အရေအတွက်သည် ၀ထက်ကြီးရမည်ဖြစ်ပါသည်။';
       return;
     }
 
@@ -77,6 +77,35 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     if (_consignmentQuantityCtrl.text.isEmpty) return false;
     if (_quantityErrorMessage != null) return false;
     return true;
+  }
+
+  Future<void> _saveBrokerConsignment() async {
+    if (!_isFormValid() || _selectedPurchase == null) return;
+
+    try {
+      final quantity = int.parse(_consignmentQuantityCtrl.text);
+      
+      // Step 8: Create broker consignment with auto deduction
+      await LocalDb.createBrokerConsignment(
+        purchaseId: _selectedPurchase!.id,
+        consignedQuantity: quantity.toDouble(),
+        sourceType: 'whole_stone',
+        brokerName: _brokerNameCtrl.text,
+        brokerPhone: _brokerPhoneCtrl.text,
+        brokerAddress: _brokerAddressCtrl.text,
+      );
+
+      // Navigate back on success
+      if (mounted) {
+        context.pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('အမှားအယွင်း: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -200,10 +229,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isFormValid() ? () {
-                  // TODO: Implement save logic
-                  context.pop(true);
-                } : null,
+                onPressed: _isFormValid() ? _saveBrokerConsignment : null,
                 child: const Text('သိမ်းဆည်းရန်'),
               ),
             ),

@@ -1178,9 +1178,9 @@ class LocalDb {
       orElse: () => throw Exception('Purchase Record not found'),
     );
 
-    // Validate quantity
-    if (consignedQuantity > purchase.quantity) {
-      throw Exception('အပ်လိုသောအရေအတွက်သည် လက်ကျန်အရေအတွက်ထက် များနေပါသည်။');
+    // Validate quantity against remaining quantity
+    if (consignedQuantity > purchase.remainingQuantity) {
+      throw Exception('ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက်ထက် မကျော်လွန်ရပါ။');
     }
 
     // Capture historical data
@@ -1212,9 +1212,12 @@ class LocalDb {
       createdAt: now,
     );
 
-    // Deduct quantity from purchase
-    purchase.quantity -= consignedQuantity.toInt();
-    await gemstones.put(purchaseId, purchase);
+    // Deduct quantity from remaining quantity only
+    purchase.remainingQuantity -= consignedQuantity.toInt();
+    final key = gemstoneKeyById(purchaseId);
+    if (key != null) {
+      await gemstones.put(key, purchase);
+    }
 
     // Save broker consignment
     await brokers.put(brokerConsignment.id, brokerConsignment);
@@ -1223,11 +1226,11 @@ class LocalDb {
     final currentUser = LocalDb.currentUser();
     final auditLog = AuditLog(
       id: genId(),
-      action: 'CREATE_BROKER_CONSIGNMENT',
+      action: 'BROKER_CONSIGNMENT_CREATED',
       userId: currentUser['id'] as String,
       userName: currentUser['name'] as String,
       timestamp: now,
-      details: 'Consigned \${consignedQuantity} from \${purchase.name} to \${brokerName}',
+      details: 'Consigned ${consignedQuantity} from ${purchase.name} to ${brokerName}',
     );
     await createAuditLog(auditLog);
 
