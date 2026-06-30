@@ -7,6 +7,7 @@ import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../shared/widgets/photo_attachment_widget.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
+import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
 import '../../../../core/services/voucher_export_service.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -254,7 +255,37 @@ class _SalesPageState extends State<SalesPage> {
                           return Card(
                             color: AppTheme.surfaceDark,
                             margin: const EdgeInsets.only(bottom: 10),
-                            child: ListTile(
+                            child: Column(
+                            children: [
+                              // Date box at the top
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.successColor.withOpacity(0.1),
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(8),
+                                    topRight: Radius.circular(8),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.calendar_today,
+                                      size: 16,
+                                      color: AppTheme.successColor,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _date.format(DateTime.fromMillisecondsSinceEpoch(s.saleDate)),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ListTile(
                               leading: CircleAvatar(
                                 backgroundColor:
                                     AppTheme.successColor.withOpacity(0.2),
@@ -368,7 +399,15 @@ class _SalesPageState extends State<SalesPage> {
                               ),
                               onTap: () => _showDetails(s, hiveKey: key),
                             ),
-                          );
+                              // Gemstone breakdown widget
+                              GemstoneBreakdownWidget(
+                                isForSale: true,
+                                onBreakdownChanged: (breakdown) {
+                                  // Store breakdown data for sale
+                                },
+                              ),
+                            ],
+                          ),);
                         },
                       ),
               ),

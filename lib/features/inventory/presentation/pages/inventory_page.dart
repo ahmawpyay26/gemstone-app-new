@@ -7,6 +7,7 @@ import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../shared/widgets/photo_attachment_widget.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
+import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
 
 extension DateTimeExtension on DateTime {
   DateTime toDateOnly() => DateTime(year, month, day);
@@ -338,7 +339,37 @@ class _InventoryPageState extends State<InventoryPage> {
                       return Card(
                         color: AppTheme.surfaceDark,
                         margin: const EdgeInsets.only(bottom: 10),
-                        child: ListTile(
+                        child: Column(
+                          children: [
+                            // Date box at the top
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryAccent.withOpacity(0.1),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(8),
+                                  topRight: Radius.circular(8),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.calendar_today,
+                                    size: 16,
+                                    color: AppTheme.primaryAccent,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _date.format(DateTime.fromMillisecondsSinceEpoch(g.dateAdded)),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ListTile(
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
                           leading: CircleAvatar(
