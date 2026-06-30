@@ -14,7 +14,6 @@ class BrokerConsignmentPage extends StatefulWidget {
 }
 
 class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
-  final _money = NumberFormat('#,##0', 'en_US');
   final _date = DateFormat('yyyy-MM-dd');
 
   Future<void> _delete(dynamic key) async {
@@ -139,13 +138,13 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
         builder: (context, Box<BrokerConsignment> box, _) {
           final totalConsigned = LocalDb.brokerConsignments()
               .values
-              .fold<int>(0, (sum, bc) => sum + (bc.consignedQuantity ?? 0));
+              .fold<double>(0, (sum, bc) => sum + (bc.consignedQuantity ?? 0));
           final totalSold = LocalDb.brokerConsignments()
               .values
-              .fold<int>(0, (sum, bc) => sum + (bc.soldQuantity ?? 0));
+              .fold<double>(0, (sum, bc) => sum + (bc.soldQuantity ?? 0));
           final totalRemaining = LocalDb.brokerConsignments()
               .values
-              .fold<int>(0, (sum, bc) => sum + (bc.remainingQuantity ?? 0));
+              .fold<double>(0, (sum, bc) => sum + bc.remainingQuantity);
 
           return Column(
             children: [
@@ -155,17 +154,17 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                   children: [
                     _summaryCard(
                       'စုစုပေါင်း အပ်ထားသော',
-                      '$totalConsigned ခု',
+                      '${totalConsigned.toInt()} ခု',
                       AppTheme.primaryAccent,
                     ),
                     _summaryCard(
                       'စုစုပေါင်း ရောင်းချ',
-                      '$totalSold ခု',
+                      '${totalSold.toInt()} ခု',
                       AppTheme.successColor,
                     ),
                     _summaryCard(
                       'ကျန်ရှိသော',
-                      '$totalRemaining ခု',
+                      '${totalRemaining.toInt()} ခု',
                       Colors.orange,
                     ),
                   ],
@@ -205,7 +204,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        _date.format(DateTime.fromMillisecondsSinceEpoch(bc.createdDate)),
+                                        _date.format(DateTime.fromMillisecondsSinceEpoch(bc.createdAt)),
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 12,
@@ -222,7 +221,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                     child: const Icon(Icons.handshake,
                                         color: AppTheme.primaryAccent),
                                   ),
-                                  title: Text(bc.brokerName ?? 'Unknown Broker',
+                                  title: Text(bc.brokerName,
                                       style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold)),
@@ -230,21 +229,21 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                          'အပ်ထားသော: ${bc.consignedQuantity} • ရောင်းချ: ${bc.soldQuantity} • ကျန်: ${bc.remainingQuantity}',
+                                          'အပ်ထားသော: ${bc.consignedQuantity.toInt()} • ရောင်းချ: ${bc.soldQuantity.toInt()} • ကျန်: ${bc.remainingQuantity.toInt()}',
                                           style:
                                               TextStyle(color: Colors.grey[400])),
-                                      Text(bc.gemstoneName ?? 'Unknown Gemstone',
+                                      Text(bc.historicalData.gemstoneType,
                                           style:
                                               TextStyle(color: Colors.grey[400])),
                                       Text(
-                                          _date.format(DateTime.fromMillisecondsSinceEpoch(bc.createdDate)),
+                                          _date.format(DateTime.fromMillisecondsSinceEpoch(bc.createdAt)),
                                           style: TextStyle(
                                               color: Colors.grey[500],
                                               fontSize: 12)),
                                     ],
                                   ),
                                   trailing: PopupMenuButton<String>(
-                                    constraints: BoxConstraints(maxHeight: 200),
+                                    constraints: const BoxConstraints(maxHeight: 200),
                                     icon: Icon(Icons.more_vert,
                                         color: LocalDb.canEditBrokerConsignment() ? Colors.white : Colors.grey[600]),
                                     enabled: LocalDb.canEditBrokerConsignment(),

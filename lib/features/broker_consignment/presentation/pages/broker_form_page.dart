@@ -21,40 +21,42 @@ class BrokerFormPage extends StatefulWidget {
 
 class _BrokerFormPageState extends State<BrokerFormPage> {
   late TextEditingController _brokerNameCtrl;
-  late TextEditingController _gemstoneNameCtrl;
+  late TextEditingController _brokerPhoneCtrl;
+  late TextEditingController _brokerAddressCtrl;
+  late TextEditingController _brokerSocialCtrl;
   late TextEditingController _quantityCtrl;
-  late TextEditingController _weightCtrl;
   late TextEditingController _notesCtrl;
   
   String? _selectedPurchaseId;
-  String? _selectedBreakdownItem;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _brokerNameCtrl = TextEditingController(text: widget.existing?.brokerName ?? '');
-    _gemstoneNameCtrl = TextEditingController(text: widget.existing?.gemstoneName ?? '');
+    _brokerPhoneCtrl = TextEditingController(text: widget.existing?.brokerPhone ?? '');
+    _brokerAddressCtrl = TextEditingController(text: widget.existing?.brokerAddress ?? '');
+    _brokerSocialCtrl = TextEditingController(text: widget.existing?.brokerSocialAccount ?? '');
     _quantityCtrl = TextEditingController(text: widget.existing?.consignedQuantity?.toString() ?? '');
-    _weightCtrl = TextEditingController(text: widget.existing?.weight?.toString() ?? '');
     _notesCtrl = TextEditingController(text: widget.existing?.notes ?? '');
     _selectedPurchaseId = widget.existing?.purchaseId;
-    _selectedBreakdownItem = widget.existing?.historicalData.breakdownItemName;
   }
 
   @override
   void dispose() {
     _brokerNameCtrl.dispose();
-    _gemstoneNameCtrl.dispose();
+    _brokerPhoneCtrl.dispose();
+    _brokerAddressCtrl.dispose();
+    _brokerSocialCtrl.dispose();
     _quantityCtrl.dispose();
-    _weightCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     if (_brokerNameCtrl.text.isEmpty ||
-        _gemstoneNameCtrl.text.isEmpty ||
+        _brokerPhoneCtrl.text.isEmpty ||
+        _brokerAddressCtrl.text.isEmpty ||
         _quantityCtrl.text.isEmpty ||
         _selectedPurchaseId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,59 +70,35 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
 
     setState(() => _isLoading = true);
     try {
-      final quantity = int.parse(_quantityCtrl.text);
-      final weight = double.tryParse(_weightCtrl.text) ?? 0.0;
+      final quantity = double.parse(_quantityCtrl.text);
 
       if (widget.existing != null) {
         // Update existing
-        final updated = widget.existing!.copyWith(
-          brokerName: _brokerNameCtrl.text,
-          gemstoneName: _gemstoneNameCtrl.text,
-          consignedQuantity: quantity,
-          weight: weight,
-          notes: _notesCtrl.text,
-          updatedDate: DateTime.now().millisecondsSinceEpoch,
-        );
+        final updated = widget.existing!;
+        updated.brokerName = _brokerNameCtrl.text;
+        updated.brokerPhone = _brokerPhoneCtrl.text;
+        updated.brokerAddress = _brokerAddressCtrl.text;
+        updated.brokerSocialAccount = _brokerSocialCtrl.text;
+        updated.consignedQuantity = quantity;
+        updated.notes = _notesCtrl.text;
+        updated.updatedAt = DateTime.now().millisecondsSinceEpoch;
+        
         await LocalDb.brokerConsignments().put(widget.hiveKey, updated);
       } else {
         // Create new
         final purchase = LocalDb.gemstones().get(_selectedPurchaseId);
         if (purchase == null) throw Exception('ဝယ်ယူမှု မတွေ့ရှိ');
 
-        final consignment = BrokerConsignment(
-          id: LocalDb.genId(),
+        await LocalDb.createBrokerConsignment(
           brokerName: _brokerNameCtrl.text,
-          gemstoneName: _gemstoneNameCtrl.text,
+          brokerPhone: _brokerPhoneCtrl.text,
+          brokerAddress: _brokerAddressCtrl.text,
+          brokerSocialAccount: _brokerSocialCtrl.text,
           purchaseId: _selectedPurchaseId!,
           consignedQuantity: quantity,
-          weight: weight,
-          soldQuantity: 0,
-          returnedQuantity: 0,
-          remainingQuantity: quantity,
           notes: _notesCtrl.text,
-          createdDate: DateTime.now().millisecondsSinceEpoch,
-          updatedDate: DateTime.now().millisecondsSinceEpoch,
-          isActive: true,
-          photoPaths: [],
-          historicalData: BrokerHistoricalData(
-            originalSeller: '',
-            gemstoneType: purchase.type,
-            originalWeight: purchase.weightCarat,
-            sourceType: 'purchase',
-            purchaseId: _selectedPurchaseId,
-            breakdownItemName: _selectedBreakdownItem,
-          ),
-        );
-
-        await LocalDb.createBrokerConsignment(
-          brokerName: consignment.brokerName,
-          gemstoneName: consignment.gemstoneName,
-          purchaseId: consignment.purchaseId,
-          consignedQuantity: consignment.consignedQuantity,
-          weight: consignment.weight,
-          notes: consignment.notes,
-          sourceType: 'purchase',
-          breakdownItemName: _selectedBreakdownItem,
+          sourceType: 'whole_stone',
+          breakdownItemName: null,
         );
       }
 
@@ -180,9 +158,35 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             ),
             const SizedBox(height: 16),
             TextField(
-              controller: _gemstoneNameCtrl,
+              controller: _brokerPhoneCtrl,
               decoration: InputDecoration(
-                labelText: 'ကျောက်မျ ိုးအမည်',
+                labelText: 'ဖုန်းနံပါတ်',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: AppTheme.surfaceDark,
+              ),
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _brokerAddressCtrl,
+              decoration: InputDecoration(
+                labelText: 'လိပ်စာ',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: AppTheme.surfaceDark,
+              ),
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _brokerSocialCtrl,
+              decoration: InputDecoration(
+                labelText: 'လူမှုကွန်ယက်အကောင့်',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -196,21 +200,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               controller: _quantityCtrl,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'အရေအတွက်',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                filled: true,
-                fillColor: AppTheme.surfaceDark,
-              ),
-              style: const TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _weightCtrl,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'ကြေးချိန် (ကာရက်)',
+                labelText: 'အပ်ထားသောအရေအတွက်',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
