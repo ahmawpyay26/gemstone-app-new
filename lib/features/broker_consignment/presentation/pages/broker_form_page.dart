@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 
 class BrokerFormPage extends StatefulWidget {
@@ -19,12 +20,16 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   // Purchase Record reference
   Gemstone? _selectedPurchase;
 
+  // Step 6.3: number of purchase records loaded from LocalDb
+  int _purchaseRecordCount = 0;
+
   @override
   void initState() {
     super.initState();
     _brokerNameCtrl = TextEditingController();
     _brokerPhoneCtrl = TextEditingController();
     _brokerAddressCtrl = TextEditingController();
+    _purchaseRecordCount = LocalDb.gemstones().values.length;
   }
 
   @override
@@ -51,6 +56,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('ပွဲစားအချက်အလက်', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Text('Purchase records loaded: $_purchaseRecordCount'),
             const SizedBox(height: 12),
             TextField(
               controller: _brokerNameCtrl,
