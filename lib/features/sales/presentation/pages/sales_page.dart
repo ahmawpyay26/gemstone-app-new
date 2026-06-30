@@ -400,14 +400,18 @@ class _SalesPageState extends State<SalesPage> {
                               onTap: () => _showDetails(s, hiveKey: key),
                             ),
                               // Gemstone breakdown widget
-                              GemstoneBreakdownWidget(
-                                isForSale: true,
-                                onBreakdownChanged: (breakdown) {
-                                  // Store breakdown data for sale
-                                },
+                              Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: GemstoneBreakdownWidget(
+                                  isForSale: true,
+                                  onBreakdownChanged: (breakdown) {
+                                    // Store breakdown data for sale
+                                  },
+                                ),
                               ),
                             ],
-                          ),);
+                          ),
+                        );
                         },
                       ),
               ),
