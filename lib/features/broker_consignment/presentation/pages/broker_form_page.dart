@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 
@@ -81,9 +82,19 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             ),
             const SizedBox(height: 12),
             if (_selectedPurchase != null)
-              Text(
-                'ရွေးချယ်ထားသည့်ဝယ်ယူမှုမှတ်တမ်း: ${_selectedPurchase!.name}',
-                style: Theme.of(context).textTheme.bodyMedium,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ရွေးချယ်ထားသည့်ဝယ်ယူမှုမှတ်တမ်း: ${_selectedPurchase!.name}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'ဝယ်ယူမှုရက်စွဲ: ${DateFormat('dd/MM/yyyy').format(DateTime.fromMillisecondsSinceEpoch(_selectedPurchase!.createdAt))}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
             const SizedBox(height: 12),
             TextField(
