@@ -23,6 +23,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
 
   // Step 6.4: list of purchase records loaded from LocalDb
   List<Gemstone> _purchaseRecords = [];
+  
+  // Step 7: Consignment quantity input
+  late TextEditingController _consignmentQuantityCtrl;
+  String? _quantityErrorMessage;
 
   @override
   void initState() {
@@ -30,6 +34,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     _brokerNameCtrl = TextEditingController();
     _brokerPhoneCtrl = TextEditingController();
     _brokerAddressCtrl = TextEditingController();
+    _consignmentQuantityCtrl = TextEditingController();
     _purchaseRecords = LocalDb.gemstones().values.toList();
   }
 
@@ -38,7 +43,40 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     _brokerNameCtrl.dispose();
     _brokerPhoneCtrl.dispose();
     _brokerAddressCtrl.dispose();
+    _consignmentQuantityCtrl.dispose();
     super.dispose();
+  }
+
+  void _validateQuantity(String value) {
+    if (_selectedPurchase == null) {
+      _quantityErrorMessage = null;
+      return;
+    }
+
+    if (value.isEmpty) {
+      _quantityErrorMessage = null;
+      return;
+    }
+
+    final quantity = int.tryParse(value);
+    if (quantity == null || quantity <= 0) {
+      _quantityErrorMessage = 'အရေအတွက်သည် ၀ထ다ကြီးရမည်ဖြစ်ပါသည်။';
+      return;
+    }
+
+    if (quantity > _selectedPurchase!.remainingQuantity) {
+      _quantityErrorMessage = 'ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက်ထက် မကျော်လွန်ရပါ။';
+      return;
+    }
+
+    _quantityErrorMessage = null;
+  }
+
+  bool _isFormValid() {
+    if (_selectedPurchase == null) return false;
+    if (_consignmentQuantityCtrl.text.isEmpty) return false;
+    if (_quantityErrorMessage != null) return false;
+    return true;
   }
 
   @override
@@ -102,6 +140,38 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                 ],
               ),
             const SizedBox(height: 12),
+            if (_selectedPurchase != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _consignmentQuantityCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'အပ်စာရင်းအရေအတွက်',
+                      border: const OutlineInputBorder(),
+                      errorText: _quantityErrorMessage,
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _validateQuantity(value);
+                      });
+                    },
+                  ),
+                  if (_quantityErrorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        _quantityErrorMessage!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            const SizedBox(height: 12),
             TextField(
               controller: _brokerNameCtrl,
               decoration: const InputDecoration(
@@ -130,10 +200,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: _isFormValid() ? () {
                   // TODO: Implement save logic
                   context.pop(true);
-                },
+                } : null,
                 child: const Text('သိမ်းဆည်းရန်'),
               ),
             ),
