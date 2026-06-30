@@ -682,8 +682,10 @@ class LocalDb {
   }
 
   /// ပစ္စည်းတစ်ခုချင်းစီ၏ ကျန်ရှိအရေအတွက်
+  /// Accounts for sales deductions AND broker consignment deductions
   static int gemstoneRemainingQuantity(Gemstone g) {
-    return g.quantity - gemstoneSoldQuantity(g.id);
+    // Use the stored remainingQuantity field which accounts for broker deductions
+    return g.remainingQuantity;
   }
 
   /// ပစ္စည်းတစ်ခုချင်းစီ၏ အရောင်းအကြိမ်အရေအတွက် (ဘယ်နှစ်ကြိမ် ရောင်းခဲ့သည်)
@@ -1214,10 +1216,8 @@ class LocalDb {
 
     // Deduct quantity from remaining quantity only
     purchase.remainingQuantity -= consignedQuantity.toInt();
-    final key = gemstoneKeyById(purchaseId);
-    if (key != null) {
-      await gemstones.put(key, purchase);
-    }
+    // Use purchaseId directly as the Hive key (Gemstone objects are stored with their ID as key)
+    await gemstones.put(purchaseId, purchase);
 
     // Save broker consignment
     await brokers.put(brokerConsignment.id, brokerConsignment);
@@ -1421,17 +1421,13 @@ class LocalDb {
 
     // Step 9: Update broker consignment - increase returnedQuantity
     bc.returnedQuantity += returnedQuantity;
-    final brokerKey = brokerConsignmentKeyById(brokerConsignmentId);
-    if (brokerKey != null) {
-      await brokers.put(brokerKey, bc);
-    }
+    // Use brokerConsignmentId directly as the Hive key
+    await brokers.put(brokerConsignmentId, bc);
 
     // Step 9: Restore to purchase record - increase remainingQuantity
     purchase.remainingQuantity += returnedQuantity.toInt();
-    final purchaseKey = gemstoneKeyById(bc.purchaseId);
-    if (purchaseKey != null) {
-      await gemstones.put(purchaseKey, purchase);
-    }
+    // Use purchaseId directly as the Hive key
+    await gemstones.put(bc.purchaseId, purchase);
 
     // Create audit log
     final currentUser = LocalDb.currentUser();
