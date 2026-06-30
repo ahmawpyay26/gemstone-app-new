@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../local/local_db.dart';
-import '../../features/broker_consignment/presentation/pages/broker_form_page.dart';
-import '../../features/broker_consignment/presentation/pages/broker_detail_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/inventory/presentation/pages/inventory_page.dart';
@@ -14,8 +12,6 @@ import '../../features/reports/presentation/pages/reports_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/account_settings/presentation/pages/account_settings_page.dart';
 import '../../features/broker_consignment/presentation/pages/broker_consignment_page.dart';
-import '../../features/broker_consignment/presentation/pages/broker_form_page.dart';
-import '../../features/broker_consignment/presentation/pages/broker_detail_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -86,23 +82,6 @@ final GoRouter appRouter = GoRouter(
       path: '/broker-consignment',
       name: 'broker-consignment',
       builder: (context, state) => const BrokerConsignmentPage(),
-      routes: [
-        GoRoute(
-          path: 'form',
-          name: 'broker-consignment-form',
-          builder: (context, state) => const BrokerFormPage(),
-        ),
-        GoRoute(
-          path: 'form/:id',
-          name: 'broker-consignment-form-edit',
-          builder: (context, state) => BrokerFormPage(brokerId: state.pathParameters['id']),
-        ),
-        GoRoute(
-          path: 'detail/:id',
-          name: 'broker-consignment-detail',
-          builder: (context, state) => BrokerDetailPage(brokerId: state.pathParameters['id']!),
-        ),
-      ],
     ),
   ],
 );
