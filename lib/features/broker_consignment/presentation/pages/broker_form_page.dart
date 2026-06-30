@@ -108,6 +108,58 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     }
   }
 
+  void _showPurchaseSelector() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('ဝယ်ယူမှုမှတ်တမ်းရွေးချယ်ပါ'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _purchaseRecords.length,
+              itemBuilder: (context, index) {
+                final gemstone = _purchaseRecords[index];
+                final purchaseDate = DateFormat('dd/MM/yyyy').format(
+                  DateTime.fromMillisecondsSinceEpoch(gemstone.createdAt),
+                );
+                return ListTile(
+                  title: Text(
+                    gemstone.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text('အမျိုးအစား: ${gemstone.type}'),
+                      Text('ဝယ်ယူမှုရက်စွဲ: $purchaseDate'),
+                      Text('ကျန်ရှိအရေအတွက်: ${gemstone.remainingQuantity}'),
+                      Text('ID: ${gemstone.id}'),
+                    ],
+                  ),
+                  onTap: () {
+                    setState(() {
+                      _selectedPurchase = gemstone;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ပိတ်ရန်'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,27 +177,32 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           children: [
             Text('ပွဲစားအချက်အလက်', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
-            DropdownButtonFormField<Gemstone>(
-              value: _selectedPurchase,
-              isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'ဝယ်ယူမှုမှတ်တမ်း',
-                border: OutlineInputBorder(),
+            GestureDetector(
+              onTap: () => _showPurchaseSelector(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _selectedPurchase == null
+                            ? 'ဝယ်ယူမှုမှတ်တမ်းရွေးချယ်ပါ'
+                            : _selectedPurchase!.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: _selectedPurchase == null ? Colors.grey : Colors.black,
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
+                ),
               ),
-              items: _purchaseRecords.map((g) {
-                return DropdownMenuItem<Gemstone>(
-                  value: g,
-                  child: Text(
-                    '${g.name} (${g.type}) - အရေအတွက် ${g.quantity}',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                );
-              }).toList(),
-              onChanged: (g) {
-                setState(() {
-                  _selectedPurchase = g;
-                });
-              },
             ),
             const SizedBox(height: 12),
             if (_selectedPurchase != null)
