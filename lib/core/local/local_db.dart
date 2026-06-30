@@ -1369,4 +1369,26 @@ class LocalDb {
     return linkedBrokers.isEmpty;
   }
 
+  // -------------------------------------------------------------------------
+  // Broker Consignment RBAC Permissions
+  // -------------------------------------------------------------------------
+
+  /// Broker Consignment ကို ဖန်တီးနိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
+  static bool canCreateBrokerConsignment() {
+    if (isCurrentUserSuperAdmin()) return true;
+    return isCurrentUserAdmin();
+  }
+
+  /// Broker Consignment ကို Edit နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
+  static bool canEditBrokerConsignment() {
+    if (isCurrentUserSuperAdmin()) return true;
+    return isCurrentUserAdmin();
+  }
+
+  /// Broker Consignment ကို ဖျက်နိုင်သည်ကို စစ်ဆေးခြင်း (Admin-only)
+  static bool canDeleteBrokerConsignment() {
+    if (isCurrentUserSuperAdmin()) return true;
+    return isCurrentUserAdmin();
+  }
+
 }

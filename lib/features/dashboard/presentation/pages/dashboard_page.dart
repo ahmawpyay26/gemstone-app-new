@@ -200,6 +200,7 @@ class _DashboardPageState extends State<DashboardPage> {
         const SizedBox(height: 16),
         GridView.count(
           crossAxisCount: 2,
+          childAspectRatio: 1.0,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           shrinkWrap: true,
@@ -213,6 +214,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 () => context.push('/expenses')),
             _moduleCard(Icons.people, 'အလုပ်သမားများ', 'အလုပ်သမားစာရင်း',
                 () => context.push('/workers')),
+            _moduleCard(Icons.handshake, 'ပွဲစားအပ်စာရင်းများ', 'ပွဲစားအပ်စာရင်း',
+                () => context.push('/broker-consignment')),
             _moduleCard(Icons.location_city, 'ခွဲခြင်းများ', 'ခွဲခြင်းစာရင်း',
                 () => context.push('/branches')),
           ],
