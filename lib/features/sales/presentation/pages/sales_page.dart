@@ -293,6 +293,7 @@ class _SalesPageState extends State<SalesPage> {
                                           fontWeight: FontWeight.bold)),
                                   if (s.costPrice > 0) _profitBadge(s),
                                   PopupMenuButton<String>(
+                                    constraints: BoxConstraints(maxHeight: 300),
                                     icon: Icon(Icons.more_vert,
                                         color: LocalDb.canEditSale() ? Colors.white : Colors.grey[600]),
                                     enabled: LocalDb.canEditSale(),
