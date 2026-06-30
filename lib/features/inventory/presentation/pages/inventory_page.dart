@@ -514,18 +514,31 @@ class _InventoryPageState extends State<InventoryPage> {
                                   )),
                             ],
                           ),
+                          ),
                         ),
-                      );
-                    },
+                        // Gemstone breakdown widget
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: GemstoneBreakdownWidget(
+                            isForSale: false,
+                            onBreakdownChanged: (breakdown) {
+                              // Store breakdown data for purchase
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 },
-              ),
-            ),
+              );
+            },
           ),
-        ],
+        ),
       ),
-    );
-  }
+    ],
+    ),
+  );
+}
 
   Widget _empty() => Center(
         child: Column(
