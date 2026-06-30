@@ -795,3 +795,203 @@ class StaffUserAdapter extends TypeAdapter<StaffUser> {
       ..write(obj.lastLoginAt);
   }
 }
+
+
+// ---------------------------------------------------------------------------
+// Broker Consignment
+// ---------------------------------------------------------------------------
+
+/// Historical data snapshot captured at broker consignment creation
+class BrokerHistoricalData {
+  String purchaseName; // Gemstone name at time of consignment
+  int purchaseDate; // Purchase date (timestamp)
+  String originalSeller; // Seller name at time of consignment
+  String gemstoneType; // Gemstone type at time of consignment
+  String sourceType; // "whole_stone" or "breakdown_item"
+  String? breakdownItemName; // Name if sourceType is "breakdown_item"
+  double originalQuantity; // Purchase quantity at time of consignment
+  double originalWeight; // Purchase weight at time of consignment
+  int capturedAt; // When this snapshot was taken (timestamp)
+
+  BrokerHistoricalData({
+    required this.purchaseName,
+    required this.purchaseDate,
+    required this.originalSeller,
+    required this.gemstoneType,
+    required this.sourceType,
+    this.breakdownItemName,
+    required this.originalQuantity,
+    required this.originalWeight,
+    required this.capturedAt,
+  });
+}
+
+class BrokerHistoricalDataAdapter extends TypeAdapter<BrokerHistoricalData> {
+  @override
+  final int typeId = 10;
+
+  @override
+  BrokerHistoricalData read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return BrokerHistoricalData(
+      purchaseName: fields[0] as String,
+      purchaseDate: fields[1] as int,
+      originalSeller: fields[2] as String,
+      gemstoneType: fields[3] as String,
+      sourceType: fields[4] as String,
+      breakdownItemName: fields[5] as String?,
+      originalQuantity: fields[6] as double,
+      originalWeight: fields[7] as double,
+      capturedAt: fields[8] as int,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, BrokerHistoricalData obj) {
+    writer
+      ..writeByte(9)
+      ..writeByte(0)
+      ..write(obj.purchaseName)
+      ..writeByte(1)
+      ..write(obj.purchaseDate)
+      ..writeByte(2)
+      ..write(obj.originalSeller)
+      ..writeByte(3)
+      ..write(obj.gemstoneType)
+      ..writeByte(4)
+      ..write(obj.sourceType)
+      ..writeByte(5)
+      ..write(obj.breakdownItemName)
+      ..writeByte(6)
+      ..write(obj.originalQuantity)
+      ..writeByte(7)
+      ..write(obj.originalWeight)
+      ..writeByte(8)
+      ..write(obj.capturedAt);
+  }
+}
+
+/// Broker Consignment Record
+class BrokerConsignment {
+  String id;
+  String purchaseId; // Permanent reference to source Purchase Record
+  
+  // Current Status
+  double consignedQuantity;
+  double soldQuantity;
+  double returnedQuantity;
+  
+  // Historical Data (Immutable)
+  BrokerHistoricalData historicalData;
+  
+  // Broker Information
+  String brokerName;
+  String brokerPhone;
+  String brokerAddress;
+  String? brokerSocialAccount;
+  
+  // Additional Information
+  String notes;
+  List<String> photoPaths; // Paths to broker photos
+  
+  // Timestamps
+  int createdAt;
+  int updatedAt;
+  int? deletedAt; // Soft delete support
+
+  BrokerConsignment({
+    required this.id,
+    required this.purchaseId,
+    required this.consignedQuantity,
+    this.soldQuantity = 0,
+    this.returnedQuantity = 0,
+    required this.historicalData,
+    required this.brokerName,
+    required this.brokerPhone,
+    required this.brokerAddress,
+    this.brokerSocialAccount,
+    this.notes = '',
+    this.photoPaths = const [],
+    required this.createdAt,
+    int? updatedAt,
+    this.deletedAt,
+  }) : updatedAt = updatedAt ?? createdAt;
+
+  /// Calculate remaining quantity with broker
+  double get remainingQuantity => consignedQuantity - soldQuantity - returnedQuantity;
+
+  /// Check if this broker consignment is active (not deleted)
+  bool get isActive => deletedAt == null;
+
+  /// Check if this broker consignment is completed (no remaining quantity)
+  bool get isCompleted => remainingQuantity <= 0;
+}
+
+class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
+  @override
+  final int typeId = 11;
+
+  @override
+  BrokerConsignment read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return BrokerConsignment(
+      id: fields[0] as String,
+      purchaseId: fields[1] as String,
+      consignedQuantity: fields[2] as double,
+      soldQuantity: (fields[3] as double?) ?? 0,
+      returnedQuantity: (fields[4] as double?) ?? 0,
+      historicalData: fields[5] as BrokerHistoricalData,
+      brokerName: fields[6] as String,
+      brokerPhone: fields[7] as String,
+      brokerAddress: fields[8] as String,
+      brokerSocialAccount: fields[9] as String?,
+      notes: (fields[10] as String?) ?? '',
+      photoPaths: (fields[11] as List?)?.cast<String>() ?? [],
+      createdAt: fields[12] as int,
+      updatedAt: (fields[13] as int?) ?? fields[12] as int,
+      deletedAt: fields[14] as int?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, BrokerConsignment obj) {
+    writer
+      ..writeByte(15)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.purchaseId)
+      ..writeByte(2)
+      ..write(obj.consignedQuantity)
+      ..writeByte(3)
+      ..write(obj.soldQuantity)
+      ..writeByte(4)
+      ..write(obj.returnedQuantity)
+      ..writeByte(5)
+      ..write(obj.historicalData)
+      ..writeByte(6)
+      ..write(obj.brokerName)
+      ..writeByte(7)
+      ..write(obj.brokerPhone)
+      ..writeByte(8)
+      ..write(obj.brokerAddress)
+      ..writeByte(9)
+      ..write(obj.brokerSocialAccount)
+      ..writeByte(10)
+      ..write(obj.notes)
+      ..writeByte(11)
+      ..write(obj.photoPaths)
+      ..writeByte(12)
+      ..write(obj.createdAt)
+      ..writeByte(13)
+      ..write(obj.updatedAt)
+      ..writeByte(14)
+      ..write(obj.deletedAt);
+  }
+}

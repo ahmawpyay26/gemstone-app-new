@@ -17,6 +17,7 @@ class LocalDb {
   static const String staffUsersBox = 'staffUsers';
   static const String permissionsBox = 'permissions';
   static const String rolesBox = 'roles';
+  static const String brokerConsignmentsBox = 'brokerConsignments';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -31,6 +32,8 @@ class LocalDb {
     if (!Hive.isAdapterRegistered(7)) Hive.registerAdapter(PermissionAdapter());
     if (!Hive.isAdapterRegistered(8)) Hive.registerAdapter(RoleAdapter());
     if (!Hive.isAdapterRegistered(9)) Hive.registerAdapter(StaffUserAdapter());
+    if (!Hive.isAdapterRegistered(10)) Hive.registerAdapter(BrokerHistoricalDataAdapter());
+    if (!Hive.isAdapterRegistered(11)) Hive.registerAdapter(BrokerConsignmentAdapter());
 
     await Hive.openBox<AppUser>(usersBox);
     await Hive.openBox<Gemstone>(gemstonesBox);
@@ -42,6 +45,7 @@ class LocalDb {
     await Hive.openBox<StaffUser>(staffUsersBox);
     await Hive.openBox<Permission>(permissionsBox);
     await Hive.openBox<Role>(rolesBox);
+    await Hive.openBox<BrokerConsignment>(brokerConsignmentsBox);
 
     await _seedDefaults();
   }
@@ -1146,6 +1150,203 @@ class LocalDb {
   /// လုပ်ဆောင်ချက်ကို Admin သာ ပြုလုပ်နိုင်သည်ဆိုသည့် Error message
   static String adminOnlyErrorMessage() {
     return 'ဤလုပ်ဆောင်ချက်ကို Admin သာ ပြုလုပ်နိုင်ပါသည်။';
+  }
+
+  // -------------------------------------------------------------------------
+  // Broker Consignment CRUD Operations
+  // -------------------------------------------------------------------------
+
+  /// Create new Broker Consignment with automatic quantity deduction
+  static Future<BrokerConsignment> createBrokerConsignment({
+    required String purchaseId,
+    required double consignedQuantity,
+    required String sourceType, // "whole_stone" or "breakdown_item"
+    String? breakdownItemName,
+    required String brokerName,
+    required String brokerPhone,
+    required String brokerAddress,
+    String? brokerSocialAccount,
+    String notes = '',
+    List<String> photoPaths = const [],
+  }) async {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    final gemstones = Hive.box<Gemstone>(gemstonesBox);
+    
+    // Get the purchase record
+    final purchase = gemstones.values.firstWhere(
+      (g) => g.id == purchaseId,
+      orElse: () => throw Exception('Purchase Record not found'),
+    );
+
+    // Validate quantity
+    if (consignedQuantity > purchase.quantity) {
+      throw Exception('အပ်လိုသောအရေအတွက်သည် လက်ကျန်အရေအတွက်ထက် များနေပါသည်။');
+    }
+
+    // Capture historical data
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final historicalData = BrokerHistoricalData(
+      purchaseName: purchase.name,
+      purchaseDate: purchase.createdAt,
+      originalSeller: purchase.seller,
+      gemstoneType: purchase.gemstoneType,
+      sourceType: sourceType,
+      breakdownItemName: breakdownItemName,
+      originalQuantity: purchase.quantity,
+      originalWeight: purchase.weight,
+      capturedAt: now,
+    );
+
+    // Create broker consignment
+    final brokerConsignment = BrokerConsignment(
+      id: genId(),
+      purchaseId: purchaseId,
+      consignedQuantity: consignedQuantity,
+      historicalData: historicalData,
+      brokerName: brokerName,
+      brokerPhone: brokerPhone,
+      brokerAddress: brokerAddress,
+      brokerSocialAccount: brokerSocialAccount,
+      notes: notes,
+      photoPaths: photoPaths,
+      createdAt: now,
+    );
+
+    // Deduct quantity from purchase
+    purchase.quantity -= consignedQuantity;
+    await gemstones.put(purchaseId, purchase);
+
+    // Save broker consignment
+    await brokers.put(brokerConsignment.id, brokerConsignment);
+
+    // Create audit log
+    await createAuditLog(
+      action: 'CREATE_BROKER_CONSIGNMENT',
+      details: 'Consigned \${consignedQuantity} from \${purchase.name} to \${brokerName}',
+      relatedId: brokerConsignment.id,
+    );
+
+    return brokerConsignment;
+  }
+
+  /// Get all active broker consignments for a purchase
+  static List<BrokerConsignment> getActiveBrokerConsignmentsForPurchase(String purchaseId) {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    return brokers.values
+        .where((b) => b.purchaseId == purchaseId && b.isActive)
+        .toList();
+  }
+
+  /// Get broker consignment by ID
+  static BrokerConsignment? getBrokerConsignment(String id) {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    return brokers.get(id);
+  }
+
+  /// Get all active broker consignments
+  static List<BrokerConsignment> getAllActiveBrokerConsignments() {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    return brokers.values.where((b) => b.isActive).toList();
+  }
+
+  /// Update broker sold quantity
+  static Future<void> updateBrokerSoldQuantity(String brokerId, double soldQuantity) async {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    final broker = brokers.get(brokerId);
+    
+    if (broker == null) throw Exception('Broker Consignment not found');
+    if (soldQuantity > broker.remainingQuantity) {
+      throw Exception('ရောင်းလိုသောအရေအတွက်သည် ပွဲစားထံရှိ လက်ကျန်ထက် များနေပါသည်။');
+    }
+
+    broker.soldQuantity = soldQuantity;
+    broker.updatedAt = DateTime.now().millisecondsSinceEpoch;
+    await brokers.put(brokerId, broker);
+
+    await createAuditLog(
+      action: 'BROKER_SOLD',
+      details: 'Sold \${soldQuantity} units',
+      relatedId: brokerId,
+    );
+  }
+
+  /// Update broker returned quantity
+  static Future<void> updateBrokerReturnedQuantity(String brokerId, double returnedQuantity) async {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    final gemstones = Hive.box<Gemstone>(gemstonesBox);
+    final broker = brokers.get(brokerId);
+    
+    if (broker == null) throw Exception('Broker Consignment not found');
+    if (returnedQuantity > broker.remainingQuantity) {
+      throw Exception('ပြန်လည်လက်ခံသော အရေအတွက်သည် ပွဲစားထံရှိ လက်ကျန်ထက် များနေပါသည်။');
+    }
+
+    // Restore quantity to purchase
+    final purchase = gemstones.get(broker.purchaseId);
+    if (purchase != null) {
+      purchase.quantity += returnedQuantity;
+      await gemstones.put(broker.purchaseId, purchase);
+    }
+
+    broker.returnedQuantity = returnedQuantity;
+    broker.updatedAt = DateTime.now().millisecondsSinceEpoch;
+    await brokers.put(brokerId, broker);
+
+    await createAuditLog(
+      action: 'BROKER_RETURNED',
+      details: 'Returned \${returnedQuantity} units',
+      relatedId: brokerId,
+    );
+  }
+
+  /// Delete broker consignment and restore all quantities
+  static Future<void> deleteBrokerConsignment(String brokerId) async {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    final gemstones = Hive.box<Gemstone>(gemstonesBox);
+    final broker = brokers.get(brokerId);
+    
+    if (broker == null) throw Exception('Broker Consignment not found');
+    
+    // Check if broker has sales
+    if (broker.soldQuantity > 0) {
+      throw Exception('ရောင်းထားသည့် အရေအတွက်ကြောင့် ဖျက်၍မရပါ။');
+    }
+
+    // Restore all quantities to purchase
+    final remainingToRestore = broker.consignedQuantity - broker.returnedQuantity;
+    final purchase = gemstones.get(broker.purchaseId);
+    if (purchase != null) {
+      purchase.quantity += remainingToRestore;
+      await gemstones.put(broker.purchaseId, purchase);
+    }
+
+    // Soft delete
+    broker.deletedAt = DateTime.now().millisecondsSinceEpoch;
+    await brokers.put(brokerId, broker);
+
+    await createAuditLog(
+      action: 'DELETE_BROKER_CONSIGNMENT',
+      details: 'Deleted and restored \${remainingToRestore} units',
+      relatedId: brokerId,
+    );
+  }
+
+  /// Check if purchase can be edited (not linked to active broker consignments)
+  static bool canEditPurchaseFields(String purchaseId) {
+    final activeBrokers = getActiveBrokerConsignmentsForPurchase(purchaseId);
+    return activeBrokers.isEmpty;
+  }
+
+  /// Check if breakdown item can be deleted (not linked to active broker consignments)
+  static bool canDeleteBreakdownItem(String purchaseId, String breakdownItemName) {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    final linkedBrokers = brokers.values.where((b) =>
+      b.purchaseId == purchaseId &&
+      b.historicalData.sourceType == 'breakdown_item' &&
+      b.historicalData.breakdownItemName == breakdownItemName &&
+      b.isActive
+    ).toList();
+    return linkedBrokers.isEmpty;
   }
 
 }
