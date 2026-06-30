@@ -14,6 +14,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   late TextEditingController _brokerNameCtrl;
   late TextEditingController _brokerPhoneCtrl;
   late TextEditingController _brokerAddressCtrl;
+  
+  // Purchase Record reference
+  dynamic _selectedPurchase;
 
   @override
   void initState() {
