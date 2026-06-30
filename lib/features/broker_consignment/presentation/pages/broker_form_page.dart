@@ -5,6 +5,21 @@ import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../core/theme/app_theme.dart';
 
+/// Temporary model for consignment items during form editing
+class ConsignmentItemTemp {
+  String id;
+  Gemstone? gemstone;
+  double consignedQuantity;
+  String sourceType; // 'whole_stone' or 'breakdown_item'
+
+  ConsignmentItemTemp({
+    required this.id,
+    this.gemstone,
+    this.consignedQuantity = 0,
+    this.sourceType = 'whole_stone',
+  });
+}
+
 class BrokerFormPage extends StatefulWidget {
   final String? brokerId;
 
@@ -15,17 +30,20 @@ class BrokerFormPage extends StatefulWidget {
 }
 
 class _BrokerFormPageState extends State<BrokerFormPage> {
+  // Header fields
   late TextEditingController _brokerNameCtrl;
   late TextEditingController _brokerPhoneCtrl;
   late TextEditingController _brokerAddressCtrl;
-  late TextEditingController _consignmentQuantityCtrl;
+  late TextEditingController _brokerSocialCtrl;
+  late TextEditingController _notesCtrl;
   
-  final _money = NumberFormat('#,##0', 'en_US');
+  DateTime _consignmentDate = DateTime.now();
+  
+  // Items list
+  List<ConsignmentItemTemp> _items = [];
+  List<Gemstone> _availableGemstones = [];
+  
   final _date = DateFormat('dd/MM/yyyy');
-  
-  Gemstone? _selectedPurchase;
-  List<Gemstone> _purchaseRecords = [];
-  String? _quantityErrorMessage;
 
   @override
   void initState() {
@@ -33,8 +51,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     _brokerNameCtrl = TextEditingController();
     _brokerPhoneCtrl = TextEditingController();
     _brokerAddressCtrl = TextEditingController();
-    _consignmentQuantityCtrl = TextEditingController();
-    _purchaseRecords = LocalDb.gemstones().values.toList();
+    _brokerSocialCtrl = TextEditingController();
+    _notesCtrl = TextEditingController();
+    
+    _availableGemstones = LocalDb.gemstones().values.toList();
   }
 
   @override
@@ -42,56 +62,86 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     _brokerNameCtrl.dispose();
     _brokerPhoneCtrl.dispose();
     _brokerAddressCtrl.dispose();
-    _consignmentQuantityCtrl.dispose();
+    _brokerSocialCtrl.dispose();
+    _notesCtrl.dispose();
     super.dispose();
   }
 
-  void _validateQuantity(String value) {
-    if (_selectedPurchase == null) {
-      _quantityErrorMessage = null;
-      return;
-    }
-
-    if (value.isEmpty) {
-      _quantityErrorMessage = null;
-      return;
-    }
-
-    final quantity = int.tryParse(value);
-    if (quantity == null || quantity <= 0) {
-      _quantityErrorMessage = 'အရေအတွက်သည် ၀ထက်ကြီးရမည်ဖြစ်ပါသည်။';
-      return;
-    }
-
-    if (quantity > _selectedPurchase!.remainingQuantity) {
-      _quantityErrorMessage = 'ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက်ထက် မကျော်လွန်ရပါ။';
-      return;
-    }
-
-    _quantityErrorMessage = null;
+  bool _isHeaderValid() {
+    return _brokerNameCtrl.text.isNotEmpty &&
+        _brokerPhoneCtrl.text.isNotEmpty &&
+        _brokerAddressCtrl.text.isNotEmpty;
   }
 
   bool _isFormValid() {
-    if (_selectedPurchase == null) return false;
-    if (_consignmentQuantityCtrl.text.isEmpty) return false;
-    if (_quantityErrorMessage != null) return false;
+    if (!_isHeaderValid()) return false;
+    if (_items.isEmpty) return false;
+    
+    // All items must have gemstone and quantity > 0
+    for (final item in _items) {
+      if (item.gemstone == null || item.consignedQuantity <= 0) {
+        return false;
+      }
+      // Quantity must not exceed remaining
+      if (item.consignedQuantity > item.gemstone!.remainingQuantity) {
+        return false;
+      }
+    }
+    
     return true;
   }
 
+  void _addItem() {
+    setState(() {
+      _items.add(ConsignmentItemTemp(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      ));
+    });
+  }
+
+  void _removeItem(String itemId) {
+    setState(() {
+      _items.removeWhere((item) => item.id == itemId);
+    });
+  }
+
+  void _updateItemGemstone(String itemId, Gemstone? gemstone) {
+    setState(() {
+      final item = _items.firstWhere((i) => i.id == itemId);
+      item.gemstone = gemstone;
+      // Reset quantity if gemstone changed
+      item.consignedQuantity = 0;
+    });
+  }
+
+  void _updateItemQuantity(String itemId, double quantity) {
+    setState(() {
+      final item = _items.firstWhere((i) => i.id == itemId);
+      item.consignedQuantity = quantity;
+    });
+  }
+
   Future<void> _saveBrokerConsignment() async {
-    if (!_isFormValid() || _selectedPurchase == null) return;
+    if (!_isFormValid()) return;
 
     try {
-      final quantity = int.parse(_consignmentQuantityCtrl.text);
+      // For now, save each item as a separate BrokerConsignment record
+      // (backward compatible with existing model)
+      // TODO: Refactor to use new multi-item model in future steps
       
-      await LocalDb.createBrokerConsignment(
-        purchaseId: _selectedPurchase!.id,
-        consignedQuantity: quantity.toDouble(),
-        sourceType: 'whole_stone',
-        brokerName: _brokerNameCtrl.text,
-        brokerPhone: _brokerPhoneCtrl.text,
-        brokerAddress: _brokerAddressCtrl.text,
-      );
+      for (final item in _items) {
+        if (item.gemstone == null) continue;
+        
+        await LocalDb.createBrokerConsignment(
+          purchaseId: item.gemstone!.id,
+          consignedQuantity: item.consignedQuantity,
+          sourceType: item.sourceType,
+          brokerName: _brokerNameCtrl.text,
+          brokerPhone: _brokerPhoneCtrl.text,
+          brokerAddress: _brokerAddressCtrl.text,
+          brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
+        );
+      }
 
       if (mounted) {
         context.pop(true);
@@ -105,82 +155,12 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     }
   }
 
-  void _showPurchaseSelector() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppTheme.surfaceDark,
-          title: const Text('ဝယ်ယူမှုမှတ်တမ်းရွေးချယ်ပါ'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _purchaseRecords.length,
-              itemBuilder: (context, index) {
-                final gemstone = _purchaseRecords[index];
-                final purchaseDate = _date.format(
-                  DateTime.fromMillisecondsSinceEpoch(gemstone.createdAt),
-                );
-                return ListTile(
-                  title: Text(
-                    gemstone.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text(
-                        'အမျိုးအစား: ${gemstone.type}',
-                        style: TextStyle(color: Colors.grey[400]),
-                      ),
-                      Text(
-                        'ဝယ်ယူမှုရက်စွဲ: $purchaseDate',
-                        style: TextStyle(color: Colors.grey[400]),
-                      ),
-                      Text(
-                        'ကျန်ရှိအရေအတွက်: ${gemstone.remainingQuantity}',
-                        style: TextStyle(color: Colors.grey[400]),
-                      ),
-                      Text(
-                        'ID: ${gemstone.id}',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  onTap: () {
-                    setState(() {
-                      _selectedPurchase = gemstone;
-                      _consignmentQuantityCtrl.clear();
-                      _quantityErrorMessage = null;
-                    });
-                    Navigator.of(context).pop();
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('ပိတ်ရန်'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.primaryDark,
       appBar: AppBar(
-        title: Text(widget.brokerId != null ? 'ပွဲစားအပ်စာရင်းပြင်ဆင်ရန်' : 'ပွဲစားအပ်စာရင်းထည့်သွင်းရန်'),
+        title: const Text('ပွဲစားအပ်စာရင်း'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -191,152 +171,57 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Purchase Selection Card
+            // ===== HEADER SECTION =====
+            Text(
+              'ပွဲစားအချက်အလက်',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Date picker
             GestureDetector(
-              onTap: () => _showPurchaseSelector(),
-              child: Card(
-                color: AppTheme.surfaceDark,
-                margin: const EdgeInsets.only(bottom: 16),
-                child: Column(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _consignmentDate,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (picked != null) {
+                  setState(() => _consignmentDate = picked);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[700]!),
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[900],
+                ),
+                child: Row(
                   children: [
-                    // Header with date/icon
-                    if (_selectedPurchase != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryAccent.withOpacity(0.1),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            topRight: Radius.circular(8),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.shopping_bag,
-                              size: 16,
-                              color: AppTheme.primaryAccent,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _date.format(
-                                DateTime.fromMillisecondsSinceEpoch(
-                                  _selectedPurchase!.createdAt,
-                                ),
-                              ),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    // Content
-                    ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: AppTheme.primaryAccent.withOpacity(0.2),
-                        child: Icon(
-                          Icons.shopping_cart,
-                          color: AppTheme.primaryAccent,
-                        ),
-                      ),
-                      title: Text(
-                        _selectedPurchase?.name ?? 'ဝယ်ယူမှုမှတ်တမ်းရွေးချယ်ပါ',
-                        style: TextStyle(
-                          color: _selectedPurchase == null ? Colors.grey : Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: _selectedPurchase == null
-                          ? null
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'အမျိုးအစား: ${_selectedPurchase!.type}',
-                                  style: TextStyle(color: Colors.grey[400]),
-                                ),
-                                Text(
-                                  'ကျန်ရှိအရေအတွက်: ${_selectedPurchase!.remainingQuantity}',
-                                  style: TextStyle(color: Colors.grey[400]),
-                                ),
-                              ],
-                            ),
-                      trailing: Icon(
-                        Icons.arrow_drop_down,
-                        color: AppTheme.primaryAccent,
-                      ),
+                    Icon(Icons.calendar_today, color: AppTheme.primaryAccent, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      _date.format(_consignmentDate),
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ],
                 ),
               ),
             ),
-
-            // Consignment Quantity Input
-            if (_selectedPurchase != null)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'အပ်စာရင်းအရေအတွက်',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _consignmentQuantityCtrl,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'အရေအတွက်ထည့်သွင်းပါ',
-                      hintStyle: TextStyle(color: Colors.grey[600]),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[700]!),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[700]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppTheme.primaryAccent),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppTheme.errorColor),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[900],
-                      errorText: _quantityErrorMessage,
-                      errorStyle: const TextStyle(color: AppTheme.errorColor),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _validateQuantity(value);
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-
-            // Broker Information Section
-            Text(
-              'ပွဲစားအချက်အလက်',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: Colors.white,
-              ),
-            ),
             const SizedBox(height: 12),
+            
+            // Broker name
             TextField(
               controller: _brokerNameCtrl,
               style: const TextStyle(color: Colors.white),
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                labelText: 'ပွဲစားအမည်',
+                labelText: 'ပွဲစားအမည် *',
                 labelStyle: TextStyle(color: Colors.grey[400]),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -355,11 +240,14 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               ),
             ),
             const SizedBox(height: 12),
+            
+            // Phone
             TextField(
               controller: _brokerPhoneCtrl,
               style: const TextStyle(color: Colors.white),
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                labelText: 'ဖုန်းနံပါတ်',
+                labelText: 'ဖုန်းနံပါတ် *',
                 labelStyle: TextStyle(color: Colors.grey[400]),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -378,11 +266,15 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               ),
             ),
             const SizedBox(height: 12),
+            
+            // Address
             TextField(
               controller: _brokerAddressCtrl,
               style: const TextStyle(color: Colors.white),
+              onChanged: (_) => setState(() {}),
+              maxLines: 2,
               decoration: InputDecoration(
-                labelText: 'လိပ်စာ',
+                labelText: 'လိပ်စာ *',
                 labelStyle: TextStyle(color: Colors.grey[400]),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -399,9 +291,115 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                 filled: true,
                 fillColor: Colors.grey[900],
               ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Social account
+            TextField(
+              controller: _brokerSocialCtrl,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'လူမှုကွန်ယက်အကောင့်',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                ),
+                filled: true,
+                fillColor: Colors.grey[900],
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Notes
+            TextField(
+              controller: _notesCtrl,
+              style: const TextStyle(color: Colors.white),
               maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'မှတ်ချက်များ',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                ),
+                filled: true,
+                fillColor: Colors.grey[900],
+              ),
             ),
             const SizedBox(height: 24),
+            
+            // ===== ITEMS SECTION =====
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'အပ်စာရင်းအရေအတွက် (${_items.length})',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryAccent,
+                    foregroundColor: Colors.black,
+                  ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('ထည့်သွင်းရန်'),
+                  onPressed: _addItem,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            
+            // Items list
+            if (_items.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[700]!),
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[900],
+                ),
+                child: Center(
+                  child: Text(
+                    'ကျောက်အရေအတွက်ထည့်သွင်းရန် အပ်စာရင်းထည့်သွင်းခလုံးကိုနှိပ်ပါ',
+                    style: TextStyle(color: Colors.grey[500]),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _items.length,
+                itemBuilder: (context, index) {
+                  final item = _items[index];
+                  return _buildItemRow(item);
+                },
+              ),
+            
+            const SizedBox(height: 24),
+            
+            // Save button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -429,6 +427,170 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildItemRow(ConsignmentItemTemp item) {
+    return Card(
+      color: AppTheme.surfaceDark,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with delete button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'ကျောက်အရေအတွက် ${_items.indexOf(item) + 1}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: AppTheme.errorColor),
+                  onPressed: () => _removeItem(item.id),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            
+            // Gemstone selection
+            GestureDetector(
+              onTap: () => _showGemstoneSelector(item),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[700]!),
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[900],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.gemstone?.name ?? 'ကျောက်ရွေးချယ်ပါ',
+                            style: TextStyle(
+                              color: item.gemstone == null ? Colors.grey[500] : Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (item.gemstone != null)
+                            Text(
+                              'အမျိုးအစား: ${item.gemstone!.type}',
+                              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_drop_down, color: AppTheme.primaryAccent),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            // Quantity input
+            if (item.gemstone != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'အပ်စာရင်းအရေအတွက်',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  TextField(
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'အရေအတွက် (ကျန်ရှိ: ${item.gemstone!.remainingQuantity})',
+                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey[700]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey[700]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[900],
+                    ),
+                    onChanged: (value) {
+                      final qty = double.tryParse(value) ?? 0;
+                      _updateItemQuantity(item.id, qty);
+                    },
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGemstoneSelector(ConsignmentItemTemp item) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.surfaceDark,
+          title: const Text('ကျောက်ရွေးချယ်ပါ'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _availableGemstones.length,
+              itemBuilder: (context, index) {
+                final gemstone = _availableGemstones[index];
+                return ListTile(
+                  title: Text(
+                    gemstone.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'အမျိုးအစား: ${gemstone.type}',
+                        style: TextStyle(color: Colors.grey[400]),
+                      ),
+                      Text(
+                        'ကျန်ရှိအရေအတွက်: ${gemstone.remainingQuantity}',
+                        style: TextStyle(color: Colors.grey[400]),
+                      ),
+                    ],
+                  ),
+                  onTap: () {
+                    _updateItemGemstone(item.id, gemstone);
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ပိတ်ရန်'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
