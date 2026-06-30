@@ -21,7 +21,7 @@ class BrokerFormPage extends StatefulWidget {
 
 class _BrokerFormPageState extends State<BrokerFormPage> {
   late TextEditingController _brokerNameCtrl;
-  late TextEditingController _gemstoneName Ctrl;
+  late TextEditingController _gemstoneNameCtrl;
   late TextEditingController _quantityCtrl;
   late TextEditingController _weightCtrl;
   late TextEditingController _notesCtrl;
