@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/local/models.dart';
 
 class BrokerFormPage extends StatefulWidget {
   final String? brokerId;
@@ -16,7 +17,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   late TextEditingController _brokerAddressCtrl;
   
   // Purchase Record reference
-  dynamic _selectedPurchase;
+  Gemstone? _selectedPurchase;
 
   @override
   void initState() {
