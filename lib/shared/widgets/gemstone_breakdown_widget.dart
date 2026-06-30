@@ -30,11 +30,16 @@ class GemstoneBreakdownWidget extends StatefulWidget {
 
 class _GemstoneBreakdownWidgetState extends State<GemstoneBreakdownWidget> {
   late Map<String, dynamic> breakdown;
+  late Map<String, TextEditingController> quantityControllers;
+  late Map<String, TextEditingController> priceControllers;
 
   @override
   void initState() {
     super.initState();
     breakdown = widget.initialBreakdown ?? {};
+    quantityControllers = {};
+    priceControllers = {};
+    
     // Initialize all parts if not present
     for (var part in gemstoneParts) {
       if (!breakdown.containsKey(part)) {
@@ -43,7 +48,28 @@ class _GemstoneBreakdownWidgetState extends State<GemstoneBreakdownWidget> {
           if (widget.isForSale) 'price': 0,
         };
       }
+      // Initialize controllers
+      quantityControllers[part] = TextEditingController(
+        text: (breakdown[part]['quantity'] ?? 0).toString(),
+      );
+      if (widget.isForSale) {
+        priceControllers[part] = TextEditingController(
+          text: (breakdown[part]['price'] ?? 0).toString(),
+        );
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    // Dispose all controllers
+    for (var controller in quantityControllers.values) {
+      controller.dispose();
+    }
+    for (var controller in priceControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   void _updateBreakdown(String part, String field, dynamic value) {
@@ -81,7 +107,6 @@ class _GemstoneBreakdownWidgetState extends State<GemstoneBreakdownWidget> {
           ),
           const SizedBox(height: 12),
           ...gemstoneParts.map((part) {
-            final data = breakdown[part] ?? {};
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
@@ -120,6 +145,7 @@ class _GemstoneBreakdownWidgetState extends State<GemstoneBreakdownWidget> {
                         ),
                       ),
                       style: const TextStyle(color: Colors.white, fontSize: 12),
+                      controller: quantityControllers[part],
                       onChanged: (value) {
                         _updateBreakdown(
                           part,
@@ -127,9 +153,6 @@ class _GemstoneBreakdownWidgetState extends State<GemstoneBreakdownWidget> {
                           int.tryParse(value) ?? 0,
                         );
                       },
-                      controller: TextEditingController(
-                        text: (data['quantity'] ?? 0).toString(),
-                      ),
                     ),
                   ),
                   if (widget.isForSale) ...[
@@ -159,6 +182,7 @@ class _GemstoneBreakdownWidgetState extends State<GemstoneBreakdownWidget> {
                         ),
                         style:
                             const TextStyle(color: Colors.white, fontSize: 12),
+                        controller: priceControllers[part],
                         onChanged: (value) {
                           _updateBreakdown(
                             part,
@@ -166,9 +190,6 @@ class _GemstoneBreakdownWidgetState extends State<GemstoneBreakdownWidget> {
                             int.tryParse(value) ?? 0,
                           );
                         },
-                        controller: TextEditingController(
-                          text: (data['price'] ?? 0).toString(),
-                        ),
                       ),
                     ),
                   ],
