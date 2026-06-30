@@ -22,6 +22,7 @@ class InventoryPage extends StatefulWidget {
 
 class _InventoryPageState extends State<InventoryPage> {
   final _money = NumberFormat('#,##0', 'en_US');
+  final _date = DateFormat('dd/MM/yyyy');
   String _selectedPeriod = 'all'; // all, daily, weekly, monthly, yearly
 
   static String _trim(double v) =>
@@ -359,7 +360,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _date.format(DateTime.fromMillisecondsSinceEpoch(g.dateAdded)),
+                                    _date.format(DateTime.fromMillisecondsSinceEpoch(g.createdAt)),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 12,
