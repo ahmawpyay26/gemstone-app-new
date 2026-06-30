@@ -7,6 +7,7 @@ import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../shared/widgets/photo_attachment_widget.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
+import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
 
 extension DateTimeExtension on DateTime {
   DateTime toDateOnly() => DateTime(year, month, day);
@@ -97,42 +98,102 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   void _showPhotoViewer(Gemstone gemstone) {
-    showDialog(
-      context: context,
-      builder: (_) => PhotoViewer(photoPaths: gemstone.photoPaths),
+    if (gemstone.photoPaths.isEmpty) {
+      _showError('ဤမှတ်တမ်းတွင် ဓာတ်ပုံမရှိသေးပါ။');
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PhotoViewer(photoUrls: gemstone.photoPaths),
+      ),
     );
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
-  }
-
   Future<void> _delete(dynamic key) async {
+    // Check admin permission
     if (!LocalDb.canDeletePurchase()) {
       _showError(LocalDb.adminOnlyErrorMessage());
       return;
     }
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('ဖျက်မည်လား?'),
-        content: const Text('ဤမှတ်တမ်းကို ဖျက်ပြီးသည်နှင့် ပြန်မရနိုင်ပါ။'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('ပယ်ဖျက်ရန်'),
+
+    final gemstone = LocalDb.gemstones().get(key);
+    if (gemstone == null) return;
+
+    final ok = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: const Text('ဝယ်ယူမှတ်တမ်း ဖျက်မည်'),
+            content: const Text(
+                'ဤဝယ်ယူမှတ်တမ်းကို ဖျက်မှာ သေချာပါသလား?'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(c, false),
+                  child: const Text('မဖျက်တော့ပါ')),
+              TextButton(
+                  onPressed: () => Navigator.pop(c, true),
+                  child: const Text('ဖျက်မည်',
+                      style: TextStyle(color: AppTheme.errorColor))),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('ဖျက်ရန်'),
-          ),
-        ],
+        ) ??
+        false;
+
+    if (ok) {
+      try {
+        await LocalDb.deletePurchaseRecord(
+          gemstone.id,
+          key,
+          gemstone.name,
+          gemstone.quantity,
+        );
+        _showSuccess('ဝယ်ယူမှတ်တမ်း အောင်မြင်စွာ ဖျက်ပြီးပါပြီ။');
+      } catch (e) {
+        _showError('အမှားအယွင်းတစ်ခု ကျေးဇူးပြု၍ ထပ်မံကြိုးစားပါ');
+      }
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.errorColor,
+        behavior: SnackBarBehavior.floating,
       ),
     );
-    if (confirm == true) {
-      await LocalDb.gemstones().delete(key);
-    }
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.successColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<bool> _confirm(String msg) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: const Text('အတည်ပြုရန်'),
+            content: Text(msg),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(c, false),
+                  child: const Text('မလုပ်တော့ပါ')),
+              TextButton(
+                  onPressed: () => Navigator.pop(c, true),
+                  child: const Text('ဖျက်မည်',
+                      style: TextStyle(color: AppTheme.errorColor))),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   @override
@@ -337,11 +398,78 @@ class _InventoryPageState extends State<InventoryPage> {
                                           'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • ဝယ်ထားသော: ${g.quantity} • ကျန်ရှိ: $remaining',
                                           style: const TextStyle(
                                               color: AppTheme.primaryAccent,
-                                              fontSize: 11));
+                                              fontSize: 12));
                                     }),
                                   ),
+                                  if (LocalDb.gemstoneRemainingQuantity(g) <= 0)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.errorColor
+                                            .withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'အရောင်းအဆုံး',
+                                        style: TextStyle(
+                                          color: AppTheme.errorColor,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
+                              Builder(builder: (c) {
+                                final totalCost = LocalDb.gemstoneTotalCost(g);
+                                final result =
+                                    LocalDb.calculateRemainingCostAndProfit(
+                                        g.id);
+                                final remainingCost =
+                                    result['remainingCost'] as double? ?? 0;
+                                final totalProfit =
+                                    result['totalProfit'] as double? ?? 0;
+                                final currentProfit =
+                                    0.0; // Current profit shown in sales records
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                        'စုစုပေါင်း အရင်း: ${_money.format(totalCost)} ကျပ်',
+                                        style: const TextStyle(
+                                            color: Colors.orangeAccent,
+                                            fontSize: 11)),
+                                    Text(
+                                        'ကျန်ရှိအရင်း: ${_money.format(remainingCost)} ကျပ်',
+                                        style: TextStyle(
+                                            color: remainingCost > 0
+                                                ? Colors.yellow
+                                                : Colors.green,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600)),
+                                    if (currentProfit > 0)
+                                      Text(
+                                          'လက်ရှိအမြတ်: ${_money.format(currentProfit)} ကျပ်',
+                                          style: const TextStyle(
+                                              color: Colors.lightGreen,
+                                              fontSize: 11)),
+                                    if (totalProfit > 0)
+                                      Text(
+                                          'စုစုပေါင်းအမြတ်: ${_money.format(totalProfit)} ကျပ်',
+                                          style: const TextStyle(
+                                              color: Colors.lightGreen,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold)),
+                                    if (g.quantity <= 0 && totalProfit <= 0)
+                                      Text('အမြတ်မရှိသေးပါ',
+                                          style: TextStyle(
+                                              color: Colors.grey[400],
+                                              fontSize: 11))
+                                  ],
+                                );
+                              }),
                             ],
                           ),
                           trailing: PopupMenuButton<String>(
@@ -386,6 +514,16 @@ class _InventoryPageState extends State<InventoryPage> {
                                     ],
                                   )),
                             ],
+                          ),
+                        ),
+                        // Gemstone breakdown widget
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: GemstoneBreakdownWidget(
+                            isForSale: false,
+                            onBreakdownChanged: (breakdown) {
+                              // Store breakdown data for purchase
+                            },
                           ),
                         ),
                       ],
@@ -473,22 +611,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _note;
   String _weightUnit = 'kg';
   late List<String> _photoPaths;
-  
-  // Breakdown state
-  late List<Map<String, dynamic>> _breakdownItems;
-  String? _selectedBreakdownType;
-  late TextEditingController _breakdownQtyController;
-  late TextEditingController _customBreakdownNameController;
-  bool _showCustomBreakdownInput = false;
-  
-  static const List<String> _breakdownTypes = [
-    'ဖျက်စ',
-    'လွှာချက်',
-    'လက်ကောက်',
-    'လက်စွပ်',
-    'ပုတီး',
-    'ပန်းပု',
-  ];
 
   @override
   void initState() {
@@ -522,11 +644,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
     _color = TextEditingController(text: e?.color ?? '');
     _origin = TextEditingController(text: e?.origin ?? '');
     _note = TextEditingController(text: e?.note ?? '');
-    
-    // Initialize breakdown
-    _breakdownItems = [];
-    _breakdownQtyController = TextEditingController();
-    _customBreakdownNameController = TextEditingController();
   }
 
   @override
@@ -546,9 +663,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       _qty,
       _color,
       _origin,
-      _note,
-      _breakdownQtyController,
-      _customBreakdownNameController,
+      _note
     ]) {
       c.dispose();
     }
@@ -557,39 +672,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
 
   double _d(String s) => double.tryParse(s.trim()) ?? 0;
   int _i(String s) => int.tryParse(s.trim()) ?? 0;
-
-  void _addBreakdownItem() {
-    final type = _showCustomBreakdownInput 
-        ? _customBreakdownNameController.text.trim()
-        : _selectedBreakdownType;
-    final qty = _i(_breakdownQtyController.text);
-    
-    if (type == null || type.isEmpty || qty <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('အမျိုးအစား နှင့် အရေအတွက်ကို ဖြည့်ပါ')),
-      );
-      return;
-    }
-    
-    setState(() {
-      _breakdownItems.add({'type': type, 'quantity': qty});
-      _breakdownQtyController.clear();
-      _customBreakdownNameController.clear();
-      _selectedBreakdownType = null;
-      _showCustomBreakdownInput = false;
-    });
-  }
-
-  void _removeBreakdownItem(int index) {
-    setState(() => _breakdownItems.removeAt(index));
-  }
-
-  String _getBreakdownSummary() {
-    if (_breakdownItems.isEmpty) return '';
-    return _breakdownItems
-        .map((item) => '${item['type']} ${item['quantity']}')
-        .join('၊ ');
-  }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -730,181 +812,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                   Expanded(child: _field(_origin, 'မူရင်းနေရာ')),
                 ]),
                 _field(_note, 'မှတ်ချက်'),
-                const SizedBox(height: 20),
-                
-                // Breakdown Section
-                ExpansionTile(
-                  title: const Text(
-                    'ကျောက်အစိတ်စိတ်ပိုင်း',
-                    style: TextStyle(
-                      color: AppTheme.primaryAccent,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Dropdown + Add button
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _showCustomBreakdownInput
-                                    ? TextField(
-                                        controller: _customBreakdownNameController,
-                                        decoration: InputDecoration(
-                                          hintText: 'အမည်ထည့်ပါ',
-                                          hintStyle: TextStyle(color: Colors.grey[600]),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 8,
-                                          ),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(4),
-                                            borderSide: BorderSide(
-                                              color: AppTheme.primaryAccent.withOpacity(0.3),
-                                            ),
-                                          ),
-                                        ),
-                                        style: const TextStyle(color: Colors.white),
-                                      )
-                                    : DropdownButtonFormField<String>(
-                                        value: _selectedBreakdownType,
-                                        isExpanded: true,
-                                        dropdownColor: AppTheme.surfaceLight,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration: const InputDecoration(
-                                          labelText: 'အမျိုးအစား',
-                                          contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 8,
-                                          ),
-                                        ),
-                                        items: [
-                                          ..._breakdownTypes.map((type) =>
-                                              DropdownMenuItem(
-                                                value: type,
-                                                child: Text(type),
-                                              )),
-                                          const DropdownMenuItem(
-                                            value: 'custom',
-                                            child: Text('Custom / မိမိစိတ်ကြိုက်'),
-                                          ),
-                                        ],
-                                        onChanged: (v) {
-                                          setState(() {
-                                            if (v == 'custom') {
-                                              _showCustomBreakdownInput = true;
-                                              _selectedBreakdownType = null;
-                                            } else {
-                                              _showCustomBreakdownInput = false;
-                                              _selectedBreakdownType = v;
-                                            }
-                                          });
-                                        },
-                                      ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextField(
-                                  controller: _breakdownQtyController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: InputDecoration(
-                                    hintText: 'အရေ',
-                                    hintStyle: TextStyle(color: Colors.grey[600]),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 8,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(4),
-                                      borderSide: BorderSide(
-                                        color: AppTheme.primaryAccent.withOpacity(0.3),
-                                      ),
-                                    ),
-                                  ),
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: _addBreakdownItem,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.primaryAccent,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                ),
-                                child: const Text(
-                                  '+ ထည့်',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          
-                          // Breakdown items list
-                          if (_breakdownItems.isNotEmpty) ...[
-                            Text(
-                              'ထည့်သွင်းထားသည့် အစိတ်စိတ်များ:',
-                              style: TextStyle(
-                                color: Colors.grey[300],
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ..._breakdownItems.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final item = entry.value;
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.surfaceLight.withOpacity(0.3),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          '${item['type']} — ${item['quantity']}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline,
-                                          color: Colors.red, size: 18),
-                                      onPressed: () => _removeBreakdownItem(index),
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                
                 const SizedBox(height: 20),
                 PhotoAttachmentWidget(
                   photoPaths: _photoPaths,
