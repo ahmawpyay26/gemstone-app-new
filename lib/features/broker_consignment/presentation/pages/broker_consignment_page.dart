@@ -78,6 +78,26 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
     }
   }
 
+  Widget _buildSummaryItem(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            color: AppTheme.primaryAccent,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,11 +143,54 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
               .toList()
               ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
+          // Calculate totals
+          final totalRecords = brokers.length;
+          final totalConsigned = brokers.fold<double>(0, (sum, bc) => sum + bc.consignedQuantity);
+          final totalSold = brokers.fold<double>(0, (sum, bc) => sum + bc.soldQuantity);
+          final totalRemaining = brokers.fold<double>(0, (sum, bc) => sum + bc.remainingQuantity);
+
           return ListView.builder(
             padding: const EdgeInsets.all(12),
-            itemCount: brokers.length,
+            itemCount: brokers.length + 1,
             itemBuilder: (context, index) {
-              final bc = brokers[index];
+              // Summary box at the top
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppTheme.primaryAccent, width: 2),
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey[900],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'စုစုပေါင်း ပွဲစားအပ်စာရင်း',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppTheme.primaryAccent,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildSummaryItem('မှတ်တမ်း', totalRecords.toString()),
+                            _buildSummaryItem('အပ်ထား', totalConsigned.toStringAsFixed(0)),
+                            _buildSummaryItem('ရောင်းပြီး', totalSold.toStringAsFixed(0)),
+                            _buildSummaryItem('ကျန်', totalRemaining.toStringAsFixed(0)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final bc = brokers[index - 1];
               
               // Initialize controller if not exists
               if (!_returnedQtyControllers.containsKey(bc.id)) {
@@ -137,7 +200,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
 
               return Card(
                 color: AppTheme.surfaceDark,
-                margin: const EdgeInsets.only(bottom: 10),
+                margin: const EdgeInsets.only(bottom: 12),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
