@@ -38,12 +38,14 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   late TextEditingController _notesCtrl;
   
   DateTime _consignmentDate = DateTime.now();
+  late String _brokerConsignmentNumber;
   
   // Items list
   List<ConsignmentItemTemp> _items = [];
   List<Gemstone> _availableGemstones = [];
   
   final _date = DateFormat('dd/MM/yyyy');
+  final _dateNum = DateFormat('yyyyMMdd');
 
   @override
   void initState() {
@@ -55,6 +57,17 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     _notesCtrl = TextEditingController();
     
     _availableGemstones = LocalDb.gemstones().values.toList();
+    _generateBrokerConsignmentNumber();
+  }
+
+  void _generateBrokerConsignmentNumber() {
+    final dateStr = _dateNum.format(_consignmentDate);
+    final randomSuffix = DateTime.now().millisecondsSinceEpoch % 10000;
+    _brokerConsignmentNumber = 'BC-$dateStr-${randomSuffix.toString().padLeft(4, '0')}';
+  }
+
+  double _getTotalConsignmentQuantity() {
+    return _items.fold<double>(0, (sum, item) => sum + item.consignedQuantity);
   }
 
   @override
@@ -181,6 +194,41 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             ),
             const SizedBox(height: 12),
             
+            // Broker Consignment Number
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppTheme.primaryAccent),
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.grey[900],
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.tag, color: AppTheme.primaryAccent, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'အပ်စာရင်းအမှတ်',
+                          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                        ),
+                        Text(
+                          _brokerConsignmentNumber,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
             // Date picker
             GestureDetector(
               onTap: () async {
@@ -191,7 +239,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   lastDate: DateTime.now().add(const Duration(days: 365)),
                 );
                 if (picked != null) {
-                  setState(() => _consignmentDate = picked);
+                  setState(() {
+                    _consignmentDate = picked;
+                    _generateBrokerConsignmentNumber();
+                  });
                 }
               },
               child: Container(
@@ -346,11 +397,61 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             const SizedBox(height: 24),
             
             // ===== ITEMS SECTION =====
+            // Running totals card
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppTheme.primaryAccent),
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.grey[900],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      Text(
+                        'စုစုပေါင်းအရေအတွက်',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_items.length}',
+                        style: const TextStyle(
+                          color: AppTheme.primaryAccent,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        'စုစုပေါင်းအပ်စာရင်းအရေအတွက်',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_getTotalConsignmentQuantity().toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          color: AppTheme.primaryAccent,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'အပ်စာရင်းအရေအတွက် (${_items.length})',
+                  'အပ်စာရင်းအရေအတွက်များ',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -444,7 +545,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'ကျောက်အရေအတွက် ${_items.indexOf(item) + 1}',
+                  'အရေအတွက် ${_items.indexOf(item) + 1}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
