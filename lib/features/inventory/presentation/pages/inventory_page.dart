@@ -7,7 +7,7 @@ import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../shared/widgets/photo_attachment_widget.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
-import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
+
 
 extension DateTimeExtension on DateTime {
   DateTime toDateOnly() => DateTime(year, month, day);
@@ -24,6 +24,7 @@ class _InventoryPageState extends State<InventoryPage> {
   final _money = NumberFormat('#,##0', 'en_US');
   final _date = DateFormat('dd/MM/yyyy');
   String _selectedPeriod = 'all'; // all, daily, weekly, monthly, yearly
+  final Set<String> _expandedBreakdowns = {}; // Track which breakdown sections are expanded
 
   static String _trim(double v) =>
       v == v.roundToDouble() ? v.toInt().toString() : v.toString();
@@ -522,16 +523,9 @@ class _InventoryPageState extends State<InventoryPage> {
                             ],
                           ),
                         ),
-                        // Gemstone breakdown widget
-                        Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: GemstoneBreakdownWidget(
-                            isForSale: false,
-                            onBreakdownChanged: (breakdown) {
-                              // Store breakdown data for purchase
-                            },
-                          ),
-                        ),
+                        // Breakdown summary section (collapsed/expandable)
+                        if (g.breakdownItems.isNotEmpty)
+                          _buildBreakdownSummarySection(g),
                       ],
                     ),
                   );
@@ -564,6 +558,109 @@ class _InventoryPageState extends State<InventoryPage> {
           ],
         ),
       );
+
+  /// Build collapsed/expandable breakdown summary section
+  Widget _buildBreakdownSummarySection(Gemstone gemstone) {
+    final isExpanded = _expandedBreakdowns.contains(gemstone.id);
+    
+    // Filter breakdown items with quantity > 0
+    final activeItems = gemstone.breakdownItems.entries
+        .where((e) => e.value > 0)
+        .toList();
+    
+    if (activeItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    // Build summary text (collapsed view)
+    final summaryText = activeItems
+        .map((e) => '${e.key} ${e.value}')
+        .join(' • ');
+    
+    return GestureDetector(
+      onTap: () => setState(() {
+        if (isExpanded) {
+          _expandedBreakdowns.remove(gemstone.id);
+        } else {
+          _expandedBreakdowns.add(gemstone.id);
+        }
+      }),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'ကျောက်အစိတ်စိတ်ပိုင်း',
+                    style: TextStyle(
+                      color: AppTheme.primaryAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: AppTheme.primaryAccent,
+                  size: 20,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (isExpanded)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...activeItems.map((entry) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          entry.key,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          '${entry.value}',
+                          style: TextStyle(
+                            color: AppTheme.primaryAccent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+                ],
+              )
+            else
+              Text(
+                summaryText,
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 11,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   /// Build period filter button
   Widget _buildPeriodButton(String label, String value) {
