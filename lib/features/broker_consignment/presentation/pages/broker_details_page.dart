@@ -107,8 +107,8 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
 
     try {
       await LocalDb.recordBrokerSale(
-        brokerConsignmentId: widget.brokerId,
-        soldQuantity: soldQty.toDouble(),
+        consignmentId: widget.brokerId,
+        soldQuantity: soldQty.toInt(),
         saleAmount: saleAmount,
       );
 
