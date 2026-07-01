@@ -134,6 +134,14 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     });
   }
 
+  void _updateItemSourceType(String itemId, String sourceType) {
+    setState(() {
+      final item = _items.firstWhere((i) => i.id == itemId);
+      item.sourceType = sourceType;
+      item.consignedQuantity = 0;
+    });
+  }
+
   Future<void> _saveBrokerConsignment() async {
     if (!_isFormValid()) return;
 
@@ -571,6 +579,30 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             ),
             const SizedBox(height: 8),
             
+            // Source Type selector (Step 1: Whole Stone / Breakdown Item)
+            Text(
+              'အရင်းအမြစ်အမျိုးအစား',
+              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            SegmentedButton<String>(
+              segments: const <ButtonSegment<String>>[
+                ButtonSegment<String>(
+                  value: 'whole_stone',
+                  label: Text('အပြည့်အစုံ'),
+                ),
+                ButtonSegment<String>(
+                  value: 'breakdown_item',
+                  label: Text('အခွဲ'),
+                ),
+              ],
+              selected: <String>{item.sourceType},
+              onSelectionChanged: (Set<String> newSelection) {
+                _updateItemSourceType(item.id, newSelection.first);
+              },
+            ),
+            const SizedBox(height: 12),
+            
             // Gemstone selection dropdown (Task 1: Improved selector)
             DropdownButtonFormField<String?>(
               value: item.gemstone?.id,
@@ -633,6 +665,21 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.source_outlined,
+                            color: AppTheme.primaryAccent, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'အရင်းအမြစ်: ${item.sourceType == 'whole_stone' ? 'အပြည့်အစုံ' : 'အခွဲ'}',
+                            style: const TextStyle(
+                                color: AppTheme.primaryAccent, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         const Icon(Icons.inventory_2_outlined,
