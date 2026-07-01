@@ -891,8 +891,16 @@ class _SaleFormState extends State<_SaleForm> {
       ));
     }
     
-    // Recalculate profit from all sales records for this gemstone
+    // Apply cost recovery logic to the purchase record
     if (gemId.isNotEmpty) {
+      final gemstone = LocalDb.gemstoneById(gemId);
+      if (gemstone != null) {
+        // Apply cost recovery based on the net sale amount (amount - commission)
+        LocalDb.applyCostRecovery(gemstone, netSale);
+        // Save updated gemstone with new cost tracking values
+        await LocalDb.gemstones().put(gemId, gemstone);
+      }
+      // Recalculate profit from all sales records for this gemstone
       await LocalDb.updateGemstoneProductLedger(gemId);
     }
     

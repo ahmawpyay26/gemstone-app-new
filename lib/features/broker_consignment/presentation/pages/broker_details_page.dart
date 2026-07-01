@@ -27,18 +27,22 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
   
   // Broker Sales Tracking
   late TextEditingController _soldQtyController;
+  late TextEditingController _saleAmountController;
   String? _soldQtyError;
+  String? _saleAmountError;
 
   @override
   void initState() {
     super.initState();
     _soldQtyController = TextEditingController();
+    _saleAmountController = TextEditingController();
     _loadData();
   }
 
   @override
   void dispose() {
     _soldQtyController.dispose();
+    _saleAmountController.dispose();
     super.dispose();
   }
 
@@ -79,18 +83,41 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
     setState(() => _soldQtyError = null);
   }
 
+  void _validateSaleAmount(String value) {
+    if (value.isEmpty) {
+      setState(() => _saleAmountError = null);
+      return;
+    }
+
+    final saleAmount = double.tryParse(value);
+    if (saleAmount == null || saleAmount <= 0) {
+      setState(() => _saleAmountError = 'ရောင်းရငွေသည် ၀ထက်ကြီးရမည်ဖြစ်ပါသည်။');
+      return;
+    }
+
+    setState(() => _saleAmountError = null);
+  }
+
   Future<void> _recordBrokerSale() async {
     final soldQty = int.tryParse(_soldQtyController.text);
+    final saleAmount = double.tryParse(_saleAmountController.text);
+    
     if (soldQty == null || soldQty <= 0 || _soldQtyError != null) return;
+    if (saleAmount == null || saleAmount <= 0 || _saleAmountError != null) return;
 
     try {
       await LocalDb.recordBrokerSale(
         brokerConsignmentId: widget.brokerId,
         soldQuantity: soldQty.toDouble(),
+        saleAmount: saleAmount,
       );
 
       _soldQtyController.clear();
-      setState(() => _soldQtyError = null);
+      _saleAmountController.clear();
+      setState(() {
+        _soldQtyError = null;
+        _saleAmountError = null;
+      });
       _loadData(); // Refresh data
 
       if (mounted) {
@@ -376,19 +403,45 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                                     onChanged: _validateSoldQuantity,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'ရောင်းချငွေ',
+                              style: TextStyle(color: Colors.grey[300], fontSize: 12),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _saleAmountController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                hintText: '0.00',
+                                hintStyle: TextStyle(color: Colors.grey[600]),
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.grey[700]!),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                errorText: _saleAmountError,
+                              ),
+                              onChanged: _validateSaleAmount,
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'အများဆုံး: ${_brokerConsignment!.remainingQuantity.toStringAsFixed(0)}',
+                                  style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                ),
                                 ElevatedButton(
-                                  onPressed: _soldQtyError == null && (_soldQtyController.text.isNotEmpty)
+                                  onPressed: (_soldQtyError == null && _saleAmountError == null && 
+                                      _soldQtyController.text.isNotEmpty && _saleAmountController.text.isNotEmpty)
                                       ? _recordBrokerSale
                                       : null,
                                   child: const Text('မှတ်တမ်းတင်'),
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'အများဆုံး: ${_brokerConsignment!.remainingQuantity.toStringAsFixed(0)}',
-                              style: TextStyle(color: Colors.grey[400], fontSize: 11),
                             ),
                           ],
                         ),

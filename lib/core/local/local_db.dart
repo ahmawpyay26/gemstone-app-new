@@ -232,6 +232,56 @@ class LocalDb {
   }
 
   // -------------------------------------------------------------------------
+  // Cost Recovery & Profit Calculation Engine
+  // -------------------------------------------------------------------------
+  /// Apply cost recovery logic to a purchase record based on sale amount.
+  /// 
+  /// Business Rules:
+  /// Case 1: If saleAmount <= remainingCostBalance
+  ///   - Recovered Cost += saleAmount
+  ///   - Remaining Cost Balance -= saleAmount
+  ///   - Profit = 0
+  /// 
+  /// Case 2: If saleAmount > remainingCostBalance
+  ///   - Recovered Cost += remainingCostBalance
+  ///   - Remaining Cost Balance = 0
+  ///   - Profit += (saleAmount - remainingCostBalance)
+  /// 
+  /// Case 3: If remainingCostBalance == 0
+  ///   - All future sales become profit immediately
+  static void applyCostRecovery(Gemstone gemstone, double saleAmount) {
+    if (saleAmount <= 0) return;
+    
+    // Ensure remaining cost balance never goes below zero
+    double remainingBalance = gemstone.remainingCostBalance;
+    
+    if (saleAmount <= remainingBalance) {
+      // Case 1: Partial recovery - sale amount is less than remaining cost
+      gemstone.recoveredCost += saleAmount;
+      gemstone.remainingCostBalance -= saleAmount;
+      // Profit remains unchanged
+    } else {
+      // Case 2 & 3: Full recovery or already recovered
+      double profitIncrease = saleAmount - remainingBalance;
+      gemstone.recoveredCost += remainingBalance;
+      gemstone.remainingCostBalance = 0;
+      // Add profit only after cost is fully recovered
+      if (gemstone.totalProfit == null) {
+        gemstone.totalProfit = profitIncrease;
+      } else {
+        gemstone.totalProfit = (gemstone.totalProfit ?? 0) + profitIncrease;
+      }
+    }
+    
+    // Update total sales revenue
+    if (gemstone.totalSalesRevenue == null) {
+      gemstone.totalSalesRevenue = saleAmount;
+    } else {
+      gemstone.totalSalesRevenue = (gemstone.totalSalesRevenue ?? 0) + saleAmount;
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Auth
   // -------------------------------------------------------------------------
   /// Login with username and password (NEW METHOD)
@@ -1422,6 +1472,7 @@ class LocalDb {
   static Future<void> recordBrokerSale({
     required String brokerConsignmentId,
     required double soldQuantity,
+    double? saleAmount,
   }) async {
     final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
     final gemstones = Hive.box<Gemstone>(gemstonesBox);
@@ -1442,6 +1493,27 @@ class LocalDb {
     bc.soldQuantity += soldQuantity;
     await brokers.put(brokerConsignmentId, bc);
 
+    // Apply cost recovery if sale amount is provided
+    String costRecoveryDetails = '';
+    if (saleAmount != null && saleAmount > 0) {
+      final purchase = gemstones.get(bc.purchaseId);
+      if (purchase != null) {
+        final previousRecoveredCost = purchase.recoveredCost;
+        final previousProfit = purchase.totalProfit ?? 0;
+        
+        // Apply cost recovery engine
+        applyCostRecovery(purchase, saleAmount);
+        
+        // Save updated purchase record
+        await gemstones.put(bc.purchaseId, purchase);
+        
+        // Calculate cost recovery details for audit log
+        final costRecovered = purchase.recoveredCost - previousRecoveredCost;
+        final profitGenerated = (purchase.totalProfit ?? 0) - previousProfit;
+        costRecoveryDetails = ', Cost Recovered: ${costRecovered.toStringAsFixed(0)}, Profit: ${profitGenerated.toStringAsFixed(0)}';
+      }
+    }
+
     // Create audit log
     final currentUser = LocalDb.currentUser();
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -1451,7 +1523,7 @@ class LocalDb {
       userId: currentUser['id'] as String,
       userName: currentUser['name'] as String,
       timestamp: now,
-      details: 'Sold ${soldQuantity} from broker ${bc.brokerName}',
+      details: 'Sold ${soldQuantity} from broker ${bc.brokerName}, Sale Amount: ${saleAmount?.toStringAsFixed(0) ?? "N/A"}$costRecoveryDetails',
     );
     await createAuditLog(auditLog);
   }
