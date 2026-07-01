@@ -106,10 +106,18 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         if (item.selectedPurchase == null || item.selectedBreakdownItem == null) {
           return false;
         }
-      }
-      // Quantity must not exceed remaining
-      if (item.consignedQuantity > item.gemstone!.remainingQuantity) {
-        return false;
+        // Check quantity against breakdown item available quantity
+        if (item.selectedBreakdownItem != null && item.availableBreakdownItems.containsKey(item.selectedBreakdownItem)) {
+          final availableQty = item.availableBreakdownItems[item.selectedBreakdownItem]!;
+          if (item.consignedQuantity > availableQty) {
+            return false;
+          }
+        }
+      } else {
+        // For whole stone, check against gemstone remaining quantity
+        if (item.consignedQuantity > item.gemstone!.remainingQuantity) {
+          return false;
+        }
       }
     }
     
@@ -914,7 +922,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                     keyboardType: TextInputType.number,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'အရေအတွက် (ကျန်ရှိ: ${item.gemstone!.remainingQuantity})',
+                      hintText: item.sourceType == 'breakdown_item' && item.selectedBreakdownItem != null
+                          ? 'အရေအတွက် (ကျန်ရှိ: ${item.availableBreakdownItems[item.selectedBreakdownItem] ?? 0})'
+                          : 'အရေအတွက် (ကျန်ရှိ: ${item.gemstone!.remainingQuantity})',
                       hintStyle: TextStyle(color: Colors.grey[600]),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -931,8 +941,33 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                       filled: true,
                       fillColor: Colors.grey[900],
                     ),
-                    onChanged: (value) {
+                      onChanged: (value) {
                       final qty = double.tryParse(value) ?? 0;
+                      
+                      // Validate quantity
+                      if (item.sourceType == 'breakdown_item' && item.selectedBreakdownItem != null) {
+                        final maxQty = item.availableBreakdownItems[item.selectedBreakdownItem] ?? 0;
+                        if (qty > maxQty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('ထည့်သွင်းသောအရေအတွက်သည် ရွေးချယ်ထားသော ပစ္စည်း၏ လက်ကျန်အရေအတွက်ထက် မများရပါ။'),
+                              backgroundColor: AppTheme.errorColor,
+                            ),
+                          );
+                          return;
+                        }
+                      } else {
+                        if (qty > item.gemstone!.remainingQuantity) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက်ထက် မများရပါ။'),
+                              backgroundColor: AppTheme.errorColor,
+                            ),
+                          );
+                          return;
+                        }
+                      }
+                      
                       _updateItemQuantity(item.id, qty);
                     },
                   ),
