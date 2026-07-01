@@ -445,45 +445,57 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+
+            // Section title
+            Text(
+              'အပ်မည့်ကျောက်စာရင်းများ',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 12),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'အပ်စာရင်းအရေအတွက်များ',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+            // Add button (prominent)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryAccent,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryAccent,
-                    foregroundColor: Colors.black,
-                  ),
-                  icon: const Icon(Icons.add),
-                  label: const Text('ထည့်သွင်းရန်'),
-                  onPressed: _addItem,
-                ),
-              ],
+                icon: const Icon(Icons.add_circle_outline),
+                label: const Text('+ ကျောက်ထည့်ရန်'),
+                onPressed: _addItem,
+              ),
             ),
             const SizedBox(height: 12),
             
             // Items list
             if (_items.isEmpty)
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey[700]!),
                   borderRadius: BorderRadius.circular(8),
                   color: Colors.grey[900],
                 ),
                 child: Center(
-                  child: Text(
-                    'ကျောက်အရေအတွက်ထည့်သွင်းရန် အပ်စာရင်းထည့်သွင်းခလုံးကိုနှိပ်ပါ',
-                    style: TextStyle(color: Colors.grey[500]),
-                    textAlign: TextAlign.center,
+                  child: Column(
+                    children: [
+                      Icon(Icons.inbox_outlined, color: Colors.grey[600], size: 32),
+                      const SizedBox(height: 8),
+                      Text(
+                        'ကျောက်မထည့်သွင်းရသေးပါ',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
               )
@@ -496,7 +508,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   final item = _items[index];
                   return _buildItemRow(item);
                 },
-              ),
+              )
             
             const SizedBox(height: 24),
             
