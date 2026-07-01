@@ -433,16 +433,16 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                         const SnackBar(content: Text('PDF ထုတ်ရန် လုပ်ဆောင်ချက် မပြီးသေးပါ။')),
                                       );
                                     } else if (value == 'photos') {
-                                      if (bc.photos.isEmpty) {
+                                      if (bc.photoPaths.isEmpty) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           const SnackBar(content: Text('ဓာတ်ပုံ မရှိသေးပါ။')),
                                         );
                                       } else {
-                                        // Open PhotoViewer with bc.photos
+                                        // Open PhotoViewer with bc.photoPaths
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
                                             builder: (context) => PhotoViewer(
-                                              photoUrls: bc.photos,
+                                              photoUrls: bc.photoPaths,
                                             ),
                                           ),
                                         );
