@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -34,6 +35,74 @@ class _PhotoViewerState extends State<PhotoViewer> {
 
   void _handleDoubleTap() {
     // Double tap zoom is handled by InteractiveViewer
+  }
+
+  Widget _buildPhotoImage(String photoPath) {
+    // Check if it's a local file path or URL
+    final isLocalFile = !photoPath.startsWith('http');
+    
+    if (isLocalFile) {
+      final file = File(photoPath);
+      
+      // Check if file exists
+      if (!file.existsSync()) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.image_not_supported, size: 80, color: Colors.grey[600]),
+              const SizedBox(height: 12),
+              Text(
+                'ဓာတ်ပုံ မတွေ့နိုင်ပါ',
+                style: TextStyle(color: Colors.grey[400]),
+              ),
+            ],
+          ),
+        );
+      }
+      
+      // Display local file
+      return Image.file(
+        file,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.broken_image, size: 80, color: Colors.grey[600]),
+                const SizedBox(height: 12),
+                Text(
+                  'ဓာတ်ပုံ မဖွင့်နိုင်ပါ',
+                  style: TextStyle(color: Colors.grey[400]),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } else {
+      // Display network image
+      return Image.network(
+        photoPath,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.broken_image, size: 80, color: Colors.grey[600]),
+                const SizedBox(height: 12),
+                Text(
+                  'ဓာတ်ပုံ မဖွင့်နိုင်ပါ',
+                  style: TextStyle(color: Colors.grey[400]),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
   }
 
   @override
@@ -98,25 +167,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
           child: InteractiveViewer(
             minScale: 1.0,
             maxScale: 3.0,
-            child: Image.network(
-              widget.photoUrls[index],
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.broken_image, size: 80, color: Colors.grey[600]),
-                      const SizedBox(height: 12),
-                      Text(
-                        'ဓာတ်ပုံ မဖွင့်နိုင်ပါ',
-                        style: TextStyle(color: Colors.grey[400]),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+            child: _buildPhotoImage(widget.photoUrls[index]),
           ),
         ),
       ),
