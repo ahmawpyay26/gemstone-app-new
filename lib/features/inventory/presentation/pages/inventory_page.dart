@@ -572,10 +572,10 @@ class _InventoryPageState extends State<InventoryPage> {
       return const SizedBox.shrink();
     }
     
-    // Build summary text (collapsed view)
+    // Build summary text (collapsed view) - one item per line
     final summaryText = activeItems
-        .map((e) => '${e.key} ${e.value}')
-        .join(' • ');
+        .map((e) => '${e.key} — ${e.value}')
+        .join('\n');
     
     return GestureDetector(
       onTap: () => setState(() {
@@ -601,7 +601,7 @@ class _InventoryPageState extends State<InventoryPage> {
               children: [
                 Expanded(
                   child: Text(
-                    'ကျောက်အစိတ်စိတ်ပိုင်း',
+                    'ကျောက်အစိတ်စိတ်ပိုင်းများ:',
                     style: TextStyle(
                       color: AppTheme.primaryAccent,
                       fontSize: 12,
@@ -609,11 +609,12 @@ class _InventoryPageState extends State<InventoryPage> {
                     ),
                   ),
                 ),
-                Icon(
-                  isExpanded ? Icons.expand_less : Icons.expand_more,
-                  color: AppTheme.primaryAccent,
-                  size: 20,
-                ),
+                if (activeItems.length > 1)
+                  Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: AppTheme.primaryAccent,
+                    size: 20,
+                  ),
               ],
             ),
             const SizedBox(height: 8),
@@ -652,8 +653,9 @@ class _InventoryPageState extends State<InventoryPage> {
                 style: TextStyle(
                   color: Colors.grey[400],
                   fontSize: 11,
+                  height: 1.5,
                 ),
-                maxLines: 2,
+                maxLines: 5,
                 overflow: TextOverflow.ellipsis,
               ),
           ],
