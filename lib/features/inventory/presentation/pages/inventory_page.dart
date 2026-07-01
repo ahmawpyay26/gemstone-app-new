@@ -717,6 +717,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late Map<String, int> _breakdownItems; // breakdown item name -> quantity
   late List<String> _breakdownItemNames; // list of added breakdown item names (for ordering)
   String? _customItemName; // for custom item input
+  bool _breakdownExpanded = false; // Track if breakdown section is expanded
 
   @override
   void initState() {
@@ -958,14 +959,8 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                 ]),
                 _field(_note, 'မှတ်ချက်'),
                 const SizedBox(height: 20),
-                // Breakdown Items Section
-                Text('ကျောက်အစိတ်စိတ်ပိုင်းများ',
-                    style: TextStyle(
-                        color: Colors.grey[300],
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                _buildBreakdownItemsSection(),
+                // Breakdown Items Section (Collapsed/Expandable)
+                _buildBreakdownSection(),
                 const SizedBox(height: 20),
                 PhotoAttachmentWidget(
                   photoPaths: _photoPaths,
@@ -994,6 +989,45 @@ class _GemstoneFormState extends State<_GemstoneForm> {
     );
   }
 
+  /// Build collapsed/expandable breakdown section
+  Widget _buildBreakdownSection() {
+    return GestureDetector(
+      onTap: () => setState(() => _breakdownExpanded = !_breakdownExpanded),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.3)),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'ကျောက်အစိတ်စိတ်ပိုင်းများ',
+                  style: TextStyle(
+                    color: AppTheme.primaryAccent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Icon(
+                  _breakdownExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: AppTheme.primaryAccent,
+                  size: 20,
+                ),
+              ],
+            ),
+            if (_breakdownExpanded) ...[const SizedBox(height: 12), _buildBreakdownItemsSection()],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBreakdownItemsSection() {
     return Column(
       children: [
@@ -1004,27 +1038,35 @@ class _GemstoneFormState extends State<_GemstoneForm> {
               final qty = _breakdownItems[itemName] ?? 0;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceLight,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppTheme.primaryAccent, width: 0.5),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text('$itemName: $qty',
-                            style: const TextStyle(color: Colors.white, fontSize: 14)),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.red, size: 18),
-                        onPressed: () => _removeBreakdownItem(itemName),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      itemName,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          '— $qty',
+                          style: TextStyle(
+                            color: AppTheme.primaryAccent,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _removeBreakdownItem(itemName),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.red,
+                            size: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               );
             }).toList(),
@@ -1037,73 +1079,58 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   }
 
   Widget _buildAddBreakdownItemForm() {
+    final TextEditingController nameCtrl = TextEditingController();
     final TextEditingController qtyCtrl = TextEditingController();
-    String? selectedItem;
-    String? customName;
 
     return StatefulBuilder(
       builder: (context, setState) {
         return Column(
           children: [
-            DropdownButtonFormField<String>(
-              value: selectedItem,
-              isExpanded: true,
-              dropdownColor: AppTheme.surfaceLight,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: 'တျောက်အစိတ်စိတ်ပိုင်း'),
-              items: _getBreakdownItemOptions()
-                  .map((name) => DropdownMenuItem(
-                        value: name,
-                        child: Text(name),
-                      ))
-                  .toList(),
-              onChanged: (String? value) {
-                setState(() {
-                  selectedItem = value;
-                  if (value != 'မိမ်စိတ်ကွင်တေ') {
-                    customName = null;
-                  }
-                });
-              },
-            ),
-            const SizedBox(height: 12),
-            if (selectedItem == 'မိမ်စိတ်ကွင်တေ')
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: TextFormField(
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'တျောက်အစိတ်စိတ်ပိုင်း ချက်'),
-                  onChanged: (value) => customName = value.trim(),
-                ),
-              ),
             Row(
               children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: nameCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'အမည် ရေးရန်',
+                      hintText: 'ဥပမာ - ဖျက်စ',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
                     controller: qtyCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: false),
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: 'အချိ'),
+                    decoration: const InputDecoration(
+                      labelText: 'အရေအတွက်',
+                      hintText: '0',
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    final itemName = selectedItem == 'မိမ်စိတ်ကွင်တေ' ? customName : selectedItem;
-                    final qty = int.tryParse(qtyCtrl.text.trim()) ?? 0;
-                    if (itemName != null && itemName.isNotEmpty && qty > 0) {
-                      _addBreakdownItem(itemName, qty);
-                      qtyCtrl.clear();
-                      setState(() {
-                        selectedItem = null;
-                        customName = null;
-                      });
-                    }
-                  },
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('+'),
-                ),
               ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  final itemName = nameCtrl.text.trim();
+                  final qty = int.tryParse(qtyCtrl.text.trim()) ?? 0;
+                  if (itemName.isNotEmpty && qty > 0) {
+                    _addBreakdownItem(itemName, qty);
+                    nameCtrl.clear();
+                    qtyCtrl.clear();
+                    setState(() {});
+                  }
+                },
+                child: const Text(
+                  'ထည့်ရန်',
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
           ],
         );
