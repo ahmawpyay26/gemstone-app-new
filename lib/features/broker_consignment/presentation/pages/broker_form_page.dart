@@ -508,7 +508,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   final item = _items[index];
                   return _buildItemRow(item);
                 },
-              )
+              ),
             
             const SizedBox(height: 24),
             
