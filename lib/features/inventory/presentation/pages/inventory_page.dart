@@ -430,6 +430,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                     result['remainingCost'] as double? ?? 0;
                                 final totalProfit =
                                     result['totalProfit'] as double? ?? 0;
+                                final recoveredCost = g.recoveredCost;
                                 final currentProfit =
                                     0.0; // Current profit shown in sales records
 
@@ -440,6 +441,11 @@ class _InventoryPageState extends State<InventoryPage> {
                                         'စုစုပေါင်း အရင်း: ${_money.format(totalCost)} ကျပ်',
                                         style: const TextStyle(
                                             color: Colors.orangeAccent,
+                                            fontSize: 11)),
+                                    Text(
+                                        'ပြန်လည်ရရှိ: ${_money.format(recoveredCost)} ကျပ်',
+                                        style: const TextStyle(
+                                            color: Colors.lightBlue,
                                             fontSize: 11)),
                                     Text(
                                         'ကျန်ရှိအရင်း: ${_money.format(remainingCost)} ကျပ်',
