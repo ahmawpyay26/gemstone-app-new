@@ -1254,9 +1254,24 @@ class LocalDb {
       orElse: () => throw Exception('Purchase Record not found'),
     );
 
-    // Validate quantity against remaining quantity
-    if (consignedQuantity > purchase.remainingQuantity) {
-      throw Exception('ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက်ထက် မကျော်လွန်ရပါ။');
+    // Validate quantity based on source type
+    if (sourceType == 'breakdown_item') {
+      // For breakdown items, validate against breakdown item quantity
+      if (breakdownItemName == null || breakdownItemName.isEmpty) {
+        throw Exception('Breakdown item name is required');
+      }
+      if (!purchase.breakdownItems.containsKey(breakdownItemName)) {
+        throw Exception('Breakdown item not found');
+      }
+      final availableQty = purchase.breakdownItems[breakdownItemName] ?? 0;
+      if (consignedQuantity > availableQty) {
+        throw Exception('လက်ကျန်အရေအတွက် မလုံလောက်ပါ။');
+      }
+    } else {
+      // For whole stone, validate against remaining quantity
+      if (consignedQuantity > purchase.remainingQuantity) {
+        throw Exception('ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက်ထက် မကျော်လွန်ရပါ။');
+      }
     }
 
     // Capture historical data
@@ -1288,8 +1303,19 @@ class LocalDb {
       createdAt: now,
     );
 
-    // Deduct quantity from remaining quantity only
-    purchase.remainingQuantity -= consignedQuantity.toInt();
+    // Deduct quantity based on source type
+    if (sourceType == 'breakdown_item' && breakdownItemName != null) {
+      // Deduct from breakdown item
+      final currentQty = purchase.breakdownItems[breakdownItemName] ?? 0;
+      final newQty = currentQty - consignedQuantity.toInt();
+      if (newQty < 0) {
+        throw Exception('Breakdown item quantity cannot go below zero');
+      }
+      purchase.breakdownItems[breakdownItemName] = newQty;
+    } else {
+      // Deduct from whole stone remaining quantity
+      purchase.remainingQuantity -= consignedQuantity.toInt();
+    }
     // Use purchaseId directly as the Hive key (Gemstone objects are stored with their ID as key)
     await gemstones.put(purchaseId, purchase);
 
@@ -1298,13 +1324,16 @@ class LocalDb {
 
     // Create audit log
     final currentUser = LocalDb.currentUser();
+    final auditLogDetails = sourceType == 'breakdown_item'
+        ? 'Consigned ${consignedQuantity} of $breakdownItemName from ${purchase.name} to ${brokerName}'
+        : 'Consigned ${consignedQuantity} from ${purchase.name} to ${brokerName}';
     final auditLog = AuditLog(
       id: genId(),
       action: 'BROKER_CONSIGNMENT_CREATED',
       userId: currentUser['id'] as String,
       userName: currentUser['name'] as String,
       timestamp: now,
-      details: 'Consigned ${consignedQuantity} from ${purchase.name} to ${brokerName}',
+      details: auditLogDetails,
     );
     await createAuditLog(auditLog);
 
