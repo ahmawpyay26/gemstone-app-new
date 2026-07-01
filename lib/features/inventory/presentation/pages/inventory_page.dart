@@ -712,6 +712,8 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _color;
   late final TextEditingController _origin;
   late final TextEditingController _note;
+  late final TextEditingController _breakdownItemNameCtrl; // breakdown item name input
+  late final TextEditingController _breakdownItemQtyCtrl; // breakdown item quantity input
   String _weightUnit = 'kg';
   late List<String> _photoPaths;
   late Map<String, int> _breakdownItems; // breakdown item name -> quantity
@@ -760,6 +762,8 @@ class _GemstoneFormState extends State<_GemstoneForm> {
     _color = TextEditingController(text: e?.color ?? '');
     _origin = TextEditingController(text: e?.origin ?? '');
     _note = TextEditingController(text: e?.note ?? '');
+    _breakdownItemNameCtrl = TextEditingController();
+    _breakdownItemQtyCtrl = TextEditingController();
   }
 
   @override
@@ -779,7 +783,9 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       _qty,
       _color,
       _origin,
-      _note
+      _note,
+      _breakdownItemNameCtrl,
+      _breakdownItemQtyCtrl
     ]) {
       c.dispose();
     }
@@ -1079,52 +1085,56 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   }
 
   Widget _buildAddBreakdownItemForm() {
-    final TextEditingController nameCtrl = TextEditingController();
-    final TextEditingController qtyCtrl = TextEditingController();
-
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return Column(
+    return Column(
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: nameCtrl,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      labelText: 'အမည် ရေးရန်',
-                      hintText: 'ဥပမာ - ဖျက်စ',
-                    ),
-                  ),
+            Expanded(
+              child: TextFormField(
+                controller: _breakdownItemNameCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'အမည် ရေးရန်',
+                  hintText: 'ဥပမာ - ဖျက်စ',
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    controller: qtyCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: false),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      labelText: 'အရေအတွက်',
-                      hintText: '0',
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  final itemName = nameCtrl.text.trim();
-                  final qty = int.tryParse(qtyCtrl.text.trim()) ?? 0;
-                  if (itemName.isNotEmpty && qty > 0) {
-                    _addBreakdownItem(itemName, qty);
-                    nameCtrl.clear();
-                    qtyCtrl.clear();
-                    setState(() {});
-                  }
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextFormField(
+                controller: _breakdownItemQtyCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'အရေအတွက်',
+                  hintText: '0',
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              final itemName = _breakdownItemNameCtrl.text.trim();
+              final qty = int.tryParse(_breakdownItemQtyCtrl.text.trim()) ?? 0;
+              if (itemName.isNotEmpty && qty > 0) {
+                _addBreakdownItem(itemName, qty);
+                _breakdownItemNameCtrl.clear();
+                _breakdownItemQtyCtrl.clear();
+              }
+            },
+            child: const Text(
+              'ထည့်ရန်',
+              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
                 },
                 child: const Text(
                   'ထည့်ရန်',
