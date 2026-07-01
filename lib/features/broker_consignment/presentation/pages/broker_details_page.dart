@@ -24,11 +24,22 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
 
   BrokerConsignment? _brokerConsignment;
   Gemstone? _gemstone;
+  
+  // Broker Sales Tracking
+  late TextEditingController _soldQtyController;
+  String? _soldQtyError;
 
   @override
   void initState() {
     super.initState();
+    _soldQtyController = TextEditingController();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _soldQtyController.dispose();
+    super.dispose();
   }
 
   void _loadData() {
@@ -40,8 +51,59 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
         final gemstonesBox = Hive.box<Gemstone>('gemstones');
         _gemstone = gemstonesBox.get(_brokerConsignment!.purchaseId);
       }
+      setState(() {});
     } catch (e) {
       debugPrint('Error loading broker details: $e');
+    }
+  }
+
+  void _validateSoldQuantity(String value) {
+    if (value.isEmpty) {
+      setState(() => _soldQtyError = null);
+      return;
+    }
+
+    final soldQty = int.tryParse(value);
+    if (soldQty == null || soldQty <= 0) {
+      setState(() => _soldQtyError = 'အရေအတွက်သည် ၀ထက်ကြီးရမည်ဖြစ်ပါသည်။');
+      return;
+    }
+
+    // Validation: Sold + Returned must not exceed Consigned
+    final totalUsed = soldQty + _brokerConsignment!.returnedQuantity.toInt();
+    if (totalUsed > _brokerConsignment!.consignedQuantity) {
+      setState(() => _soldQtyError = 'ရောင်းချ + ပြန်လည်လက်ခံ သည် အပ်ထားအရေအတွက်ထက် မများရပါ။');
+      return;
+    }
+
+    setState(() => _soldQtyError = null);
+  }
+
+  Future<void> _recordBrokerSale() async {
+    final soldQty = int.tryParse(_soldQtyController.text);
+    if (soldQty == null || soldQty <= 0 || _soldQtyError != null) return;
+
+    try {
+      await LocalDb.recordBrokerSale(
+        brokerConsignmentId: widget.brokerId,
+        soldQuantity: soldQty.toDouble(),
+      );
+
+      _soldQtyController.clear();
+      setState(() => _soldQtyError = null);
+      _loadData(); // Refresh data
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ရောင်းချမှု အောင်မြင်ပါသည်။')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('အမှားအယွင်း: $e')),
+        );
+      }
     }
   }
 
@@ -276,6 +338,62 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                         ],
                       ),
                     ),
+
+                    // Broker Sales Recording Section
+                    if (_brokerConsignment!.remainingQuantity > 0) ...[  
+                      _buildSectionHeader('ရောင်းချမှု မှတ်တမ်းတင်ခြင်း'),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppTheme.primaryAccent, width: 1),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.black.withOpacity(0.2),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ရောင်းချမှုအရေအတွက်',
+                              style: TextStyle(color: Colors.grey[300], fontSize: 12),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _soldQtyController,
+                                    keyboardType: TextInputType.number,
+                                    style: const TextStyle(color: Colors.white),
+                                    decoration: InputDecoration(
+                                      hintText: '0',
+                                      hintStyle: TextStyle(color: Colors.grey[600]),
+                                      border: OutlineInputBorder(
+                                        borderSide: BorderSide(color: Colors.grey[700]!),
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      errorText: _soldQtyError,
+                                    ),
+                                    onChanged: _validateSoldQuantity,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: _soldQtyError == null && (_soldQtyController.text.isNotEmpty)
+                                      ? _recordBrokerSale
+                                      : null,
+                                  child: const Text('မှတ်တမ်းတင်'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'အများဆုံး: ${_brokerConsignment!.remainingQuantity.toStringAsFixed(0)}',
+                              style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
 
                     // Source Information Section
                     _buildSectionHeader('ရင်းမြစ်အချက်အလက်'),

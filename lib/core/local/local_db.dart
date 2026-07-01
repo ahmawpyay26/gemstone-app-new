@@ -1395,6 +1395,43 @@ class LocalDb {
   }
 
   /// Step 9: Process broker return - restore inventory
+  static Future<void> recordBrokerSale({
+    required String brokerConsignmentId,
+    required double soldQuantity,
+  }) async {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    final gemstones = Hive.box<Gemstone>(gemstonesBox);
+
+    // Get broker consignment
+    final bc = brokers.values.firstWhere(
+      (b) => b.id == brokerConsignmentId,
+      orElse: () => throw Exception('Broker Consignment not found'),
+    );
+
+    // Validation: Sold + Returned must not exceed Consigned
+    final totalUsed = soldQuantity + bc.returnedQuantity;
+    if (totalUsed > bc.consignedQuantity) {
+      throw Exception('ရောင်းချ + ပြန်လည်လက်ခံ သည် အပ်ထားအရေအတွက်ထက် မများရပါ။');
+    }
+
+    // Update broker consignment - increase soldQuantity
+    bc.soldQuantity += soldQuantity;
+    await brokers.put(brokerConsignmentId, bc);
+
+    // Create audit log
+    final currentUser = LocalDb.currentUser();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final auditLog = AuditLog(
+      id: genId(),
+      action: 'BROKER_CONSIGNMENT_SOLD',
+      userId: currentUser['id'] as String,
+      userName: currentUser['name'] as String,
+      timestamp: now,
+      details: 'Sold ${soldQuantity} from broker ${bc.brokerName}',
+    );
+    await createAuditLog(auditLog);
+  }
+
   static Future<void> processBrokerReturn({
     required String brokerConsignmentId,
     required double returnedQuantity,
