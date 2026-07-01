@@ -15,6 +15,10 @@ class BrokerConsignmentPage extends StatefulWidget {
 
 class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
   final _dateFormat = DateFormat('dd/MM/yyyy');
+  final _currencyFormat = NumberFormat('#,##0.00', 'en_US');
+  
+  // Task 5: Filtering
+  String _selectedFilter = 'All';
   
   // Step 9: Returned quantity tracking
   final Map<String, TextEditingController> _returnedQtyControllers = {};
@@ -98,23 +102,71 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
     }
   }
 
-  Widget _buildSummaryItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: Colors.grey[400], fontSize: 12),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: AppTheme.primaryAccent,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+  String _getStatusKey(BrokerConsignment bc) {
+    if (bc.remainingQuantity == 0) {
+      return 'Completed';
+    } else if (bc.returnedQuantity > 0) {
+      return 'Partial Return';
+    } else {
+      return 'Active';
+    }
+  }
+
+  bool _matchesFilter(BrokerConsignment bc) {
+    if (_selectedFilter == 'All') return true;
+    return _getStatusKey(bc) == _selectedFilter;
+  }
+
+  Widget _buildSummaryItem(String label, String value, {bool isSmall = false}) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey[400], fontSize: isSmall ? 11 : 12),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: AppTheme.primaryAccent,
+              fontSize: isSmall ? 16 : 18,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String value) {
+    final isSelected = _selectedFilter == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedFilter = value;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryAccent : Colors.grey[800],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppTheme.primaryAccent : Colors.grey[700]!,
           ),
         ),
-      ],
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
     );
   }
 
@@ -158,61 +210,103 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
           }
 
           // Get all active broker consignments, sorted by newest first
-          final brokers = box.values
+          final allBrokers = box.values
               .where((b) => b.isActive)
               .toList()
               ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-          // Calculate totals
-          final totalRecords = brokers.length;
-          final totalPurchaseRecords = brokers.fold<int>(0, (sum, bc) => sum + 1); // Each broker has at least 1 record
-          final totalConsigned = brokers.fold<double>(0, (sum, bc) => sum + bc.consignedQuantity);
-          final totalRemaining = brokers.fold<double>(0, (sum, bc) => sum + bc.remainingQuantity);
-          final totalReturned = brokers.fold<double>(0, (sum, bc) => sum + bc.returnedQuantity);
+          // Filter brokers based on selected filter
+          final brokers = allBrokers.where((b) => _matchesFilter(b)).toList();
+
+          // Calculate totals from ALL brokers (not filtered)
+          final totalRecords = allBrokers.length;
+          final totalDifferentGemstones = allBrokers.toSet().length;
+          final totalConsigned = allBrokers.fold<double>(0, (sum, bc) => sum + bc.consignedQuantity);
+          final totalSold = allBrokers.fold<double>(0, (sum, bc) => sum + bc.soldQuantity);
+          final totalRemaining = allBrokers.fold<double>(0, (sum, bc) => sum + bc.remainingQuantity);
+          final totalReturned = allBrokers.fold<double>(0, (sum, bc) => sum + bc.returnedQuantity);
 
           return ListView.builder(
             padding: const EdgeInsets.all(12),
-            itemCount: brokers.length + 1,
+            itemCount: brokers.length + 2,
             itemBuilder: (context, index) {
-              // Summary box at the top
+              // Summary dashboard at the top
               if (index == 0) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppTheme.primaryAccent, width: 2),
-                      borderRadius: BorderRadius.circular(12),
-                      color: Colors.grey[900],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'စုစုပေါင်း ပွဲစားအပ်စာရင်း',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppTheme.primaryAccent,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Main summary cards
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppTheme.primaryAccent, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.grey[900],
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildSummaryItem('မှတ်တမ်း', totalRecords.toString()),
-                            _buildSummaryItem('ကျောက်', totalPurchaseRecords.toString()),
-                            _buildSummaryItem('အပ်ထား', totalConsigned.toStringAsFixed(0)),
-                            _buildSummaryItem('ကျန်', totalRemaining.toStringAsFixed(0)),
-                            _buildSummaryItem('ပြန်လည်', totalReturned.toStringAsFixed(0)),
+                            Text(
+                              'စုစုပေါင်း ပွဲစားအပ်စာရင်း',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: AppTheme.primaryAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // First row: Records, Gemstones, Consigned
+                            Row(
+                              children: [
+                                _buildSummaryItem('📦 စုစုပေါင်း\nပွဲစားအပ်မှတ်တမ်း', totalRecords.toString(), isSmall: true),
+                                const SizedBox(width: 8),
+                                _buildSummaryItem('💎 စုစုပေါင်း\nအပ်ထားသော ကျောက်', totalDifferentGemstones.toString(), isSmall: true),
+                                const SizedBox(width: 8),
+                                _buildSummaryItem('🔢 စုစုပေါင်း\nအပ်ထားသော အရေအတွက်', totalConsigned.toStringAsFixed(0), isSmall: true),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Second row: Sold, Returned, Remaining
+                            Row(
+                              children: [
+                                _buildSummaryItem('💰 စုစုပေါင်း\nရောင်းပြီး', totalSold.toStringAsFixed(0), isSmall: true),
+                                const SizedBox(width: 8),
+                                _buildSummaryItem('📥 စုစုပေါင်း\nပြန်ရရှိပြီး', totalReturned.toStringAsFixed(0), isSmall: true),
+                                const SizedBox(width: 8),
+                                _buildSummaryItem('📦 ပွဲစားထံ\nကျန်ရှိ', totalRemaining.toStringAsFixed(0), isSmall: true),
+                              ],
+                            ),
                           ],
                         ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // Filter chips
+              if (index == 1) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildFilterChip('All', 'All'),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Active', 'Active'),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Completed', 'Completed'),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Partial Return', 'Partial Return'),
                       ],
                     ),
                   ),
                 );
               }
 
-              final bc = brokers[index - 1];
+              final bc = brokers[index - 2];
               
               // Initialize controller if not exists
               if (!_returnedQtyControllers.containsKey(bc.id)) {
@@ -259,26 +353,123 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                 ),
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.2),
-                                border: Border.all(color: statusColor),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                statusBadge,
-                                style: TextStyle(
-                                  color: statusColor,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withOpacity(0.2),
+                                    border: Border.all(color: statusColor),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    statusBadge,
+                                    style: TextStyle(
+                                      color: statusColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 8),
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Edit feature coming soon')),
+                                      );
+                                    } else if (value == 'delete') {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Delete feature coming soon')),
+                                      );
+                                    } else if (value == 'print') {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Print feature coming soon')),
+                                      );
+                                    } else if (value == 'export_image') {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Export image feature coming soon')),
+                                      );
+                                    } else if (value == 'export_pdf') {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Export PDF feature coming soon')),
+                                      );
+                                    } else if (value == 'photos') {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('View photos feature coming soon')),
+                                      );
+                                    }
+                                  },
+                                  itemBuilder: (BuildContext context) => [
+                                    const PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Text('✏️'),
+                                          SizedBox(width: 8),
+                                          Text('Edit'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Text('🗑️'),
+                                          SizedBox(width: 8),
+                                          Text('Delete', style: TextStyle(color: AppTheme.errorColor)),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'print',
+                                      child: Row(
+                                        children: [
+                                          Text('🖨️'),
+                                          SizedBox(width: 8),
+                                          Text('Print'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'export_image',
+                                      child: Row(
+                                        children: [
+                                          Text('🖼️'),
+                                          SizedBox(width: 8),
+                                          Text('Export Image'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'export_pdf',
+                                      child: Row(
+                                        children: [
+                                          Text('📄'),
+                                          SizedBox(width: 8),
+                                          Text('Export PDF'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'photos',
+                                      child: Row(
+                                        children: [
+                                          Text('📷'),
+                                          SizedBox(width: 8),
+                                          Text('View Photos'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
-                        // Task 3: Enhanced card details
+                        // Task 5: Enhanced card details with all metrics
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -286,20 +477,20 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               Column(
                                 children: [
                                   Text(
                                     'ကျောက်',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 10),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     '1',
                                     style: const TextStyle(
                                       color: AppTheme.primaryAccent,
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -309,14 +500,14 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                 children: [
                                   Text(
                                     'အပ်ထား',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 10),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     bc.consignedQuantity.toInt().toString(),
                                     style: const TextStyle(
                                       color: AppTheme.primaryAccent,
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -325,15 +516,15 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                               Column(
                                 children: [
                                   Text(
-                                    'ကျန်',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                    'ရောင်းချ',
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 10),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    bc.remainingQuantity.toInt().toString(),
+                                    bc.soldQuantity.toInt().toString(),
                                     style: const TextStyle(
                                       color: AppTheme.primaryAccent,
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -343,14 +534,31 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                 children: [
                                   Text(
                                     'ပြန်လည်',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 10),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     bc.returnedQuantity.toInt().toString(),
                                     style: const TextStyle(
                                       color: AppTheme.primaryAccent,
-                                      fontSize: 14,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text(
+                                    'ကျန်',
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 10),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    bc.remainingQuantity.toInt().toString(),
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryAccent,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
