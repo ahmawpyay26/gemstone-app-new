@@ -1135,18 +1135,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       ],
     );
   }
-                },
-                child: const Text(
-                  'ထည့်ရန်',
-                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Widget _field(TextEditingController c, String label,
       {bool number = false, bool required = false}) {
