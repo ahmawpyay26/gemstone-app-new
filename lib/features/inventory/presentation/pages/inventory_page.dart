@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
-import '../../../core/local/local_db.dart';
-import '../../../core/local/models.dart';
-import '../../../shared/theme.dart';
-import '../../../shared/widgets/gemstone_breakdown_widget.dart';
-import '../../../shared/widgets/photo_attachment_widget.dart';
-import 'package:wouter/wouter.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/local/local_db.dart';
+import '../../../../core/local/models.dart';
+import '../../../../shared/widgets/photo_attachment_widget.dart';
+import '../../../../shared/widgets/photo_viewer.dart';
+
+
+extension DateTimeExtension on DateTime {
+  DateTime toDateOnly() => DateTime(year, month, day);
+}
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({Key? key}) : super(key: key);
@@ -16,46 +21,180 @@ class InventoryPage extends StatefulWidget {
 }
 
 class _InventoryPageState extends State<InventoryPage> {
-  late List<Gemstone> _gemstones;
-  String _period = 'all';
-  final Map<int, bool> _expandedBreakdown = {};
+  final _money = NumberFormat('#,##0', 'en_US');
+  final _date = DateFormat('dd/MM/yyyy');
+  String _selectedPeriod = 'all'; // all, daily, weekly, monthly, yearly
+  final Set<String> _expandedBreakdowns = {}; // Track which breakdown sections are expanded
 
-  @override
-  void initState() {
-    super.initState();
-    _loadGemstones();
+  static String _trim(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+
+  /// Get start date based on selected period
+  DateTime _getStartDate() {
+    final now = DateTime.now();
+    switch (_selectedPeriod) {
+      case 'daily':
+        return DateTime(now.year, now.month, now.day);
+      case 'weekly':
+        final daysToSubtract = now.weekday - 1; // Monday = 1
+        return now.subtract(Duration(days: daysToSubtract)).toDateOnly();
+      case 'monthly':
+        return DateTime(now.year, now.month, 1);
+      case 'yearly':
+        return DateTime(now.year, 1, 1);
+      default:
+        return DateTime(1970); // all time
+    }
   }
 
-  void _loadGemstones() {
-    final box = LocalDb.gemstones();
-    setState(() {
-      _gemstones = box.values.toList().cast<Gemstone>();
-      _gemstones.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    });
+  /// Filter gemstones by period
+  List<Gemstone> _filterGemstonesByPeriod(List<Gemstone> gemstones) {
+    if (_selectedPeriod == 'all') return gemstones;
+    final startDate = _getStartDate();
+    return gemstones.where((g) {
+      final createdDate =
+          DateTime.fromMillisecondsSinceEpoch(g.createdAt).toDateOnly();
+      return createdDate.isAtSameMomentAs(startDate) ||
+          createdDate.isAfter(startDate);
+    }).toList();
   }
 
-  void _deleteGemstone(int hiveKey) {
-    showDialog(
+  /// Calculate total stone count for filtered period
+  int _calculateTotalStoneCount(List<Gemstone> gemstones) {
+    int total = 0;
+    for (final g in gemstones) {
+      total += g.quantity;
+    }
+    return total;
+  }
+
+  /// Calculate total remaining stock for filtered period
+  int _calculateTotalRemainingStock(List<Gemstone> gemstones) {
+    int total = 0;
+    for (final g in gemstones) {
+      total += LocalDb.gemstoneRemainingQuantity(g);
+    }
+    return total;
+  }
+
+  /// Get total stone count (reusable from LocalDb)
+  int _getTotalStoneCount() => LocalDb.totalStoneCount();
+
+  /// Get remaining stone count (reusable from LocalDb)
+  int _getRemainingStoneCount() => LocalDb.remainingStoneCount();
+
+  void _openForm({Gemstone? existing, dynamic key}) {
+    // Check edit permission
+    if (existing != null && !LocalDb.canEditPurchase()) {
+      _showError(LocalDb.adminOnlyErrorMessage());
+      return;
+    }
+
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('ဖျက်မည်လား'),
-        content: const Text('ဤကျောက်မျက်ကို ဖျက်လိုက်ပါက ပြန်မရနိုင်ပါ။'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ပယ်ဖျက်'),
-          ),
-          TextButton(
-            onPressed: () {
-              LocalDb.gemstones().delete(hiveKey);
-              _loadGemstones();
-              Navigator.pop(context);
-            },
-            child: const Text('ဖျက်'),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _GemstoneForm(existing: existing, hiveKey: key),
+    );
+  }
+
+  void _showPhotoViewer(Gemstone gemstone) {
+    if (gemstone.photoPaths.isEmpty) {
+      _showError('ဤမှတ်တမ်းတွင် ဓာတ်ပုံမရှိသေးပါ။');
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PhotoViewer(photoUrls: gemstone.photoPaths),
       ),
     );
+  }
+
+  Future<void> _delete(dynamic key) async {
+    // Check admin permission
+    if (!LocalDb.canDeletePurchase()) {
+      _showError(LocalDb.adminOnlyErrorMessage());
+      return;
+    }
+
+    final gemstone = LocalDb.gemstones().get(key);
+    if (gemstone == null) return;
+
+    final ok = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: const Text('ဝယ်ယူမှတ်တမ်း ဖျက်မည်'),
+            content: const Text(
+                'ဤဝယ်ယူမှတ်တမ်းကို ဖျက်မှာ သေချာပါသလား?'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(c, false),
+                  child: const Text('မဖျက်တော့ပါ')),
+              TextButton(
+                  onPressed: () => Navigator.pop(c, true),
+                  child: const Text('ဖျက်မည်',
+                      style: TextStyle(color: AppTheme.errorColor))),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (ok) {
+      try {
+        await LocalDb.deletePurchaseRecord(
+          gemstone.id,
+          key,
+          gemstone.name,
+          gemstone.quantity,
+        );
+        _showSuccess('ဝယ်ယူမှတ်တမ်း အောင်မြင်စွာ ဖျက်ပြီးပါပြီ။');
+      } catch (e) {
+        _showError('အမှားအယွင်းတစ်ခု ကျေးဇူးပြု၍ ထပ်မံကြိုးစားပါ');
+      }
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.errorColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.successColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<bool> _confirm(String msg) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: const Text('အတည်ပြုရန်'),
+            content: Text(msg),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(c, false),
+                  child: const Text('မလုပ်တော့ပါ')),
+              TextButton(
+                  onPressed: () => Navigator.pop(c, true),
+                  child: const Text('ဖျက်မည်',
+                      style: TextStyle(color: AppTheme.errorColor))),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   @override
@@ -63,47 +202,397 @@ class _InventoryPageState extends State<InventoryPage> {
     return Scaffold(
       backgroundColor: AppTheme.primaryDark,
       appBar: AppBar(
-        title: const Text('ကျောက်စာရင်း'),
-        backgroundColor: AppTheme.primaryDark,
+        title: const Text('အဝယ် စာရင်းများ'),
+        leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/dashboard')),
       ),
-      body: _gemstones.isEmpty
-          ? const Center(
-              child: Text('ကျောက်မျက်မရှိသေးပါ',
-                  style: TextStyle(color: Colors.grey)))
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: _gemstones.length,
-              itemBuilder: (context, index) {
-                final gemstone = _gemstones[index];
-                final hiveKey = LocalDb.gemstones().toMap().entries
-                    .firstWhere((e) => e.value == gemstone)
-                    .key;
-                return _buildGemstoneCard(gemstone, hiveKey, index);
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppTheme.primaryAccent,
+        foregroundColor: Colors.black,
+        icon: const Icon(Icons.add),
+        label: const Text('အသစ်ထည့်ရန်'),
+        onPressed: () => _openForm(),
+      ),
+      body: Column(
+        children: [
+          // Summary Filter Section
+          Container(
+            color: AppTheme.surfaceDark,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ပစ္စည်းစာရင်းအချုပ် အလျင်းအလျ',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildPeriodButton('အားလုံး', 'all'),
+                      const SizedBox(width: 8),
+                      _buildPeriodButton('တစ်ရက်ချုပ်', 'daily'),
+                      const SizedBox(width: 8),
+                      _buildPeriodButton('တစ်ပတ်ချုပ်', 'weekly'),
+                      const SizedBox(width: 8),
+                      _buildPeriodButton('တစ်လချုပ်', 'monthly'),
+                      const SizedBox(width: 8),
+                      _buildPeriodButton('တစ်နှစ်ချုပ်', 'yearly'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Summary Statistics
+          ValueListenableBuilder(
+            valueListenable: LocalDb.sales().listenable(),
+            builder: (context, _, __) => ValueListenableBuilder(
+              valueListenable: LocalDb.gemstones().listenable(),
+              builder: (context, Box<Gemstone> box, _) {
+                final totalStones = _getTotalStoneCount();
+                final totalRemaining = _getRemainingStoneCount();
+                return Container(
+                color: AppTheme.surfaceLight,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ကျောက်အလုံးရေ စုစုပေါင်း',
+                            style: TextStyle(
+                                color: Colors.grey[400], fontSize: 11),
+                          ),
+                          Text(
+                            '$totalStones အလုံး',
+                            style: const TextStyle(
+                              color: AppTheme.primaryAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'လက်ကျန်စုစုပေါင်း အလုံး',
+                            style: TextStyle(
+                                color: Colors.grey[400], fontSize: 11),
+                          ),
+                          Text(
+                            '$totalRemaining အလုံး',
+                            style: const TextStyle(
+                              color: Colors.lightGreen,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
               },
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          builder: (context) => _GemstoneForm(
-            onSaved: _loadGemstones,
+          ),
+          // Gemstone List
+          Expanded(
+            child: ValueListenableBuilder(
+              valueListenable: LocalDb.sales().listenable(),
+              builder: (context, _, __) => ValueListenableBuilder(
+                valueListenable: LocalDb.gemstones().listenable(),
+                builder: (context, Box<Gemstone> box, _) {
+                  if (box.isEmpty) {
+                    return _empty();
+                  }
+                  final allGems = box.values.toList();
+                  final filteredGems = _filterGemstonesByPeriod(allGems);
+                  if (filteredGems.isEmpty) {
+                    return _empty();
+                  }
+                  final keys = filteredGems
+                      .map((g) => box.keys.firstWhere(
+                            (k) => box.get(k)?.id == g.id,
+                            orElse: () => null,
+                          ))
+                      .where((k) => k != null)
+                      .toList()
+                      .reversed
+                      .toList();
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
+                    itemCount: keys.length,
+                    itemBuilder: (context, i) {
+                      final key = keys[i];
+                      final g = box.get(key)!;
+                      return Card(
+                        color: AppTheme.surfaceDark,
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: Column(
+                          children: [
+                            // Date box at the top
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryAccent.withOpacity(0.1),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(8),
+                                  topRight: Radius.circular(8),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.calendar_today,
+                                    size: 16,
+                                    color: AppTheme.primaryAccent,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _date.format(DateTime.fromMillisecondsSinceEpoch(g.createdAt)),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                AppTheme.primaryAccent.withOpacity(0.2),
+                            child: const Icon(Icons.diamond,
+                                color: AppTheme.primaryAccent),
+                          ),
+                          title: Text(g.name,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  '${g.type} • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}',
+                                  style: TextStyle(color: Colors.grey[400])),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Builder(builder: (c) {
+                                      final remaining = LocalDb.gemstoneRemainingQuantity(g);
+                                      return Text(
+                                          'ဝယ်ဈေး: ${_money.format(g.costPrice)} ကျပ် • ဝယ်ထားသော: ${g.quantity} • ကျန်ရှိ: $remaining',
+                                          style: const TextStyle(
+                                              color: AppTheme.primaryAccent,
+                                              fontSize: 12));
+                                    }),
+                                  ),
+                                  if (LocalDb.gemstoneRemainingQuantity(g) <= 0)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.errorColor
+                                            .withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'အရောင်းအဆုံး',
+                                        style: TextStyle(
+                                          color: AppTheme.errorColor,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              Builder(builder: (c) {
+                                final totalCost = LocalDb.gemstoneTotalCost(g);
+                                final result =
+                                    LocalDb.calculateRemainingCostAndProfit(
+                                        g.id);
+                                final remainingCost =
+                                    result['remainingCost'] as double? ?? 0;
+                                final totalProfit =
+                                    result['totalProfit'] as double? ?? 0;
+                                final recoveredCost = g.recoveredCost;
+                                final currentProfit =
+                                    0.0; // Current profit shown in sales records
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                        'စုစုပေါင်း အရင်း: ${_money.format(totalCost)} ကျပ်',
+                                        style: const TextStyle(
+                                            color: Colors.orangeAccent,
+                                            fontSize: 11)),
+                                    Text(
+                                        'ပြန်လည်ရရှိ: ${_money.format(recoveredCost)} ကျပ်',
+                                        style: const TextStyle(
+                                            color: Colors.lightBlue,
+                                            fontSize: 11)),
+                                    Text(
+                                        'ကျန်ရှိအရင်း: ${_money.format(remainingCost)} ကျပ်',
+                                        style: TextStyle(
+                                            color: remainingCost > 0
+                                                ? Colors.yellow
+                                                : Colors.green,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600)),
+                                    if (currentProfit > 0)
+                                      Text(
+                                          'လက်ရှိအမြတ်: ${_money.format(currentProfit)} ကျပ်',
+                                          style: const TextStyle(
+                                              color: Colors.lightGreen,
+                                              fontSize: 11)),
+                                    if (totalProfit > 0)
+                                      Text(
+                                          'စုစုပေါင်းအမြတ်: ${_money.format(totalProfit)} ကျပ်',
+                                          style: const TextStyle(
+                                              color: Colors.lightGreen,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold)),
+                                    if (g.quantity <= 0 && totalProfit <= 0)
+                                      Text('အမြတ်မရှိသေးပါ',
+                                          style: TextStyle(
+                                              color: Colors.grey[400],
+                                              fontSize: 11))
+                                  ],
+                                );
+                              }),
+                            ],
+                          ),
+                          trailing: PopupMenuButton<String>(
+                            color: AppTheme.surfaceLight,
+                            icon: Icon(Icons.more_vert,
+                                color: LocalDb.canEditPurchase() ? Colors.white : Colors.grey[600]),
+                            enabled: LocalDb.canEditPurchase(),
+                            onSelected: (v) {
+                              if (v == 'edit') _openForm(existing: g, key: key);
+                              if (v == 'delete') _delete(key);
+                              if (v == 'photos') _showPhotoViewer(g);
+                            },
+                            itemBuilder: (_) => [
+                              PopupMenuItem(
+                                  value: 'edit',
+                                  enabled: LocalDb.canEditPurchase(),
+                                  child: const Row(
+                                    children: [
+                                      Text('✏️'),
+                                      SizedBox(width: 8),
+                                      Text('ပြုပြင်ရန်'),
+                                    ],
+                                  )),
+                              PopupMenuItem(
+                                  value: 'delete',
+                                  enabled: LocalDb.canDeletePurchase(),
+                                  child: const Row(
+                                    children: [
+                                      Text('🗑️'),
+                                      SizedBox(width: 8),
+                                      Text('ဖျက်ရန်'),
+                                    ],
+                                  )),
+                              const PopupMenuDivider(),
+                              PopupMenuItem(
+                                  value: 'photos',
+                                  child: const Row(
+                                    children: [
+                                      Text('🖼️'),
+                                      SizedBox(width: 8),
+                                      Text('ဓာတ်ပုံကြည့်ရန်'),
+                                    ],
+                                  )),
+                            ],
+                          ),
+                        ),
+                        // Breakdown summary section (collapsed/expandable)
+                        if (g.breakdownItems.isNotEmpty)
+                          _buildBreakdownSummarySection(g),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
           ),
         ),
-        child: const Icon(Icons.add),
       ),
-    );
-  }
+    ],
+    ),
+  );
+}
 
-  Widget _buildGemstoneCard(Gemstone gemstone, int hiveKey, int index) {
-    final isExpanded = _expandedBreakdown[index] ?? false;
-    final hasBreakdown = gemstone.breakdownItems.isNotEmpty;
-    final breakdownSummary = _buildBreakdownSummary(gemstone.breakdownItems);
+  Widget _empty() => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.diamond, size: 70, color: Colors.grey[700]),
+            const SizedBox(height: 12),
+            Text(
+              _selectedPeriod == 'all'
+                  ? 'ကျောက်မျက်စာရင်း မရှိသေးပါ'
+                  : 'ရွေးချယ်ထားသည့် ကာလတွင် ကျောက်မျက် မရှိပါ',
+              style: TextStyle(color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 4),
+            Text('အောက်က ခလုတ်ဖြင့် ထည့်ပါ',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+          ],
+        ),
+      );
 
-    return Card(
-      color: AppTheme.surfaceLight,
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
+  /// Build collapsed/expandable breakdown summary section
+  Widget _buildBreakdownSummarySection(Gemstone gemstone) {
+    final isExpanded = _expandedBreakdowns.contains(gemstone.id);
+    
+    // Filter breakdown items with quantity > 0
+    final activeItems = gemstone.breakdownItems.entries
+        .where((e) => e.value > 0)
+        .toList();
+    
+    if (activeItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    // Build summary text (collapsed view)
+    final summaryText = activeItems
+        .map((e) => '${e.key} ${e.value}')
+        .join(' • ');
+    
+    return GestureDetector(
+      onTap: () => setState(() {
+        if (isExpanded) {
+          _expandedBreakdowns.remove(gemstone.id);
+        } else {
+          _expandedBreakdowns.add(gemstone.id);
+        }
+      }),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.3)),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -111,199 +600,96 @@ class _InventoryPageState extends State<InventoryPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        gemstone.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      if (gemstone.type.isNotEmpty)
-                        Text(
-                          gemstone.type,
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 12,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                PopupMenuButton(
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      child: const Text('ပြင်ဆင်'),
-                      onTap: () => showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (context) => _GemstoneForm(
-                          existing: gemstone,
-                          hiveKey: hiveKey,
-                          onSaved: _loadGemstones,
-                        ),
-                      ),
+                  child: Text(
+                    'ကျောက်အစိတ်စိတ်ပိုင်း',
+                    style: TextStyle(
+                      color: AppTheme.primaryAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
-                    PopupMenuItem(
-                      child: const Text('ဖျက်'),
-                      onTap: () => _deleteGemstone(hiveKey),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'အရေအတွက်: ${gemstone.quantity}',
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                ),
-                Text(
-                  'ကျန်: ${gemstone.remainingQuantity}',
-                  style: TextStyle(
-                    color: AppTheme.primaryAccent,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'ဝယ်ဈေး: ${gemstone.costPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-                Text(
-                  'အမြတ်: ${gemstone.totalProfit?.toStringAsFixed(2) ?? '0.00'}',
-                  style: TextStyle(
-                    color: gemstone.totalProfit != null && gemstone.totalProfit! > 0
-                        ? Colors.green
-                        : Colors.grey,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            if (hasBreakdown) ...[
-              const SizedBox(height: 12),
-              _buildBreakdownSummarySection(gemstone, index, isExpanded),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _buildBreakdownSummary(Map<String, int> items) {
-    if (items.isEmpty) return '';
-    final filtered = items.entries.where((e) => e.value > 0).toList();
-    if (filtered.isEmpty) return '';
-    return filtered.map((e) => '${e.key} ${e.value}').join(' • ');
-  }
-
-  Widget _buildBreakdownSummarySection(Gemstone gemstone, int index, bool isExpanded) {
-    final summary = _buildBreakdownSummary(gemstone.breakdownItems);
-    if (summary.isEmpty) return const SizedBox.shrink();
-
-    return GestureDetector(
-      onTap: () => setState(() => _expandedBreakdown[index] = !isExpanded),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.3)),
-        ),
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'ကျောက်အစိတ်စိတ်ပိုင်းများ:',
-                  style: TextStyle(
-                    color: AppTheme.primaryAccent,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Icon(
                   isExpanded ? Icons.expand_less : Icons.expand_more,
                   color: AppTheme.primaryAccent,
-                  size: 18,
+                  size: 20,
                 ),
               ],
             ),
-            if (!isExpanded)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  summary,
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              )
-            else ...[
-              const SizedBox(height: 8),
+            const SizedBox(height: 8),
+            if (isExpanded)
               Column(
-                children: gemstone.breakdownItems.entries
-                    .where((e) => e.value > 0)
-                    .map((e) => Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                e.key,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                ),
-                              ),
-                              Text(
-                                '${e.value}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...activeItems.map((entry) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          entry.key,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
                           ),
-                        ))
-                    .toList(),
+                        ),
+                        Text(
+                          '${entry.value}',
+                          style: TextStyle(
+                            color: AppTheme.primaryAccent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+                ],
+              )
+            else
+              Text(
+                summaryText,
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 11,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
           ],
         ),
       ),
     );
   }
 
-  void _buildPeriodButton(String period, String label) {
-    setState(() => _period = period);
+  /// Build period filter button
+  Widget _buildPeriodButton(String label, String value) {
+    final isSelected = _selectedPeriod == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedPeriod = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryAccent : AppTheme.surfaceLight,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
   }
 }
 
 class _GemstoneForm extends StatefulWidget {
   final Gemstone? existing;
-  final int? hiveKey;
-  final VoidCallback onSaved;
-
-  const _GemstoneForm({
-    this.existing,
-    this.hiveKey,
-    required this.onSaved,
-  });
+  final dynamic hiveKey;
+  const _GemstoneForm({this.existing, this.hiveKey});
 
   @override
   State<_GemstoneForm> createState() => _GemstoneFormState();
@@ -328,21 +714,17 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _note;
   String _weightUnit = 'kg';
   late List<String> _photoPaths;
-  late Map<String, int> _breakdownItems;
-  late List<String> _breakdownItemNames;
-  String? _customItemName;
-  bool _breakdownExpanded = false;
-  late TextEditingController _breakdownNameCtrl;
-  late TextEditingController _breakdownQtyCtrl;
-  late FocusNode _breakdownNameFocus;
-  late FocusNode _breakdownQtyFocus;
-  String? _breakdownError;
+  late Map<String, int> _breakdownItems; // breakdown item name -> quantity
+  late List<String> _breakdownItemNames; // list of added breakdown item names (for ordering)
+  String? _customItemName; // for custom item input
+  bool _breakdownExpanded = false; // Track if breakdown section is expanded
 
   @override
   void initState() {
     super.initState();
     final e = widget.existing;
     _photoPaths = List.from(e?.photoPaths ?? []);
+    // Load saved breakdown items
     if (e?.breakdownItems != null && e!.breakdownItems.isNotEmpty) {
       _breakdownItems = Map.from(e.breakdownItems);
       _breakdownItemNames = List.from(e.breakdownItems.keys);
@@ -378,11 +760,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
     _color = TextEditingController(text: e?.color ?? '');
     _origin = TextEditingController(text: e?.origin ?? '');
     _note = TextEditingController(text: e?.note ?? '');
-    _breakdownNameCtrl = TextEditingController();
-    _breakdownQtyCtrl = TextEditingController();
-    _breakdownNameFocus = FocusNode();
-    _breakdownQtyFocus = FocusNode();
-    _breakdownError = null;
   }
 
   @override
@@ -402,19 +779,43 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       _qty,
       _color,
       _origin,
-      _note,
-      _breakdownNameCtrl,
-      _breakdownQtyCtrl,
+      _note
     ]) {
       c.dispose();
     }
-    _breakdownNameFocus.dispose();
-    _breakdownQtyFocus.dispose();
     super.dispose();
   }
 
   double _d(String s) => double.tryParse(s.trim()) ?? 0;
   int _i(String s) => int.tryParse(s.trim()) ?? 0;
+
+  void _addBreakdownItem(String itemName, int quantity) {
+    if (itemName.isEmpty || quantity <= 0) return;
+    setState(() {
+      if (!_breakdownItems.containsKey(itemName)) {
+        _breakdownItemNames.add(itemName);
+      }
+      _breakdownItems[itemName] = quantity;
+      _customItemName = null;
+    });
+  }
+
+  void _removeBreakdownItem(String itemName) {
+    setState(() {
+      _breakdownItems.remove(itemName);
+      _breakdownItemNames.remove(itemName);
+    });
+  }
+
+  List<String> _getBreakdownItemOptions() => [
+    "ဖျက်စ",
+    "လွှာချက်",
+    "လက်ကောက်",
+    "လက်စွပ်",
+    "ပုတီး",
+    "ပန်းပု",
+    "မိမိစိတ်ကြိုက်",
+  ];
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -466,7 +867,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       ));
     }
     if (mounted) Navigator.pop(context);
-    widget.onSaved();
   }
 
   @override
@@ -559,6 +959,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                 ]),
                 _field(_note, 'မှတ်ချက်'),
                 const SizedBox(height: 20),
+                // Breakdown Items Section (Collapsed/Expandable)
                 _buildBreakdownSection(),
                 const SizedBox(height: 20),
                 PhotoAttachmentWidget(
@@ -588,6 +989,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
     );
   }
 
+  /// Build collapsed/expandable breakdown section
   Widget _buildBreakdownSection() {
     return GestureDetector(
       onTap: () => setState(() => _breakdownExpanded = !_breakdownExpanded),
@@ -629,6 +1031,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   Widget _buildBreakdownItemsSection() {
     return Column(
       children: [
+        // Added breakdown items display
         if (_breakdownItemNames.isNotEmpty)
           Column(
             children: _breakdownItemNames.map((itemName) {
@@ -669,69 +1072,42 @@ class _GemstoneFormState extends State<_GemstoneForm> {
             }).toList(),
           ),
         if (_breakdownItemNames.isNotEmpty) const SizedBox(height: 12),
+        // Add breakdown item form
         _buildAddBreakdownItemForm(),
       ],
     );
   }
 
   Widget _buildAddBreakdownItemForm() {
+    final TextEditingController nameCtrl = TextEditingController();
+    final TextEditingController qtyCtrl = TextEditingController();
+
     return StatefulBuilder(
       builder: (context, setState) {
         return Column(
           children: [
-            if (_breakdownError != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: Colors.red, width: 0.5),
-                  ),
-                  child: Text(
-                    _breakdownError!,
-                    style: const TextStyle(color: Colors.red, fontSize: 12),
-                  ),
-                ),
-              ),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
-                    controller: _breakdownNameCtrl,
-                    focusNode: _breakdownNameFocus,
+                    controller: nameCtrl,
                     style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: 'အမည် ရေးရန်',
                       hintText: 'ဥပမာ - ဖျက်စ',
                     ),
-                    onChanged: (_) {
-                      if (_breakdownError != null) {
-                        setState(() => _breakdownError = null);
-                      }
-                    },
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
-                    controller: _breakdownQtyCtrl,
-                    focusNode: _breakdownQtyFocus,
+                    controller: qtyCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: false),
                     style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: 'အရေအတွက်',
                       hintText: '0',
                     ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                    onChanged: (_) {
-                      if (_breakdownError != null) {
-                        setState(() => _breakdownError = null);
-                      }
-                    },
                   ),
                 ),
               ],
@@ -741,39 +1117,14 @@ class _GemstoneFormState extends State<_GemstoneForm> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  final itemName = _breakdownNameCtrl.text.trim();
-                  final qtyStr = _breakdownQtyCtrl.text.trim();
-                  final qty = int.tryParse(qtyStr) ?? 0;
-
-                  if (itemName.isEmpty) {
-                    setState(() => _breakdownError = 'အမည်ကို ဖြည့်ပါ။');
-                    _breakdownNameFocus.requestFocus();
-                    return;
+                  final itemName = nameCtrl.text.trim();
+                  final qty = int.tryParse(qtyCtrl.text.trim()) ?? 0;
+                  if (itemName.isNotEmpty && qty > 0) {
+                    _addBreakdownItem(itemName, qty);
+                    nameCtrl.clear();
+                    qtyCtrl.clear();
+                    setState(() {});
                   }
-
-                  if (qtyStr.isEmpty) {
-                    setState(() => _breakdownError = 'အရေအတွက်ကို ဖြည့်ပါ။');
-                    _breakdownQtyFocus.requestFocus();
-                    return;
-                  }
-
-                  if (qty <= 0) {
-                    setState(() => _breakdownError = 'အရေအတွက်သည် 0 ထက်ကြီးရမည်ဖြစ်ပါသည်။');
-                    _breakdownQtyFocus.requestFocus();
-                    return;
-                  }
-
-                  if (_breakdownItems.containsKey(itemName)) {
-                    setState(() => _breakdownError = 'ဤအမည်ဖြင့် အစိတ်အပိုင်း ရှိပြီးသားဖြစ်ပါသည်။');
-                    _breakdownNameFocus.requestFocus();
-                    return;
-                  }
-
-                  _addBreakdownItem(itemName, qty);
-                  _breakdownNameCtrl.clear();
-                  _breakdownQtyCtrl.clear();
-                  setState(() => _breakdownError = null);
-                  _breakdownNameFocus.requestFocus();
                 },
                 child: const Text(
                   'ထည့်ရန်',
@@ -785,24 +1136,6 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         );
       },
     );
-  }
-
-  void _addBreakdownItem(String itemName, int quantity) {
-    if (itemName.isEmpty || quantity <= 0) return;
-    setState(() {
-      if (!_breakdownItems.containsKey(itemName)) {
-        _breakdownItemNames.add(itemName);
-      }
-      _breakdownItems[itemName] = quantity;
-      _customItemName = null;
-    });
-  }
-
-  void _removeBreakdownItem(String itemName) {
-    setState(() {
-      _breakdownItems.remove(itemName);
-      _breakdownItemNames.remove(itemName);
-    });
   }
 
   Widget _field(TextEditingController c, String label,
