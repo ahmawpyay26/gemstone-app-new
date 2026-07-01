@@ -8,8 +8,6 @@ import '../../../shared/widgets/gemstone_breakdown_widget.dart';
 import '../../../shared/widgets/photo_attachment_widget.dart';
 import 'package:wouter/wouter.dart';
 
-part 'inventory_page_form.dart';
-
 class InventoryPage extends StatefulWidget {
   const InventoryPage({Key? key}) : super(key: key);
 
