@@ -22,8 +22,8 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
   final _dateFormat = DateFormat('dd/MM/yyyy');
   final _currencyFormat = NumberFormat('#,##0.00', 'en_US');
 
-  late BrokerConsignment? _brokerConsignment;
-  late Purchase? _purchase;
+  BrokerConsignment? _brokerConsignment;
+  Purchase? _purchase;
 
   @override
   void initState() {
