@@ -116,6 +116,8 @@ class Gemstone {
   double originalPurchaseCost; // ကုန်ကျစာရင်း (Set once, never changes)
   double remainingCostBalance; // ကျန်ရှိအရင်းကျ (Reduces on sales)
   double recoveredCost; // ပြန်လည်ရရှိသောအရင်း (Increases on sales)
+  double? totalProfit; // စုစုပေါင်းအမြတ် (Only after cost fully recovered)
+  double? totalSalesRevenue; // စုစုပေါင်းရောင်းချငွေ (Total revenue from all sales)
 
   Gemstone({
     required this.id,
@@ -147,6 +149,8 @@ class Gemstone {
     this.originalPurchaseCost = 0,
     this.remainingCostBalance = 0,
     this.recoveredCost = 0,
+    this.totalProfit,
+    this.totalSalesRevenue,
   });
 }
 
@@ -197,13 +201,15 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       originalPurchaseCost: fields[26] == null ? 0 : (fields[26] as num).toDouble(),
       remainingCostBalance: fields[27] == null ? 0 : (fields[27] as num).toDouble(),
       recoveredCost: fields[28] == null ? 0 : (fields[28] as num).toDouble(),
+      totalProfit: fields[29] == null ? null : (fields[29] as num).toDouble(),
+      totalSalesRevenue: fields[30] == null ? null : (fields[30] as num).toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Gemstone obj) {
     writer
-      ..writeByte(29)
+      ..writeByte(31)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -261,7 +267,11 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       ..writeByte(27)
       ..write(obj.remainingCostBalance)
       ..writeByte(28)
-      ..write(obj.recoveredCost);
+      ..write(obj.recoveredCost)
+      ..writeByte(29)
+      ..write(obj.totalProfit)
+      ..writeByte(30)
+      ..write(obj.totalSalesRevenue);
   }
 }
 
