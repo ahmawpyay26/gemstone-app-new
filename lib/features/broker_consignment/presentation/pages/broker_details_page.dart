@@ -23,7 +23,7 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
   final _currencyFormat = NumberFormat('#,##0.00', 'en_US');
 
   BrokerConsignment? _brokerConsignment;
-  Purchase? _purchase;
+  Gemstone? _gemstone;
 
   @override
   void initState() {
@@ -37,8 +37,8 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
       _brokerConsignment = box.get(widget.brokerId);
       
       if (_brokerConsignment != null) {
-        final purchaseBox = Hive.box<Purchase>('purchases');
-        _purchase = purchaseBox.get(_brokerConsignment!.purchaseId);
+        final gemstonesBox = Hive.box<Gemstone>('gemstones');
+        _gemstone = gemstonesBox.get(_brokerConsignment!.purchaseId);
       }
     } catch (e) {
       debugPrint('Error loading broker details: $e');
@@ -224,12 +224,12 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                           Divider(color: Colors.grey[700], height: 1),
                           _buildDetailRow(
                             'အလေးချိန်',
-                            '${_currencyFormat.format(_brokerConsignment!.historicalData.originalWeight)} ${_purchase?.weightUnit ?? 'carat'}',
+                            '${_currencyFormat.format(_brokerConsignment!.historicalData.originalWeight)} ${_gemstone?.weightUnit ?? 'carat'}',
                           ),
                           Divider(color: Colors.grey[700], height: 1),
-                          _buildDetailRow('မူရင်းနေရာ', _purchase?.origin ?? '-'),
+                          _buildDetailRow('မူရင်းနေရာ', _gemstone?.origin ?? '-'),
                           Divider(color: Colors.grey[700], height: 1),
-                          _buildDetailRow('အရောင်', _purchase?.color ?? '-'),
+                          _buildDetailRow('အရောင်', _gemstone?.color ?? '-'),
                           if (_brokerConsignment!.historicalData.sourceType == 'breakdown_item') ...[
                             Divider(color: Colors.grey[700], height: 1),
                             _buildDetailRow('အခွဲအမည်', _brokerConsignment!.historicalData.breakdownItemName ?? '-'),
