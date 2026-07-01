@@ -1437,7 +1437,16 @@ class LocalDb {
     final remainingToRestore = broker.consignedQuantity - broker.returnedQuantity;
     final purchase = gemstones.get(broker.purchaseId);
     if (purchase != null) {
-      purchase.quantity += remainingToRestore.toInt();
+      // Check if this is a breakdown item consignment
+      if (broker.historicalData.sourceType == 'breakdown_item') {
+        final itemName = broker.historicalData.breakdownItemName ?? '';
+        if (itemName.isNotEmpty && purchase.breakdownItems.containsKey(itemName)) {
+          purchase.breakdownItems[itemName] = (purchase.breakdownItems[itemName] ?? 0) + remainingToRestore.toInt();
+        }
+      } else {
+        // Restore to whole stone quantity
+        purchase.quantity += remainingToRestore.toInt();
+      }
       await gemstones.put(broker.purchaseId, purchase);
     }
 

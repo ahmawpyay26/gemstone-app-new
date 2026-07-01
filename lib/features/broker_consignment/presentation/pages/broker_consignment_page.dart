@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
+import '../../../../shared/widgets/photo_viewer.dart';
 
 class BrokerConsignmentPage extends StatefulWidget {
   const BrokerConsignmentPage({Key? key}) : super(key: key);
@@ -115,6 +116,43 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
   bool _matchesFilter(BrokerConsignment bc) {
     if (_selectedFilter == 'All') return true;
     return _getStatusKey(bc) == _selectedFilter;
+  }
+
+  void _showDeleteConfirmation(BrokerConsignment bc) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ပွဲစားအပ်စာရင်း ဖျက်ရန်'),
+        content: Text('"${bc.brokerName}" ၏ ပွဲစားအပ်စာရင်းကို ဖျက်မည်ဖြစ်ပါသည်။\nဤလုပ်ဆောင်ချက်ကို ပြန်လည်ပြင်ဆင်၍ မရပါ။'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ပယ်ဖျက်ရန်'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await LocalDb.deleteBrokerConsignment(bc.id);
+                if (mounted) {
+                  setState(() {});
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('ပွဲစားအပ်စာရင်း ဖျက်ပြီးပါပြီ။')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('အမှားအယွင်း: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSummaryItem(String label, String value, {bool isSmall = false}) {
@@ -374,31 +412,41 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                 const SizedBox(width: 8),
                                 PopupMenuButton<String>(
                                   icon: const Icon(Icons.more_vert, color: Colors.white),
-                                  onSelected: (value) {
+                                  onSelected: (value) async {
                                     if (value == 'edit') {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Edit feature coming soon')),
-                                      );
+                                      final result = await context.push('/broker-consignment/form', extra: bc);
+                                      if (result == true && mounted) {
+                                        setState(() {});
+                                      }
                                     } else if (value == 'delete') {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Delete feature coming soon')),
-                                      );
+                                      _showDeleteConfirmation(bc);
                                     } else if (value == 'print') {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Print feature coming soon')),
+                                        const SnackBar(content: Text('ပရင့်ထုတ်ရန် လုပ်ဆောင်ချက် မပြီးသေးပါ။')),
                                       );
                                     } else if (value == 'export_image') {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Export image feature coming soon')),
+                                        const SnackBar(content: Text('ပုံထုတ်ရန် လုပ်ဆောင်ချက် မပြီးသေးပါ။')),
                                       );
                                     } else if (value == 'export_pdf') {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Export PDF feature coming soon')),
+                                        const SnackBar(content: Text('PDF ထုတ်ရန် လုပ်ဆောင်ချက် မပြီးသေးပါ။')),
                                       );
                                     } else if (value == 'photos') {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('View photos feature coming soon')),
-                                      );
+                                      if (bc.photos.isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('ဓာတ်ပုံ မရှိသေးပါ။')),
+                                        );
+                                      } else {
+                                        // Open PhotoViewer with bc.photos
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) => PhotoViewer(
+                                              photoUrls: bc.photos,
+                                            ),
+                                          ),
+                                        );
+                                      }
                                     }
                                   },
                                   itemBuilder: (BuildContext context) => [
@@ -408,7 +456,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                         children: [
                                           Text('✏️'),
                                           SizedBox(width: 8),
-                                          Text('Edit'),
+                                          Text('ပြင်ဆင်ရန်'),
                                         ],
                                       ),
                                     ),
@@ -418,7 +466,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                         children: [
                                           Text('🗑️'),
                                           SizedBox(width: 8),
-                                          Text('Delete', style: TextStyle(color: AppTheme.errorColor)),
+                                          Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
                                         ],
                                       ),
                                     ),
@@ -428,7 +476,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                         children: [
                                           Text('🖨️'),
                                           SizedBox(width: 8),
-                                          Text('Print'),
+                                          Text('ပရင့်ထုတ်ရန်'),
                                         ],
                                       ),
                                     ),
@@ -438,7 +486,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                         children: [
                                           Text('🖼️'),
                                           SizedBox(width: 8),
-                                          Text('Export Image'),
+                                          Text('ပုံထုတ်ရန်'),
                                         ],
                                       ),
                                     ),
@@ -448,7 +496,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                         children: [
                                           Text('📄'),
                                           SizedBox(width: 8),
-                                          Text('Export PDF'),
+                                          Text('PDF ထုတ်ရန်'),
                                         ],
                                       ),
                                     ),
@@ -458,7 +506,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                         children: [
                                           Text('📷'),
                                           SizedBox(width: 8),
-                                          Text('View Photos'),
+                                          Text('ဓာတ်ပုံကြည့်ရန်'),
                                         ],
                                       ),
                                     ),
