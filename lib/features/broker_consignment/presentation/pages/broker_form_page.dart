@@ -11,12 +11,18 @@ class ConsignmentItemTemp {
   Gemstone? gemstone;
   double consignedQuantity;
   String sourceType; // 'whole_stone' or 'breakdown_item'
+  Gemstone? selectedPurchase; // For breakdown_item source type
+  String? selectedBreakdownItem; // Selected breakdown item name
+  Map<String, int> availableBreakdownItems; // Filtered breakdown items from purchase
 
   ConsignmentItemTemp({
     required this.id,
     this.gemstone,
     this.consignedQuantity = 0,
     this.sourceType = 'whole_stone',
+    this.selectedPurchase,
+    this.selectedBreakdownItem,
+    this.availableBreakdownItems = const {},
   });
 }
 
@@ -95,6 +101,12 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       if (item.gemstone == null || item.consignedQuantity <= 0) {
         return false;
       }
+      // For breakdown items, must select purchase and breakdown item
+      if (item.sourceType == 'breakdown_item') {
+        if (item.selectedPurchase == null || item.selectedBreakdownItem == null) {
+          return false;
+        }
+      }
       // Quantity must not exceed remaining
       if (item.consignedQuantity > item.gemstone!.remainingQuantity) {
         return false;
@@ -139,6 +151,33 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       final item = _items.firstWhere((i) => i.id == itemId);
       item.sourceType = sourceType;
       item.consignedQuantity = 0;
+      if (sourceType == 'whole_stone') {
+        item.selectedPurchase = null;
+        item.selectedBreakdownItem = null;
+        item.availableBreakdownItems = {};
+      }
+    });
+  }
+
+  void _updateItemPurchase(String itemId, Gemstone? purchase) {
+    setState(() {
+      final item = _items.firstWhere((i) => i.id == itemId);
+      item.selectedPurchase = purchase;
+      item.selectedBreakdownItem = null;
+      if (purchase != null && purchase.breakdownItems.isNotEmpty) {
+        item.availableBreakdownItems = Map.from(purchase.breakdownItems);
+        item.availableBreakdownItems.removeWhere((_, qty) => qty <= 0);
+      } else {
+        item.availableBreakdownItems = {};
+      }
+    });
+  }
+
+  void _updateItemBreakdownItem(String itemId, String? breakdownItemName) {
+    setState(() {
+      final item = _items.firstWhere((i) => i.id == itemId);
+      item.selectedBreakdownItem = breakdownItemName;
+      item.consignedQuantity = 0;
     });
   }
 
@@ -157,6 +196,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           purchaseId: item.gemstone!.id,
           consignedQuantity: item.consignedQuantity,
           sourceType: item.sourceType,
+          breakdownItemName: item.selectedBreakdownItem,
           brokerName: _brokerNameCtrl.text,
           brokerPhone: _brokerPhoneCtrl.text,
           brokerAddress: _brokerAddressCtrl.text,
@@ -732,6 +772,133 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               ),
             
             const SizedBox(height: 8),
+            
+            // Purchase Record selector (for breakdown items)
+            if (item.sourceType == 'breakdown_item')
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ဝယ်ယူမှုမှတ်တမ်းရွေးချယ်ပါ',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<String?>(
+                    value: item.selectedPurchase?.id,
+                    isExpanded: true,
+                    dropdownColor: AppTheme.surfaceDark,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'မှတ်တမ်းရွေးချယ်ပါ',
+                      labelStyle: TextStyle(color: Colors.grey[400]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey[700]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey[700]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[900],
+                    ),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('— မှတ်တမ်းရွေးချယ်ပါ —'),
+                      ),
+                      ..._availableGemstones.map((g) => DropdownMenuItem<String?>(
+                        value: g.id,
+                        child: Text(
+                          '${g.name} (${g.type} • ID: ${g.id.substring(0, 8)}...)',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      )).toList(),
+                    ],
+                    onChanged: (String? gemstoneId) {
+                      if (gemstoneId != null) {
+                        final gemstone = _availableGemstones.firstWhere(
+                          (g) => g.id == gemstoneId,
+                          orElse: () => _availableGemstones.first,
+                        );
+                        _updateItemPurchase(item.id, gemstone);
+                      } else {
+                        _updateItemPurchase(item.id, null);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            
+            // Breakdown Item selector (only show if purchase selected)
+            if (item.sourceType == 'breakdown_item' && item.selectedPurchase != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ကျောက်အစိတ်စိတ်ရွေးချယ်ပါ',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  if (item.availableBreakdownItems.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[700]!),
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.grey[900],
+                      ),
+                      child: Text(
+                        'အစိတ်စိတ်မရှိသေးပါ',
+                        style: TextStyle(color: Colors.grey[500]),
+                      ),
+                    )
+                  else
+                    DropdownButtonFormField<String?>(
+                      value: item.selectedBreakdownItem,
+                      isExpanded: true,
+                      dropdownColor: AppTheme.surfaceDark,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'အစိတ်စိတ်ရွေးချယ်ပါ',
+                        labelStyle: TextStyle(color: Colors.grey[400]),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[700]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[700]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[900],
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('— အစိတ်စိတ်ရွေးချယ်ပါ —'),
+                        ),
+                        ...item.availableBreakdownItems.entries.map((e) => DropdownMenuItem<String?>(
+                          value: e.key,
+                          child: Text('${e.key} (ကျန်: ${e.value})'),
+                        )).toList(),
+                      ],
+                      onChanged: (String? breakdownItem) {
+                        _updateItemBreakdownItem(item.id, breakdownItem);
+                      },
+                    ),
+                  const SizedBox(height: 8),
+                ],
+              ),
             
             // Quantity input
             if (item.gemstone != null)
