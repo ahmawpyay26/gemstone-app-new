@@ -611,12 +611,18 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _note;
   String _weightUnit = 'kg';
   late List<String> _photoPaths;
+  late Map<String, int> _breakdownItems; // breakdown item name -> quantity
+  late List<String> _breakdownItemNames; // list of added breakdown item names (for ordering)
+  String? _customItemName; // for custom item input
 
   @override
   void initState() {
     super.initState();
     final e = widget.existing;
     _photoPaths = List.from(e?.photoPaths ?? []);
+    _breakdownItems = {};
+    _breakdownItemNames = [];
+    _customItemName = null;
     _name = TextEditingController(text: e?.name ?? '');
     _type = TextEditingController(text: e?.type ?? '');
     _weight = TextEditingController(text: e?.weightCarat.toString() ?? '');
@@ -672,6 +678,34 @@ class _GemstoneFormState extends State<_GemstoneForm> {
 
   double _d(String s) => double.tryParse(s.trim()) ?? 0;
   int _i(String s) => int.tryParse(s.trim()) ?? 0;
+
+  void _addBreakdownItem(String itemName, int quantity) {
+    if (itemName.isEmpty || quantity <= 0) return;
+    setState(() {
+      if (!_breakdownItems.containsKey(itemName)) {
+        _breakdownItemNames.add(itemName);
+      }
+      _breakdownItems[itemName] = quantity;
+      _customItemName = null;
+    });
+  }
+
+  void _removeBreakdownItem(String itemName) {
+    setState(() {
+      _breakdownItems.remove(itemName);
+      _breakdownItemNames.remove(itemName);
+    });
+  }
+
+  List<String> _getBreakdownItemOptions() => [
+    "ဖျက်စ",
+    "လွှာချက်",
+    "လက်ကောက်",
+    "လက်စွပ်",
+    "ပုတီး",
+    "ပန်းပု",
+    "မိမိစိတ်ကြိုက်",
+  ];
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -813,6 +847,15 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                 ]),
                 _field(_note, 'မှတ်ချက်'),
                 const SizedBox(height: 20),
+                // Breakdown Items Section
+                Text('ကျောက်အစိတ်စိတ်ပိုင်းများ',
+                    style: TextStyle(
+                        color: Colors.grey[300],
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                _buildBreakdownItemsSection(),
+                const SizedBox(height: 20),
                 PhotoAttachmentWidget(
                   photoPaths: _photoPaths,
                   onPhotosChanged: (photos) {
@@ -837,6 +880,123 @@ class _GemstoneFormState extends State<_GemstoneForm> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildBreakdownItemsSection() {
+    return Column(
+      children: [
+        // Added breakdown items display
+        if (_breakdownItemNames.isNotEmpty)
+          Column(
+            children: _breakdownItemNames.map((itemName) {
+              final qty = _breakdownItems[itemName] ?? 0;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceLight,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppTheme.primaryAccent, width: 0.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text('$itemName: $qty',
+                            style: const TextStyle(color: Colors.white, fontSize: 14)),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.red, size: 18),
+                        onPressed: () => _removeBreakdownItem(itemName),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        if (_breakdownItemNames.isNotEmpty) const SizedBox(height: 12),
+        // Add breakdown item form
+        _buildAddBreakdownItemForm(),
+      ],
+    );
+  }
+
+  Widget _buildAddBreakdownItemForm() {
+    final TextEditingController qtyCtrl = TextEditingController();
+    String? selectedItem;
+    String? customName;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Column(
+          children: [
+            DropdownButtonFormField<String>(
+              value: selectedItem,
+              isExpanded: true,
+              dropdownColor: AppTheme.surfaceLight,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(labelText: 'တျောက်အစိတ်စိတ်ပိုင်း'),
+              items: _getBreakdownItemOptions()
+                  .map((name) => DropdownMenuItem(
+                        value: name,
+                        child: Text(name),
+                      ))
+                  .toList(),
+              onChanged: (String? value) {
+                setState(() {
+                  selectedItem = value;
+                  if (value != 'မိမ်စိတ်ကွင်တေ') {
+                    customName = null;
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            if (selectedItem == 'မိမ်စိတ်ကွင်တေ')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: TextFormField(
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'တျောက်အစိတ်စိတ်ပိုင်း ချက်'),
+                  onChanged: (value) => customName = value.trim(),
+                ),
+              ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: qtyCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'အချိ'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    final itemName = selectedItem == 'မိမ်စိတ်ကွင်တေ' ? customName : selectedItem;
+                    final qty = int.tryParse(qtyCtrl.text.trim()) ?? 0;
+                    if (itemName != null && itemName.isNotEmpty && qty > 0) {
+                      _addBreakdownItem(itemName, qty);
+                      qtyCtrl.clear();
+                      setState(() {
+                        selectedItem = null;
+                        customName = null;
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('+'),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 
