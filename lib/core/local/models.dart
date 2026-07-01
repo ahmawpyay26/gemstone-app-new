@@ -111,6 +111,11 @@ class Gemstone {
   int soldQuantity; // ရောင်းပြီးအရေအတွက်
   List<String> photoPaths; // ဓာတ်ပုံ file paths
   Map<String, int> breakdownItems; // breakdown item name -> quantity
+  
+  // Cost/Profit Tracking for Breakdown Items
+  double originalPurchaseCost; // ကုန်ကျစာရင်း (Set once, never changes)
+  double remainingCostBalance; // ကျန်ရှိအရင်းကျ (Reduces on sales)
+  double recoveredCost; // ပြန်လည်ရရှိသောအရင်း (Increases on sales)
 
   Gemstone({
     required this.id,
@@ -139,6 +144,9 @@ class Gemstone {
     this.soldQuantity = 0,
     this.photoPaths = const [],
     this.breakdownItems = const {},
+    this.originalPurchaseCost = 0,
+    this.remainingCostBalance = 0,
+    this.recoveredCost = 0,
   });
 }
 
@@ -186,13 +194,16 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       soldQuantity: fields[23] == null ? 0 : (fields[23] as int),
       photoPaths: (fields[24] as List<dynamic>?)?.cast<String>() ?? [],
       breakdownItems: (fields[25] as Map<dynamic, dynamic>?)?.cast<String, int>() ?? {},
+      originalPurchaseCost: fields[26] == null ? 0 : (fields[26] as num).toDouble(),
+      remainingCostBalance: fields[27] == null ? 0 : (fields[27] as num).toDouble(),
+      recoveredCost: fields[28] == null ? 0 : (fields[28] as num).toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Gemstone obj) {
     writer
-      ..writeByte(26)
+      ..writeByte(29)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -244,7 +255,13 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       ..writeByte(24)
       ..write(obj.photoPaths)
       ..writeByte(25)
-      ..write(obj.breakdownItems);
+      ..write(obj.breakdownItems)
+      ..writeByte(26)
+      ..write(obj.originalPurchaseCost)
+      ..writeByte(27)
+      ..write(obj.remainingCostBalance)
+      ..writeByte(28)
+      ..write(obj.recoveredCost);
   }
 }
 
