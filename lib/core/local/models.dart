@@ -110,6 +110,7 @@ class Gemstone {
   int remainingQuantity; // ကျန်ရှိအရေအတွက်
   int soldQuantity; // ရောင်းပြီးအရေအတွက်
   List<String> photoPaths; // ဓာတ်ပုံ file paths
+  Map<String, int> breakdownItems; // breakdown item name -> quantity
 
   Gemstone({
     required this.id,
@@ -137,6 +138,7 @@ class Gemstone {
     this.remainingQuantity = 0,
     this.soldQuantity = 0,
     this.photoPaths = const [],
+    this.breakdownItems = const {},
   });
 }
 
@@ -183,13 +185,14 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       remainingQuantity: fields[22] == null ? 0 : (fields[22] as int),
       soldQuantity: fields[23] == null ? 0 : (fields[23] as int),
       photoPaths: (fields[24] as List<dynamic>?)?.cast<String>() ?? [],
+      breakdownItems: (fields[25] as Map<dynamic, dynamic>?)?.cast<String, int>() ?? {},
     );
   }
 
   @override
   void write(BinaryWriter writer, Gemstone obj) {
     writer
-      ..writeByte(25)
+      ..writeByte(26)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -239,7 +242,9 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       ..writeByte(23)
       ..write(obj.soldQuantity)
       ..writeByte(24)
-      ..write(obj.photoPaths);
+      ..write(obj.photoPaths)
+      ..writeByte(25)
+      ..write(obj.breakdownItems);
   }
 }
 

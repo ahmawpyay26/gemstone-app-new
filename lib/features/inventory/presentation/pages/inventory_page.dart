@@ -620,8 +620,14 @@ class _GemstoneFormState extends State<_GemstoneForm> {
     super.initState();
     final e = widget.existing;
     _photoPaths = List.from(e?.photoPaths ?? []);
-    _breakdownItems = {};
-    _breakdownItemNames = [];
+    // Load saved breakdown items
+    if (e?.breakdownItems != null && e!.breakdownItems.isNotEmpty) {
+      _breakdownItems = Map.from(e.breakdownItems);
+      _breakdownItemNames = List.from(e.breakdownItems.keys);
+    } else {
+      _breakdownItems = {};
+      _breakdownItemNames = [];
+    }
     _customItemName = null;
     _name = TextEditingController(text: e?.name ?? '');
     _type = TextEditingController(text: e?.type ?? '');
@@ -729,6 +735,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       g.origin = _origin.text.trim();
       g.note = _note.text.trim();
       g.photoPaths = _photoPaths;
+      g.breakdownItems = _breakdownItems;
       await box.put(widget.hiveKey, g);
     } else {
       await box.add(Gemstone(
@@ -752,6 +759,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         note: _note.text.trim(),
         createdAt: DateTime.now().millisecondsSinceEpoch,
         photoPaths: _photoPaths,
+        breakdownItems: _breakdownItems,
       ));
     }
     if (mounted) Navigator.pop(context);
