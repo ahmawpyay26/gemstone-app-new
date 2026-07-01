@@ -48,6 +48,7 @@ class LocalDb {
     await Hive.openBox<BrokerConsignment>(brokerConsignmentsBox);
 
     await _seedDefaults();
+    await _migrateGemstonesCostTracking();
   }
 
   /// Supported weight units. value => Burmese display label.
@@ -204,6 +205,29 @@ class LocalDb {
           soldQuantity: 0,
         ),
       ]);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Migration: Initialize cost tracking fields for existing Gemstones
+  // -------------------------------------------------------------------------
+  static Future<void> _migrateGemstonesCostTracking() async {
+    final gems = Hive.box<Gemstone>(gemstonesBox);
+    bool hasChanges = false;
+    
+    for (int i = 0; i < gems.length; i++) {
+      final g = gems.getAt(i);
+      if (g != null && g.originalPurchaseCost == 0) {
+        g.originalPurchaseCost = g.costPrice;
+        g.remainingCostBalance = g.costPrice;
+        g.recoveredCost = 0;
+        await gems.putAt(i, g);
+        hasChanges = true;
+      }
+    }
+    
+    if (hasChanges) {
+      print('[Migration] Gemstone cost tracking fields initialized for existing records');
     }
   }
 
