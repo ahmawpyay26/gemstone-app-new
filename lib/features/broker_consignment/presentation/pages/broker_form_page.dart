@@ -559,42 +559,119 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             ),
             const SizedBox(height: 8),
             
-            // Gemstone selection
-            GestureDetector(
-              onTap: () => _showGemstoneSelector(item),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[700]!),
+            // Gemstone selection dropdown (Task 1: Improved selector)
+            DropdownButtonFormField<String?>(
+              value: item.gemstone?.id,
+              isExpanded: true,
+              dropdownColor: AppTheme.surfaceDark,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'ကျောက်ရွေးချယ်ပါ',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  color: Colors.grey[900],
+                  borderSide: BorderSide(color: Colors.grey[700]!),
                 ),
-                child: Row(
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                ),
+                filled: true,
+                fillColor: Colors.grey[900],
+              ),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('— ကျောက်မျက်ရွေးချယ်ပါ —'),
+                ),
+                ..._availableGemstones.map((g) => DropdownMenuItem<String?>(
+                  value: g.id,
+                  child: Text(
+                    '${g.name} (${g.type} • ကျန်: ${g.remainingQuantity} • ID: ${g.id.substring(0, 8)}...)',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )).toList(),
+              ],
+              onChanged: (String? gemstoneId) {
+                if (gemstoneId != null) {
+                  final gemstone = _availableGemstones.firstWhere(
+                    (g) => g.id == gemstoneId,
+                    orElse: () => _availableGemstones.first,
+                  );
+                  _updateItemGemstone(item.id, gemstone);
+                } else {
+                  _updateItemGemstone(item.id, null);
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+
+            // Display selected gemstone details
+            if (item.gemstone != null)
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryAccent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.gemstone?.name ?? 'ကျောက်ရွေးချယ်ပါ',
-                            style: TextStyle(
-                              color: item.gemstone == null ? Colors.grey[500] : Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    Row(
+                      children: [
+                        const Icon(Icons.inventory_2_outlined,
+                            color: AppTheme.primaryAccent, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'ကျန်ရှိအရေအတွက်: ${item.gemstone!.remainingQuantity}',
+                            style: const TextStyle(
+                                color: AppTheme.primaryAccent, fontSize: 12),
                           ),
-                          if (item.gemstone != null)
-                            Text(
-                              'အမျိုးအစား: ${item.gemstone!.type}',
-                              style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                            ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    Icon(Icons.arrow_drop_down, color: AppTheme.primaryAccent),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.calendar_today,
+                            color: AppTheme.primaryAccent, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'ဝယ်ယူမှုရက်စွဲ: ${DateFormat('dd/MM/yyyy').format(DateTime.fromMillisecondsSinceEpoch(item.gemstone!.createdAt))}',
+                            style: const TextStyle(
+                                color: AppTheme.primaryAccent, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (item.gemstone!.weightCarat > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.scale,
+                                color: AppTheme.primaryAccent, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'အလေးချိန်: ${item.gemstone!.weightCarat} ${LocalDb.unitLabel(item.gemstone!.weightUnit)}',
+                                style: const TextStyle(
+                                    color: AppTheme.primaryAccent, fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
-            ),
+            
             const SizedBox(height: 8),
             
             // Quantity input
@@ -638,60 +715,6 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showGemstoneSelector(ConsignmentItemTemp item) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppTheme.surfaceDark,
-          title: const Text('ကျောက်ရွေးချယ်ပါ'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _availableGemstones.length,
-              itemBuilder: (context, index) {
-                final gemstone = _availableGemstones[index];
-                return ListTile(
-                  title: Text(
-                    gemstone.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'အမျိုးအစား: ${gemstone.type}',
-                        style: TextStyle(color: Colors.grey[400]),
-                      ),
-                      Text(
-                        'ကျန်ရှိအရေအတွက်: ${gemstone.remainingQuantity}',
-                        style: TextStyle(color: Colors.grey[400]),
-                      ),
-                    ],
-                  ),
-                  onTap: () {
-                    _updateItemGemstone(item.id, gemstone);
-                    Navigator.of(context).pop();
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('ပိတ်ရန်'),
-            ),
-          ],
-        );
-      },
     );
   }
 }
