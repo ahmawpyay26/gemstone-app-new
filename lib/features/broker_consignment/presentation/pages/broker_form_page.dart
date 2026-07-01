@@ -81,6 +81,14 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     return _confirmedItems.fold<double>(0, (sum, item) => sum + item.consignedQuantity);
   }
 
+  /// Get purchases that have breakdown items with quantity > 0
+  List<Gemstone> _getPurchasesWithBreakdownItems() {
+    return _availableGemstones.where((gemstone) {
+      return gemstone.breakdownItems.isNotEmpty &&
+          gemstone.breakdownItems.values.any((qty) => qty > 0);
+    }).toList();
+  }
+
   @override
   void dispose() {
     _brokerNameCtrl.dispose();
@@ -830,7 +838,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                       value: null,
                       child: Text('— မှတ်တမ်းရွေးချယ်ပါ —'),
                     ),
-                    ..._availableGemstones.map((g) => DropdownMenuItem<String?>(
+                    ..._getPurchasesWithBreakdownItems().map((g) => DropdownMenuItem<String?>(
                       value: g.id,
                       child: Text(
                         '${g.name} (${g.type} • ID: ${g.id.substring(0, 8)}...)',
@@ -840,9 +848,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   ],
                   onChanged: (String? gemstoneId) {
                     if (gemstoneId != null) {
-                      final gemstone = _availableGemstones.firstWhere(
+                      final gemstone = _getPurchasesWithBreakdownItems().firstWhere(
                         (g) => g.id == gemstoneId,
-                        orElse: () => _availableGemstones.first,
+                        orElse: () => _getPurchasesWithBreakdownItems().first,
                       );
                       _updateCurrentItemPurchase(gemstone);
                     } else {
