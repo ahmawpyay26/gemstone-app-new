@@ -1003,7 +1003,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'အရေအတွက် ${_items.indexOf(item) + 1}',
+                  'အရေအတွက် ${_confirmedItems.indexOf(item) + 1}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
