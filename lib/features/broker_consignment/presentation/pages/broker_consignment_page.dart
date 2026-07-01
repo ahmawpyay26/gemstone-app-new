@@ -78,6 +78,26 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
     }
   }
 
+  String _getStatusBadge(BrokerConsignment bc) {
+    if (bc.remainingQuantity == 0) {
+      return 'အပြီးစီး';
+    } else if (bc.returnedQuantity > 0) {
+      return 'အခြေခံ ပြန်လည်လက်ခံ';
+    } else {
+      return 'လုပ်ဆောင်ခြင်းတွင်';
+    }
+  }
+
+  Color _getStatusColor(BrokerConsignment bc) {
+    if (bc.remainingQuantity == 0) {
+      return Colors.green;
+    } else if (bc.returnedQuantity > 0) {
+      return Colors.orange;
+    } else {
+      return AppTheme.primaryAccent;
+    }
+  }
+
   Widget _buildSummaryItem(String label, String value) {
     return Column(
       children: [
@@ -145,9 +165,10 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
 
           // Calculate totals
           final totalRecords = brokers.length;
+          final totalPurchaseRecords = brokers.fold<int>(0, (sum, bc) => sum + 1); // Each broker has at least 1 record
           final totalConsigned = brokers.fold<double>(0, (sum, bc) => sum + bc.consignedQuantity);
-          final totalSold = brokers.fold<double>(0, (sum, bc) => sum + bc.soldQuantity);
           final totalRemaining = brokers.fold<double>(0, (sum, bc) => sum + bc.remainingQuantity);
+          final totalReturned = brokers.fold<double>(0, (sum, bc) => sum + bc.returnedQuantity);
 
           return ListView.builder(
             padding: const EdgeInsets.all(12),
@@ -179,9 +200,10 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             _buildSummaryItem('မှတ်တမ်း', totalRecords.toString()),
+                            _buildSummaryItem('ကျောက်', totalPurchaseRecords.toString()),
                             _buildSummaryItem('အပ်ထား', totalConsigned.toStringAsFixed(0)),
-                            _buildSummaryItem('ရောင်းပြီး', totalSold.toStringAsFixed(0)),
                             _buildSummaryItem('ကျန်', totalRemaining.toStringAsFixed(0)),
+                            _buildSummaryItem('ပြန်လည်', totalReturned.toStringAsFixed(0)),
                           ],
                         ),
                       ],
@@ -198,90 +220,194 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                 _returnedQtyErrors[bc.id] = null;
               }
 
-              return Card(
-                color: AppTheme.surfaceDark,
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundColor: AppTheme.primaryAccent.withOpacity(0.2),
-                          child: const Icon(Icons.handshake, color: AppTheme.primaryAccent),
-                        ),
-                        title: Text(
-                          bc.brokerName,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+              final statusBadge = _getStatusBadge(bc);
+              final statusColor = _getStatusColor(bc);
+
+              return GestureDetector(
+                onTap: () async {
+                  // Task 3: Tap to open details page
+                  final result = await context.push('/broker-consignment/${bc.id}');
+                  if (result == true && mounted) {
+                    setState(() {});
+                  }
+                },
+                child: Card(
+                  color: AppTheme.surfaceDark,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'ကျောက်: ${bc.historicalData.purchaseName} (${bc.historicalData.gemstoneType})',
-                              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                            Expanded(
+                              child: ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: CircleAvatar(
+                                  backgroundColor: AppTheme.primaryAccent.withOpacity(0.2),
+                                  child: const Icon(Icons.handshake, color: AppTheme.primaryAccent),
+                                ),
+                                title: Text(
+                                  bc.brokerName,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: Text(
+                                  'ရက်စွဲ: ${_dateFormat.format(DateTime.fromMillisecondsSinceEpoch(bc.createdAt))}',
+                                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                                ),
+                              ),
                             ),
-                            Text(
-                              'အပ်ထားသော: ${bc.consignedQuantity.toInt()} • ရောင်းချ: ${bc.soldQuantity.toInt()} • ကျန်: ${bc.remainingQuantity.toInt()}',
-                              style: TextStyle(color: Colors.grey[300], fontSize: 12),
-                            ),
-                            Text(
-                              'ရက်စွဲ: ${_dateFormat.format(DateTime.fromMillisecondsSinceEpoch(bc.createdAt))}',
-                              style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.2),
+                                border: Border.all(color: statusColor),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                statusBadge,
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      // Step 9: Returned quantity input
-                      if (bc.remainingQuantity > 0)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 12),
+                        // Task 3: Enhanced card details
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              Text(
-                                'ပြန်လည်လက်ခံသောအရေအတွက်',
-                                style: TextStyle(color: Colors.grey[300], fontSize: 12),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
+                              Column(
                                 children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _returnedQtyControllers[bc.id],
-                                      keyboardType: TextInputType.number,
-                                      style: const TextStyle(color: Colors.white),
-                                      decoration: InputDecoration(
-                                        hintText: '0',
-                                        hintStyle: TextStyle(color: Colors.grey[600]),
-                                        border: OutlineInputBorder(
-                                          borderSide: BorderSide(color: Colors.grey[700]!),
-                                        ),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                        errorText: _returnedQtyErrors[bc.id],
-                                      ),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _validateReturnedQuantity(bc, value);
-                                        });
-                                      },
+                                  Text(
+                                    'ကျောက်',
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '1',
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryAccent,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  ElevatedButton(
-                                    onPressed: _returnedQtyErrors[bc.id] == null && (_returnedQtyControllers[bc.id]?.text.isNotEmpty ?? false)
-                                        ? () => _processReturn(bc)
-                                        : null,
-                                    child: const Text('လက်ခံ'),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text(
+                                    'အပ်ထား',
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    bc.consignedQuantity.toInt().toString(),
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryAccent,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text(
+                                    'ကျန်',
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    bc.remainingQuantity.toInt().toString(),
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryAccent,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text(
+                                    'ပြန်လည်',
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    bc.returnedQuantity.toInt().toString(),
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryAccent,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
                         ),
-                    ],
+                        // Step 9: Returned quantity input
+                        if (bc.remainingQuantity > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'ပြန်လည်လက်ခံသောအရေအတွက်',
+                                  style: TextStyle(color: Colors.grey[300], fontSize: 12),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _returnedQtyControllers[bc.id],
+                                        keyboardType: TextInputType.number,
+                                        style: const TextStyle(color: Colors.white),
+                                        decoration: InputDecoration(
+                                          hintText: '0',
+                                          hintStyle: TextStyle(color: Colors.grey[600]),
+                                          border: OutlineInputBorder(
+                                            borderSide: BorderSide(color: Colors.grey[700]!),
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                          errorText: _returnedQtyErrors[bc.id],
+                                        ),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _validateReturnedQuantity(bc, value);
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: _returnedQtyErrors[bc.id] == null && (_returnedQtyControllers[bc.id]?.text.isNotEmpty ?? false)
+                                          ? () => _processReturn(bc)
+                                          : null,
+                                      child: const Text('လက်ခံ'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               );
