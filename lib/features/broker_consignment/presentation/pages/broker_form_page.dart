@@ -703,16 +703,17 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           ),
           const SizedBox(height: 12),
           
-          // Gemstone selection dropdown
-          DropdownButtonFormField<String?>(
-            value: _currentEditingItem.gemstone?.id,
-            isExpanded: true,
-            dropdownColor: AppTheme.surfaceDark,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              labelText: 'ကျောက်ရွေးချယ်ပါ',
-              labelStyle: TextStyle(color: Colors.grey[400]),
-              border: OutlineInputBorder(
+          // Gemstone selection dropdown - only for whole stone mode
+          if (_currentEditingItem.sourceType == 'whole_stone')
+            DropdownButtonFormField<String?>(
+              value: _currentEditingItem.gemstone?.id,
+              isExpanded: true,
+              dropdownColor: AppTheme.surfaceDark,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'ကျောက်ရွေးချယ်ပါ',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey[700]!),
               ),
@@ -751,20 +752,20 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                 _updateCurrentItemGemstone(null);
               }
             },
-          ),
-          const SizedBox(height: 8),
+            ),
+            const SizedBox(height: 8),
 
-          // Display selected gemstone details
-          if (_currentEditingItem.gemstone != null)
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryAccent.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            // Display selected gemstone details
+            if (_currentEditingItem.gemstone != null)
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryAccent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   Row(
                     children: [
                       const Icon(Icons.source_outlined,
@@ -794,9 +795,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                       ),
                     ],
                   ),
-                ],
+                  ],
+                ),
               ),
-            ),
           
           const SizedBox(height: 8),
           
