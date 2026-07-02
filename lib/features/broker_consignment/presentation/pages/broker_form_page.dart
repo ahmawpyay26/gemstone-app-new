@@ -929,7 +929,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             ),
           
           // Quantity input
-          if (_currentEditingItem.gemstone != null)
+          if (_currentEditingItem.gemstone != null || _currentEditingItem.selectedBreakdownItem != null)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
