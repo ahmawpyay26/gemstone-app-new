@@ -106,23 +106,30 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   }
 
   bool _isCurrentItemValid() {
-    if (_currentEditingItem.gemstone == null || _currentEditingItem.consignedQuantity <= 0) {
+    // Validate quantity first
+    if (_currentEditingItem.consignedQuantity <= 0) {
       return false;
     }
-    // For breakdown items, must select purchase and breakdown item
+    
+    // Branch validation by sourceType
     if (_currentEditingItem.sourceType == 'breakdown_item') {
+      // For breakdown items: require purchase, breakdown item, and quantity
       if (_currentEditingItem.selectedPurchase == null || _currentEditingItem.selectedBreakdownItem == null) {
         return false;
       }
       // Check quantity against breakdown item available quantity
-      if (_currentEditingItem.selectedBreakdownItem != null && _currentEditingItem.availableBreakdownItems.containsKey(_currentEditingItem.selectedBreakdownItem)) {
+      if (_currentEditingItem.availableBreakdownItems.containsKey(_currentEditingItem.selectedBreakdownItem)) {
         final availableQty = _currentEditingItem.availableBreakdownItems[_currentEditingItem.selectedBreakdownItem]!;
         if (_currentEditingItem.consignedQuantity > availableQty) {
           return false;
         }
       }
     } else {
-      // For whole stone, check against gemstone remaining quantity
+      // For whole stone: require gemstone and quantity
+      if (_currentEditingItem.gemstone == null) {
+        return false;
+      }
+      // Check quantity against gemstone remaining quantity
       if (_currentEditingItem.consignedQuantity > _currentEditingItem.gemstone!.remainingQuantity) {
         return false;
       }
@@ -134,25 +141,32 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     if (!_isHeaderValid()) return false;
     if (_confirmedItems.isEmpty) return false;
     
-    // All items must have gemstone and quantity > 0
+    // Validate all confirmed items
     for (final item in _confirmedItems) {
-      if (item.gemstone == null || item.consignedQuantity <= 0) {
+      // Validate quantity first
+      if (item.consignedQuantity <= 0) {
         return false;
       }
-      // For breakdown items, must select purchase and breakdown item
+      
+      // Branch validation by sourceType
       if (item.sourceType == 'breakdown_item') {
+        // For breakdown items: require purchase, breakdown item, and quantity
         if (item.selectedPurchase == null || item.selectedBreakdownItem == null) {
           return false;
         }
         // Check quantity against breakdown item available quantity
-        if (item.selectedBreakdownItem != null && item.availableBreakdownItems.containsKey(item.selectedBreakdownItem)) {
+        if (item.availableBreakdownItems.containsKey(item.selectedBreakdownItem)) {
           final availableQty = item.availableBreakdownItems[item.selectedBreakdownItem]!;
           if (item.consignedQuantity > availableQty) {
             return false;
           }
         }
       } else {
-        // For whole stone, check against gemstone remaining quantity
+        // For whole stone: require gemstone and quantity
+        if (item.gemstone == null) {
+          return false;
+        }
+        // Check quantity against gemstone remaining quantity
         if (item.consignedQuantity > item.gemstone!.remainingQuantity) {
           return false;
         }
