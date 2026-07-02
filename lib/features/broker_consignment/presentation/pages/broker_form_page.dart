@@ -1030,11 +1030,11 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   // Helper method to build compact summary text for confirmed items
   String _buildConfirmedItemSummary(ConsignmentItemTemp item) {
     if (item.sourceType == 'whole_stone' && item.gemstone != null) {
-      return '${item.gemstone!.name} — ${item.quantity}';
-    } else if (item.sourceType == 'breakdown_item' && item.breakdownItem != null && item.purchaseRecord != null) {
-      return '${item.purchaseRecord!.name} / ${item.breakdownItem!.name} — ${item.quantity}';
+      return '${item.gemstone!.name} — ${item.consignedQuantity}';
+    } else if (item.sourceType == 'breakdown_item' && item.selectedBreakdownItem != null && item.selectedPurchase != null) {
+      return '${item.selectedPurchase!.name} / ${item.selectedBreakdownItem} — ${item.consignedQuantity}';
     } else {
-      return 'Unknown — ${item.quantity}';
+      return 'Unknown — ${item.consignedQuantity}';
     }
   }
 
