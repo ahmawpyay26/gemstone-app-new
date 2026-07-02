@@ -1397,10 +1397,19 @@ class LocalDb {
       throw Exception('ပြန်လည်လက်ခံသော အရေအတွက်သည် ပွဲစားထံရှိ လက်ကျန်ထက် များနေပါသည်။');
     }
 
-    // Restore quantity to purchase
+    // Restore quantity to purchase based on original source type
     final purchase = gemstones.get(broker.purchaseId);
     if (purchase != null) {
-      purchase.quantity += returnedQuantity.toInt();
+      // Check if this was a breakdown item consignment
+      if (broker.historicalData.sourceType == 'breakdown_item') {
+        final itemName = broker.historicalData.breakdownItemName ?? '';
+        if (itemName.isNotEmpty && purchase.breakdownItems.containsKey(itemName)) {
+          purchase.breakdownItems[itemName] = (purchase.breakdownItems[itemName] ?? 0) + returnedQuantity.toInt();
+        }
+      } else {
+        // Restore to whole stone quantity
+        purchase.quantity += returnedQuantity.toInt();
+      }
       await gemstones.put(broker.purchaseId, purchase);
     }
 
