@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../services/password_service.dart';
 import 'models.dart';
 
@@ -21,6 +22,8 @@ class LocalDb {
   static const String brokerConsignmentsBox = 'brokerConsignments';
   static const String brokerSaleRecordsBox = 'brokerSaleRecords';
   static const String customersBox = 'customers';
+  static const String customerLedgerBox = 'customerLedger';
+  static const String paymentsBox = 'payments';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -39,6 +42,8 @@ class LocalDb {
     if (!Hive.isAdapterRegistered(11)) Hive.registerAdapter(BrokerConsignmentAdapter());
     if (!Hive.isAdapterRegistered(12)) Hive.registerAdapter(BrokerSaleRecordAdapter());
     if (!Hive.isAdapterRegistered(13)) Hive.registerAdapter(CustomerAdapter());
+    if (!Hive.isAdapterRegistered(14)) Hive.registerAdapter(CustomerLedgerAdapter());
+    if (!Hive.isAdapterRegistered(15)) Hive.registerAdapter(PaymentAdapter());
 
     await Hive.openBox<AppUser>(usersBox);
     await Hive.openBox<Gemstone>(gemstonesBox);
@@ -53,6 +58,8 @@ class LocalDb {
     await Hive.openBox<BrokerConsignment>(brokerConsignmentsBox);
     await Hive.openBox<BrokerSaleRecord>(brokerSaleRecordsBox);
     await Hive.openBox<Customer>(customersBox);
+    await Hive.openBox<CustomerLedger>(customerLedgerBox);
+    await Hive.openBox<Payment>(paymentsBox);
 
     await _seedDefaults();
     await _migrateGemstonesCostTracking();
@@ -453,6 +460,8 @@ class LocalDb {
   static Box<AppUser> users() => Hive.box<AppUser>(usersBox);
   static Box<AuditLog> auditLogs() => Hive.box<AuditLog>(auditLogsBox);
   static Box<Customer> customers() => Hive.box<Customer>(customersBox);
+  static Box<CustomerLedger> customerLedger() => Hive.box<CustomerLedger>(customerLedgerBox);
+  static Box<Payment> payments() => Hive.box<Payment>(paymentsBox);
 
   // -------------------------------------------------------------------------
   // Customer CRUD operations
@@ -532,6 +541,90 @@ class LocalDb {
         !c.isDeleted &&
         c.phone == phone &&
         (excludeCustomerId == null || c.id != excludeCustomerId));
+  }
+
+  // -------------------------------------------------------------------------
+  // Customer Ledger operations
+  // -------------------------------------------------------------------------
+
+  /// Add a ledger entry for a customer transaction
+  static Future<void> addLedgerEntry(CustomerLedger entry) async {
+    final box = customerLedger();
+    await box.put(entry.id, entry);
+  }
+
+  /// Get all ledger entries for a customer
+  static List<CustomerLedger> getCustomerLedger(String customerId) {
+    final box = customerLedger();
+    return box.values
+        .where((e) => e.customerId == customerId)
+        .toList()
+        ..sort((a, b) => b.date.compareTo(a.date)); // Sort by date descending
+  }
+
+  /// Get customer current balance from ledger
+  static double getCustomerBalance(String customerId) {
+    final customer = getCustomer(customerId);
+    if (customer == null) return 0;
+    return customer.currentBalance;
+  }
+
+  // -------------------------------------------------------------------------
+  // Payment operations
+  // -------------------------------------------------------------------------
+
+  /// Record a payment
+  static Future<void> recordPayment(Payment payment) async {
+    final box = payments();
+    await box.put(payment.id, payment);
+    
+    // Update customer balance
+    final customer = getCustomer(payment.customerId);
+    if (customer != null) {
+      customer.currentBalance -= payment.amount;
+      await updateCustomer(customer);
+      
+      // Add ledger entry
+      final ledgerEntry = CustomerLedger(
+        id: const Uuid().v4(),
+        customerId: payment.customerId,
+        type: 'payment',
+        referenceId: payment.id,
+        date: payment.paymentDate,
+        debitAmount: 0,
+        creditAmount: payment.amount,
+        balanceAfter: customer.currentBalance,
+        note: payment.note,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      );
+      await addLedgerEntry(ledgerEntry);
+    }
+  }
+
+  /// Get all payments for a customer
+  static List<Payment> getCustomerPayments(String customerId) {
+    final box = payments();
+    return box.values
+        .where((p) => p.customerId == customerId && !p.isDeleted)
+        .toList()
+        ..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
+  }
+
+  /// Soft delete a payment
+  static Future<void> deletePayment(String paymentId) async {
+    final box = payments();
+    final payment = box.get(paymentId);
+    if (payment != null) {
+      payment.isDeleted = true;
+      await box.put(paymentId, payment);
+      
+      // Reverse the customer balance
+      final customer = getCustomer(payment.customerId);
+      if (customer != null) {
+        customer.currentBalance += payment.amount;
+        await updateCustomer(customer);
+      }
+    }
   }
 
   // -------------------------------------------------------------------------

@@ -1258,3 +1258,164 @@ class CustomerAdapter extends TypeAdapter<Customer> {
       ..write(obj.updatedAt);
   }
 }
+
+
+// ---------------------------------------------------------------------------
+// CustomerLedger (ဖောက်သည်အကောင့်)
+// ---------------------------------------------------------------------------
+class CustomerLedger {
+  String id;                    // Unique ledger entry ID (UUID)
+  String customerId;            // Reference to Customer
+  String type;                  // sale | payment | adjustment | refund
+  String? referenceId;          // Reference to sale or payment ID
+  int date;                     // Transaction date (timestamp)
+  double debitAmount;           // Amount owed (ကြွေးမြတ်)
+  double creditAmount;          // Amount paid (ငွေပေးချေ)
+  double balanceAfter;          // Running balance after transaction
+  String? note;                 // Transaction note
+  int createdAt;                // Creation timestamp
+
+  CustomerLedger({
+    required this.id,
+    required this.customerId,
+    required this.type,
+    this.referenceId,
+    required this.date,
+    this.debitAmount = 0,
+    this.creditAmount = 0,
+    required this.balanceAfter,
+    this.note,
+    required this.createdAt,
+  });
+}
+
+class CustomerLedgerAdapter extends TypeAdapter<CustomerLedger> {
+  @override
+  final int typeId = 11;
+
+  @override
+  CustomerLedger read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return CustomerLedger(
+      id: fields[0] as String,
+      customerId: fields[1] as String,
+      type: fields[2] as String,
+      referenceId: fields[3] as String?,
+      date: fields[4] as int,
+      debitAmount: (fields[5] as num?)?.toDouble() ?? 0,
+      creditAmount: (fields[6] as num?)?.toDouble() ?? 0,
+      balanceAfter: (fields[7] as num?)?.toDouble() ?? 0,
+      note: fields[8] as String?,
+      createdAt: fields[9] as int,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, CustomerLedger obj) {
+    writer
+      ..writeByte(10)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.customerId)
+      ..writeByte(2)
+      ..write(obj.type)
+      ..writeByte(3)
+      ..write(obj.referenceId)
+      ..writeByte(4)
+      ..write(obj.date)
+      ..writeByte(5)
+      ..write(obj.debitAmount)
+      ..writeByte(6)
+      ..write(obj.creditAmount)
+      ..writeByte(7)
+      ..write(obj.balanceAfter)
+      ..writeByte(8)
+      ..write(obj.note)
+      ..writeByte(9)
+      ..write(obj.createdAt);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Payment (ငွေပေးချေမှု)
+// ---------------------------------------------------------------------------
+class Payment {
+  String id;                    // Unique payment ID (UUID)
+  String customerId;            // Reference to Customer
+  String? saleId;               // Optional reference to Sale
+  int paymentDate;              // Payment date (timestamp)
+  double amount;                // Payment amount (ငွေပေးချေမှုပမာဏ)
+  String method;                // cash | bank | credit
+  String? referenceNo;          // Reference number (optional)
+  String? note;                 // Payment note
+  bool isDeleted;               // Soft delete flag
+  int createdAt;                // Creation timestamp
+
+  Payment({
+    required this.id,
+    required this.customerId,
+    this.saleId,
+    required this.paymentDate,
+    required this.amount,
+    required this.method,
+    this.referenceNo,
+    this.note,
+    this.isDeleted = false,
+    required this.createdAt,
+  });
+}
+
+class PaymentAdapter extends TypeAdapter<Payment> {
+  @override
+  final int typeId = 12;
+
+  @override
+  Payment read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return Payment(
+      id: fields[0] as String,
+      customerId: fields[1] as String,
+      saleId: fields[2] as String?,
+      paymentDate: fields[3] as int,
+      amount: (fields[4] as num?)?.toDouble() ?? 0,
+      method: fields[5] as String,
+      referenceNo: fields[6] as String?,
+      note: fields[7] as String?,
+      isDeleted: (fields[8] as bool?) ?? false,
+      createdAt: fields[9] as int,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Payment obj) {
+    writer
+      ..writeByte(10)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.customerId)
+      ..writeByte(2)
+      ..write(obj.saleId)
+      ..writeByte(3)
+      ..write(obj.paymentDate)
+      ..writeByte(4)
+      ..write(obj.amount)
+      ..writeByte(5)
+      ..write(obj.method)
+      ..writeByte(6)
+      ..write(obj.referenceNo)
+      ..writeByte(7)
+      ..write(obj.note)
+      ..writeByte(8)
+      ..write(obj.isDeleted)
+      ..writeByte(9)
+      ..write(obj.createdAt);
+  }
+}
