@@ -1407,8 +1407,8 @@ class LocalDb {
           purchase.breakdownItems[itemName] = (purchase.breakdownItems[itemName] ?? 0) + returnedQuantity.toInt();
         }
       } else {
-        // Restore to whole stone quantity
-        purchase.quantity += returnedQuantity.toInt();
+        // Restore to whole stone remaining quantity
+        purchase.remainingQuantity += returnedQuantity.toInt();
       }
       await gemstones.put(broker.purchaseId, purchase);
     }
@@ -1453,8 +1453,8 @@ class LocalDb {
           purchase.breakdownItems[itemName] = (purchase.breakdownItems[itemName] ?? 0) + remainingToRestore.toInt();
         }
       } else {
-        // Restore to whole stone quantity
-        purchase.quantity += remainingToRestore.toInt();
+        // Restore to whole stone remaining quantity
+        purchase.remainingQuantity += remainingToRestore.toInt();
       }
       await gemstones.put(broker.purchaseId, purchase);
     }

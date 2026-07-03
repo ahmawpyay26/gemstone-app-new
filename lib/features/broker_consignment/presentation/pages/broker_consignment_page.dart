@@ -382,7 +382,9 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                   child: const Icon(Icons.handshake, color: AppTheme.primaryAccent),
                                 ),
                                 title: Text(
-                                  bc.brokerName,
+                                  bc.historicalData.sourceType == 'breakdown_item'
+                                    ? '${bc.historicalData.purchaseName} / ${bc.historicalData.breakdownItemName}'
+                                    : bc.historicalData.purchaseName,
                                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(
@@ -535,7 +537,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '1',
+                                    allBrokers.map((b) => b.purchaseId).toSet().length.toString(),
                                     style: const TextStyle(
                                       color: AppTheme.primaryAccent,
                                       fontSize: 13,
