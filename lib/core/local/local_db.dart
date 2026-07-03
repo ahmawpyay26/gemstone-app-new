@@ -1232,6 +1232,23 @@ class LocalDb {
   // Broker Consignment CRUD Operations
   // -------------------------------------------------------------------------
 
+  /// Helper: Update a Gemstone by its purchaseId (UUID string).
+  /// Finds the original Hive key (numeric) and updates that record only.
+  /// This prevents duplicate Gemstone records from being created.
+  static Future<void> _updateGemstoneByPurchaseId(
+    String purchaseId,
+    Gemstone updated,
+  ) async {
+    final gemstones = Hive.box<Gemstone>(gemstonesBox);
+    final key = gemstones.keys.firstWhere(
+      (k) => gemstones.get(k)?.id == purchaseId,
+      orElse: () => null,
+    );
+    if (key != null) {
+      await gemstones.put(key, updated);
+    }
+  }
+
   /// Create new Broker Consignment with automatic quantity deduction
   static Future<BrokerConsignment> createBrokerConsignment({
     required String purchaseId,
@@ -1316,8 +1333,8 @@ class LocalDb {
       // Deduct from whole stone remaining quantity
       purchase.remainingQuantity -= consignedQuantity.toInt();
     }
-    // Use purchaseId directly as the Hive key (Gemstone objects are stored with their ID as key)
-    await gemstones.put(purchaseId, purchase);
+    // Update the original Gemstone record using the helper method
+    await _updateGemstoneByPurchaseId(purchaseId, purchase);
 
     // Save broker consignment
     await brokers.put(brokerConsignment.id, brokerConsignment);
@@ -1410,7 +1427,7 @@ class LocalDb {
         // Restore to whole stone remaining quantity
         purchase.remainingQuantity += returnedQuantity.toInt();
       }
-      await gemstones.put(broker.purchaseId, purchase);
+      await _updateGemstoneByPurchaseId(broker.purchaseId, purchase);
     }
 
     broker.returnedQuantity = returnedQuantity;
@@ -1456,7 +1473,7 @@ class LocalDb {
         // Restore to whole stone remaining quantity
         purchase.remainingQuantity += remainingToRestore.toInt();
       }
-      await gemstones.put(broker.purchaseId, purchase);
+      await _updateGemstoneByPurchaseId(broker.purchaseId, purchase);
     }
 
     // Soft delete
@@ -1552,7 +1569,7 @@ class LocalDb {
         applyCostRecovery(purchase, saleAmount);
         
         // Save updated purchase record
-        await gemstones.put(bc.purchaseId, purchase);
+        await _updateGemstoneByPurchaseId(bc.purchaseId, purchase);
         
         // Calculate cost recovery details for audit log
         final costRecovered = purchase.recoveredCost - previousRecoveredCost;
@@ -1606,8 +1623,8 @@ class LocalDb {
 
     // Step 9: Restore to purchase record - increase remainingQuantity
     purchase.remainingQuantity += returnedQuantity.toInt();
-    // Use purchaseId directly as the Hive key
-    await gemstones.put(bc.purchaseId, purchase);
+    // Update the original Gemstone record using the helper method
+    await _updateGemstoneByPurchaseId(bc.purchaseId, purchase);
 
     // Create audit log
     final currentUser = LocalDb.currentUser();
