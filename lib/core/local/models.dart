@@ -1157,3 +1157,99 @@ class BrokerSaleRecordAdapter extends TypeAdapter<BrokerSaleRecord> {
       ..write(obj.updatedAt);
   }
 }
+
+
+// ---------------------------------------------------------------------------
+// Customer (ဖောက်သည်)
+// ---------------------------------------------------------------------------
+class Customer {
+  String id;                    // Unique customer ID (UUID)
+  String name;                  // Customer name (ဖောက်သည်အမည်)
+  String? phone;                // Phone number (optional)
+  String? address;              // Address (optional)
+  String? notes;                // Notes (optional)
+  double openingBalance;        // Opening balance (မူလကြွေးမြတ်)
+  double currentBalance;        // Current balance (လက်ရှိကြွေးမြတ်)
+  double creditLimit;           // Credit limit (အကြွေးကန့်သတ်)
+  String status;                // active | inactive
+  bool isDeleted;               // Soft delete flag
+  int? deletedAt;               // Deletion timestamp
+  int createdAt;                // Creation timestamp
+  int updatedAt;                // Last update timestamp
+
+  Customer({
+    required this.id,
+    required this.name,
+    this.phone,
+    this.address,
+    this.notes,
+    this.openingBalance = 0,
+    this.currentBalance = 0,
+    this.creditLimit = 0,
+    this.status = 'active',
+    this.isDeleted = false,
+    this.deletedAt,
+    required this.createdAt,
+    int? updatedAt,
+  }) : updatedAt = updatedAt ?? createdAt;
+}
+
+class CustomerAdapter extends TypeAdapter<Customer> {
+  @override
+  final int typeId = 10;
+
+  @override
+  Customer read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return Customer(
+      id: fields[0] as String,
+      name: fields[1] as String,
+      phone: (fields[2] as String?) ?? '',
+      address: (fields[3] as String?) ?? '',
+      notes: (fields[4] as String?) ?? '',
+      openingBalance: (fields[5] as num?)?.toDouble() ?? 0,
+      currentBalance: (fields[6] as num?)?.toDouble() ?? 0,
+      creditLimit: (fields[7] as num?)?.toDouble() ?? 0,
+      status: (fields[8] as String?) ?? 'active',
+      isDeleted: (fields[9] as bool?) ?? false,
+      deletedAt: fields[10] as int?,
+      createdAt: fields[11] as int,
+      updatedAt: (fields[12] as int?) ?? fields[11] as int,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Customer obj) {
+    writer
+      ..writeByte(13)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.phone ?? '')
+      ..writeByte(3)
+      ..write(obj.address ?? '')
+      ..writeByte(4)
+      ..write(obj.notes ?? '')
+      ..writeByte(5)
+      ..write(obj.openingBalance)
+      ..writeByte(6)
+      ..write(obj.currentBalance)
+      ..writeByte(7)
+      ..write(obj.creditLimit)
+      ..writeByte(8)
+      ..write(obj.status)
+      ..writeByte(9)
+      ..write(obj.isDeleted)
+      ..writeByte(10)
+      ..write(obj.deletedAt)
+      ..writeByte(11)
+      ..write(obj.createdAt)
+      ..writeByte(12)
+      ..write(obj.updatedAt);
+  }
+}

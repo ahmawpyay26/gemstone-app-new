@@ -218,6 +218,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 () => context.push('/broker-consignment')),
             _moduleCard(Icons.location_city, 'ခွဲခြင်းများ', 'ခွဲခြင်းစာရင်း',
                 () => context.push('/branches')),
+            _moduleCard(Icons.person, 'ဖောက်သည်စာရင်း', 'ဖောက်သည်အချက်အလက်',
+                () => context.push('/customers')),
           ],
         ),
       ],

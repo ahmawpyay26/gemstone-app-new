@@ -20,6 +20,7 @@ class LocalDb {
   static const String rolesBox = 'roles';
   static const String brokerConsignmentsBox = 'brokerConsignments';
   static const String brokerSaleRecordsBox = 'brokerSaleRecords';
+  static const String customersBox = 'customers';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -37,6 +38,7 @@ class LocalDb {
     if (!Hive.isAdapterRegistered(10)) Hive.registerAdapter(BrokerHistoricalDataAdapter());
     if (!Hive.isAdapterRegistered(11)) Hive.registerAdapter(BrokerConsignmentAdapter());
     if (!Hive.isAdapterRegistered(12)) Hive.registerAdapter(BrokerSaleRecordAdapter());
+    if (!Hive.isAdapterRegistered(13)) Hive.registerAdapter(CustomerAdapter());
 
     await Hive.openBox<AppUser>(usersBox);
     await Hive.openBox<Gemstone>(gemstonesBox);
@@ -50,6 +52,7 @@ class LocalDb {
     await Hive.openBox<Role>(rolesBox);
     await Hive.openBox<BrokerConsignment>(brokerConsignmentsBox);
     await Hive.openBox<BrokerSaleRecord>(brokerSaleRecordsBox);
+    await Hive.openBox<Customer>(customersBox);
 
     await _seedDefaults();
     await _migrateGemstonesCostTracking();
@@ -449,6 +452,87 @@ class LocalDb {
   static Box<Worker> workers() => Hive.box<Worker>(workersBox);
   static Box<AppUser> users() => Hive.box<AppUser>(usersBox);
   static Box<AuditLog> auditLogs() => Hive.box<AuditLog>(auditLogsBox);
+  static Box<Customer> customers() => Hive.box<Customer>(customersBox);
+
+  // -------------------------------------------------------------------------
+  // Customer CRUD operations
+  // -------------------------------------------------------------------------
+
+  /// Create a new customer
+  static Future<void> createCustomer(Customer customer) async {
+    final box = customers();
+    await box.put(customer.id, customer);
+  }
+
+  /// Update an existing customer
+  static Future<void> updateCustomer(Customer customer) async {
+    final box = customers();
+    customer.updatedAt = DateTime.now().millisecondsSinceEpoch;
+    await box.put(customer.id, customer);
+  }
+
+  /// Soft delete a customer
+  static Future<void> deleteCustomer(String customerId) async {
+    final box = customers();
+    final customer = box.get(customerId);
+    if (customer != null) {
+      customer.isDeleted = true;
+      customer.deletedAt = DateTime.now().millisecondsSinceEpoch;
+      await box.put(customerId, customer);
+    }
+  }
+
+  /// Restore a deleted customer
+  static Future<void> restoreCustomer(String customerId) async {
+    final box = customers();
+    final customer = box.get(customerId);
+    if (customer != null) {
+      customer.isDeleted = false;
+      customer.deletedAt = null;
+      await box.put(customerId, customer);
+    }
+  }
+
+  /// Get all active customers (not deleted)
+  static List<Customer> getActiveCustomers() {
+    final box = customers();
+    return box.values
+        .where((c) => !c.isDeleted && c.status == 'active')
+        .toList();
+  }
+
+  /// Get all customers including inactive (but not deleted)
+  static List<Customer> getAllCustomers() {
+    final box = customers();
+    return box.values.where((c) => !c.isDeleted).toList();
+  }
+
+  /// Search customers by name or phone
+  static List<Customer> searchCustomers(String query) {
+    final box = customers();
+    final lowerQuery = query.toLowerCase();
+    return box.values
+        .where((c) =>
+            !c.isDeleted &&
+            (c.name.toLowerCase().contains(lowerQuery) ||
+                (c.phone?.toLowerCase().contains(lowerQuery) ?? false)))
+        .toList();
+  }
+
+  /// Get a customer by ID
+  static Customer? getCustomer(String customerId) {
+    final box = customers();
+    return box.get(customerId);
+  }
+
+  /// Check if customer phone already exists (for duplicate warning)
+  static bool phoneExists(String phone, {String? excludeCustomerId}) {
+    final box = customers();
+    return box.values.any((c) =>
+        !c.isDeleted &&
+        c.phone == phone &&
+        (excludeCustomerId == null || c.id != excludeCustomerId));
+  }
 
   // -------------------------------------------------------------------------
   // Inventory stock helpers (auto deduction on sale)
