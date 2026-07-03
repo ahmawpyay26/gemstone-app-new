@@ -172,91 +172,88 @@ warning • 'use_to_close_over_async_await' is not a recognized lint rule • an
    info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1265:7 • avoid_catches_without_on_clauses
    info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:1266:7 • avoid_print
    info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1276:81 • lines_longer_than_80_chars
-  error • The property 'isEmpty' can't be unconditionally accessed because the receiver can be 'null' • lib/core/local/local_db.dart:1277:25 • unchecked_use_of_nullable_value
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1277:34 • always_put_control_body_on_new_line
+  error • The property 'isEmpty' can't be unconditionally accessed because the receiver can be 'null' • lib/core/local/local_db.dart:1277:52 • unchecked_use_of_nullable_value
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1277:61 • always_put_control_body_on_new_line
   error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1278:34 • argument_type_not_assignable
    info • Statement should be on a separate line • lib/core/local/local_db.dart:1279:49 • always_put_control_body_on_new_line
    info • Statement should be on a separate line • lib/core/local/local_db.dart:1280:25 • always_put_control_body_on_new_line
-  error • The named parameter 'createdAt' is required, but there's no corresponding argument • lib/core/local/local_db.dart:1292:27 • missing_required_argument
   error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1294:21 • argument_type_not_assignable
-  error • The named parameter 'createdAt' is required, but there's no corresponding argument • lib/core/local/local_db.dart:1305:27 • missing_required_argument
-  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1307:21 • argument_type_not_assignable
-  error • The property 'isEmpty' can't be unconditionally accessed because the receiver can be 'null' • lib/core/local/local_db.dart:1323:25 • unchecked_use_of_nullable_value
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1323:34 • always_put_control_body_on_new_line
-  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1324:34 • argument_type_not_assignable
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1325:27 • always_put_control_body_on_new_line
-  error • The named parameter 'createdAt' is required, but there's no corresponding argument • lib/core/local/local_db.dart:1329:27 • missing_required_argument
-  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1331:19 • argument_type_not_assignable
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1349:81 • lines_longer_than_80_chars
-   info • Unnecessary cast • lib/core/local/local_db.dart:1351:20 • unnecessary_cast
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1352:25 • always_put_control_body_on_new_line
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1355:32 • always_put_control_body_on_new_line
-   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1359:7 • cascade_invocations
-   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1360:7 • cascade_invocations
-   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1361:7 • cascade_invocations
-   info • Missing an 'await' for the 'Future' computed by this expression • lib/core/local/local_db.dart:1370:9 • unawaited_futures
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1385:81 • lines_longer_than_80_chars
-   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1388:7 • avoid_catches_without_on_clauses
-   info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:1389:7 • avoid_print
-   info • Unnecessary cast • lib/core/local/local_db.dart:1401:20 • unnecessary_cast
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1402:25 • always_put_control_body_on_new_line
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1405:32 • always_put_control_body_on_new_line
-   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1409:7 • cascade_invocations
-   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1410:7 • cascade_invocations
-   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1411:7 • cascade_invocations
-   info • Missing an 'await' for the 'Future' computed by this expression • lib/core/local/local_db.dart:1420:9 • unawaited_futures
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1435:81 • lines_longer_than_80_chars
-   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1438:7 • avoid_catches_without_on_clauses
-   info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:1439:7 • avoid_print
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1458:36 • always_put_control_body_on_new_line
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1464:36 • always_put_control_body_on_new_line
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1470:36 • always_put_control_body_on_new_line
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1476:36 • always_put_control_body_on_new_line
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1482:36 • always_put_control_body_on_new_line
-   info • Unnecessary use of a block function body • lib/core/local/local_db.dart:1487:41 • prefer_expression_function_bodies
-   info • Required named parameters should be before optional named parameters • lib/core/local/local_db.dart:1518:21 • always_put_required_named_parameters_first
-   info • Required named parameters should be before optional named parameters • lib/core/local/local_db.dart:1519:21 • always_put_required_named_parameters_first
-   info • Required named parameters should be before optional named parameters • lib/core/local/local_db.dart:1520:21 • always_put_required_named_parameters_first
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1550:81 • lines_longer_than_80_chars
-   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1607:22 • unnecessary_brace_in_string_interps
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1607:81 • lines_longer_than_80_chars
-   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1607:90 • unnecessary_brace_in_string_interps
-   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1608:22 • unnecessary_brace_in_string_interps
-   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1608:68 • unnecessary_brace_in_string_interps
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1608:81 • lines_longer_than_80_chars
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1623:81 • lines_longer_than_80_chars
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1643:81 • lines_longer_than_80_chars
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1647:25 • always_put_control_body_on_new_line
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1649:81 • lines_longer_than_80_chars
-   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1653:5 • cascade_invocations
-   info • Use a raw string to avoid using escapes • lib/core/local/local_db.dart:1663:16 • use_raw_strings
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1669:81 • lines_longer_than_80_chars
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1674:25 • always_put_control_body_on_new_line
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1676:81 • lines_longer_than_80_chars
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1687:81 • lines_longer_than_80_chars
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1688:81 • lines_longer_than_80_chars
-   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1700:5 • cascade_invocations
-   info • Use a raw string to avoid using escapes • lib/core/local/local_db.dart:1710:16 • use_raw_strings
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1721:25 • always_put_control_body_on_new_line
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1729:81 • lines_longer_than_80_chars
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1737:81 • lines_longer_than_80_chars
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1738:81 • lines_longer_than_80_chars
-   info • Use a raw string to avoid using escapes • lib/core/local/local_db.dart:1760:16 • use_raw_strings
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1771:81 • lines_longer_than_80_chars
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1772:81 • lines_longer_than_80_chars
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1789:36 • always_put_control_body_on_new_line
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1795:36 • always_put_control_body_on_new_line
-   info • Statement should be on a separate line • lib/core/local/local_db.dart:1801:36 • always_put_control_body_on_new_line
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1823:81 • lines_longer_than_80_chars
-   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1831:5 • omit_local_variable_types
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1849:81 • lines_longer_than_80_chars
-   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1862:22 • unnecessary_brace_in_string_interps
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1862:81 • lines_longer_than_80_chars
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1882:81 • lines_longer_than_80_chars
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1900:81 • lines_longer_than_80_chars
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1901:81 • lines_longer_than_80_chars
-   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1921:26 • unnecessary_brace_in_string_interps
-   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1921:81 • lines_longer_than_80_chars
+  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1308:21 • argument_type_not_assignable
+  error • The property 'isEmpty' can't be unconditionally accessed because the receiver can be 'null' • lib/core/local/local_db.dart:1325:52 • unchecked_use_of_nullable_value
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1325:61 • always_put_control_body_on_new_line
+  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1326:34 • argument_type_not_assignable
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1327:27 • always_put_control_body_on_new_line
+  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1333:19 • argument_type_not_assignable
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1352:81 • lines_longer_than_80_chars
+   info • Unnecessary cast • lib/core/local/local_db.dart:1354:20 • unnecessary_cast
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1355:25 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1358:32 • always_put_control_body_on_new_line
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1362:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1363:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1364:7 • cascade_invocations
+   info • Missing an 'await' for the 'Future' computed by this expression • lib/core/local/local_db.dart:1373:9 • unawaited_futures
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1388:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1391:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:1392:7 • avoid_print
+   info • Unnecessary cast • lib/core/local/local_db.dart:1404:20 • unnecessary_cast
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1405:25 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1408:32 • always_put_control_body_on_new_line
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1412:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1413:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1414:7 • cascade_invocations
+   info • Missing an 'await' for the 'Future' computed by this expression • lib/core/local/local_db.dart:1423:9 • unawaited_futures
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1438:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1441:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:1442:7 • avoid_print
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1461:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1467:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1473:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1479:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1485:36 • always_put_control_body_on_new_line
+   info • Unnecessary use of a block function body • lib/core/local/local_db.dart:1490:41 • prefer_expression_function_bodies
+   info • Required named parameters should be before optional named parameters • lib/core/local/local_db.dart:1521:21 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/local_db.dart:1522:21 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/local_db.dart:1523:21 • always_put_required_named_parameters_first
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1553:81 • lines_longer_than_80_chars
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1610:22 • unnecessary_brace_in_string_interps
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1610:81 • lines_longer_than_80_chars
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1610:90 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1611:22 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1611:68 • unnecessary_brace_in_string_interps
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1611:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1626:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1646:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1650:25 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1652:81 • lines_longer_than_80_chars
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1656:5 • cascade_invocations
+   info • Use a raw string to avoid using escapes • lib/core/local/local_db.dart:1666:16 • use_raw_strings
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1672:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1677:25 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1679:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1690:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1691:81 • lines_longer_than_80_chars
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1703:5 • cascade_invocations
+   info • Use a raw string to avoid using escapes • lib/core/local/local_db.dart:1713:16 • use_raw_strings
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1724:25 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1732:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1740:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1741:81 • lines_longer_than_80_chars
+   info • Use a raw string to avoid using escapes • lib/core/local/local_db.dart:1763:16 • use_raw_strings
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1774:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1775:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1792:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1798:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1804:36 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1826:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1834:5 • omit_local_variable_types
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1852:81 • lines_longer_than_80_chars
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1865:22 • unnecessary_brace_in_string_interps
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1865:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1885:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1903:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1904:81 • lines_longer_than_80_chars
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1924:26 • unnecessary_brace_in_string_interps
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1924:81 • lines_longer_than_80_chars
    info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:20:3 • sort_constructors_first
    info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:27:19 • always_put_required_named_parameters_first
    info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:28:19 • always_put_required_named_parameters_first
@@ -769,7 +766,6 @@ warning • The value of the field '_currencyFormat' isn't used • lib/features
    info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:856:81 • lines_longer_than_80_chars
    info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:873:81 • lines_longer_than_80_chars
    info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:878:81 • lines_longer_than_80_chars
-  error • Expected to find '}' • lib/features/customers/presentation/pages/customers_page.dart:887:1 • expected_token
    info • Sort directive sections alphabetically • lib/features/dashboard/presentation/pages/dashboard_page.dart:5:1 • directives_ordering
    info • Convert 'key' to a super parameter • lib/features/dashboard/presentation/pages/dashboard_page.dart:9:9 • use_super_parameters
    info • Unnecessary use of a block function body • lib/features/dashboard/presentation/pages/dashboard_page.dart:25:38 • prefer_expression_function_bodies
@@ -1223,4 +1219,4 @@ warning • The value of the local variable 'initialQuantity' isn't used • tes
    info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:76:7 • cascade_invocations
    info • Unnecessary type annotation on a function expression parameter • test/widget_test.dart:7:47 • avoid_types_on_closure_parameters
 
-1222 issues found. (ran in 18.1s)
+1218 issues found. (ran in 16.7s)

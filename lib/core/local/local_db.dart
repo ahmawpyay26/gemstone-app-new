@@ -1274,8 +1274,8 @@ class LocalDb {
 
   /// Apply customer ledger impact when a sale is created or edited
   static Future<void> applySaleCustomerLedger(Sale sale, {Sale? oldSale}) async {
-    if (sale.customerId == null || sale.customerId.isEmpty) return;
-    final customer = getCustomer(sale.customerId);
+    if ((sale.customerId?.isEmpty ?? true)) return;
+    final customer = getCustomer(sale.customerId!);
     if (customer == null || customer.isDeleted) return;
     if (sale.isDeleted) return;
 
@@ -1291,7 +1291,7 @@ class LocalDb {
       customer.currentBalance += sale.amount;
       final ledgerEntry = CustomerLedger(
         id: const Uuid().v4(),
-        customerId: sale.customerId,
+        customerId: sale.customerId!,
         type: 'sale',
         referenceId: sale.id,
         date: sale.saleDate,
@@ -1305,7 +1305,7 @@ class LocalDb {
     } else {
       final ledgerEntry = CustomerLedger(
         id: const Uuid().v4(),
-        customerId: sale.customerId,
+        customerId: sale.customerId!,
         type: 'sale',
         referenceId: sale.id,
         date: sale.saleDate,
@@ -1322,15 +1322,15 @@ class LocalDb {
 
   /// Reverse customer ledger impact when a sale is deleted
   static Future<void> reverseSaleCustomerLedger(Sale sale) async {
-    if (sale.customerId == null || sale.customerId.isEmpty) return;
-    final customer = getCustomer(sale.customerId);
+    if ((sale.customerId?.isEmpty ?? true)) return;
+    final customer = getCustomer(sale.customerId!);
     if (customer == null) return;
     if (sale.paymentMethod == 'credit') {
       customer.currentBalance -= sale.amount;
     }
     final reversalEntry = CustomerLedger(
       id: const Uuid().v4(),
-      customerId: sale.customerId,
+      customerId: sale.customerId!,
       type: 'adjustment',
       referenceId: sale.id,
       date: DateTime.now().millisecondsSinceEpoch,
