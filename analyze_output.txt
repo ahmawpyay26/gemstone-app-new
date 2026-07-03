@@ -1,0 +1,1226 @@
+Analyzing gemstone-app-new...                                   
+
+warning • 'avoid_returning_null_for_future' was removed in Dart '3.3.0' • analysis_options.yaml:28:7 • removed_lint
+warning • 'invariant_booleans' was removed in Dart '3.0.0' • analysis_options.yaml:36:7 • removed_lint
+warning • 'iterable_contains_unrelated_type' was removed in Dart '3.3.0' • analysis_options.yaml:37:7 • removed_lint
+warning • 'list_remove_unrelated_type' was removed in Dart '3.3.0' • analysis_options.yaml:38:7 • removed_lint
+warning • 'avoid_returning_null' was removed in Dart '3.3.0' • analysis_options.yaml:63:7 • removed_lint
+warning • 'avoid_returning_null_for_async' is not a recognized lint rule • analysis_options.yaml:64:7 • undefined_lint
+   info • The rule avoid_returning_null_for_future is already specified and doesn't need to be specified again • analysis_options.yaml:65:7 • duplicate_rule
+warning • 'avoid_returning_null_for_future' was removed in Dart '3.3.0' • analysis_options.yaml:65:7 • removed_lint
+warning • 'no_leading_underscores_for_local_variables' is not a recognized lint rule • analysis_options.yaml:92:7 • undefined_lint
+warning • 'null_to_void_return_type' is not a recognized lint rule • analysis_options.yaml:95:7 • undefined_lint
+warning • 'package_private_types_in_public_api' is not a recognized lint rule • analysis_options.yaml:103:7 • undefined_lint
+warning • 'prefer_equal_for_default_values' was removed in Dart '3.0.0' • analysis_options.yaml:116:7 • removed_lint
+warning • 'prefer_getters_setters' is not a recognized lint rule • analysis_options.yaml:125:7 • undefined_lint
+warning • 'prefer_if_null_to_conditional_expression' is not a recognized lint rule • analysis_options.yaml:127:7 • undefined_lint
+warning • 'prefer_if_on_single_line_is_else' is not a recognized lint rule • analysis_options.yaml:128:7 • undefined_lint
+warning • 'prefer_is_operator' is not a recognized lint rule • analysis_options.yaml:136:7 • undefined_lint
+warning • 'prefer_null_coalescing_operators' is not a recognized lint rule • analysis_options.yaml:140:7 • undefined_lint
+warning • 'prefer_relative_import_imports' is not a recognized lint rule • analysis_options.yaml:141:7 • undefined_lint
+warning • 'sized_box_shrink_to_shrink' is not a recognized lint rule • analysis_options.yaml:147:7 • undefined_lint
+warning • 'unnecessary_null_to_void_return_type' is not a recognized lint rule • analysis_options.yaml:167:7 • undefined_lint
+   info • The rule unrelated_type_equality_checks is already specified and doesn't need to be specified again • analysis_options.yaml:173:7 • duplicate_rule
+warning • 'use_getters_to_change_properties' is not a recognized lint rule • analysis_options.yaml:178:7 • undefined_lint
+warning • 'use_if_null_to_convert_nullability' is not a recognized lint rule • analysis_options.yaml:179:7 • undefined_lint
+warning • 'use_to_close_over_async_await' is not a recognized lint rule • analysis_options.yaml:188:7 • undefined_lint
+warning • 'use_to_close_over_async_await' is not a recognized lint rule • analysis_options.yaml:189:7 • undefined_lint
+   info • The line length exceeds the 80-character limit • lib/core/constants/app_constants.dart:41:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/constants/app_constants.dart:51:81 • lines_longer_than_80_chars
+   info • The imported package 'collection' isn't a dependency of the importing package • lib/core/local/local_db.dart:2:8 • depend_on_referenced_packages
+   info • The import of 'package:hive/hive.dart' is unnecessary because all of the used elements are also provided by the import of 'package:hive_flutter/hive_flutter.dart' • lib/core/local/local_db.dart:3:8 • unnecessary_import
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:32:39 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:33:39 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:34:39 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:35:39 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:36:39 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:37:39 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:38:39 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:39:39 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:40:39 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:41:40 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:41:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:42:40 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:42:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:43:40 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:43:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:44:40 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:45:40 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:45:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:46:40 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:215:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:230:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:232:10 • omit_local_variable_types
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:236:9 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:237:9 • cascade_invocations
+   info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:244:7 • avoid_print
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:244:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:267:26 • always_put_control_body_on_new_line
+   info • Local variables should be final • lib/core/local/local_db.dart:270:5 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:270:5 • omit_local_variable_types
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:275:7 • cascade_invocations
+   info • Local variables should be final • lib/core/local/local_db.dart:279:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:279:7 • omit_local_variable_types
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:281:7 • cascade_invocations
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:294:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:369:7 • avoid_catches_without_on_clauses
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:376:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:377:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:378:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:379:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:383:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:384:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:385:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:392:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:393:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:394:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:395:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:396:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:397:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:398:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:399:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:420:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:426:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:427:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:428:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:433:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:434:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:435:5 • cascade_invocations
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:463:81 • lines_longer_than_80_chars
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:489:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:500:7 • cascade_invocations
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:568:27 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:636:21 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:638:23 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:647:33 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:657:22 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:660:20 • always_put_control_body_on_new_line
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:662:5 • cascade_invocations
+   info • Unnecessary use of parentheses • lib/core/local/local_db.dart:662:21 • unnecessary_parenthesis
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:663:28 • always_put_control_body_on_new_line
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:677:5 • omit_local_variable_types
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:679:25 • always_put_control_body_on_new_line
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:685:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:693:5 • omit_local_variable_types
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:695:33 • always_put_control_body_on_new_line
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:702:5 • omit_local_variable_types
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:704:25 • always_put_control_body_on_new_line
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:711:5 • omit_local_variable_types
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:713:25 • always_put_control_body_on_new_line
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:720:5 • omit_local_variable_types
+   info • Unnecessary use of a block function body • lib/core/local/local_db.dart:729:45 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/core/local/local_db.dart:736:40 • prefer_expression_function_bodies
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:746:5 • omit_local_variable_types
+   info • Unnecessary cast • lib/core/local/local_db.dart:749:29 • unnecessary_cast
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:765:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:775:18 • always_put_control_body_on_new_line
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:784:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:792:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:801:5 • omit_local_variable_types
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:808:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:810:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:818:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:826:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:834:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:842:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:850:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:858:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:867:5 • omit_local_variable_types
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:894:29 • always_put_control_body_on_new_line
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:895:5 • omit_local_variable_types
+   info • Unnecessary use of parentheses • lib/core/local/local_db.dart:898:14 • unnecessary_parenthesis
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:905:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:930:5 • omit_local_variable_types
+   info • Unnecessary use of a block function body • lib/core/local/local_db.dart:941:52 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:942:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:948:5 • omit_local_variable_types
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:975:22 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:978:20 • always_put_control_body_on_new_line
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:988:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:989:5 • cascade_invocations
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1000:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1001:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1012:7 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1013:7 • omit_local_variable_types
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1030:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1031:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1032:7 • cascade_invocations
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1053:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1055:20 • always_put_control_body_on_new_line
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1058:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1059:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1091:5 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1100:5 • omit_local_variable_types
+   info • Unnecessary use of a block function body • lib/core/local/local_db.dart:1107:30 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1130:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1140:34 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1143:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1149:7 • avoid_catches_without_on_clauses
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1157:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1167:32 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1171:34 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1173:7 • avoid_catches_without_on_clauses
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1186:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:1187:7 • avoid_print
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1195:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1204:5 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1213:5 • cascade_invocations
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1221:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:1222:7 • avoid_print
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1247:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1262:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1265:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:1266:7 • avoid_print
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1276:81 • lines_longer_than_80_chars
+  error • The property 'isEmpty' can't be unconditionally accessed because the receiver can be 'null' • lib/core/local/local_db.dart:1277:25 • unchecked_use_of_nullable_value
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1277:34 • always_put_control_body_on_new_line
+  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1278:34 • argument_type_not_assignable
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1279:49 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1280:25 • always_put_control_body_on_new_line
+  error • The named parameter 'createdAt' is required, but there's no corresponding argument • lib/core/local/local_db.dart:1292:27 • missing_required_argument
+  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1294:21 • argument_type_not_assignable
+  error • The named parameter 'createdAt' is required, but there's no corresponding argument • lib/core/local/local_db.dart:1305:27 • missing_required_argument
+  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1307:21 • argument_type_not_assignable
+  error • The property 'isEmpty' can't be unconditionally accessed because the receiver can be 'null' • lib/core/local/local_db.dart:1323:25 • unchecked_use_of_nullable_value
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1323:34 • always_put_control_body_on_new_line
+  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1324:34 • argument_type_not_assignable
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1325:27 • always_put_control_body_on_new_line
+  error • The named parameter 'createdAt' is required, but there's no corresponding argument • lib/core/local/local_db.dart:1329:27 • missing_required_argument
+  error • The argument type 'String?' can't be assigned to the parameter type 'String'.  • lib/core/local/local_db.dart:1331:19 • argument_type_not_assignable
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1349:81 • lines_longer_than_80_chars
+   info • Unnecessary cast • lib/core/local/local_db.dart:1351:20 • unnecessary_cast
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1352:25 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1355:32 • always_put_control_body_on_new_line
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1359:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1360:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1361:7 • cascade_invocations
+   info • Missing an 'await' for the 'Future' computed by this expression • lib/core/local/local_db.dart:1370:9 • unawaited_futures
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1385:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1388:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:1389:7 • avoid_print
+   info • Unnecessary cast • lib/core/local/local_db.dart:1401:20 • unnecessary_cast
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1402:25 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1405:32 • always_put_control_body_on_new_line
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1409:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1410:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1411:7 • cascade_invocations
+   info • Missing an 'await' for the 'Future' computed by this expression • lib/core/local/local_db.dart:1420:9 • unawaited_futures
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1435:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/local_db.dart:1438:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/local/local_db.dart:1439:7 • avoid_print
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1458:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1464:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1470:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1476:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1482:36 • always_put_control_body_on_new_line
+   info • Unnecessary use of a block function body • lib/core/local/local_db.dart:1487:41 • prefer_expression_function_bodies
+   info • Required named parameters should be before optional named parameters • lib/core/local/local_db.dart:1518:21 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/local_db.dart:1519:21 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/local_db.dart:1520:21 • always_put_required_named_parameters_first
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1550:81 • lines_longer_than_80_chars
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1607:22 • unnecessary_brace_in_string_interps
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1607:81 • lines_longer_than_80_chars
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1607:90 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1608:22 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1608:68 • unnecessary_brace_in_string_interps
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1608:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1623:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1643:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1647:25 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1649:81 • lines_longer_than_80_chars
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1653:5 • cascade_invocations
+   info • Use a raw string to avoid using escapes • lib/core/local/local_db.dart:1663:16 • use_raw_strings
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1669:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1674:25 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1676:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1687:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1688:81 • lines_longer_than_80_chars
+   info • Unnecessary duplication of receiver • lib/core/local/local_db.dart:1700:5 • cascade_invocations
+   info • Use a raw string to avoid using escapes • lib/core/local/local_db.dart:1710:16 • use_raw_strings
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1721:25 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1729:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1737:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1738:81 • lines_longer_than_80_chars
+   info • Use a raw string to avoid using escapes • lib/core/local/local_db.dart:1760:16 • use_raw_strings
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1771:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1772:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1789:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1795:36 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/local_db.dart:1801:36 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1823:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a local variable • lib/core/local/local_db.dart:1831:5 • omit_local_variable_types
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1849:81 • lines_longer_than_80_chars
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1862:22 • unnecessary_brace_in_string_interps
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1862:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1882:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1900:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1901:81 • lines_longer_than_80_chars
+   info • Unnecessary braces in a string interpolation • lib/core/local/local_db.dart:1921:26 • unnecessary_brace_in_string_interps
+   info • The line length exceeds the 80-character limit • lib/core/local/local_db.dart:1921:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:20:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:27:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:28:19 • always_put_required_named_parameters_first
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:120:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:122:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:128:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:137:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:138:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:139:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:140:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:141:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:142:19 • always_put_required_named_parameters_first
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:200:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:201:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:202:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:205:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:312:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:315:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:317:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:318:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:321:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:323:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:324:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:325:19 • always_put_required_named_parameters_first
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:366:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:368:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:441:3 • sort_constructors_first
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:503:3 • sort_constructors_first
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:565:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:576:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:584:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:585:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:586:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:587:19 • always_put_required_named_parameters_first
+   info • Unnecessary use of parentheses • lib/core/local/models.dart:604:15 • unnecessary_parenthesis
+   info • Unnecessary use of parentheses • lib/core/local/models.dart:605:19 • unnecessary_parenthesis
+   info • Unnecessary use of parentheses • lib/core/local/models.dart:606:21 • unnecessary_parenthesis
+   info • Unnecessary use of parentheses • lib/core/local/models.dart:607:17 • unnecessary_parenthesis
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:654:3 • sort_constructors_first
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:700:3 • sort_constructors_first
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:752:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:759:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:769:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:771:19 • always_put_required_named_parameters_first
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:853:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:860:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:861:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:862:19 • always_put_required_named_parameters_first
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:942:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:948:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:949:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:950:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:951:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:955:19 • always_put_required_named_parameters_first
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:961:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/models.dart:1046:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:1064:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1070:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1071:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1072:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1073:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1074:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1077:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1078:19 • always_put_required_named_parameters_first
+   info • Statement should be on a separate line • lib/core/local/models.dart:1084:28 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/models.dart:1085:24 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/models.dart:1086:31 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/models.dart:1087:31 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/local/models.dart:1088:24 • always_put_control_body_on_new_line
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:1185:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1197:19 • always_put_required_named_parameters_first
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:1278:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1283:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1286:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1288:19 • always_put_required_named_parameters_first
+   info • Constructor declarations should be before non-constructor declarations • lib/core/local/models.dart:1358:3 • sort_constructors_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1362:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1363:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1364:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/core/local/models.dart:1368:19 • always_put_required_named_parameters_first
+   info • Sort directive sections alphabetically • lib/core/local/rbac_test_data.dart:4:1 • directives_ordering
+   info • The line length exceeds the 80-character limit • lib/core/local/rbac_test_data.dart:14:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/local/rbac_test_data.dart:15:37 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/core/local/rbac_test_data.dart:18:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/rbac_test_data.dart:19:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/rbac_test_data.dart:20:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/rbac_test_data.dart:21:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/local/rbac_test_data.dart:22:81 • lines_longer_than_80_chars
+   info • Don't invoke 'print' in production code • lib/core/local/rbac_test_data.dart:108:7 • avoid_print
+   info • The line length exceeds the 80-character limit • lib/core/local/rbac_test_data.dart:108:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/local/rbac_test_data.dart:109:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/local/rbac_test_data.dart:110:7 • avoid_print
+   info • Sort directive sections alphabetically • lib/core/router/app_router.dart:4:1 • directives_ordering
+   info • Sort directive sections alphabetically • lib/core/router/app_router.dart:8:1 • directives_ordering
+   info • Sort directive sections alphabetically • lib/core/router/app_router.dart:10:1 • directives_ordering
+   info • Sort directive sections alphabetically • lib/core/router/app_router.dart:13:1 • directives_ordering
+   info • Sort directive sections alphabetically • lib/core/router/app_router.dart:16:1 • directives_ordering
+   info • Statement should be on a separate line • lib/core/router/app_router.dart:24:37 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/router/app_router.dart:25:35 • always_put_control_body_on_new_line
+warning • Unused import: 'package:go_router/go_router.dart' • lib/core/routing/route_guard.dart:2:8 • unused_import
+   info • Sort directive sections alphabetically • lib/core/routing/route_guard.dart:4:1 • directives_ordering
+   info • Statement should be on a separate line • lib/core/routing/route_guard.dart:21:42 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/routing/route_guard.dart:22:43 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/routing/route_guard.dart:25:37 • always_put_control_body_on_new_line
+   info • Unnecessary use of a block function body • lib/core/routing/route_guard.dart:30:41 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/core/services/audit_service.dart:36:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/audit_service.dart:43:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/services/audit_service.dart:44:7 • avoid_print
+   info • Unnecessary use of a block function body • lib/core/services/auth_service.dart:10:59 • prefer_expression_function_bodies
+   info • Statement should be on a separate line • lib/core/services/auth_service.dart:24:25 • always_put_control_body_on_new_line
+   info • Unnecessary duplication of receiver • lib/core/services/auth_service.dart:39:7 • cascade_invocations
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/auth_service.dart:43:7 • avoid_catches_without_on_clauses
+   info • Statement should be on a separate line • lib/core/services/auth_service.dart:57:25 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/auth_service.dart:76:7 • avoid_catches_without_on_clauses
+   info • Statement should be on a separate line • lib/core/services/auth_service.dart:92:25 • always_put_control_body_on_new_line
+   info • Unnecessary use of a block function body • lib/core/services/auth_service.dart:97:28 • prefer_expression_function_bodies
+   info • Statement should be on a separate line • lib/core/services/password_service.dart:28:30 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/password_service.dart:35:7 • avoid_catches_without_on_clauses
+   info • The line length exceeds the 80-character limit • lib/core/services/password_service.dart:71:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/services/permission_service.dart:7:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/core/services/permission_service.dart:20:30 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/services/permission_service.dart:28:47 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/services/permission_service.dart:31:59 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/permission_service.dart:53:7 • avoid_catches_without_on_clauses
+   info • Statement should be on a separate line • lib/core/services/permission_service.dart:65:27 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/permission_service.dart:81:7 • avoid_catches_without_on_clauses
+   info • Statement should be on a separate line • lib/core/services/permission_service.dart:90:28 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/core/services/permission_service.dart:91:30 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/permission_service.dart:93:7 • avoid_catches_without_on_clauses
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/permission_service.dart:104:7 • avoid_catches_without_on_clauses
+   info • The line length exceeds the 80-character limit • lib/core/services/permission_service.dart:137:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/permission_service.dart:157:7 • avoid_catches_without_on_clauses
+   info • Constructor declarations should be before non-constructor declarations • lib/core/services/photo_service.dart:10:3 • sort_constructors_first
+   info • Constructor declarations should be before non-constructor declarations • lib/core/services/photo_service.dart:12:11 • sort_constructors_first
+   info • Invalid location for the unnamed constructor • lib/core/services/photo_service.dart:12:11 • sort_unnamed_constructors_first
+   info • Unnecessary use of a block function body • lib/core/services/photo_service.dart:12:26 • prefer_expression_function_bodies
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:19:13 • omit_local_variable_types
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/photo_service.dart:26:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/services/photo_service.dart:27:7 • avoid_print
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:35:13 • omit_local_variable_types
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/photo_service.dart:42:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/services/photo_service.dart:43:7 • avoid_print
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:51:13 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:52:13 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:53:13 • omit_local_variable_types
+   info • Use of an async 'dart:io' method • lib/core/services/photo_service.dart:56:18 • avoid_slow_async_io
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:62:13 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:63:13 • omit_local_variable_types
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/photo_service.dart:68:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/services/photo_service.dart:69:7 • avoid_print
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:77:13 • omit_local_variable_types
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/photo_service.dart:81:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/services/photo_service.dart:82:7 • avoid_print
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:90:13 • omit_local_variable_types
+   info • Use of an async 'dart:io' method • lib/core/services/photo_service.dart:91:17 • avoid_slow_async_io
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/photo_service.dart:95:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/services/photo_service.dart:96:7 • avoid_print
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/photo_service.dart:105:7 • avoid_catches_without_on_clauses
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:112:11 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:125:13 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:126:13 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:127:13 • omit_local_variable_types
+   info • Use of an async 'dart:io' method • lib/core/services/photo_service.dart:129:18 • avoid_slow_async_io
+   info • Statement should be on a separate line • lib/core/services/photo_service.dart:129:40 • always_put_control_body_on_new_line
+   info • Unnecessary type annotation on a local variable • lib/core/services/photo_service.dart:131:13 • omit_local_variable_types
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/photo_service.dart:139:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/services/photo_service.dart:140:7 • avoid_print
+   info • Sort directive sections alphabetically • lib/core/services/voucher_export_service.dart:8:1 • directives_ordering
+warning • Unused import: '../local/local_db.dart' • lib/core/services/voucher_export_service.dart:8:8 • unused_import
+   info • The line length exceeds the 80-character limit • lib/core/services/voucher_export_service.dart:11:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/core/services/voucher_export_service.dart:13:3 • sort_constructors_first
+   info • Constructor declarations should be before non-constructor declarations • lib/core/services/voucher_export_service.dart:15:11 • sort_constructors_first
+   info • Invalid location for the unnamed constructor • lib/core/services/voucher_export_service.dart:15:11 • sort_unnamed_constructors_first
+   info • Unnecessary use of a block function body • lib/core/services/voucher_export_service.dart:15:34 • prefer_expression_function_bodies
+   info • Unnecessary type annotation on a function expression parameter • lib/core/services/voucher_export_service.dart:33:19 • avoid_types_on_closure_parameters
+   info • Unnecessary use of a block function body • lib/core/services/voucher_export_service.dart:33:39 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/core/services/voucher_export_service.dart:62:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/services/voucher_export_service.dart:67:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/services/voucher_export_service.dart:181:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a local variable • lib/core/services/voucher_export_service.dart:228:13 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/services/voucher_export_service.dart:229:13 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/services/voucher_export_service.dart:230:13 • omit_local_variable_types
+   info • Use of an async 'dart:io' method • lib/core/services/voucher_export_service.dart:232:18 • avoid_slow_async_io
+   info • Unnecessary type annotation on a local variable • lib/core/services/voucher_export_service.dart:236:13 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/services/voucher_export_service.dart:238:13 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/core/services/voucher_export_service.dart:239:13 • omit_local_variable_types
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/voucher_export_service.dart:243:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/services/voucher_export_service.dart:244:7 • avoid_print
+   info • Unnecessary type annotation on a function expression parameter • lib/core/services/voucher_export_service.dart:263:19 • avoid_types_on_closure_parameters
+   info • Unnecessary use of a block function body • lib/core/services/voucher_export_service.dart:263:39 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/core/services/voucher_export_service.dart:288:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/services/voucher_export_service.dart:293:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/core/services/voucher_export_service.dart:394:7 • avoid_catches_without_on_clauses
+   info • Don't invoke 'print' in production code • lib/core/services/voucher_export_service.dart:395:7 • avoid_print
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:8:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:15:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:22:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:29:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:36:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:49:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:57:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:65:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:73:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:81:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:89:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:97:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:105:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:113:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/core/widgets/dynamic_navigation.dart:121:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/core/widgets/dynamic_navigation.dart:138:3 • sort_constructors_first
+   info • Sort directive sections alphabetically • lib/features/account_settings/presentation/pages/account_settings_page.dart:4:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/account_settings/presentation/pages/account_settings_page.dart:9:9 • use_super_parameters
+   info • Statement should be on a separate line • lib/features/account_settings/presentation/pages/account_settings_page.dart:50:59 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/account_settings/presentation/pages/account_settings_page.dart:88:7 • avoid_catches_without_on_clauses
+   info • Statement should be on a separate line • lib/features/account_settings/presentation/pages/account_settings_page.dart:95:59 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/account_settings/presentation/pages/account_settings_page.dart:121:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/account_settings/presentation/pages/account_settings_page.dart:126:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/account_settings/presentation/pages/account_settings_page.dart:139:7 • avoid_catches_without_on_clauses
+   info • Statement should be on a separate line • lib/features/account_settings/presentation/pages/account_settings_page.dart:165:28 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/account_settings/presentation/pages/account_settings_page.dart:177:7 • avoid_catches_without_on_clauses
+   info • Use 'const' with the constructor to improve performance • lib/features/account_settings/presentation/pages/account_settings_page.dart:267:13 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/account_settings/presentation/pages/account_settings_page.dart:326:13 • prefer_const_constructors
+   info • Sort directive sections alphabetically • lib/features/auth/presentation/pages/login_page.dart:5:1 • directives_ordering
+warning • Unused import: '../../../../core/services/auth_service.dart' • lib/features/auth/presentation/pages/login_page.dart:7:8 • unused_import
+   info • Sort directive sections alphabetically • lib/features/auth/presentation/pages/login_page.dart:10:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/auth/presentation/pages/login_page.dart:13:9 • use_super_parameters
+   info • The private field _rememberMe could be 'final' • lib/features/auth/presentation/pages/login_page.dart:25:8 • prefer_final_fields
+warning • The value of the field '_rememberMe' isn't used • lib/features/auth/presentation/pages/login_page.dart:25:8 • unused_field
+   info • Statement should be on a separate line • lib/features/auth/presentation/pages/login_page.dart:42:45 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/auth/presentation/pages/login_page.dart:62:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/auth/presentation/pages/login_page.dart:130:7 • avoid_catches_without_on_clauses
+   info • Unnecessary use of a block function body • lib/features/auth/presentation/pages/login_page.dart:139:38 • prefer_expression_function_bodies
+   info • Statement should be on a separate line • lib/features/auth/presentation/pages/login_page.dart:220:53 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/auth/presentation/pages/login_page.dart:220:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/auth/presentation/pages/login_page.dart:243:53 • always_put_control_body_on_new_line
+   info • Convert 'key' to a super parameter • lib/features/branches/presentation/pages/branches_page.dart:6:9 • use_super_parameters
+   info • Unnecessary use of a block function body • lib/features/branches/presentation/pages/branches_page.dart:9:38 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/branches/presentation/pages/branches_page.dart:51:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/branches/presentation/pages/branches_page.dart:66:31 • prefer_expression_function_bodies
+   info • Sort directive sections alphabetically • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:6:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:11:9 • use_super_parameters
+warning • The value of the field '_currencyFormat' isn't used • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:19:9 • unused_field
+   info • The variable 'controller' should be final • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:30:14 • prefer_final_in_for_each
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:49:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:58:27 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:77:7 • avoid_catches_without_on_clauses
+   info • Statement should be on a separate line • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:117:35 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:126:81 • lines_longer_than_80_chars
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:139:40 • use_build_context_synchronously
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:140:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:143:17 • avoid_catches_without_on_clauses
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:145:40 • use_build_context_synchronously
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:151:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:158:80 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:164:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:212:38 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:232:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a function expression parameter • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:233:28 • avoid_types_on_closure_parameters
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:239:81 • lines_longer_than_80_chars
+   info • Closure should be a tearoff • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:257:44 • unnecessary_lambdas
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:262:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:263:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:264:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:265:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:282:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:291:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:300:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:302:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:304:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:311:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:313:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:315:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:381:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:382:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:385:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:388:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:391:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:392:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:399:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:416:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:426:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:427:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:430:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:431:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:434:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:435:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:439:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:440:81 • lines_longer_than_80_chars
+   info • Missing an 'await' for the 'Future' computed by this expression • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:444:41 • unawaited_futures
+   info • Unnecessary type annotation on a function expression parameter • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:454:49 • avoid_types_on_closure_parameters
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:471:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:536:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:540:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:553:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:570:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:587:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:604:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:629:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:636:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:638:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:641:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:643:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:645:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:650:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_consignment_page.dart:657:81 • lines_longer_than_80_chars
+   info • Sort directive sections alphabetically • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:6:1 • directives_ordering
+   info • Constructor declarations should be before non-constructor declarations • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:12:9 • sort_constructors_first
+   info • Convert 'key' to a super parameter • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:12:9 • use_super_parameters
+   info • Required named parameters should be before optional named parameters • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:14:19 • always_put_required_named_parameters_first
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:59:7 • avoid_catches_without_on_clauses
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:79:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:105:67 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:106:76 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:106:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:128:7 • avoid_catches_without_on_clauses
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:157:54 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:169:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:176:44 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:191:38 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:206:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:226:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:249:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:250:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:256:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:258:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:259:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:287:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:289:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:291:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:292:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:294:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:310:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:312:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:316:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:319:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:322:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:324:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:340:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:342:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:344:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:346:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:353:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:356:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:375:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:384:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:396:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:398:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:400:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:411:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:416:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:422:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:424:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:434:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:435:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:438:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:439:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:461:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:463:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:467:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:484:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:501:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_details_page.dart:506:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:16:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:18:3 • sort_constructors_first
+   info • Constructor declarations should be before non-constructor declarations • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:32:9 • sort_constructors_first
+   info • Convert 'key' to a super parameter • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:32:9 • use_super_parameters
+   info • The private field _confirmedItems could be 'final' • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:50:29 • prefer_final_fields
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:77:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:80:41 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:81:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:85:52 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:86:49 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:102:25 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:117:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:121:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:122:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:133:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:141:28 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:142:34 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:154:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:158:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:159:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:183:81 • lines_longer_than_80_chars
+   info • Unnecessary duplication of receiver • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:210:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:223:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:226:9 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:227:9 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:235:7 • cascade_invocations
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:237:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:238:81 • lines_longer_than_80_chars
+   info • Unnecessary duplication of receiver • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:248:7 • cascade_invocations
+   info • Statement should be on a separate line • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:253:26 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:264:38 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:267:46 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:267:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:279:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:286:7 • avoid_catches_without_on_clauses
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:296:38 • prefer_expression_function_bodies
+   info • Use 'const' with the constructor to improve performance • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:331:19 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:339:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:373:81 • lines_longer_than_80_chars
+   info • Use 'const' with the constructor to improve performance • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:381:21 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:381:81 • lines_longer_than_80_chars
+   info • Unnecessary use of string interpolation • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:560:25 • unnecessary_string_interpolations
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:629:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:684:34 • prefer_expression_function_bodies
+   info • Use 'const' with the constructor to improve performance • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:695:11 • prefer_const_constructors
+   info • Unnecessary type annotation on a function expression parameter • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:722:34 • avoid_types_on_closure_parameters
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:761:81 • lines_longer_than_80_chars
+   info • Unnecessary use of 'toList' in a spread • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:764:18 • unnecessary_to_list_in_spreads
+   info • Unnecessary type annotation on a function expression parameter • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:766:25 • avoid_types_on_closure_parameters
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:798:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:813:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:854:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:864:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:867:81 • lines_longer_than_80_chars
+   info • Unnecessary use of 'toList' in a spread • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:870:24 • unnecessary_to_list_in_spreads
+   info • Unnecessary type annotation on a function expression parameter • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:872:31 • avoid_types_on_closure_parameters
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:874:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:889:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:930:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:940:81 • lines_longer_than_80_chars
+   info • Unnecessary use of 'toList' in a spread • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:943:26 • unnecessary_to_list_in_spreads
+   info • Closure should be a tearoff • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:945:32 • unnecessary_lambdas
+   info • Unnecessary type annotation on a function expression parameter • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:945:33 • avoid_types_on_closure_parameters
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:954:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:967:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:968:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:969:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:981:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:990:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:991:81 • lines_longer_than_80_chars
+   info • Use 'const' with the constructor to improve performance • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:994:27 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:995:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:1002:81 • lines_longer_than_80_chars
+   info • Use 'const' with the constructor to improve performance • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:1004:27 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:1005:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:1042:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/pages/broker_form_page.dart:1056:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:23:9 • sort_constructors_first
+   info • Convert 'key' to a super parameter • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:23:9 • use_super_parameters
+   info • Required named parameters should be before optional named parameters • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:25:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:26:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:29:19 • always_put_required_named_parameters_first
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:66:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:95:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:163:23 • prefer_expression_function_bodies
+   info • Statement should be on a separate line • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:175:26 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:198:7 • avoid_catches_without_on_clauses
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:208:38 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:262:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:268:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:276:56 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:286:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:309:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:311:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:333:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:355:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:376:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:398:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/broker_consignment/presentation/widgets/broker_sale_form.dart:419:81 • lines_longer_than_80_chars
+warning • Unused import: 'package:go_router/go_router.dart' • lib/features/customers/presentation/pages/customers_page.dart:2:8 • unused_import
+   info • Sort directive sections alphabetically • lib/features/customers/presentation/pages/customers_page.dart:6:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/customers/presentation/pages/customers_page.dart:11:9 • use_super_parameters
+   info • Unnecessary use of a block function body • lib/features/customers/presentation/pages/customers_page.dart:38:38 • prefer_expression_function_bodies
+   info • Unnecessary use of a 'double' literal • lib/features/customers/presentation/pages/customers_page.dart:49:43 • prefer_int_literals
+   info • Unnecessary use of a block function body • lib/features/customers/presentation/pages/customers_page.dart:122:48 • prefer_expression_function_bodies
+   info • The declaration '_showPaymentDialog' isn't referenced • lib/features/customers/presentation/pages/customers_page.dart:210:8 • unused_element
+   info • The declaration '_showLedgerDialog' isn't referenced • lib/features/customers/presentation/pages/customers_page.dart:227:8 • unused_element
+   info • Constructor declarations should be before non-constructor declarations • lib/features/customers/presentation/pages/customers_page.dart:239:9 • sort_constructors_first
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:301:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/customers/presentation/pages/customers_page.dart:308:7 • avoid_catches_without_on_clauses
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/customers/presentation/pages/customers_page.dart:317:7 • avoid_catches_without_on_clauses
+   info • Unnecessary use of a block function body • lib/features/customers/presentation/pages/customers_page.dart:328:38 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:330:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/features/customers/presentation/pages/customers_page.dart:447:9 • sort_constructors_first
+warning • The value of the field '_currencyFormat' isn't used • lib/features/customers/presentation/pages/customers_page.dart:463:27 • unused_field
+   info • Unnecessary use of a block function body • lib/features/customers/presentation/pages/customers_page.dart:482:38 • prefer_expression_function_bodies
+   info • Unnecessary use of a 'double' literal • lib/features/customers/presentation/pages/customers_page.dart:493:47 • prefer_int_literals
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:502:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:512:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:546:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:554:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:561:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:572:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:579:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:586:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:593:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:601:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:623:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/features/customers/presentation/pages/customers_page.dart:655:9 • sort_constructors_first
+   info • Unnecessary use of a 'double' literal • lib/features/customers/presentation/pages/customers_page.dart:713:47 • prefer_int_literals
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:719:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:730:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:734:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:743:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:747:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a 'double' literal • lib/features/customers/presentation/pages/customers_page.dart:762:49 • prefer_int_literals
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:774:81 • lines_longer_than_80_chars
+   info • Closure should be a tearoff • lib/features/customers/presentation/pages/customers_page.dart:777:35 • unnecessary_lambdas
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:782:81 • lines_longer_than_80_chars
+   info • Closure should be a tearoff • lib/features/customers/presentation/pages/customers_page.dart:787:30 • unnecessary_lambdas
+   info • Unnecessary use of a block function body • lib/features/customers/presentation/pages/customers_page.dart:803:44 • prefer_expression_function_bodies
+   info • Unnecessary use of a 'double' literal • lib/features/customers/presentation/pages/customers_page.dart:806:39 • prefer_int_literals
+   info • Use 'const' with the constructor to improve performance • lib/features/customers/presentation/pages/customers_page.dart:809:13 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:817:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:830:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/customers/presentation/pages/customers_page.dart:838:48 • prefer_expression_function_bodies
+   info • Unnecessary use of a 'double' literal • lib/features/customers/presentation/pages/customers_page.dart:841:39 • prefer_int_literals
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:856:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:873:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/customers/presentation/pages/customers_page.dart:878:81 • lines_longer_than_80_chars
+  error • Expected to find '}' • lib/features/customers/presentation/pages/customers_page.dart:887:1 • expected_token
+   info • Sort directive sections alphabetically • lib/features/dashboard/presentation/pages/dashboard_page.dart:5:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/dashboard/presentation/pages/dashboard_page.dart:9:9 • use_super_parameters
+   info • Unnecessary use of a block function body • lib/features/dashboard/presentation/pages/dashboard_page.dart:25:38 • prefer_expression_function_bodies
+   info • Unnecessary use of a 'double' literal • lib/features/dashboard/presentation/pages/dashboard_page.dart:41:41 • prefer_int_literals
+   info • Unnecessary use of a block function body • lib/features/dashboard/presentation/pages/dashboard_page.dart:57:31 • prefer_expression_function_bodies
+   info • The local variable '__1' starts with an underscore • lib/features/dashboard/presentation/pages/dashboard_page.dart:60:26 • no_leading_underscores_for_local_identifiers
+   info • The variable name '__1' isn't a lowerCamelCase identifier • lib/features/dashboard/presentation/pages/dashboard_page.dart:60:26 • non_constant_identifier_names
+   info • Unnecessary use of a block function body • lib/features/dashboard/presentation/pages/dashboard_page.dart:60:36 • prefer_expression_function_bodies
+   info • The local variable '__2' starts with an underscore • lib/features/dashboard/presentation/pages/dashboard_page.dart:63:30 • no_leading_underscores_for_local_identifiers
+   info • The variable name '__2' isn't a lowerCamelCase identifier • lib/features/dashboard/presentation/pages/dashboard_page.dart:63:30 • non_constant_identifier_names
+   info • Unnecessary use of a block function body • lib/features/dashboard/presentation/pages/dashboard_page.dart:63:40 • prefer_expression_function_bodies
+   info • The local variable '__3' starts with an underscore • lib/features/dashboard/presentation/pages/dashboard_page.dart:66:34 • no_leading_underscores_for_local_identifiers
+   info • The variable name '__3' isn't a lowerCamelCase identifier • lib/features/dashboard/presentation/pages/dashboard_page.dart:66:34 • non_constant_identifier_names
+   info • The line length exceeds the 80-character limit • lib/features/dashboard/presentation/pages/dashboard_page.dart:67:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/dashboard/presentation/pages/dashboard_page.dart:68:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/dashboard/presentation/pages/dashboard_page.dart:74:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/dashboard/presentation/pages/dashboard_page.dart:76:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/dashboard/presentation/pages/dashboard_page.dart:89:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/dashboard/presentation/pages/dashboard_page.dart:122:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/dashboard/presentation/pages/dashboard_page.dart:136:76 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/dashboard/presentation/pages/dashboard_page.dart:162:73 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/dashboard/presentation/pages/dashboard_page.dart:191:32 • prefer_expression_function_bodies
+   info • Unnecessary use of a 'double' literal • lib/features/dashboard/presentation/pages/dashboard_page.dart:203:29 • prefer_int_literals
+   info • The line length exceeds the 80-character limit • lib/features/dashboard/presentation/pages/dashboard_page.dart:217:81 • lines_longer_than_80_chars
+   info • Sort directive sections alphabetically • lib/features/expenses/presentation/pages/expenses_page.dart:6:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/expenses/presentation/pages/expenses_page.dart:10:9 • use_super_parameters
+   info • Statement should be on a separate line • lib/features/expenses/presentation/pages/expenses_page.dart:48:13 • always_put_control_body_on_new_line
+   info • Unnecessary use of a block function body • lib/features/expenses/presentation/pages/expenses_page.dart:52:38 • prefer_expression_function_bodies
+   info • Closure should be a tearoff • lib/features/expenses/presentation/pages/expenses_page.dart:67:20 • unnecessary_lambdas
+   info • Unnecessary type annotation on a function expression parameter • lib/features/expenses/presentation/pages/expenses_page.dart:71:28 • avoid_types_on_closure_parameters
+   info • Constructor declarations should be before non-constructor declarations • lib/features/expenses/presentation/pages/expenses_page.dart:180:9 • sort_constructors_first
+   info • Statement should be on a separate line • lib/features/expenses/presentation/pages/expenses_page.dart:212:43 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/expenses/presentation/pages/expenses_page.dart:227:45 • always_put_control_body_on_new_line
+   info • Unnecessary duplication of receiver • lib/features/expenses/presentation/pages/expenses_page.dart:231:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/expenses/presentation/pages/expenses_page.dart:232:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/expenses/presentation/pages/expenses_page.dart:233:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/expenses/presentation/pages/expenses_page.dart:234:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/expenses/presentation/pages/expenses_page.dart:235:7 • cascade_invocations
+   info • Statement should be on a separate line • lib/features/expenses/presentation/pages/expenses_page.dart:247:18 • always_put_control_body_on_new_line
+   info • Unnecessary use of a block function body • lib/features/expenses/presentation/pages/expenses_page.dart:251:38 • prefer_expression_function_bodies
+   info • Statement should be on a separate line • lib/features/expenses/presentation/pages/expenses_page.dart:310:41 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/expenses/presentation/pages/expenses_page.dart:325:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/expenses/presentation/pages/expenses_page.dart:354:53 • prefer_expression_function_bodies
+   info • Sort directive sections alphabetically • lib/features/inventory/presentation/pages/inventory_page.dart:6:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/inventory/presentation/pages/inventory_page.dart:17:9 • use_super_parameters
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:27:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/inventory/presentation/pages/inventory_page.dart:52:35 • always_put_control_body_on_new_line
+   info • The declaration '_calculateTotalStoneCount' isn't referenced • lib/features/inventory/presentation/pages/inventory_page.dart:63:7 • unused_element
+   info • Unnecessary type annotation on a local variable • lib/features/inventory/presentation/pages/inventory_page.dart:64:5 • omit_local_variable_types
+   info • The declaration '_calculateTotalRemainingStock' isn't referenced • lib/features/inventory/presentation/pages/inventory_page.dart:72:7 • unused_element
+   info • Unnecessary type annotation on a local variable • lib/features/inventory/presentation/pages/inventory_page.dart:73:5 • omit_local_variable_types
+   info • Statement should be on a separate line • lib/features/inventory/presentation/pages/inventory_page.dart:122:27 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/inventory/presentation/pages/inventory_page.dart:153:9 • avoid_catches_without_on_clauses
+   info • The declaration '_confirm' isn't referenced • lib/features/inventory/presentation/pages/inventory_page.dart:179:16 • unused_element
+   info • Unnecessary use of a block function body • lib/features/inventory/presentation/pages/inventory_page.dart:179:37 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/inventory/presentation/pages/inventory_page.dart:201:38 • prefer_expression_function_bodies
+   info • Closure should be a tearoff • lib/features/inventory/presentation/pages/inventory_page.dart:216:20 • unnecessary_lambdas
+   info • Unnecessary type annotation on a function expression parameter • lib/features/inventory/presentation/pages/inventory_page.dart:256:34 • avoid_types_on_closure_parameters
+   info • Unnecessary type annotation on a function expression parameter • lib/features/inventory/presentation/pages/inventory_page.dart:317:36 • avoid_types_on_closure_parameters
+   info • Use 'const' with the constructor to improve performance • lib/features/inventory/presentation/pages/inventory_page.dart:358:35 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:364:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:391:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:397:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:399:81 • lines_longer_than_80_chars
+   info • Unnecessary cast • lib/features/inventory/presentation/pages/inventory_page.dart:431:37 • unnecessary_cast
+   info • Unnecessary cast • lib/features/inventory/presentation/pages/inventory_page.dart:433:37 • unnecessary_cast
+   info • Use 'const' for final variables initialized to a constant value • lib/features/inventory/presentation/pages/inventory_page.dart:435:33 • prefer_const_declarations
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:436:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:442:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:447:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:452:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:461:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:467:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:485:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/inventory/presentation/pages/inventory_page.dart:488:48 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/inventory/presentation/pages/inventory_page.dart:489:50 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/inventory/presentation/pages/inventory_page.dart:490:50 • always_put_control_body_on_new_line
+   info • Use 'const' with the constructor to improve performance • lib/features/inventory/presentation/pages/inventory_page.dart:514:31 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/inventory/presentation/pages/inventory_page.dart:602:17 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/inventory/presentation/pages/inventory_page.dart:603:26 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/inventory/presentation/pages/inventory_page.dart:605:28 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/inventory/presentation/pages/inventory_page.dart:639:34 • prefer_const_constructors
+   info • Constructor declarations should be before non-constructor declarations • lib/features/inventory/presentation/pages/inventory_page.dart:694:9 • sort_constructors_first
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:717:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:718:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:722:81 • lines_longer_than_80_chars
+warning • The value of the field '_customItemName' isn't used • lib/features/inventory/presentation/pages/inventory_page.dart:723:11 • unused_field
+   info • Statement should be on a separate line • lib/features/inventory/presentation/pages/inventory_page.dart:801:44 • always_put_control_body_on_new_line
+   info • The declaration '_getBreakdownItemOptions' isn't referenced • lib/features/inventory/presentation/pages/inventory_page.dart:818:16 • unused_element
+   info • Unnecessary use of double quotes • lib/features/inventory/presentation/pages/inventory_page.dart:819:5 • prefer_single_quotes
+   info • Unnecessary use of double quotes • lib/features/inventory/presentation/pages/inventory_page.dart:820:5 • prefer_single_quotes
+   info • Unnecessary use of double quotes • lib/features/inventory/presentation/pages/inventory_page.dart:821:5 • prefer_single_quotes
+   info • Unnecessary use of double quotes • lib/features/inventory/presentation/pages/inventory_page.dart:822:5 • prefer_single_quotes
+   info • Unnecessary use of double quotes • lib/features/inventory/presentation/pages/inventory_page.dart:823:5 • prefer_single_quotes
+   info • Unnecessary use of double quotes • lib/features/inventory/presentation/pages/inventory_page.dart:824:5 • prefer_single_quotes
+   info • Unnecessary use of double quotes • lib/features/inventory/presentation/pages/inventory_page.dart:825:5 • prefer_single_quotes
+   info • Statement should be on a separate line • lib/features/inventory/presentation/pages/inventory_page.dart:829:45 • always_put_control_body_on_new_line
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:833:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:834:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:835:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:836:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:837:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:838:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:839:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:840:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:841:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:842:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:843:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:844:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:845:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:846:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:847:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:848:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:849:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/inventory/presentation/pages/inventory_page.dart:850:7 • cascade_invocations
+   info • Statement should be on a separate line • lib/features/inventory/presentation/pages/inventory_page.dart:877:18 • always_put_control_body_on_new_line
+   info • Unnecessary use of a block function body • lib/features/inventory/presentation/pages/inventory_page.dart:1001:35 • prefer_expression_function_bodies
+   info • Use 'const' with the constructor to improve performance • lib/features/inventory/presentation/pages/inventory_page.dart:1017:17 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/inventory/presentation/pages/inventory_page.dart:1019:26 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:1032:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/inventory/presentation/pages/inventory_page.dart:1039:40 • prefer_expression_function_bodies
+   info • Use 'const' with the constructor to improve performance • lib/features/inventory/presentation/pages/inventory_page.dart:1060:34 • prefer_const_constructors
+   info • Unnecessary use of a block function body • lib/features/inventory/presentation/pages/inventory_page.dart:1089:39 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:1108:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/inventory/presentation/pages/inventory_page.dart:1133:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/inventory/presentation/pages/inventory_page.dart:1142:53 • prefer_expression_function_bodies
+   info • Sort directive sections alphabetically • lib/features/reports/presentation/pages/reports_page.dart:6:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/reports/presentation/pages/reports_page.dart:9:3 • use_super_parameters
+   info • Unnecessary use of a block function body • lib/features/reports/presentation/pages/reports_page.dart:14:38 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/reports/presentation/pages/reports_page.dart:26:35 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/reports/presentation/pages/reports_page.dart:29:43 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/reports/presentation/pages/reports_page.dart:32:51 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/reports/presentation/pages/reports_page.dart:37:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/reports/presentation/pages/reports_page.dart:160:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/reports/presentation/pages/reports_page.dart:231:81 • lines_longer_than_80_chars
+   info • Sort directive sections alphabetically • lib/features/sales/presentation/pages/sales_page.dart:5:1 • directives_ordering
+   info • The imported package 'collection' isn't a dependency of the importing package • lib/features/sales/presentation/pages/sales_page.dart:5:8 • depend_on_referenced_packages
+   info • Sort directive sections alphabetically • lib/features/sales/presentation/pages/sales_page.dart:7:1 • directives_ordering
+   info • Sort directive sections alphabetically • lib/features/sales/presentation/pages/sales_page.dart:11:1 • directives_ordering
+   info • Sort directive sections alphabetically • lib/features/sales/presentation/pages/sales_page.dart:12:1 • directives_ordering
+   info • Place 'package:' imports before relative imports • lib/features/sales/presentation/pages/sales_page.dart:13:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/sales/presentation/pages/sales_page.dart:16:9 • use_super_parameters
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:52:11 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:53:22 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:58:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/sales/presentation/pages/sales_page.dart:60:7 • avoid_catches_without_on_clauses
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/sales/presentation/pages/sales_page.dart:81:7 • avoid_catches_without_on_clauses
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/sales/presentation/pages/sales_page.dart:129:7 • avoid_catches_without_on_clauses
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/sales/presentation/pages/sales_page.dart:184:9 • avoid_catches_without_on_clauses
+   info • Unnecessary use of a block function body • lib/features/sales/presentation/pages/sales_page.dart:195:38 • prefer_expression_function_bodies
+   info • Closure should be a tearoff • lib/features/sales/presentation/pages/sales_page.dart:210:20 • unnecessary_lambdas
+   info • Unnecessary type annotation on a function expression parameter • lib/features/sales/presentation/pages/sales_page.dart:214:28 • avoid_types_on_closure_parameters
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:216:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:218:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:250:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:255:52 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:255:81 • lines_longer_than_80_chars
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:273:37 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:279:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:305:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:313:81 • lines_longer_than_80_chars
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:329:50 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:331:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:334:56 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:334:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:335:58 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:336:57 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:337:57 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:338:55 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:339:58 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:359:81 • lines_longer_than_80_chars
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:362:39 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:371:39 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:380:39 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:389:39 • prefer_const_constructors
+   info • Unnecessary use of a block function body • lib/features/sales/presentation/pages/sales_page.dart:427:64 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:456:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:505:22 • always_put_control_body_on_new_line
+   info • Missing an 'await' for the 'Future' computed by this expression • lib/features/sales/presentation/pages/sales_page.dart:570:21 • unawaited_futures
+   info • Missing an 'await' for the 'Future' computed by this expression • lib/features/sales/presentation/pages/sales_page.dart:573:21 • unawaited_futures
+   info • Missing an 'await' for the 'Future' computed by this expression • lib/features/sales/presentation/pages/sales_page.dart:576:21 • unawaited_futures
+   info • Unnecessary type annotation on a function expression parameter • lib/features/sales/presentation/pages/sales_page.dart:580:29 • avoid_types_on_closure_parameters
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:637:81 • lines_longer_than_80_chars
+   info • Constructor declarations should be before non-constructor declarations • lib/features/sales/presentation/pages/sales_page.dart:656:9 • sort_constructors_first
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:693:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:717:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:734:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a local variable • lib/features/sales/presentation/pages/sales_page.dart:752:5 • omit_local_variable_types
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:757:35 • always_put_control_body_on_new_line
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:791:45 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:844:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:856:81 • lines_longer_than_80_chars
+   info • Local variables should be final • lib/features/sales/presentation/pages/sales_page.dart:860:5 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • lib/features/sales/presentation/pages/sales_page.dart:860:5 • omit_local_variable_types
+   info • Local variables should be final • lib/features/sales/presentation/pages/sales_page.dart:861:5 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • lib/features/sales/presentation/pages/sales_page.dart:861:5 • omit_local_variable_types
+   info • Local variables should be final • lib/features/sales/presentation/pages/sales_page.dart:862:5 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • lib/features/sales/presentation/pages/sales_page.dart:862:5 • omit_local_variable_types
+   info • Local variables should be final • lib/features/sales/presentation/pages/sales_page.dart:863:5 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • lib/features/sales/presentation/pages/sales_page.dart:863:5 • omit_local_variable_types
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:895:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:896:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:897:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:898:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:899:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:900:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:901:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:902:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:903:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:904:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:905:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:906:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:907:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:908:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:909:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:910:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/sales/presentation/pages/sales_page.dart:911:7 • cascade_invocations
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:951:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:960:18 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:976:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:1031:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:1032:81 • lines_longer_than_80_chars
+   info • Unnecessary use of 'toList' in a spread • lib/features/sales/presentation/pages/sales_page.dart:1035:30 • unnecessary_to_list_in_spreads
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:1058:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:1059:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:1060:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:1086:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/sales/presentation/pages/sales_page.dart:1136:41 • always_put_control_body_on_new_line
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:1151:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:1157:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/sales/presentation/pages/sales_page.dart:1193:53 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/sales/presentation/pages/sales_page.dart:1211:33 • prefer_expression_function_bodies
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:1230:29 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:1231:27 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/sales/presentation/pages/sales_page.dart:1232:29 • prefer_const_constructors
+   info • Unnecessary use of a block function body • lib/features/sales/presentation/pages/sales_page.dart:1260:55 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/sales/presentation/pages/sales_page.dart:1268:81 • lines_longer_than_80_chars
+   info • Unnecessary use of 'toList' in a spread • lib/features/sales/presentation/pages/sales_page.dart:1279:24 • unnecessary_to_list_in_spreads
+   info • Sort directive sections alphabetically • lib/features/settings/presentation/pages/settings_page.dart:6:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/settings/presentation/pages/settings_page.dart:10:9 • use_super_parameters
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:16:81 • lines_longer_than_80_chars
+   info • Statement should be on a separate line • lib/features/settings/presentation/pages/settings_page.dart:46:45 • always_put_control_body_on_new_line
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/settings/presentation/pages/settings_page.dart:77:7 • avoid_catches_without_on_clauses
+   info • Unnecessary use of a block function body • lib/features/settings/presentation/pages/settings_page.dart:104:37 • prefer_expression_function_bodies
+   info • Use 'const' with the constructor to improve performance • lib/features/settings/presentation/pages/settings_page.dart:172:23 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/features/settings/presentation/pages/settings_page.dart:192:17 • prefer_const_constructors
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:243:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:251:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a function expression parameter • lib/features/settings/presentation/pages/settings_page.dart:325:32 • avoid_types_on_closure_parameters
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:391:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a function expression parameter • lib/features/settings/presentation/pages/settings_page.dart:464:32 • avoid_types_on_closure_parameters
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:466:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:473:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:488:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:516:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:517:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:529:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:530:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:533:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:537:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:539:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:548:81 • lines_longer_than_80_chars
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/settings/presentation/pages/settings_page.dart:551:64 • use_build_context_synchronously
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:551:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:552:81 • lines_longer_than_80_chars
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/features/settings/presentation/pages/settings_page.dart:555:41 • avoid_catches_without_on_clauses
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/settings/presentation/pages/settings_page.dart:557:64 • use_build_context_synchronously
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:557:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:558:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:569:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:579:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:580:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:589:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:590:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/settings_page.dart:591:81 • lines_longer_than_80_chars
+   info • Convert 'key' to a super parameter • lib/features/settings/presentation/pages/staff_management_page.dart:8:9 • use_super_parameters
+   info • Unnecessary use of a block function body • lib/features/settings/presentation/pages/staff_management_page.dart:26:38 • prefer_expression_function_bodies
+   info • Unnecessary use of a 'double' literal • lib/features/settings/presentation/pages/staff_management_page.dart:38:49 • prefer_int_literals
+   info • Constructor declarations should be before non-constructor declarations • lib/features/settings/presentation/pages/staff_management_page.dart:129:9 • sort_constructors_first
+   info • Convert 'key' to a super parameter • lib/features/settings/presentation/pages/staff_management_page.dart:129:9 • use_super_parameters
+   info • Required named parameters should be before optional named parameters • lib/features/settings/presentation/pages/staff_management_page.dart:131:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/features/settings/presentation/pages/staff_management_page.dart:132:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/features/settings/presentation/pages/staff_management_page.dart:133:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/features/settings/presentation/pages/staff_management_page.dart:134:19 • always_put_required_named_parameters_first
+   info • Unnecessary use of a block function body • lib/features/settings/presentation/pages/staff_management_page.dart:138:38 • prefer_expression_function_bodies
+   info • Constructor declarations should be before non-constructor declarations • lib/features/settings/presentation/pages/staff_management_page.dart:178:9 • sort_constructors_first
+   info • Convert 'key' to a super parameter • lib/features/settings/presentation/pages/staff_management_page.dart:178:9 • use_super_parameters
+   info • Required named parameters should be before optional named parameters • lib/features/settings/presentation/pages/staff_management_page.dart:181:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/features/settings/presentation/pages/staff_management_page.dart:182:19 • always_put_required_named_parameters_first
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/staff_management_page.dart:200:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/staff_management_page.dart:201:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/staff_management_page.dart:202:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/staff_management_page.dart:203:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/features/settings/presentation/pages/staff_management_page.dart:219:38 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/staff_management_page.dart:251:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • lib/features/settings/presentation/pages/staff_management_page.dart:278:81 • lines_longer_than_80_chars
+   info • Sort directive sections alphabetically • lib/features/workers/presentation/pages/workers_page.dart:6:1 • directives_ordering
+   info • Convert 'key' to a super parameter • lib/features/workers/presentation/pages/workers_page.dart:10:9 • use_super_parameters
+   info • Statement should be on a separate line • lib/features/workers/presentation/pages/workers_page.dart:47:13 • always_put_control_body_on_new_line
+   info • Unnecessary use of a block function body • lib/features/workers/presentation/pages/workers_page.dart:51:38 • prefer_expression_function_bodies
+   info • Closure should be a tearoff • lib/features/workers/presentation/pages/workers_page.dart:66:20 • unnecessary_lambdas
+   info • Unnecessary type annotation on a function expression parameter • lib/features/workers/presentation/pages/workers_page.dart:70:28 • avoid_types_on_closure_parameters
+   info • Statement should be on a separate line • lib/features/workers/presentation/pages/workers_page.dart:71:28 • always_put_control_body_on_new_line
+   info • Constructor declarations should be before non-constructor declarations • lib/features/workers/presentation/pages/workers_page.dart:172:9 • sort_constructors_first
+   info • Statement should be on a separate line • lib/features/workers/presentation/pages/workers_page.dart:208:45 • always_put_control_body_on_new_line
+   info • Unnecessary duplication of receiver • lib/features/workers/presentation/pages/workers_page.dart:212:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/workers/presentation/pages/workers_page.dart:213:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/workers/presentation/pages/workers_page.dart:214:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/workers/presentation/pages/workers_page.dart:215:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/workers/presentation/pages/workers_page.dart:216:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • lib/features/workers/presentation/pages/workers_page.dart:217:7 • cascade_invocations
+   info • Statement should be on a separate line • lib/features/workers/presentation/pages/workers_page.dart:231:18 • always_put_control_body_on_new_line
+   info • Unnecessary use of a block function body • lib/features/workers/presentation/pages/workers_page.dart:235:38 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/features/workers/presentation/pages/workers_page.dart:303:53 • prefer_expression_function_bodies
+   info • Sort directive sections alphabetically • lib/main.dart:3:1 • directives_ordering
+   info • Sort directive sections alphabetically • lib/main.dart:4:1 • directives_ordering
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/main.dart:10:5 • avoid_catches_without_on_clauses
+   info • Convert 'key' to a super parameter • lib/main.dart:17:9 • use_super_parameters
+   info • Unnecessary use of a block function body • lib/main.dart:20:38 • prefer_expression_function_bodies
+   info • Constructor declarations should be before non-constructor declarations • lib/shared/widgets/access_denied_widget.dart:6:9 • sort_constructors_first
+   info • Convert 'key' to a super parameter • lib/shared/widgets/access_denied_widget.dart:6:9 • use_super_parameters
+   info • Unnecessary use of a block function body • lib/shared/widgets/access_denied_widget.dart:12:38 • prefer_expression_function_bodies
+   info • Constructor declarations should be before non-constructor declarations • lib/shared/widgets/gemstone_breakdown_widget.dart:19:9 • sort_constructors_first
+   info • Convert 'key' to a super parameter • lib/shared/widgets/gemstone_breakdown_widget.dart:19:9 • use_super_parameters
+   info • Required named parameters should be before optional named parameters • lib/shared/widgets/gemstone_breakdown_widget.dart:21:19 • always_put_required_named_parameters_first
+   info • The variable 'part' should be final • lib/shared/widgets/gemstone_breakdown_widget.dart:44:14 • prefer_final_in_for_each
+   info • The variable 'controller' should be final • lib/shared/widgets/gemstone_breakdown_widget.dart:66:14 • prefer_final_in_for_each
+   info • The variable 'controller' should be final • lib/shared/widgets/gemstone_breakdown_widget.dart:69:14 • prefer_final_in_for_each
+   info • Unnecessary use of a block function body • lib/shared/widgets/gemstone_breakdown_widget.dart:89:38 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/shared/widgets/gemstone_breakdown_widget.dart:109:39 • prefer_expression_function_bodies
+   info • Unnecessary use of 'toList' in a spread • lib/shared/widgets/gemstone_breakdown_widget.dart:199:14 • unnecessary_to_list_in_spreads
+   info • Constructor declarations should be before non-constructor declarations • lib/shared/widgets/photo_attachment_widget.dart:11:9 • sort_constructors_first
+   info • Convert 'key' to a super parameter • lib/shared/widgets/photo_attachment_widget.dart:11:9 • use_super_parameters
+   info • Required named parameters should be before optional named parameters • lib/shared/widgets/photo_attachment_widget.dart:13:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/shared/widgets/photo_attachment_widget.dart:14:19 • always_put_required_named_parameters_first
+   info • Required named parameters should be before optional named parameters • lib/shared/widgets/photo_attachment_widget.dart:15:19 • always_put_required_named_parameters_first
+   info • Unnecessary type annotation on a local variable • lib/shared/widgets/photo_attachment_widget.dart:34:13 • omit_local_variable_types
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/shared/widgets/photo_attachment_widget.dart:41:7 • avoid_catches_without_on_clauses
+   info • Unnecessary type annotation on a local variable • lib/shared/widgets/photo_attachment_widget.dart:48:13 • omit_local_variable_types
+   info • Catch clause needs to use 'on' to specify the type of exception being caught • lib/shared/widgets/photo_attachment_widget.dart:55:7 • avoid_catches_without_on_clauses
+   info • Unnecessary type annotation on a local variable • lib/shared/widgets/photo_attachment_widget.dart:61:11 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/shared/widgets/photo_attachment_widget.dart:62:11 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • lib/shared/widgets/photo_attachment_widget.dart:102:11 • omit_local_variable_types
+   info • Unnecessary use of a block function body • lib/shared/widgets/photo_attachment_widget.dart:137:38 • prefer_expression_function_bodies
+   info • Use 'const' with the constructor to improve performance • lib/shared/widgets/photo_attachment_widget.dart:148:24 • prefer_const_constructors
+   info • 'textScaleFactor' is deprecated and shouldn't be used. Use textScaler instead. Use of textScaleFactor was deprecated in preparation for the upcoming nonlinear text scaling support. This feature was deprecated after v3.12.0-2.0.pre • lib/shared/widgets/photo_attachment_widget.dart:154:19 • deprecated_member_use
+   info • Unnecessary use of a 'double' literal • lib/shared/widgets/photo_attachment_widget.dart:154:36 • prefer_int_literals
+   info • Use 'const' with the constructor to improve performance • lib/shared/widgets/photo_attachment_widget.dart:163:24 • prefer_const_constructors
+   info • 'textScaleFactor' is deprecated and shouldn't be used. Use textScaler instead. Use of textScaleFactor was deprecated in preparation for the upcoming nonlinear text scaling support. This feature was deprecated after v3.12.0-2.0.pre • lib/shared/widgets/photo_attachment_widget.dart:169:19 • deprecated_member_use
+   info • Unnecessary use of a 'double' literal • lib/shared/widgets/photo_attachment_widget.dart:169:36 • prefer_int_literals
+   info • 'textScaleFactor' is deprecated and shouldn't be used. Use textScaler instead. Use of textScaleFactor was deprecated in preparation for the upcoming nonlinear text scaling support. This feature was deprecated after v3.12.0-2.0.pre • lib/shared/widgets/photo_attachment_widget.dart:189:17 • deprecated_member_use
+   info • Unnecessary use of a 'double' literal • lib/shared/widgets/photo_attachment_widget.dart:189:34 • prefer_int_literals
+   info • Statement should be on a separate line • lib/shared/widgets/photo_attachment_widget.dart:201:39 • always_put_control_body_on_new_line
+warning • Unused import: '../../core/theme/app_theme.dart' • lib/shared/widgets/photo_viewer.dart:3:8 • unused_import
+   info • Constructor declarations should be before non-constructor declarations • lib/shared/widgets/photo_viewer.dart:9:9 • sort_constructors_first
+   info • Convert 'key' to a super parameter • lib/shared/widgets/photo_viewer.dart:9:9 • use_super_parameters
+   info • Required named parameters should be before optional named parameters • lib/shared/widgets/photo_viewer.dart:11:19 • always_put_required_named_parameters_first
+   info • The line length exceeds the 80-character limit • lib/shared/widgets/photo_viewer.dart:53:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a block function body • lib/shared/widgets/photo_viewer.dart:68:52 • prefer_expression_function_bodies
+   info • Unnecessary use of a block function body • lib/shared/widgets/photo_viewer.dart:89:52 • prefer_expression_function_bodies
+   info • The line length exceeds the 80-character limit • lib/shared/widgets/photo_viewer.dart:124:81 • lines_longer_than_80_chars
+   info • Unnecessary use of a 'double' literal • lib/shared/widgets/photo_viewer.dart:147:43 • prefer_int_literals
+   info • Unnecessary use of a 'double' literal • lib/shared/widgets/photo_viewer.dart:168:23 • prefer_int_literals
+   info • Unnecessary use of a 'double' literal • lib/shared/widgets/photo_viewer.dart:169:23 • prefer_int_literals
+   info • Unsorted dependencies • pubspec.yaml:23:3 • sort_pub_dependencies
+   info • Unsorted dependencies • pubspec.yaml:43:3 • sort_pub_dependencies
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:16:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:16:38 • prefer_int_literals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:17:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:17:40 • prefer_int_literals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:18:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:18:39 • prefer_int_literals
+   info • Use 'const' for final variables initialized to a constant value • test/broker_consignment_edge_case_test.dart:21:7 • prefer_const_declarations
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:24:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:24:7 • omit_local_variable_types
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:30:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:30:7 • omit_local_variable_types
+   info • The line length exceeds the 80-character limit • test/broker_consignment_edge_case_test.dart:30:81 • lines_longer_than_80_chars
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:36:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:36:7 • omit_local_variable_types
+   info • The line length exceeds the 80-character limit • test/broker_consignment_edge_case_test.dart:40:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:57:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:57:38 • prefer_int_literals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:58:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:58:40 • prefer_int_literals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:59:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:59:39 • prefer_int_literals
+   info • Use 'const' for final variables initialized to a constant value • test/broker_consignment_edge_case_test.dart:61:7 • prefer_const_declarations
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:63:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:63:7 • omit_local_variable_types
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:67:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:67:7 • omit_local_variable_types
+   info • The line length exceeds the 80-character limit • test/broker_consignment_edge_case_test.dart:67:81 • lines_longer_than_80_chars
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:78:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:78:38 • prefer_int_literals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:79:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:79:40 • prefer_int_literals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:80:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:80:39 • prefer_int_literals
+   info • Use 'const' for final variables initialized to a constant value • test/broker_consignment_edge_case_test.dart:82:7 • prefer_const_declarations
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:84:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:84:7 • omit_local_variable_types
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:87:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:87:7 • omit_local_variable_types
+   info • The line length exceeds the 80-character limit • test/broker_consignment_edge_case_test.dart:87:81 • lines_longer_than_80_chars
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:93:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:93:7 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:106:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:106:38 • prefer_int_literals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:107:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:107:40 • prefer_int_literals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:109:7 • omit_local_variable_types
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:120:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:120:7 • omit_local_variable_types
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:124:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:124:7 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:138:13 • omit_local_variable_types
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:139:13 • omit_local_variable_types
+warning • The value of the local variable 'initialQuantity' isn't used • test/broker_consignment_edge_case_test.dart:139:20 • unused_local_variable
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:139:38 • prefer_int_literals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:140:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:140:40 • prefer_int_literals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:141:13 • omit_local_variable_types
+   info • Unnecessary use of a 'double' literal • test/broker_consignment_edge_case_test.dart:141:39 • prefer_int_literals
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:144:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:144:7 • omit_local_variable_types
+   info • The line length exceeds the 80-character limit • test/broker_consignment_edge_case_test.dart:151:81 • lines_longer_than_80_chars
+   info • The line length exceeds the 80-character limit • test/broker_consignment_edge_case_test.dart:155:81 • lines_longer_than_80_chars
+   info • Local variables should be final • test/broker_consignment_edge_case_test.dart:159:7 • prefer_final_locals
+   info • Unnecessary type annotation on a local variable • test/broker_consignment_edge_case_test.dart:159:7 • omit_local_variable_types
+   info • The line length exceeds the 80-character limit • test/broker_consignment_edge_case_test.dart:160:81 • lines_longer_than_80_chars
+   info • Sort directive sections alphabetically • test/super_admin_permission_test.dart:5:1 • directives_ordering
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:35:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:36:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:37:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:38:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:39:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:40:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:41:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:48:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:49:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:55:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:56:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:62:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:63:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:71:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:72:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:73:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:74:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:75:7 • cascade_invocations
+   info • Unnecessary duplication of receiver • test/super_admin_permission_test.dart:76:7 • cascade_invocations
+   info • Unnecessary type annotation on a function expression parameter • test/widget_test.dart:7:47 • avoid_types_on_closure_parameters
+
+1222 issues found. (ran in 18.1s)

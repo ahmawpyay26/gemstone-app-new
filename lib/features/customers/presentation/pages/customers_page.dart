@@ -884,3 +884,4 @@ class _CustomerLedgerDialogState extends State<_CustomerLedgerDialog> {
       ),
     );
   }
+}

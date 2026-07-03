@@ -1274,7 +1274,7 @@ class LocalDb {
 
   /// Apply customer ledger impact when a sale is created or edited
   static Future<void> applySaleCustomerLedger(Sale sale, {Sale? oldSale}) async {
-    if (sale.customerId.isEmpty) return;
+    if (sale.customerId == null || sale.customerId.isEmpty) return;
     final customer = getCustomer(sale.customerId);
     if (customer == null || customer.isDeleted) return;
     if (sale.isDeleted) return;
@@ -1299,6 +1299,7 @@ class LocalDb {
         creditAmount: 0,
         balanceAfter: customer.currentBalance,
         note: 'အရောင်း: ${sale.gemstoneName}',
+        createdAt: DateTime.now().millisecondsSinceEpoch,
       );
       await addLedgerEntry(ledgerEntry);
     } else {
@@ -1312,6 +1313,7 @@ class LocalDb {
         creditAmount: sale.amount,
         balanceAfter: customer.currentBalance,
         note: 'အရောင်း (${sale.paymentMethod}): ${sale.gemstoneName}',
+        createdAt: DateTime.now().millisecondsSinceEpoch,
       );
       await addLedgerEntry(ledgerEntry);
     }
@@ -1320,7 +1322,7 @@ class LocalDb {
 
   /// Reverse customer ledger impact when a sale is deleted
   static Future<void> reverseSaleCustomerLedger(Sale sale) async {
-    if (sale.customerId.isEmpty) return;
+    if (sale.customerId == null || sale.customerId.isEmpty) return;
     final customer = getCustomer(sale.customerId);
     if (customer == null) return;
     if (sale.paymentMethod == 'credit') {
@@ -1336,6 +1338,7 @@ class LocalDb {
       creditAmount: sale.amount,
       balanceAfter: customer.currentBalance,
       note: 'အရောင်းမှတ်တမ်း ပယ်ဖျက်ခြင်း: ${sale.gemstoneName}',
+      createdAt: DateTime.now().millisecondsSinceEpoch,
     );
     await addLedgerEntry(reversalEntry);
     await updateCustomer(customer);
