@@ -282,7 +282,8 @@ class Sale {
   String id;
   String gemstoneId; // ဆက်စပ်ကျောက်မျက် id (ဗလာဖြစ်နိုင်)
   String gemstoneName; // ရောင်းသည့်ကျောက်
-  String customerName; // ဝယ်သူအမည်
+  String? customerId; // ဖောက်သည် ID (Customer Master reference)
+  String customerName; // ဝယ်သူအမည် (backward compatibility)
   double amount; // ရောင်းရငွေ (gross revenue)
   double costPrice; // ရောင်းသည့်ပစ္စည်း ၏ စုစုပေါင်းအရင်း (cost of goods sold)
   double commissionFee; // ပွဲခ (ရောင်းစဉ် ပေးရသည့်ပွဲခ)
@@ -312,6 +313,7 @@ class Sale {
     required this.id,
     this.gemstoneId = '',
     required this.gemstoneName,
+    this.customerId,
     required this.customerName,
     required this.amount,
     this.costPrice = 0,
@@ -347,6 +349,7 @@ class SaleAdapter extends TypeAdapter<Sale> {
     return Sale(
       id: fields[0] as String,
       gemstoneName: fields[1] as String,
+      customerId: fields[22] as String?,
       customerName: fields[2] as String,
       amount: (fields[3] as num).toDouble(),
       quantity: fields[4] as int,
@@ -374,7 +377,7 @@ class SaleAdapter extends TypeAdapter<Sale> {
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(22)
+      ..writeByte(23)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -418,7 +421,9 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(20)
       ..write(obj.deleteReason)
       ..writeByte(21)
-      ..write(obj.photoPaths);
+      ..write(obj.photoPaths)
+      ..writeByte(22)
+      ..write(obj.customerId);
   }
 }
 

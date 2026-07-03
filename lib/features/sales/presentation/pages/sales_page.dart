@@ -304,7 +304,8 @@ class _SalesPageState extends State<SalesPage> {
                                       '${s.weightCarat > 0 ? ' • ${s.weightCarat} ${_saleUnit(s)}' : ''}',
                                       style:
                                           TextStyle(color: Colors.grey[400])),
-                                  Text('ဝယ်သူ: ${s.customerName}',
+                                  Text(
+                                      'ဝယ်သူ: ${_getCustomerName(s)}',
                                       style:
                                           TextStyle(color: Colors.grey[400])),
                                   Text(
@@ -505,6 +506,16 @@ class _SalesPageState extends State<SalesPage> {
     return '';
   }
 
+  String _getCustomerName(Sale sale) {
+    if (sale.customerId != null && sale.customerId!.isNotEmpty) {
+      final customer = LocalDb.customers().get(sale.customerId);
+      if (customer != null) {
+        return customer.name;
+      }
+    }
+    return sale.customerName;
+  }
+
   String _payLabel(String m) {
     switch (m) {
       case 'bank':
@@ -619,7 +630,7 @@ class _SalesPageState extends State<SalesPage> {
               Text('အရေအတွက်: ${sale.quantity}'),
               if (sale.weightCarat > 0)
                 Text('အလေးချိန်: ${sale.weightCarat} ${_saleUnit(sale)}'),
-              Text('ဝယ်သူ: ${sale.customerName}'),
+              Text('ဝယ်သူ: ${_getCustomerName(sale)}'),
               Text('ငွေပမာဏ: ${_money.format(sale.amount)}'),
               Text('ငွေပေးချေမှု: ${_payLabel(sale.paymentMethod)}'),
               Text('နေ့စွဲ: ${_date.format(DateTime.fromMillisecondsSinceEpoch(sale.saleDate))}'),
@@ -650,6 +661,7 @@ class _SaleForm extends StatefulWidget {
 class _SaleFormState extends State<_SaleForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _customer;
+  String? _selectedCustomerId; // Customer Master ID
   late final TextEditingController _amount;
   late final TextEditingController _qty;
   late final TextEditingController _weight;
@@ -671,6 +683,7 @@ class _SaleFormState extends State<_SaleForm> {
     super.initState();
     final e = widget.existing;
     _photoPaths = List.from(e?.photoPaths ?? []);
+    _selectedCustomerId = e?.customerId;
     _customer = TextEditingController(text: e?.customerName ?? '');
     _amount =
         TextEditingController(text: e != null ? _trim(e.amount) : '');
@@ -855,6 +868,7 @@ class _SaleFormState extends State<_SaleForm> {
       
       s.gemstoneId = gemId;
       s.gemstoneName = name;
+      s.customerId = _selectedCustomerId;
       s.customerName = _customer.text.trim();
       s.amount = amount;
       s.costPrice = cost;
@@ -881,6 +895,7 @@ class _SaleFormState extends State<_SaleForm> {
         id: LocalDb.genId(),
         gemstoneId: gemId,
         gemstoneName: name,
+        customerId: _selectedCustomerId,
         customerName: _customer.text.trim(),
         amount: amount,
         costPrice: cost,
@@ -1025,7 +1040,7 @@ class _SaleFormState extends State<_SaleForm> {
                 // Manual name (editable; auto-filled when a gem is selected)
                 _field(_manualName, 'ကျောက်မျက်အမည်', required: true),
 
-                _field(_customer, 'ဝယ်သူအမည်'),
+                _buildCustomerPicker(),
                 Row(children: [
                   Expanded(
                       child: _field(_amount, 'ရောင်းရငွေ (ကျပ်)',
@@ -1157,8 +1172,87 @@ class _SaleFormState extends State<_SaleForm> {
         decoration: InputDecoration(labelText: label),
         onChanged: (_) => setState(() {}),
         validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'ဖြည့်ပါ' : null
+            ? (v) => (v == null || v.trim().isEmpty) ? 'ဖဳစ်ပာ' : null
             : null,
+      ),
+    );
+  }
+
+  Widget _buildCustomerPicker() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: ValueListenableBuilder<Box<Customer>>(
+        valueListenable: LocalDb.customers().listenable(),
+        builder: (context, box, _) {
+          final activeCustomers = box.values
+              .where((c) => !c.isDeleted && c.status == 'active')
+              .toList();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'ဖောက်သည် *',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Colors.white24),
+                  ),
+                ),
+                child: DropdownButton<String?>(
+                  isExpanded: true,
+                  value: _selectedCustomerId,
+                  dropdownColor: Colors.grey[900],
+                  style: const TextStyle(color: Colors.white),
+                  underline: const SizedBox(),
+                  hint: const Text('ဖောက်သည်အချက်အလက်'),
+                  onChanged: (customerId) {
+                    setState(() {
+                      _selectedCustomerId = customerId;
+                      if (customerId != null) {
+                        final customer = activeCustomers.firstWhereOrNull(
+                          (c) => c.id == customerId,
+                        );
+                        if (customer != null) {
+                          _customer.text = customer.name;
+                        }
+                      }
+                    });
+                  },
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('ဖောက်သည်အချက်အလက်'),
+                    ),
+                    ...activeCustomers.map((customer) {
+                      return DropdownMenuItem<String>(
+                        value: customer.id,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(customer.name),
+                            if (customer.phone != null && customer.phone!.isNotEmpty)
+                              Text(
+                                customer.phone!,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
