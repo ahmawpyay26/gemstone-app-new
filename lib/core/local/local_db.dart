@@ -1415,7 +1415,10 @@ class LocalDb {
     }
 
     // Restore quantity to purchase based on original source type
-    final purchase = gemstones.get(broker.purchaseId);
+    final purchase = gemstones.values.firstWhere(
+      (g) => g.id == broker.purchaseId,
+      orElse: () => null,
+    );
     if (purchase != null) {
       // Check if this was a breakdown item consignment
       if (broker.historicalData.sourceType == 'breakdown_item') {
@@ -1461,7 +1464,10 @@ class LocalDb {
 
     // Restore all quantities to purchase
     final remainingToRestore = broker.consignedQuantity - broker.returnedQuantity;
-    final purchase = gemstones.get(broker.purchaseId);
+    final purchase = gemstones.values.firstWhere(
+      (g) => g.id == broker.purchaseId,
+      orElse: () => null,
+    );
     if (purchase != null) {
       // Check if this is a breakdown item consignment
       if (broker.historicalData.sourceType == 'breakdown_item') {
