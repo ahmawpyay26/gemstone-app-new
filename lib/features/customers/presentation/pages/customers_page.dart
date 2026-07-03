@@ -411,8 +411,6 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
       ],
     );
   }
-}
-
 
   void _showPaymentDialog(BuildContext context, Customer customer) {
     showDialog(
@@ -437,7 +435,6 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
       builder: (context) => _CustomerLedgerDialog(customer: customer),
     );
   }
-}
 
 // ============================================================================
 // Payment Form Dialog
