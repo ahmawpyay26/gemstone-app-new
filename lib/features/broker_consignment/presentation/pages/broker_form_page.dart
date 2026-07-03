@@ -258,10 +258,18 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       // TODO: Refactor to use new multi-item model in future steps
       
       for (final item in _confirmedItems) {
-        if (item.gemstone == null) continue;
+        // Determine purchaseId based on sourceType
+        String purchaseId;
+        if (item.sourceType == 'whole_stone') {
+          if (item.gemstone == null) continue; // Skip invalid whole stone items
+          purchaseId = item.gemstone!.id;
+        } else {
+          if (item.selectedPurchase == null) continue; // Skip invalid breakdown items
+          purchaseId = item.selectedPurchase!.id;
+        }
         
         await LocalDb.createBrokerConsignment(
-          purchaseId: item.gemstone!.id,
+          purchaseId: purchaseId,
           consignedQuantity: item.consignedQuantity,
           sourceType: item.sourceType,
           breakdownItemName: item.selectedBreakdownItem,
