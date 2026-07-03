@@ -412,3 +412,477 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
     );
   }
 }
+
+
+  void _showPaymentDialog(BuildContext context, Customer customer) {
+    showDialog(
+      context: context,
+      builder: (context) => _PaymentFormDialog(
+        customer: customer,
+        onSave: (payment) {
+          LocalDb.recordPayment(payment);
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ငွေပေးချေမှုမှတ်တမ်းတင်ပြီးပါပြီ')),
+          );
+          setState(() {});
+        },
+      ),
+    );
+  }
+
+  void _showLedgerDialog(BuildContext context, Customer customer) {
+    showDialog(
+      context: context,
+      builder: (context) => _CustomerLedgerDialog(customer: customer),
+    );
+  }
+}
+
+// ============================================================================
+// Payment Form Dialog
+// ============================================================================
+class _PaymentFormDialog extends StatefulWidget {
+  final Customer customer;
+  final Function(Payment) onSave;
+
+  const _PaymentFormDialog({
+    required this.customer,
+    required this.onSave,
+  });
+
+  @override
+  State<_PaymentFormDialog> createState() => _PaymentFormDialogState();
+}
+
+class _PaymentFormDialogState extends State<_PaymentFormDialog> {
+  late final NumberFormat _money;
+  final _amountController = TextEditingController();
+  final _referenceController = TextEditingController();
+  final _noteController = TextEditingController();
+  late DateTime _paymentDate;
+  String _method = 'cash';
+  late final NumberFormat _currencyFormat;
+
+  @override
+  void initState() {
+    super.initState();
+    _money = NumberFormat('#,##0', 'my_MM');
+    _currencyFormat = NumberFormat('#,##0.00', 'my_MM');
+    _paymentDate = DateTime.now();
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _referenceController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('ငွေပေးချေမှု ထည့်သွင်း'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Customer info
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ဖောက်သည်: ${widget.customer.name}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'လက်ရှိကြွေးမြတ်: ${_money.format(widget.customer.currentBalance)}',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Payment date
+            Text(
+              'ငွေပေးချေမှုရက်စွဲ',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _paymentDate,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now(),
+                );
+                if (picked != null) {
+                  setState(() => _paymentDate = picked);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 20),
+                    const SizedBox(width: 8),
+                    Text(DateFormat('dd/MM/yyyy').format(_paymentDate)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Amount
+            Text(
+              'ငွေပေးချေမှုပမာဏ',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _amountController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'ပမာဏထည့်သွင်းပါ',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Payment method
+            Text(
+              'ငွေပေးချေမှုနည်းလမ်း',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: _method,
+              items: const [
+                DropdownMenuItem(value: 'cash', child: Text('ငွေသားငွေ')),
+                DropdownMenuItem(value: 'bank', child: Text('ဘဏ်')),
+              ],
+              onChanged: (value) => setState(() => _method = value ?? 'cash'),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Reference number
+            Text(
+              'ကိုးကားအမှတ်',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _referenceController,
+              decoration: InputDecoration(
+                hintText: 'ကိုးကားအမှတ် (ရွေးချယ်)',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Note
+            Text(
+              'မှတ်ချက်',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _noteController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'မှတ်ချက် (ရွေးချယ်)',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('ပယ်ဖျက်'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final amount = double.tryParse(_amountController.text);
+            if (amount == null || amount <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('ပမာဏ ၀ より大きい ဖြစ်ရမည်')),
+              );
+              return;
+            }
+            if (amount > widget.customer.currentBalance) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('ပမာဏသည် လက်ရှိကြွေးမြတ်ထက် မကြီးရမည်')),
+              );
+              return;
+            }
+
+            final payment = Payment(
+              id: const Uuid().v4(),
+              customerId: widget.customer.id,
+              paymentDate: _paymentDate.millisecondsSinceEpoch,
+              amount: amount,
+              method: _method,
+              referenceNo: _referenceController.text.isEmpty
+                  ? null
+                  : _referenceController.text,
+              note: _noteController.text.isEmpty ? null : _noteController.text,
+              createdAt: DateTime.now().millisecondsSinceEpoch,
+            );
+            widget.onSave(payment);
+          },
+          child: const Text('သိမ်းဆည်း'),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// Customer Ledger Dialog
+// ============================================================================
+class _CustomerLedgerDialog extends StatefulWidget {
+  final Customer customer;
+
+  const _CustomerLedgerDialog({required this.customer});
+
+  @override
+  State<_CustomerLedgerDialog> createState() => _CustomerLedgerDialogState();
+}
+
+class _CustomerLedgerDialogState extends State<_CustomerLedgerDialog> {
+  late final NumberFormat _money;
+
+  @override
+  void initState() {
+    super.initState();
+    _money = NumberFormat('#,##0', 'my_MM');
+  }
+
+  String _getTransactionTypeLabel(String type) {
+    switch (type) {
+      case 'sale':
+        return 'ရောင်းချမှု';
+      case 'payment':
+        return 'ငွေပေးချေမှု';
+      case 'adjustment':
+        return 'ညှိနှိုင်းခြင်း';
+      case 'refund':
+        return 'ပြန်အမ်းခြင်း';
+      default:
+        return type;
+    }
+  }
+
+  String _getPaymentMethodLabel(String method) {
+    switch (method) {
+      case 'cash':
+        return 'ငွေသားငွေ';
+      case 'bank':
+        return 'ဘဏ်';
+      case 'credit':
+        return 'အကြွေး';
+      default:
+        return method;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ledgerEntries = LocalDb.getCustomerLedger(widget.customer.id);
+    final payments = LocalDb.getCustomerPayments(widget.customer.id);
+
+    return AlertDialog(
+      title: const Text('ဖောက်သည်စာရင်း'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Customer info header
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ဖောက်သည်: ${widget.customer.name}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'လက်ရှိကြွေးမြတ်',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            ),
+                            Text(
+                              _money.format(widget.customer.currentBalance),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'အကြွေးကန့်သတ်',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            ),
+                            Text(
+                              _money.format(widget.customer.creditLimit),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Ledger entries
+            if (ledgerEntries.isEmpty && payments.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'စာရင်းမှတ်တမ်းမရှိသေးပါ',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                )
+              )
+            else
+              Column(
+                children: [
+                  Text(
+                    'ငွေပေးချေမှုမှတ်တမ်း',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                  ),
+                  const SizedBox(height: 8),
+                  ...payments.map((payment) => _buildPaymentRow(payment)),
+                  if (ledgerEntries.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'အခြားစာရင်းမှတ်တမ်း',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                    ),
+                    const SizedBox(height: 8),
+                    ...ledgerEntries
+                        .where((e) => e.type != 'payment')
+                        .map((entry) => _buildLedgerRow(entry)),
+                  ],
+                ],
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('ပိတ်မည်'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentRow(Payment payment) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: [
+            Icon(Icons.payment, size: 20, color: Colors.green),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ငွေပေးချေမှု - ${_getPaymentMethodLabel(payment.method)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                  Text(
+                    DateFormat('dd/MM/yyyy').format(
+                      DateTime.fromMillisecondsSinceEpoch(payment.paymentDate),
+                    ),
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              _money.format(payment.amount),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLedgerRow(CustomerLedger entry) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: [
+            Icon(
+              entry.type == 'sale' ? Icons.shopping_cart : Icons.edit,
+              size: 20,
+              color: entry.debitAmount > 0 ? Colors.red : Colors.green,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _getTransactionTypeLabel(entry.type),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                  Text(
+                    DateFormat('dd/MM/yyyy').format(
+                      DateTime.fromMillisecondsSinceEpoch(entry.date),
+                    ),
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (entry.debitAmount > 0)
+                  Text(
+                    _money.format(entry.debitAmount),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                  ),
+                if (entry.creditAmount > 0)
+                  Text(
+                    _money.format(entry.creditAmount),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
