@@ -1336,6 +1336,8 @@ class LocalDb {
     }
     // Update the original Gemstone record using the helper method
     await _updateGemstoneByPurchaseId(purchaseId, purchase);
+    // Recalculate ledger after inventory change
+    await updateGemstoneProductLedger(purchaseId);
 
     // Save broker consignment
     await brokers.put(brokerConsignment.id, brokerConsignment);
@@ -1431,6 +1433,8 @@ class LocalDb {
         purchase.remainingQuantity += returnedQuantity.toInt();
       }
       await _updateGemstoneByPurchaseId(broker.purchaseId, purchase);
+      // Recalculate ledger after inventory change
+      await updateGemstoneProductLedger(broker.purchaseId);
     }
 
     broker.returnedQuantity = returnedQuantity;
@@ -1479,6 +1483,8 @@ class LocalDb {
         purchase.remainingQuantity += remainingToRestore.toInt();
       }
       await _updateGemstoneByPurchaseId(broker.purchaseId, purchase);
+      // Recalculate ledger after inventory change
+      await updateGemstoneProductLedger(broker.purchaseId);
     }
 
     // Soft delete
@@ -1575,6 +1581,8 @@ class LocalDb {
         
         // Save updated purchase record
         await _updateGemstoneByPurchaseId(bc.purchaseId, purchase);
+        // Recalculate ledger after cost recovery
+        await updateGemstoneProductLedger(bc.purchaseId);
         
         // Calculate cost recovery details for audit log
         final costRecovered = purchase.recoveredCost - previousRecoveredCost;
@@ -1639,6 +1647,8 @@ class LocalDb {
     }
     // Update the original Gemstone record using the helper method
     await _updateGemstoneByPurchaseId(bc.purchaseId, purchase);
+    // Recalculate ledger after inventory change
+    await updateGemstoneProductLedger(bc.purchaseId);
 
     // Create audit log
     final currentUser = LocalDb.currentUser();
