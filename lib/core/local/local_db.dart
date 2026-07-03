@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../services/password_service.dart';
@@ -1415,9 +1416,8 @@ class LocalDb {
     }
 
     // Restore quantity to purchase based on original source type
-    final purchase = gemstones.values.firstWhere(
+    final purchase = gemstones.values.firstWhereOrNull(
       (g) => g.id == broker.purchaseId,
-      orElse: () => null,
     );
     if (purchase != null) {
       // Check if this was a breakdown item consignment
@@ -1464,9 +1464,8 @@ class LocalDb {
 
     // Restore all quantities to purchase
     final remainingToRestore = broker.consignedQuantity - broker.returnedQuantity;
-    final purchase = gemstones.values.firstWhere(
+    final purchase = gemstones.values.firstWhereOrNull(
       (g) => g.id == broker.purchaseId,
-      orElse: () => null,
     );
     if (purchase != null) {
       // Check if this is a breakdown item consignment
