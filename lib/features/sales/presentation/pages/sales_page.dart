@@ -864,7 +864,31 @@ class _SaleFormState extends State<_SaleForm> {
 
     if (_isEdit) {
       final s = widget.existing!;
-      // BUG #1 FIX: Capture old gemstoneId before modification
+      final oldSale = Sale(
+        id: s.id,
+        gemstoneId: s.gemstoneId,
+        gemstoneName: s.gemstoneName,
+        customerId: s.customerId,
+        customerName: s.customerName,
+        amount: s.amount,
+        costPrice: s.costPrice,
+        commissionFee: s.commissionFee,
+        quantity: s.quantity,
+        weightCarat: s.weightCarat,
+        paymentMethod: s.paymentMethod,
+        note: s.note,
+        saleDate: s.saleDate,
+        netSale: s.netSale,
+        costUsed: s.costUsed,
+        profitGenerated: s.profitGenerated,
+        remainingCostAfterSale: s.remainingCostAfterSale,
+        accumulatedProfit: s.accumulatedProfit,
+        photoPaths: s.photoPaths,
+        isDeleted: s.isDeleted,
+        deletedAt: s.deletedAt,
+        deletedBy: s.deletedBy,
+        deleteReason: s.deleteReason,
+      );
       final oldGemstoneId = s.gemstoneId;
       
       s.gemstoneId = gemId;
@@ -887,12 +911,15 @@ class _SaleFormState extends State<_SaleForm> {
       s.photoPaths = _photoPaths;
       await box.put(widget.hiveKey, s);
       
+      // Apply customer ledger impact for edit
+      await LocalDb.applySaleCustomerLedger(s, oldSale: oldSale);
+      
       // BUG #1 FIX: Recalculate ledger for old gemstone if it changed
       if (oldGemstoneId.isNotEmpty && oldGemstoneId != gemId) {
         await LocalDb.updateGemstoneProductLedger(oldGemstoneId);
       }
     } else {
-      await box.add(Sale(
+      final newSale = Sale(
         id: LocalDb.genId(),
         gemstoneId: gemId,
         gemstoneName: name,
@@ -912,7 +939,9 @@ class _SaleFormState extends State<_SaleForm> {
         profitGenerated: profitGenerated,
         accumulatedProfit: accumulatedProfit,
         photoPaths: _photoPaths,
-      ));
+      );
+      await box.add(newSale);
+      await LocalDb.applySaleCustomerLedger(newSale);
     }
     
     // Apply cost recovery logic to the purchase record

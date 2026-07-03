@@ -1269,6 +1269,79 @@ class LocalDb {
   }
 
   // ---------------------------------------------------------------------------
+  // Sale-Customer Ledger Integration
+  // ---------------------------------------------------------------------------
+
+  /// Apply customer ledger impact when a sale is created or edited
+  static Future<void> applySaleCustomerLedger(Sale sale, {Sale? oldSale}) async {
+    if (sale.customerId.isEmpty) return;
+    final customer = getCustomer(sale.customerId);
+    if (customer == null || customer.isDeleted) return;
+    if (sale.isDeleted) return;
+
+    // If editing, reverse the old sale impact first
+    if (oldSale != null && oldSale.customerId == sale.customerId) {
+      if (oldSale.paymentMethod == 'credit') {
+        customer.currentBalance -= oldSale.amount;
+      }
+    }
+
+    // Apply new sale impact
+    if (sale.paymentMethod == 'credit') {
+      customer.currentBalance += sale.amount;
+      final ledgerEntry = CustomerLedger(
+        id: const Uuid().v4(),
+        customerId: sale.customerId,
+        type: 'sale',
+        referenceId: sale.id,
+        date: sale.saleDate,
+        debitAmount: sale.amount,
+        creditAmount: 0,
+        balanceAfter: customer.currentBalance,
+        note: 'အရောင်း: ${sale.gemstoneName}',
+      );
+      await addLedgerEntry(ledgerEntry);
+    } else {
+      final ledgerEntry = CustomerLedger(
+        id: const Uuid().v4(),
+        customerId: sale.customerId,
+        type: 'sale',
+        referenceId: sale.id,
+        date: sale.saleDate,
+        debitAmount: 0,
+        creditAmount: sale.amount,
+        balanceAfter: customer.currentBalance,
+        note: 'အရောင်း (${sale.paymentMethod}): ${sale.gemstoneName}',
+      );
+      await addLedgerEntry(ledgerEntry);
+    }
+    await updateCustomer(customer);
+  }
+
+  /// Reverse customer ledger impact when a sale is deleted
+  static Future<void> reverseSaleCustomerLedger(Sale sale) async {
+    if (sale.customerId.isEmpty) return;
+    final customer = getCustomer(sale.customerId);
+    if (customer == null) return;
+    if (sale.paymentMethod == 'credit') {
+      customer.currentBalance -= sale.amount;
+    }
+    final reversalEntry = CustomerLedger(
+      id: const Uuid().v4(),
+      customerId: sale.customerId,
+      type: 'adjustment',
+      referenceId: sale.id,
+      date: DateTime.now().millisecondsSinceEpoch,
+      debitAmount: 0,
+      creditAmount: sale.amount,
+      balanceAfter: customer.currentBalance,
+      note: 'အရောင်းမှတ်တမ်း ပယ်ဖျက်ခြင်း: ${sale.gemstoneName}',
+    );
+    await addLedgerEntry(reversalEntry);
+    await updateCustomer(customer);
+  }
+
+  // ---------------------------------------------------------------------------
   // Soft Delete & Restore Sale
   // ---------------------------------------------------------------------------
 
@@ -1288,6 +1361,9 @@ class LocalDb {
       sale.deleteReason = deleteReason;
 
       await sales().put(saleKey, sale);
+
+      // Reverse customer ledger impact
+      await reverseSaleCustomerLedger(sale);
 
       // Recalculate gemstone ledger (removes sale from calculations)
       if (sale.gemstoneId.isNotEmpty) {
@@ -1335,6 +1411,9 @@ class LocalDb {
       sale.deleteReason = null;
 
       await sales().put(saleKey, sale);
+
+      // Reapply customer ledger impact
+      await applySaleCustomerLedger(sale);
 
       // Recalculate gemstone ledger (adds sale back to calculations)
       if (sale.gemstoneId.isNotEmpty) {
