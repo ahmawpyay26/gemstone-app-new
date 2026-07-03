@@ -206,6 +206,30 @@ class _CustomersPageState extends State<CustomersPage> {
       ),
     );
   }
+
+  void _showPaymentDialog(BuildContext context, Customer customer) {
+    showDialog(
+      context: context,
+      builder: (context) => _PaymentFormDialog(
+        customer: customer,
+        onSave: (payment) {
+          LocalDb.recordPayment(payment);
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ငွေပေးချေမှုမှတ်တမ်းတင်ပြီးပါပြီ')),
+          );
+          setState(() {});
+        },
+      ),
+    );
+  }
+
+  void _showLedgerDialog(BuildContext context, Customer customer) {
+    showDialog(
+      context: context,
+      builder: (context) => _CustomerLedgerDialog(customer: customer),
+    );
+  }
 }
 
 class _CustomerFormDialog extends StatefulWidget {
@@ -409,32 +433,6 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
           child: const Text('သိမ်းဆည်း'),
         ),
       ],
-    );
-  }
-}
-
-
-  void _showPaymentDialog(BuildContext context, Customer customer) {
-    showDialog(
-      context: context,
-      builder: (context) => _PaymentFormDialog(
-        customer: customer,
-        onSave: (payment) {
-          LocalDb.recordPayment(payment);
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('ငွေပေးချေမှုမှတ်တမ်းတင်ပြီးပါပြီ')),
-          );
-          setState(() {});
-        },
-      ),
-    );
-  }
-
-  void _showLedgerDialog(BuildContext context, Customer customer) {
-    showDialog(
-      context: context,
-      builder: (context) => _CustomerLedgerDialog(customer: customer),
     );
   }
 }
