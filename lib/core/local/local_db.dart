@@ -1621,8 +1621,17 @@ class LocalDb {
     // Use brokerConsignmentId directly as the Hive key
     await brokers.put(brokerConsignmentId, bc);
 
-    // Step 9: Restore to purchase record - increase remainingQuantity
-    purchase.remainingQuantity += returnedQuantity.toInt();
+    // Step 9: Restore to purchase record based on original source type
+    // Check if this was a breakdown item consignment
+    if (bc.historicalData.sourceType == 'breakdown_item') {
+      final itemName = bc.historicalData.breakdownItemName ?? '';
+      if (itemName.isNotEmpty && purchase.breakdownItems.containsKey(itemName)) {
+        purchase.breakdownItems[itemName] = (purchase.breakdownItems[itemName] ?? 0) + returnedQuantity.toInt();
+      }
+    } else {
+      // Restore to whole stone remaining quantity
+      purchase.remainingQuantity += returnedQuantity.toInt();
+    }
     // Update the original Gemstone record using the helper method
     await _updateGemstoneByPurchaseId(bc.purchaseId, purchase);
 
