@@ -499,7 +499,7 @@ class LocalDb {
   static double totalSales() {
     double t = 0;
     for (final s in sales().values) {
-      t += s.amount;
+      if (!s.isDeleted) t += s.amount;
     }
     return t;
   }
@@ -524,7 +524,7 @@ class LocalDb {
   static double totalCostOfGoodsSold() {
     double t = 0;
     for (final s in sales().values) {
-      t += s.costPrice;
+      if (!s.isDeleted) t += s.costPrice;
     }
     return t;
   }
@@ -533,7 +533,7 @@ class LocalDb {
   static double totalSalesCommission() {
     double t = 0;
     for (final s in sales().values) {
-      t += s.commissionFee;
+      if (!s.isDeleted) t += s.commissionFee;
     }
     return t;
   }
@@ -752,7 +752,7 @@ class LocalDb {
   static int gemstoneSoldQuantity(String gemstoneId) {
     int total = 0;
     for (final s in sales().values) {
-      if (s.gemstoneId == gemstoneId) {
+      if (!s.isDeleted && s.gemstoneId == gemstoneId) {
         total += s.quantity;
       }
     }
@@ -770,7 +770,7 @@ class LocalDb {
   static int gemstoneSaleCount(String gemstoneId) {
     int count = 0;
     for (final s in sales().values) {
-      if (s.gemstoneId == gemstoneId) {
+      if (!s.isDeleted && s.gemstoneId == gemstoneId) {
         count++;
       }
     }
@@ -825,7 +825,7 @@ class LocalDb {
     
     // Get all sales for this gemstone, sorted by date (oldest first)
     final salesForGem = salesBox.values
-        .where((s) => s.gemstoneId == gemstoneId)
+        .where((s) => !s.isDeleted && s.gemstoneId == gemstoneId)
         .toList()
       ..sort((a, b) => a.saleDate.compareTo(b.saleDate));
     
@@ -884,7 +884,7 @@ class LocalDb {
     // Get all sales for this gemstone, sorted by date (oldest first)
     final salesForGem = sales()
         .values
-        .where((s) => s.gemstoneId == gemstoneId)
+        .where((s) => !s.isDeleted && s.gemstoneId == gemstoneId)
         .toList()
       ..sort((a, b) => a.saleDate.compareTo(b.saleDate));
 
