@@ -1201,7 +1201,7 @@ class Customer {
 
 class CustomerAdapter extends TypeAdapter<Customer> {
   @override
-  final int typeId = 10;
+  final int typeId = 13;
 
   @override
   Customer read(BinaryReader reader) {
@@ -1291,7 +1291,7 @@ class CustomerLedger {
 
 class CustomerLedgerAdapter extends TypeAdapter<CustomerLedger> {
   @override
-  final int typeId = 13;
+  final int typeId = 14;
 
   @override
   CustomerLedger read(BinaryReader reader) {
@@ -1371,7 +1371,7 @@ class Payment {
 
 class PaymentAdapter extends TypeAdapter<Payment> {
   @override
-  final int typeId = 14;
+  final int typeId = 15;
 
   @override
   Payment read(BinaryReader reader) {
