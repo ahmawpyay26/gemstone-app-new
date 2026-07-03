@@ -850,6 +850,9 @@ class _SaleFormState extends State<_SaleForm> {
 
     if (_isEdit) {
       final s = widget.existing!;
+      // BUG #1 FIX: Capture old gemstoneId before modification
+      final oldGemstoneId = s.gemstoneId;
+      
       s.gemstoneId = gemId;
       s.gemstoneName = name;
       s.customerName = _customer.text.trim();
@@ -868,6 +871,11 @@ class _SaleFormState extends State<_SaleForm> {
       s.accumulatedProfit = accumulatedProfit;
       s.photoPaths = _photoPaths;
       await box.put(widget.hiveKey, s);
+      
+      // BUG #1 FIX: Recalculate ledger for old gemstone if it changed
+      if (oldGemstoneId.isNotEmpty && oldGemstoneId != gemId) {
+        await LocalDb.updateGemstoneProductLedger(oldGemstoneId);
+      }
     } else {
       await box.add(Sale(
         id: LocalDb.genId(),
