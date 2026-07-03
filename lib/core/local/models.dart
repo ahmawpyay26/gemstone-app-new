@@ -1027,3 +1027,133 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
       ..write(obj.deletedAt);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Broker Sale Record (Individual Sale Transactions)
+// ---------------------------------------------------------------------------
+class BrokerSaleRecord {
+  String id; // Unique sale record ID
+  String brokerConsignmentId; // Reference to broker consignment
+  String purchaseId; // Reference to original purchase
+  
+  // Source Information
+  String sourceType; // whole_stone | breakdown_item
+  String? breakdownItemName; // Name of breakdown item if sourceType == breakdown_item
+  
+  // Sale Details
+  double soldQuantity;
+  double unitPrice;
+  double totalSaleAmount;
+  double brokerCommission;
+  double netAmount; // totalSaleAmount - brokerCommission
+  
+  // Additional Information
+  String? buyerName;
+  String remark;
+  
+  // Timestamps
+  int saleDate; // Unix timestamp of sale
+  int createdAt;
+  int updatedAt;
+
+  BrokerSaleRecord({
+    required this.id,
+    required this.brokerConsignmentId,
+    required this.purchaseId,
+    required this.sourceType,
+    this.breakdownItemName,
+    required this.soldQuantity,
+    required this.unitPrice,
+    required this.totalSaleAmount,
+    required this.brokerCommission,
+    required this.netAmount,
+    this.buyerName,
+    this.remark = '',
+    required this.saleDate,
+    required this.createdAt,
+    int? updatedAt,
+  }) : updatedAt = updatedAt ?? createdAt;
+
+  /// Validate sale record data
+  String? validate() {
+    if (soldQuantity <= 0) return 'Sold quantity must be greater than 0';
+    if (unitPrice < 0) return 'Unit price cannot be negative';
+    if (totalSaleAmount <= 0) return 'Total sale amount must be greater than 0';
+    if (brokerCommission < 0) return 'Broker commission cannot be negative';
+    if (netAmount < 0) return 'Net amount cannot be negative';
+    
+    // Verify calculation
+    final expectedNetAmount = totalSaleAmount - brokerCommission;
+    if ((netAmount - expectedNetAmount).abs() > 0.01) {
+      return 'Net amount calculation is incorrect';
+    }
+    
+    return null;
+  }
+}
+
+class BrokerSaleRecordAdapter extends TypeAdapter<BrokerSaleRecord> {
+  @override
+  final int typeId = 12;
+
+  @override
+  BrokerSaleRecord read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return BrokerSaleRecord(
+      id: fields[0] as String,
+      brokerConsignmentId: fields[1] as String,
+      purchaseId: fields[2] as String,
+      sourceType: fields[3] as String,
+      breakdownItemName: fields[4] as String?,
+      soldQuantity: fields[5] as double,
+      unitPrice: fields[6] as double,
+      totalSaleAmount: fields[7] as double,
+      brokerCommission: fields[8] as double,
+      netAmount: fields[9] as double,
+      buyerName: fields[10] as String?,
+      remark: (fields[11] as String?) ?? '',
+      saleDate: fields[12] as int,
+      createdAt: fields[13] as int,
+      updatedAt: (fields[14] as int?) ?? fields[13] as int,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, BrokerSaleRecord obj) {
+    writer
+      ..writeByte(15)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.brokerConsignmentId)
+      ..writeByte(2)
+      ..write(obj.purchaseId)
+      ..writeByte(3)
+      ..write(obj.sourceType)
+      ..writeByte(4)
+      ..write(obj.breakdownItemName)
+      ..writeByte(5)
+      ..write(obj.soldQuantity)
+      ..writeByte(6)
+      ..write(obj.unitPrice)
+      ..writeByte(7)
+      ..write(obj.totalSaleAmount)
+      ..writeByte(8)
+      ..write(obj.brokerCommission)
+      ..writeByte(9)
+      ..write(obj.netAmount)
+      ..writeByte(10)
+      ..write(obj.buyerName)
+      ..writeByte(11)
+      ..write(obj.remark)
+      ..writeByte(12)
+      ..write(obj.saleDate)
+      ..writeByte(13)
+      ..write(obj.createdAt)
+      ..writeByte(14)
+      ..write(obj.updatedAt);
+  }
+}

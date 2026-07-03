@@ -19,6 +19,7 @@ class LocalDb {
   static const String permissionsBox = 'permissions';
   static const String rolesBox = 'roles';
   static const String brokerConsignmentsBox = 'brokerConsignments';
+  static const String brokerSaleRecordsBox = 'brokerSaleRecords';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -35,6 +36,7 @@ class LocalDb {
     if (!Hive.isAdapterRegistered(9)) Hive.registerAdapter(StaffUserAdapter());
     if (!Hive.isAdapterRegistered(10)) Hive.registerAdapter(BrokerHistoricalDataAdapter());
     if (!Hive.isAdapterRegistered(11)) Hive.registerAdapter(BrokerConsignmentAdapter());
+    if (!Hive.isAdapterRegistered(12)) Hive.registerAdapter(BrokerSaleRecordAdapter());
 
     await Hive.openBox<AppUser>(usersBox);
     await Hive.openBox<Gemstone>(gemstonesBox);
@@ -47,6 +49,7 @@ class LocalDb {
     await Hive.openBox<Permission>(permissionsBox);
     await Hive.openBox<Role>(rolesBox);
     await Hive.openBox<BrokerConsignment>(brokerConsignmentsBox);
+    await Hive.openBox<BrokerSaleRecord>(brokerSaleRecordsBox);
 
     await _seedDefaults();
     await _migrateGemstonesCostTracking();
