@@ -762,6 +762,7 @@ class _SaleFormState extends State<_SaleForm> {
   String _payment = 'cash';
   late DateTime _saleDate;
   late List<String> _photoPaths;
+  final _money = NumberFormat('#,##0', 'en_US');
 
   String? _selectedGemId; // null => manual entry
   bool _autoDeduct = true;
@@ -793,7 +794,7 @@ class _SaleFormState extends State<_SaleForm> {
     String gemstoneName = _manualName.text;
     String? gemstoneId;
     if (_selectedGemId != null) {
-      final gem = LocalDb.getGemstone(_selectedGemId!);
+      final gem = LocalDb.gemstoneById(_selectedGemId!);
       gemstoneName = gem?.name ?? 'Unknown';
       gemstoneId = gem?.id;
     }
@@ -1492,7 +1493,7 @@ class _SaleFormState extends State<_SaleForm> {
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: AppTheme.surface,
+                                color: AppTheme.surfaceDark,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: AppTheme.primaryAccent.withOpacity(0.2),
@@ -1514,7 +1515,7 @@ class _SaleFormState extends State<_SaleForm> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          'Qty: ${item.quantity} | Total: ${_money.format(item.totalAmount.toInt())}',
+                                          'Qty: ${item.quantity} | Total: ${NumberFormat('#,##0', 'en_US').format(item.totalAmount.toInt())}',
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.grey[400],
