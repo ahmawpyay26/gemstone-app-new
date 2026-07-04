@@ -1,8 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Permissions for photo attachment and file operations -->
+    <!-- Camera and Photo Permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <!-- Other Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- For printing -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
