@@ -748,152 +748,47 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                       ),
                     ),
 
-                    // Broker Sales Recording Section
+                    // Broker Sales Information Card
                     if (_brokerConsignment!.remainingQuantity > 0) ...[
-                      _buildSectionHeader('ရောင်းချမှု မှတ်တမ်းတင်ခြင်း'),
+                      _buildSectionHeader('ကြေးမုံရောင်းချမှု'),
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           border: Border.all(color: AppTheme.primaryAccent, width: 1),
                           borderRadius: BorderRadius.circular(8),
                           color: Colors.black.withOpacity(0.2),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            _buildFormField(
-                              'ရောင်းချအရေအတွက်',
-                              _quantitySoldController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              errorText: _quantitySoldError,
-                              onChanged: _validateQuantitySold,
-                            ),
-                            _buildFormField(
-                              'ယူနစ်စျေး',
-                              _unitPriceController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              errorText: _unitPriceError,
-                              onChanged: _validateUnitPrice,
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'စုစုပေါင်းပမာဏ',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                                  ),
-                                  Text(
-                                    _currencyFormat.format(_calculateTotalAmount()),
-                                    style: const TextStyle(color: AppTheme.primaryAccent, fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _buildFormField(
-                              'ကော်မရှင်',
-                              _commissionController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              errorText: _commissionError,
-                              onChanged: _validateCommission,
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'စုစုပေါင်းငွေ',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                                  ),
-                                  Text(
-                                    _currencyFormat.format(_calculateNetAmount()),
-                                    style: const TextStyle(color: AppTheme.primaryAccent, fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _buildFormField(
-                              'ဝယ်ယူသူအမည်',
-                              _buyerNameController,
-                            ),
-                            GestureDetector(
-                              onTap: () async {
-                                final picked = await showDatePicker(
-                                  context: context,
-                                  initialDate: _selectedSaleDate ?? DateTime.now(),
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime.now(),
-                                );
-                                if (picked != null) {
-                                  setState(() => _selectedSaleDate = picked);
-                                }
-                              },
+                            Icon(Icons.info_outline, color: AppTheme.primaryAccent, size: 24),
+                            const SizedBox(width: 12),
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'ရောင်းချရက်စွဲ',
-                                    style: TextStyle(color: Colors.grey[300], fontSize: 12),
+                                  const Text(
+                                    'ကြေးမုံရောင်းချမှု',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'ကြေးမုံရောင်းချမှုများကို ယခုအခါ ရောင်းချမှု စာမျက်နှာမှ ပြုလုပ်ပါ။',
+                                    style: TextStyle(fontSize: 13, color: Colors.grey[300]),
+                                  ),
+                                  const SizedBox(height: 12),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey[700]!),
-                                      borderRadius: BorderRadius.circular(4),
+                                      color: Colors.black.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          _selectedSaleDate != null
-                                              ? _dateFormat.format(_selectedSaleDate!)
-                                              : 'ရက်စွဲရွေးချယ်ပါ',
-                                          style: TextStyle(
-                                            color: _selectedSaleDate != null ? Colors.white : Colors.grey[600],
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                        Icon(Icons.calendar_today, color: Colors.grey[500], size: 18),
-                                      ],
+                                    child: const Text(
+                                      'ရောင်းချမှု → အသစ်ထည့်သွင်း → ကြေးမုံရောင်းချမှု',
+                                      style: TextStyle(fontSize: 12, color: AppTheme.primaryAccent, fontFamily: 'monospace'),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            _buildFormField(
-                              'မှတ်ချက်',
-                              _remarkController,
-                              maxLines: 3,
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'အများဆုံး: ${_brokerConsignment!.remainingQuantity.toStringAsFixed(0)}',
-                                  style: TextStyle(color: Colors.grey[400], fontSize: 11),
-                                ),
-                                ElevatedButton(
-                                  onPressed: (_quantitySoldError == null && _unitPriceError == null && _commissionError == null &&
-                                      _quantitySoldController.text.isNotEmpty && _unitPriceController.text.isNotEmpty)
-                                      ? _recordBrokerSale
-                                      : null,
-                                  child: const Text('မှတ်တမ်းတင်'),
-                                ),
-                              ],
                             ),
                           ],
                         ),
