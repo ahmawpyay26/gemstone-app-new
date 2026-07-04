@@ -623,6 +623,21 @@ class LocalDb {
       if (customer != null) {
         customer.currentBalance += payment.amount;
         await updateCustomer(customer);
+        
+        // Create reversing ledger entry for audit trail
+        final ledgerEntry = CustomerLedger(
+          id: const Uuid().v4(),
+          customerId: payment.customerId,
+          type: 'refund',
+          referenceId: payment.id,
+          date: DateTime.now().millisecondsSinceEpoch,
+          debitAmount: payment.amount,
+          creditAmount: 0,
+          balanceAfter: customer.currentBalance,
+          note: 'Payment deletion reversal',
+          createdAt: DateTime.now().millisecondsSinceEpoch,
+        );
+        await addLedgerEntry(ledgerEntry);
       }
     }
   }
