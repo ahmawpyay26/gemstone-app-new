@@ -147,6 +147,238 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
     return total - commission;
   }
 
+  Future<void> _showEditDialog(BrokerSaleRecord record) async {
+    final editQuantityController = TextEditingController(text: record.soldQuantity.toString());
+    final editUnitPriceController = TextEditingController(text: record.unitPrice.toString());
+    final editCommissionController = TextEditingController(text: record.brokerCommission.toString());
+    final editBuyerNameController = TextEditingController(text: record.buyerName ?? '');
+    final editRemarkController = TextEditingController(text: record.remark);
+    DateTime editSaleDate = DateTime.fromMillisecondsSinceEpoch(record.saleDate);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text('ရောင်းချမှု ပြင်ဆင်ရန်'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: editQuantityController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'အရေအတွက်',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: editUnitPriceController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'ယူနစ်စျေး',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: editCommissionController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'ကော်မရှင်',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: editBuyerNameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'ဝယ်ယူသူ',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: editRemarkController,
+                maxLines: 2,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'မှတ်ချက်',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ပယ်ဖျက်ရန်'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newQty = double.tryParse(editQuantityController.text) ?? 0;
+              final newUnitPrice = double.tryParse(editUnitPriceController.text) ?? 0;
+              final newCommission = double.tryParse(editCommissionController.text) ?? 0;
+              
+              if (newQty <= 0 || newUnitPrice < 0 || newCommission < 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('ကျေးဇူးပြု၍ တန်ဖိုးများ စစ်ဆေးပါ။')),
+                );
+                return;
+              }
+              
+              await _applyBrokerSaleEdit(
+                record,
+                newQty,
+                newUnitPrice,
+                newCommission,
+                editBuyerNameController.text.trim(),
+                editRemarkController.text.trim(),
+              );
+              
+              if (mounted) Navigator.pop(context);
+            },
+            child: const Text('သိမ်းဆည်းရန်'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _applyBrokerSaleEdit(
+    BrokerSaleRecord oldRecord,
+    double newQty,
+    double newUnitPrice,
+    double newCommission,
+    String buyerName,
+    String remark,
+  ) async {
+    try {
+      // Calculate new amounts
+      final newTotalAmount = newQty * newUnitPrice;
+      final newNetAmount = newTotalAmount - newCommission;
+      
+      // Calculate quantity difference
+      final qtyDifference = newQty - oldRecord.soldQuantity;
+      
+      // Check if new quantity exceeds remaining
+      if (qtyDifference > 0 && _brokerConsignment!.remainingQuantity < qtyDifference) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('အများဆုံး: ${_brokerConsignment!.remainingQuantity.toStringAsFixed(0)}')),
+          );
+        }
+        return;
+      }
+      
+      // Update broker consignment sold quantity
+      _brokerConsignment!.soldQuantity += qtyDifference;
+      final brokerBox = Hive.box<BrokerConsignment>('brokerConsignments');
+      await brokerBox.put(widget.brokerId, _brokerConsignment!);
+      
+      // Update the sale record
+      oldRecord.soldQuantity = newQty;
+      oldRecord.unitPrice = newUnitPrice;
+      oldRecord.totalSaleAmount = newTotalAmount;
+      oldRecord.brokerCommission = newCommission;
+      oldRecord.netAmount = newNetAmount;
+      oldRecord.buyerName = buyerName.isNotEmpty ? buyerName : null;
+      oldRecord.remark = remark;
+      
+      final saleRecordsBox = Hive.box<BrokerSaleRecord>('brokerSaleRecords');
+      final recordIndex = _brokerSaleRecords.indexOf(oldRecord);
+      if (recordIndex >= 0) {
+        await saleRecordsBox.putAt(recordIndex, oldRecord);
+      }
+      
+      // Update product ledger
+      await LocalDb.updateGemstoneProductLedger(_brokerConsignment!.purchaseId);
+      
+      _loadData();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပြင်ဆင်မှု အောင်မြင်ပါသည်။')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('အမှားအယွင်း: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showDeleteConfirmation(BrokerSaleRecord record) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text('ဖျက်ရန်အတည်ပြုပါ'),
+        content: const Text('ဤရောင်းချမှု မှတ်တမ်းကို ဖျက်မည်ဖြစ်သည်။ ဆက်လက်မည်ဖြစ်သည်။'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ပယ်ဖျက်ရန်'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await _deleteBrokerSale(record);
+              if (mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('ဖျက်ရန်'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteBrokerSale(BrokerSaleRecord record) async {
+    try {
+      // Reverse the sold quantity
+      _brokerConsignment!.soldQuantity -= record.soldQuantity;
+      final brokerBox = Hive.box<BrokerConsignment>('brokerConsignments');
+      await brokerBox.put(widget.brokerId, _brokerConsignment!);
+      
+      // Remove the sale record
+      final saleRecordsBox = Hive.box<BrokerSaleRecord>('brokerSaleRecords');
+      final recordIndex = _brokerSaleRecords.indexOf(record);
+      if (recordIndex >= 0) {
+        await saleRecordsBox.deleteAt(recordIndex);
+      }
+      
+      // Update product ledger
+      await LocalDb.updateGemstoneProductLedger(_brokerConsignment!.purchaseId);
+      
+      _loadData();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ဖျက်မှု အောင်မြင်ပါသည်။')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('အမှားအယွင်း: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _recordBrokerSale() async {
     final qty = double.tryParse(_quantitySoldController.text);
     final unitPrice = double.tryParse(_unitPriceController.text);
@@ -692,6 +924,16 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                               DataColumn(label: Text('စုစုပေါင်းငွေ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
                               DataColumn(label: Text('ဝယ်ယူသူ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
                             ],
+                            columns: [
+                              DataColumn(label: Text('ရက်စွဲ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('အရေအတွက်', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('ယူနစ်စျေး', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('စုစုပေါင်း', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('ကော်မရှင်', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('စုစုပေါင်းငွေ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('ဝယ်ယူသူ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('လုပ်ဆောင်ချက်', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                            ],
                             rows: _brokerSaleRecords.map((record) {
                               return DataRow(
                                 cells: [
@@ -722,6 +964,25 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                                   DataCell(Text(
                                     record.buyerName ?? '-',
                                     style: const TextStyle(color: Colors.white, fontSize: 11),
+                                  )),
+                                  DataCell(Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, color: Colors.blue, size: 16),
+                                        onPressed: () => _showEditDialog(record),
+                                        tooltip: 'ပြင်ဆင်ရန်',
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete, color: Colors.red, size: 16),
+                                        onPressed: () => _showDeleteConfirmation(record),
+                                        tooltip: 'ဖျက်ရန်',
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                      ),
+                                    ],
                                   )),
                                 ],
                               );
