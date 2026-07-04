@@ -836,6 +836,23 @@ class _SaleFormState extends State<_SaleForm> {
     _showSuccess('Item removed');
   }
 
+  void _editItemFromTemporaryList(int index) {
+    final item = _items[index];
+    // Load item data back into form fields
+    setState(() {
+      _selectedGemId = item.gemstoneId;
+      _manualName.text = item.gemstoneName;
+      _qty.text = item.quantity.toString();
+      _amount.text = item.unitPrice.toString();
+      _note.text = item.remark;
+    });
+    // Remove from temporary list
+    setState(() {
+      _items.removeAt(index);
+    });
+    _showSuccess('Item loaded for editing');
+  }
+
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: AppTheme.errorColor),
@@ -1348,7 +1365,7 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Temporary Item List Section
+                // Temporary Item List Section (Improved UI)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -1363,7 +1380,7 @@ class _SaleFormState extends State<_SaleForm> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Temporary Items',
+                        'ထည့်ထားသော ပစ္စည်းများ',
                         style: const TextStyle(
                           color: AppTheme.primaryAccent,
                           fontSize: 14,
@@ -1374,7 +1391,7 @@ class _SaleFormState extends State<_SaleForm> {
                       if (_items.isEmpty)
                         Center(
                           child: Text(
-                            '(No items yet)',
+                            '(ပစ္စည်းများ ထည့်ထားမရှိသေးပါ)',
                             style: TextStyle(
                               color: Colors.grey[500],
                               fontSize: 12,
@@ -1398,53 +1415,142 @@ class _SaleFormState extends State<_SaleForm> {
                                   color: AppTheme.primaryAccent.withOpacity(0.2),
                                 ),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item.gemstoneName,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Qty: ${item.quantity} | Total: ${NumberFormat('#,##0', 'en_US').format(item.totalAmount.toInt())}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[400],
-                                          ),
-                                        ),
-                                        if (item.remark.isNotEmpty)
-                                          Text(
-                                            'Note: ${item.remark}',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.grey[500],
-                                            ),
-                                          ),
-                                      ],
+                                  // Item name
+                                  Text(
+                                    'ကျောက်မျက်အမည်: ${item.gemstoneName}',
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryAccent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
                                     ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.close, size: 20),
-                                    color: AppTheme.errorColor,
-                                    onPressed: () => _removeItemFromTemporaryList(idx),
+                                  const SizedBox(height: 8),
+                                  // Quantity
+                                  Text(
+                                    'အရေအတွက်: ${item.quantity}',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  // Total amount
+                                  Text(
+                                    'ခန့်မှန်းရောင်းငွေ: ${NumberFormat('#,##0', 'en_US').format(item.totalAmount.toInt())} ကျပ်',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  if (item.remark.isNotEmpty) ...[const SizedBox(height: 4), Text(
+                                    'မှတ်ချက်: ${item.remark}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[500],
+                                    ),
+                                  )],
+                                  const SizedBox(height: 8),
+                                  // Action buttons (Edit and Delete)
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      TextButton.icon(
+                                        onPressed: () => _editItemFromTemporaryList(idx),
+                                        icon: const Icon(Icons.edit, size: 16),
+                                        label: const Text('ပြုပြင်ရန်'),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: AppTheme.primaryAccent,
+                                        ),
+                                      ),
+                                      TextButton.icon(
+                                        onPressed: () => _removeItemFromTemporaryList(idx),
+                                        icon: const Icon(Icons.close, size: 16),
+                                        label: const Text('ဖျက်ရန်'),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: AppTheme.errorColor,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             );
                           },
                         ),
+                      if (_items.isNotEmpty) ...[const SizedBox(height: 16), Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryAccent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'စုစုပေါင်းအချက်အလက်',
+                              style: TextStyle(
+                                color: AppTheme.primaryAccent,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'ပစ္စည်းအမျိုးအစား: ${_items.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'စုစုပေါင်း အရေအတွက်: ${_totalQuantity.toInt()}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'စုစုပေါင်း ရောင်းငွေ:',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                Text(
+                                  '${NumberFormat('#,##0', 'en_US').format(_totalAmount.toInt())} ကျပ်',
+                                  style: const TextStyle(
+                                    color: AppTheme.primaryAccent,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      )],
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
               ],
             ),
           ),
