@@ -462,6 +462,7 @@ class LocalDb {
   static Box<Customer> customers() => Hive.box<Customer>(customersBox);
   static Box<CustomerLedger> customerLedger() => Hive.box<CustomerLedger>(customerLedgerBox);
   static Box<Payment> payments() => Hive.box<Payment>(paymentsBox);
+  static Box<BrokerSaleRecord> brokerSaleRecords() => Hive.box<BrokerSaleRecord>(brokerSaleRecordsBox);
 
   // -------------------------------------------------------------------------
   // Customer CRUD operations
