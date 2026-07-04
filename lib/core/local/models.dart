@@ -308,6 +308,9 @@ class Sale {
   
   // Photo Attachments
   List<String> photoPaths; // ဓာတ်ပုံ file paths
+  
+  // Multi-Item Invoice Support
+  String invoiceNumber; // Invoice number for grouping multiple sales (e.g., INV-2026-07-04-0001)
 
   Sale({
     required this.id,
@@ -333,6 +336,7 @@ class Sale {
     this.deletedBy,
     this.deleteReason,
     this.photoPaths = const [],
+    this.invoiceNumber = '',
   });
 }
 
@@ -371,13 +375,14 @@ class SaleAdapter extends TypeAdapter<Sale> {
       deletedBy: fields[19] as String?,
       deleteReason: fields[20] as String?,
       photoPaths: (fields[21] as List<dynamic>?)?.cast<String>() ?? [],
+      invoiceNumber: (fields[23] as String?) ?? '',
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(23)
+      ..writeByte(24)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -423,7 +428,9 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(21)
       ..write(obj.photoPaths)
       ..writeByte(22)
-      ..write(obj.customerId);
+      ..write(obj.customerId)
+      ..writeByte(23)
+      ..write(obj.invoiceNumber);
   }
 }
 
