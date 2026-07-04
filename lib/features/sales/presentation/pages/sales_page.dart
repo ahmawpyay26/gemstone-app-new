@@ -11,6 +11,7 @@ import '../../../../shared/widgets/photo_viewer.dart';
 import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
 import '../../../../core/services/voucher_export_service.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:uuid/uuid.dart';
 
 class SalesPage extends StatefulWidget {
   const SalesPage({Key? key}) : super(key: key);
@@ -717,6 +718,27 @@ class _SalesPageState extends State<SalesPage> {
   }
 }
 
+// Item model for multi-item invoices
+class _SaleItem {
+  String id;
+  String? gemstoneId;
+  String gemstoneName;
+  int quantity;
+  double unitPrice;
+  String remark;
+
+  _SaleItem({
+    required this.id,
+    this.gemstoneId,
+    required this.gemstoneName,
+    required this.quantity,
+    required this.unitPrice,
+    this.remark = '',
+  });
+
+  double get totalAmount => quantity * unitPrice;
+}
+
 class _SaleForm extends StatefulWidget {
   final Sale? existing;
   final dynamic hiveKey;
@@ -743,6 +765,10 @@ class _SaleFormState extends State<_SaleForm> {
 
   String? _selectedGemId; // null => manual entry
   bool _autoDeduct = true;
+  
+  // Multi-item invoice support
+  late List<_SaleItem> _items;
+  bool _isMultiItemMode = false;
 
   bool get _isEdit => widget.existing != null && widget.hiveKey != null;
 
@@ -774,6 +800,18 @@ class _SaleFormState extends State<_SaleForm> {
         LocalDb.gemstoneById(e.gemstoneId) != null) {
       _selectedGemId = e.gemstoneId;
     }
+    
+    // Initialize multi-item list
+    _items = [
+      _SaleItem(
+        id: const Uuid().v4(),
+        gemstoneId: e?.gemstoneId,
+        gemstoneName: e?.gemstoneName ?? '',
+        quantity: e?.quantity ?? 1,
+        unitPrice: e?.amount ?? 0,
+        remark: e?.note ?? '',
+      ),
+    ];
   }
 
   static String _trim(double v) =>
@@ -785,6 +823,29 @@ class _SaleFormState extends State<_SaleForm> {
       c.dispose();
     }
     super.dispose();
+  }
+  
+  double get _totalQuantity => _items.fold<int>(0, (sum, item) => sum + item.quantity).toDouble();
+  double get _totalAmount => _items.fold<double>(0, (sum, item) => sum + item.totalAmount);
+  
+  void _addItem() {
+    setState(() {
+      _items.add(_SaleItem(
+        id: const Uuid().v4(),
+        gemstoneName: '',
+        quantity: 1,
+        unitPrice: 0,
+      ));
+      _isMultiItemMode = true;
+    });
+  }
+  
+  void _removeItem(int index) {
+    if (_items.length > 1) {
+      setState(() {
+        _items.removeAt(index);
+      });
+    }
   }
 
   void _onSelectGem(String? id) {
@@ -1236,15 +1297,119 @@ class _SaleFormState extends State<_SaleForm> {
                   recordType: 'sale',
                 ),
                 const SizedBox(height: 20),
+                // Multi-item invoice UI
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceLight,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'ကုန်ပစ္စည်းများ',
+                        style: TextStyle(
+                          color: AppTheme.primaryAccent,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Items list
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _items.length,
+                        itemBuilder: (context, index) {
+                          final item = _items[index];
+                          return _buildItemCard(index, item);
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      // Add item button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _addItem,
+                          icon: const Icon(Icons.add, color: AppTheme.primaryAccent),
+                          label: const Text(
+                            '➕ ကုန်ပစ္စည်းထည့်ရန်',
+                            style: TextStyle(color: AppTheme.primaryAccent),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Summary
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryAccent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'စုစုပေါင်းအရေအတွက်',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  '${_totalQuantity.toInt()} ခု',
+                                  style: const TextStyle(
+                                    color: AppTheme.primaryAccent,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                const Text(
+                                  'စုစုပေါင်းငွေ',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  '${NumberFormat('#,##0').format(_totalAmount)} ကျပ်',
+                                  style: const TextStyle(
+                                    color: AppTheme.primaryAccent,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _save,
-                    child: const Text('သိမ်းဆည်းမည်',
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold)),
+                    onPressed: null,
+                    child: const Text(
+                      'Coming in Phase 2B',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1271,6 +1436,125 @@ class _SaleFormState extends State<_SaleForm> {
         validator: required
             ? (v) => (v == null || v.trim().isEmpty) ? 'ဖဳစ်ပာ' : null
             : null,
+      ),
+    );
+  }
+
+  Widget _buildItemCard(int index, _SaleItem item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ကုန်ပစ္စည်း ${index + 1}',
+                style: const TextStyle(
+                  color: AppTheme.primaryAccent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+              if (index > 0)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                  onPressed: () => _removeItem(index),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Gemstone name
+          TextFormField(
+            initialValue: item.gemstoneName,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(labelText: 'ကျောက်မျက်အမည်'),
+            onChanged: (value) {
+              setState(() {
+                item.gemstoneName = value;
+              });
+            },
+          ),
+          const SizedBox(height: 8),
+          // Quantity and Unit Price
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: item.quantity.toString(),
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'အရေအတွက်'),
+                  onChanged: (value) {
+                    setState(() {
+                      item.quantity = int.tryParse(value) ?? 1;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  initialValue: item.unitPrice.toString(),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'ယူနစ်ဈေး'),
+                  onChanged: (value) {
+                    setState(() {
+                      item.unitPrice = double.tryParse(value) ?? 0;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Remark
+          TextFormField(
+            initialValue: item.remark,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(labelText: 'မှတ်ချက်'),
+            onChanged: (value) {
+              setState(() {
+                item.remark = value;
+              });
+            },
+          ),
+          const SizedBox(height: 8),
+          // Total amount display
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryAccent.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'စုစုပေါင်းငွေ:',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                Text(
+                  '${NumberFormat('#,##0').format(item.totalAmount)} ကျပ်',
+                  style: const TextStyle(
+                    color: AppTheme.primaryAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
