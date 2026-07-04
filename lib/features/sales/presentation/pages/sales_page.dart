@@ -43,6 +43,56 @@ class _SalesPageState extends State<SalesPage> {
     );
   }
 
+  void _showSaleTypeSelector() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: const Text('ရောင်းချမှု အမျိုးအစား'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<String>(
+              title: const Text('ပုံမှန် ရောင်းချမှု'),
+              subtitle: const Text('ကျောက်စာ စာလုံးတိုက်မှ ရောင်းချခြင်း'),
+              value: 'direct',
+              groupValue: 'direct',
+              onChanged: (_) {
+                Navigator.pop(context);
+                _openForm();
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('ကြေးမုံ ရောင်းချမှု'),
+              subtitle: const Text('ကြေးမုံထံ ရောင်းချခြင်း'),
+              value: 'broker',
+              groupValue: 'broker',
+              onChanged: (_) {
+                Navigator.pop(context);
+                _openBrokerSaleForm();
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ပယ်ဖျက်မည်'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openBrokerSaleForm() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _BrokerSaleForm(),
+    );
+  }
+
   Future<void> _exportVoucher(Sale sale) async {
     try {
       final voucherService = VoucherExportService();
@@ -207,7 +257,7 @@ class _SalesPageState extends State<SalesPage> {
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add),
         label: const Text('အရောင်းအသစ်'),
-        onPressed: () => _openForm(),
+        onPressed: () => _showSaleTypeSelector(),
       ),
       body: ValueListenableBuilder(
         valueListenable: LocalDb.sales().listenable(),
@@ -1283,6 +1333,325 @@ class _SaleFormState extends State<_SaleForm> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _BrokerSaleForm extends StatefulWidget {
+  const _BrokerSaleForm({Key? key}) : super(key: key);
+
+  @override
+  State<_BrokerSaleForm> createState() => _BrokerSaleFormState();
+}
+
+class _BrokerSaleFormState extends State<_BrokerSaleForm> {
+  late TextEditingController _brokerNameController;
+  late TextEditingController _quantitySoldController;
+  late TextEditingController _unitPriceController;
+  late TextEditingController _commissionController;
+  late TextEditingController _buyerNameController;
+  late TextEditingController _remarkController;
+  DateTime? _selectedSaleDate;
+  BrokerConsignment? _selectedConsignment;
+
+  String? _quantityError;
+  String? _priceError;
+  String? _commissionError;
+
+  @override
+  void initState() {
+    super.initState();
+    _brokerNameController = TextEditingController();
+    _quantitySoldController = TextEditingController();
+    _unitPriceController = TextEditingController();
+    _commissionController = TextEditingController();
+    _buyerNameController = TextEditingController();
+    _remarkController = TextEditingController();
+    _selectedSaleDate = DateTime.now();
+  }
+
+  @override
+  void dispose() {
+    _brokerNameController.dispose();
+    _quantitySoldController.dispose();
+    _unitPriceController.dispose();
+    _commissionController.dispose();
+    _buyerNameController.dispose();
+    _remarkController.dispose();
+    super.dispose();
+  }
+
+  void _validateQuantity(String value) {
+    if (value.isEmpty) {
+      setState(() => _quantityError = null);
+      return;
+    }
+    final qty = double.tryParse(value);
+    if (qty == null || qty <= 0) {
+      setState(() => _quantityError = 'အရေအတွက်သည် ၀ထက်ကြီးရမည်ဖြစ်ပါသည်။');
+      return;
+    }
+    if (_selectedConsignment != null && qty > _selectedConsignment!.remainingQuantity) {
+      setState(() => _quantityError = 'ကျန်ရှိသော အရေအတွက်ထက် ကျော်လွန်သည်။');
+      return;
+    }
+    setState(() => _quantityError = null);
+  }
+
+  void _validatePrice(String value) {
+    if (value.isEmpty) {
+      setState(() => _priceError = null);
+      return;
+    }
+    final price = double.tryParse(value);
+    if (price == null || price < 0) {
+      setState(() => _priceError = 'စျေးနှုန်းသည် အနုတ်မဖြစ်ရမည်ဖြစ်ပါသည်။');
+      return;
+    }
+    setState(() => _priceError = null);
+  }
+
+  void _validateCommission(String value) {
+    if (value.isEmpty) {
+      setState(() => _commissionError = null);
+      return;
+    }
+    final commission = double.tryParse(value);
+    if (commission == null || commission < 0) {
+      setState(() => _commissionError = 'ကော်မရှင်သည် အနုတ်မဖြစ်ရမည်ဖြစ်ပါသည်။');
+      return;
+    }
+    setState(() => _commissionError = null);
+  }
+
+  Future<void> _saveBrokerSale() async {
+    if (_selectedConsignment == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ကြေးမုံအချက်အလက်ကို ရွေးချယ်ပါ။')),
+      );
+      return;
+    }
+
+    final qty = double.tryParse(_quantitySoldController.text);
+    final unitPrice = double.tryParse(_unitPriceController.text);
+    final commission = double.tryParse(_commissionController.text) ?? 0;
+
+    if (qty == null || qty <= 0 || _quantityError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('အရေအတွက်ကို စစ်ဆေးပါ။')),
+      );
+      return;
+    }
+
+    if (unitPrice == null || unitPrice < 0 || _priceError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ယူနစ်စျေးကို စစ်ဆေးပါ။')),
+      );
+      return;
+    }
+
+    if (_commissionError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ကော်မရှင်ကို စစ်ဆေးပါ။')),
+      );
+      return;
+    }
+
+    try {
+      final totalAmount = qty * unitPrice;
+      final netAmount = totalAmount - commission;
+
+      final saleRecord = BrokerSaleRecord(
+        id: LocalDb.genId(),
+        brokerConsignmentId: _selectedConsignment!.id,
+        purchaseId: _selectedConsignment!.purchaseId,
+        sourceType: _selectedConsignment!.historicalData.sourceType,
+        breakdownItemName: _selectedConsignment!.historicalData.breakdownItemName,
+        soldQuantity: qty,
+        unitPrice: unitPrice,
+        totalSaleAmount: totalAmount,
+        brokerCommission: commission,
+        netAmount: netAmount,
+        buyerName: _buyerNameController.text.trim().isNotEmpty ? _buyerNameController.text.trim() : null,
+        remark: _remarkController.text.trim(),
+        saleDate: _selectedSaleDate!.millisecondsSinceEpoch,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      final validationError = saleRecord.validate();
+      if (validationError != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('အမှားအယွင်း: $validationError')),
+          );
+        }
+        return;
+      }
+
+      final saleRecordsBox = Hive.box<BrokerSaleRecord>('brokerSaleRecords');
+      await saleRecordsBox.add(saleRecord);
+
+      _selectedConsignment!.soldQuantity += qty;
+      final brokerBox = Hive.box<BrokerConsignment>('brokerConsignments');
+      await brokerBox.put(_selectedConsignment!.id, _selectedConsignment!);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ကြေးမုံရောင်းချမှု သိမ်းဆည်းပြီးပါပြီ။')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('အမှားအယွင်း: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final brokerConsignments = LocalDb.brokerConsignments().values.where((c) => c.remainingQuantity > 0).toList();
+
+    return SingleChildScrollView(
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceDark,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+          ),
+        ),
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'ကြေးမုံရောင်းချမှု',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<BrokerConsignment>(
+              value: _selectedConsignment,
+              decoration: InputDecoration(
+                labelText: 'ကြေးမုံအချက်အလက်',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              items: brokerConsignments.map((consignment) {
+                final gemstone = LocalDb.gemstones().get(consignment.purchaseId);
+                return DropdownMenuItem(
+                  value: consignment,
+                  child: Text('${gemstone?.name ?? "Unknown"} - ${consignment.brokerName}'),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() => _selectedConsignment = value);
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _quantitySoldController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'ရောင်းချသော အရေအတွက်',
+                errorText: _quantityError,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onChanged: _validateQuantity,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _unitPriceController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'ယူနစ်စျေးနှုန်း',
+                errorText: _priceError,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onChanged: _validatePrice,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _commissionController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'ကော်မရှင်',
+                errorText: _commissionError,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onChanged: _validateCommission,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _buyerNameController,
+              decoration: InputDecoration(
+                labelText: 'ဝယ်ယူသူအမည်',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _remarkController,
+              decoration: InputDecoration(
+                labelText: 'မှတ်ချက်',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedSaleDate ?? DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime.now(),
+                );
+                if (date != null) {
+                  setState(() => _selectedSaleDate = date);
+                }
+              },
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'ရောင်းချသည့်နေ့စွဲ',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text(
+                  _selectedSaleDate != null ? DateFormat('dd/MM/yyyy').format(_selectedSaleDate!) : 'ရွေးချယ်ပါ',
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saveBrokerSale,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text('သိမ်းဆည်းမည်'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
