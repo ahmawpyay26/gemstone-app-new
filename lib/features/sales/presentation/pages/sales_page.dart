@@ -1430,15 +1430,47 @@ class _SaleFormState extends State<_SaleForm> {
             ],
           ),
           const SizedBox(height: 8),
-          // Gemstone name
-          TextFormField(
-            initialValue: item.gemstoneName,
-            style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(labelText: 'ကျောက်မျက်အမည်'),
-            onChanged: (value) {
-              setState(() {
-                item.gemstoneName = value;
-              });
+          // Gemstone selector dropdown
+          ValueListenableBuilder<Box<Gemstone>>(
+            valueListenable: LocalDb.gemstones().listenable(),
+            builder: (context, box, _) {
+              final gems = box.values.toList();
+              
+              return DropdownButtonFormField<String?>(
+                value: item.gemstoneId,
+                isExpanded: true,
+                dropdownColor: AppTheme.surfaceLight,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'ကျောက်မျက် *',
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('— ကျောက်မျက်ရွေးပါ —'),
+                  ),
+                  ...gems.map((g) => DropdownMenuItem<String?>(
+                    value: g.id,
+                    child: Text(
+                      g.name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )).toList(),
+                ],
+                onChanged: (gemstoneId) {
+                  setState(() {
+                    item.gemstoneId = gemstoneId;
+                    if (gemstoneId != null) {
+                      final g = LocalDb.gemstoneById(gemstoneId);
+                      if (g != null) {
+                        item.gemstoneName = g.name;
+                      }
+                    } else {
+                      item.gemstoneName = '';
+                    }
+                  });
+                },
+              );
             },
           ),
           const SizedBox(height: 8),
