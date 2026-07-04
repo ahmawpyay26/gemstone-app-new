@@ -56,8 +56,8 @@ class _SalesPageState extends State<SalesPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               RadioListTile<String>(
-                title: const Text('ပုံမှန် ရောင်းချမှု'),
-                subtitle: const Text('ကျောက်စာ စာလုံးတိုက်မှ ရောင်းချခြင်း'),
+                title: const Text('ကိုယ်တိုင်ရောင်းချမှု'),
+                subtitle: const Text(''),
                 value: 'direct',
                 groupValue: selectedType,
                 onChanged: (value) {
@@ -67,8 +67,8 @@ class _SalesPageState extends State<SalesPage> {
                 },
               ),
               RadioListTile<String>(
-                title: const Text('ကြေးမုံ ရောင်းချမှု'),
-                subtitle: const Text('ကြေးမုံထံ ရောင်းချခြင်း'),
+                title: const Text('ပွဲစားထံမှ ရောင်းချမှု'),
+                subtitle: const Text(''),
                 value: 'broker',
                 groupValue: selectedType,
                 onChanged: (value) {
