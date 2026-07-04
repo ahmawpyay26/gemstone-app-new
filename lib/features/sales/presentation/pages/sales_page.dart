@@ -918,173 +918,130 @@ class _SaleFormState extends State<_SaleForm> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final qty = int.tryParse(_qty.text.trim()) ?? 1;
-    final weight = double.tryParse(_weight.text.trim()) ?? 0;
-    final amount = double.tryParse(_amount.text.trim()) ?? 0;
-    final sellCommission = double.tryParse(_commission.text.trim()) ?? 0;
-
-    final gemId = _selectedGemId ?? '';
-    final name = gemId.isNotEmpty
-        ? (LocalDb.gemstoneById(gemId)?.name ?? _manualName.text.trim())
-        : _manualName.text.trim();
-
-    // --- Compute cost of goods sold (COGS) for this sale ---
-    // The cost field holds the per-unit cost (auto-filled from the linked
-    // gemstone, but the user may override it). Total COGS = per-unit × qty.
-    // For manual entries (no linked gemstone) the field is taken as the total
-    // cost as typed.
-    final perUnitCost = double.tryParse(_cost.text.trim()) ?? 0;
-    double cost;
-    if (gemId.isNotEmpty) {
-      cost = perUnitCost * qty;
-    } else {
-      cost = perUnitCost;
-    }
-
-    // Stock validation when linked to an inventory item and auto-deduct is on.
-    if (gemId.isNotEmpty && _autoDeduct) {
-      final g = LocalDb.gemstoneById(gemId)!;
+    // PHASE 1: VALIDATE ALL ITEMS BEFORE SAVING ANY
+    for (int i = 0; i < _items.length; i++) {
+      final item = _items[i];
       
-                      // Sold out check is already done in dropdown filter
-                      // This is a safety check
-      // Check remaining quantity (not purchase quantity)
-      final remaining = LocalDb.gemstoneRemainingQuantity(g);
-      if (remaining <= 0) {
-        _toast('ဤပစ္စည်းသည် အရောင်းအဆုံးဖြစ်နေပါသည်။');
+      // Check gemstone selected
+      if (item.gemstoneId == null || item.gemstoneId!.isEmpty) {
+        _toast('အရည်အသွေး $i: ကျောက်မျက်ရွေးချယ်ပါ');
         return;
       }
       
-      // For edit: account for the previous sale quantity being re-released
-      final prevQty = (_isEdit && widget.existing!.gemstoneId == gemId)
-          ? widget.existing!.quantity
-          : 0;
-      final prevWeight = (_isEdit && widget.existing!.gemstoneId == gemId)
-          ? widget.existing!.weightCarat
-          : 0;
-      final availableQty = remaining + prevQty;
-      final availableWeight = g.weightCarat + prevWeight;
-      if (qty > availableQty) {
-        _toast('Stock မလောက်ပါ — ကျန် $availableQty ခုသာ ရှိသည်');
+      // Check quantity > 0
+      if (item.quantity <= 0) {
+        _toast('အရည်အသွေး $i: အရေအတွက် > 0 ဖြစ်ရမည်');
         return;
       }
-      if (weight > 0 && weight > availableWeight) {
-        _toast(
-            'အလေးချိန် မလောက်ပါ — ကျန် ${_trim(availableWeight.toDouble())} ${LocalDb.unitLabel(g.weightUnit)}သာ ရှိသည်');
+      
+      // Check unit price >= 0
+      if (item.unitPrice < 0) {
+        _toast('အရည်အသွေး $i: ယူနစ်ဈေးနှုန်း >= 0 ဖြစ်ရမည်');
         return;
+      }
+      
+      // Check gemstone exists
+      final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
+      if (gemstone == null) {
+        _toast('အရည်အသွေး $i: ကျောက်မျက်မတွေ့ရှိ');
+        return;
+      }
+      
+      // Check inventory if auto-deduct enabled
+      if (_autoDeduct) {
+        final remaining = LocalDb.gemstoneRemainingQuantity(gemstone);
+        if (remaining <= 0) {
+          _toast('အရည်အသွေး $i: အရောင်းအဆုံးဖြစ်နေ');
+          return;
+        }
+        if (item.quantity > remaining) {
+          _toast('အရည်အသွေး $i: Stock မလောက်ပါ — ကျန် $remaining ခုသာ ရှိသည်');
+          return;
+        }
       }
     }
 
+    // PHASE 2: GENERATE INVOICE NUMBER
+    final now = DateTime.now();
+    final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
     final box = LocalDb.sales();
+    final existingInvoices = box.values
+        .where((s) => s.invoiceNumber.startsWith('INV-$dateStr-'))
+        .length;
+    final invoiceNum = 'INV-$dateStr-${(existingInvoices + 1).toString().padLeft(3, '0')}';
 
-    // NOTE: Stock is NO LONGER deducted from g.quantity
-    // Purchase quantity (g.quantity) remains immutable
-    // Sales only affect soldQuantity and remainingQuantity (derived fields)
-    // Cost tracking is handled via updateGemstoneProductLedger()
-
-    // --- Calculate transaction history fields for Product-wise Independent Ledger ---
-    final netSale = amount - sellCommission;
+    // PHASE 3: SAVE LOOP - Save each item as separate Sale record
+    final Set<String> gemstonesUpdated = {};
+    final sellCommission = double.tryParse(_commission.text.trim()) ?? 0;
+    final perUnitCost = double.tryParse(_cost.text.trim()) ?? 0;
     
-    // These will be recalculated from sales records after save
-    double costUsed = 0;
-    double profitGenerated = 0;
-    double remainingCostAfterSale = 0;
-    double accumulatedProfit = 0;
-
-    if (_isEdit) {
-      final s = widget.existing!;
-      final oldSale = Sale(
-        id: s.id,
-        gemstoneId: s.gemstoneId,
-        gemstoneName: s.gemstoneName,
-        customerId: s.customerId,
-        customerName: s.customerName,
-        amount: s.amount,
-        costPrice: s.costPrice,
-        commissionFee: s.commissionFee,
-        quantity: s.quantity,
-        weightCarat: s.weightCarat,
-        paymentMethod: s.paymentMethod,
-        note: s.note,
-        saleDate: s.saleDate,
-        netSale: s.netSale,
-        costUsed: s.costUsed,
-        profitGenerated: s.profitGenerated,
-        remainingCostAfterSale: s.remainingCostAfterSale,
-        accumulatedProfit: s.accumulatedProfit,
-        photoPaths: s.photoPaths,
-        isDeleted: s.isDeleted,
-        deletedAt: s.deletedAt,
-        deletedBy: s.deletedBy,
-        deleteReason: s.deleteReason,
-      );
-      final oldGemstoneId = s.gemstoneId;
+    for (int i = 0; i < _items.length; i++) {
+      final item = _items[i];
+      final qty = item.quantity;
+      final unitPrice = item.unitPrice;
+      final amount = qty * unitPrice;
+      final netSale = amount - sellCommission;
       
-      s.gemstoneId = gemId;
-      s.gemstoneName = name;
-      s.customerId = _selectedCustomerId;
-      s.customerName = _customer.text.trim();
-      s.amount = amount;
-      s.costPrice = cost;
-      s.commissionFee = sellCommission;
-      s.quantity = qty;
-      s.weightCarat = weight;
-      s.paymentMethod = _payment;
-      s.note = _note.text.trim();
-      s.saleDate = _saleDate.millisecondsSinceEpoch;
-      s.netSale = netSale;
-      s.costUsed = costUsed;
-      s.remainingCostAfterSale = remainingCostAfterSale;
-      s.profitGenerated = profitGenerated;
-      s.accumulatedProfit = accumulatedProfit;
-      s.photoPaths = _photoPaths;
-      await box.put(widget.hiveKey, s);
-      
-      // Apply customer ledger impact for edit
-      await LocalDb.applySaleCustomerLedger(s, oldSale: oldSale);
-      
-      // BUG #1 FIX: Recalculate ledger for old gemstone if it changed
-      if (oldGemstoneId.isNotEmpty && oldGemstoneId != gemId) {
-        await LocalDb.updateGemstoneProductLedger(oldGemstoneId);
+      // Calculate cost
+      double cost;
+      if (item.gemstoneId!.isNotEmpty) {
+        cost = perUnitCost * qty;
+      } else {
+        cost = perUnitCost;
       }
-    } else {
+      
+      // Create Sale record
       final newSale = Sale(
         id: LocalDb.genId(),
-        gemstoneId: gemId,
-        gemstoneName: name,
+        gemstoneId: item.gemstoneId ?? '',
+        gemstoneName: item.gemstoneName,
         customerId: _selectedCustomerId,
         customerName: _customer.text.trim(),
         amount: amount,
         costPrice: cost,
         commissionFee: sellCommission,
         quantity: qty,
-        weightCarat: weight,
+        weightCarat: 0,
         paymentMethod: _payment,
-        note: _note.text.trim(),
+        note: item.remark,
         saleDate: _saleDate.millisecondsSinceEpoch,
         netSale: netSale,
-        costUsed: costUsed,
-        remainingCostAfterSale: remainingCostAfterSale,
-        profitGenerated: profitGenerated,
-        accumulatedProfit: accumulatedProfit,
-        photoPaths: _photoPaths,
+        costUsed: 0,
+        profitGenerated: 0,
+        remainingCostAfterSale: 0,
+        accumulatedProfit: 0,
+        photoPaths: i == 0 ? _photoPaths : [],
+        isDeleted: false,
+        deletedAt: null,
+        deletedBy: '',
+        deleteReason: '',
+        invoiceNumber: invoiceNum,
       );
+      
+      // Save to Hive
       await box.add(newSale);
+      
+      // Update customer ledger
       await LocalDb.applySaleCustomerLedger(newSale);
-    }
-    
-    // Apply cost recovery logic to the purchase record
-    if (gemId.isNotEmpty) {
-      final gemstone = LocalDb.gemstoneById(gemId);
-      if (gemstone != null) {
-        // Apply cost recovery based on the net sale amount (amount - commission)
-        LocalDb.applyCostRecovery(gemstone, netSale);
-        // Save updated gemstone with new cost tracking values
-        await LocalDb.gemstones().put(gemId, gemstone);
+      
+      // Update gemstone cost recovery
+      if (item.gemstoneId!.isNotEmpty) {
+        final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
+        if (gemstone != null) {
+          LocalDb.applyCostRecovery(gemstone, netSale);
+          await LocalDb.gemstones().put(item.gemstoneId!, gemstone);
+          gemstonesUpdated.add(item.gemstoneId!);
+        }
       }
-      // Recalculate profit from all sales records for this gemstone
+    }
+
+    // PHASE 4: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
+    for (final gemId in gemstonesUpdated) {
       await LocalDb.updateGemstoneProductLedger(gemId);
     }
     
+    // Show success and close form
+    _toast('Invoice $invoiceNum သိမ်းဆည်းပြီးပါပြီ');
     if (mounted) Navigator.pop(context);
   }
 
