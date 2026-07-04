@@ -1307,17 +1307,21 @@ class _SaleFormState extends State<_SaleForm> {
                   underline: const SizedBox(),
                   hint: const Text('ဖောက်သည်အချက်အလက်'),
                   onChanged: (customerId) {
-                    setState(() {
-                      _selectedCustomerId = customerId;
-                      if (customerId != null) {
-                        final customer = activeCustomers.firstWhereOrNull(
-                          (c) => c.id == customerId,
-                        );
-                        if (customer != null) {
-                          _customer.text = customer.name;
+                    if (customerId == '__add_new_customer__') {
+                      _showCreateCustomerDialog();
+                    } else {
+                      setState(() {
+                        _selectedCustomerId = customerId;
+                        if (customerId != null) {
+                          final customer = activeCustomers.firstWhereOrNull(
+                            (c) => c.id == customerId,
+                          );
+                          if (customer != null) {
+                            _customer.text = customer.name;
+                          }
                         }
-                      }
-                    });
+                      });
+                    }
                   },
                   items: [
                     const DropdownMenuItem<String?>(
@@ -1344,12 +1348,118 @@ class _SaleFormState extends State<_SaleForm> {
                         ),
                       );
                     }).toList(),
+                    DropdownMenuItem<String>(
+                      value: '__add_new_customer__',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: Colors.white24),
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: const Row(
+                          children: [
+                            Text('➕ '),
+                            Text('ဖောက်သည်အသစ်ထည့်ရန်'),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _showCreateCustomerDialog() {
+    final TextEditingController nameController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: const Text('ဖောက်သည်အသစ်ထည့်ရန်'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: nameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'ဖောက်သည်အမည်',
+                hintText: 'ဖောက်သည်အမည်ထည့်သွင်းပါ',
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ပယ်ဖျက်မည်'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final customerName = nameController.text.trim();
+              if (customerName.isEmpty) {
+                _toast('ဖောက်သည်အမည်ထည့်သွင်းပါ');
+                return;
+              }
+              
+              // Check for duplicate (case-insensitive)
+              final existingCustomer = LocalDb.customers()
+                  .values
+                  .firstWhereOrNull((c) => 
+                    c.name.toLowerCase() == customerName.toLowerCase() && 
+                    !c.isDeleted
+                  );
+              
+              if (existingCustomer != null) {
+                if (mounted) {
+                  Navigator.pop(context);
+                  setState(() {
+                    _selectedCustomerId = existingCustomer.id;
+                    _customer.text = existingCustomer.name;
+                  });
+                }
+                return;
+              }
+              
+              // Create new customer
+              final newCustomer = Customer(
+                id: LocalDb.genId(),
+                name: customerName,
+                phone: '',
+                address: '',
+                notes: '',
+                openingBalance: 0.0,
+                currentBalance: 0.0,
+                creditLimit: 0.0,
+                status: 'active',
+                isDeleted: false,
+                deletedAt: null,
+                createdAt: DateTime.now().millisecondsSinceEpoch,
+                updatedAt: DateTime.now().millisecondsSinceEpoch,
+              );
+              
+              await LocalDb.customers().add(newCustomer);
+              
+              if (mounted) {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedCustomerId = newCustomer.id;
+                  _customer.text = newCustomer.name;
+                });
+                _toast('ဖောက်သည်အသစ်ထည့်သွင်းပြီးပါပြီ');
+              }
+            },
+            child: const Text('သိမ်းဆည်းမည်'),
+          ),
+        ],
       ),
     );
   }
