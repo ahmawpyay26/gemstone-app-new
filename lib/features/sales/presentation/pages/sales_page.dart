@@ -1392,7 +1392,7 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
       setState(() => _quantityError = 'အရေအတွက်သည် ၀ထက်ကြီးရမည်ဖြစ်ပါသည်။');
       return;
     }
-    if (_selectedConsignment != null && qty > _selectedConsignment!.remainingQuantity) {
+    if (_selectedConsignment != null && qty > (_selectedConsignment!.remainingQuantity as double)) {
       setState(() => _quantityError = 'ကျန်ရှိသော အရေအတွက်ထက် ကျော်လွန်သည်။');
       return;
     }
@@ -1459,7 +1459,7 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
     }
 
     try {
-      final totalAmount = qty * unitPrice;
+      final totalAmount = (qty as double) * unitPrice;
       final netAmount = totalAmount - commission;
 
       final saleRecord = BrokerSaleRecord(
@@ -1493,8 +1493,8 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
       await saleRecordsBox.add(saleRecord);
 
       _selectedConsignment!.soldQuantity += qty;
-      final brokerBox = Hive.box<BrokerConsignment>('brokerConsignments');
-      await brokerBox.put(_selectedConsignment!.id, _selectedConsignment!);
+      final brokerConsignmentBox = Hive.box<BrokerConsignment>('brokerConsignments');
+      await brokerConsignmentBox.put(_selectedConsignment!.id, _selectedConsignment!);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1513,7 +1513,8 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
 
   @override
   Widget build(BuildContext context) {
-    final brokerConsignments = LocalDb.brokerConsignments().values.where((c) => c.remainingQuantity > 0).toList();
+    final brokerConsignmentsBox = Hive.box<BrokerConsignment>('brokerConsignments');
+    final brokerConsignments = brokerConsignmentsBox.values.where((c) => c.remainingQuantity > 0).toList();
 
     return SingleChildScrollView(
       child: Container(
@@ -1555,7 +1556,8 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
               items: brokerConsignments.map((consignment) {
-                final gemstone = LocalDb.gemstones().get(consignment.purchaseId);
+                final gemstonesBox = Hive.box<Gemstone>('gemstones');
+                final gemstone = gemstonesBox.get(consignment.purchaseId);
                 return DropdownMenuItem(
                   value: consignment,
                   child: Text('${gemstone?.name ?? "Unknown"} - ${consignment.brokerName}'),
