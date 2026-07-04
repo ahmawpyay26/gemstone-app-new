@@ -1079,16 +1079,29 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   Widget _buildPhotoMediaBox() {
     // Create a temporary broker consignment for the form
     // This will be replaced with the real one after save
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final tempHistoricalData = BrokerHistoricalData(
+      purchaseName: 'Temporary',
+      purchaseDate: now,
+      originalSeller: '',
+      gemstoneType: '',
+      sourceType: 'whole_stone',
+      originalQuantity: 0,
+      originalWeight: 0,
+      capturedAt: now,
+    );
+
     final tempBrokerConsignment = BrokerConsignment(
       id: _tempBrokerId,
       purchaseId: '',
       consignedQuantity: 0,
+      historicalData: tempHistoricalData,
       brokerName: _brokerNameCtrl.text,
       brokerPhone: _brokerPhoneCtrl.text,
       brokerAddress: _brokerAddressCtrl.text,
       brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
       photoPaths: _formPhotoPaths,
-      createdAt: DateTime.now().millisecondsSinceEpoch,
+      createdAt: now,
     );
 
     return PhotoMediaBox(
