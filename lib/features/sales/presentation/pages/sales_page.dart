@@ -44,42 +44,59 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   void _showSaleTypeSelector() {
+    String selectedType = 'direct';
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        title: const Text('ရောင်းချမှု အမျိုးအစား'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<String>(
-              title: const Text('ပုံမှန် ရောင်းချမှု'),
-              subtitle: const Text('ကျောက်စာ စာလုံးတိုက်မှ ရောင်းချခြင်း'),
-              value: 'direct',
-              groupValue: 'direct',
-              onChanged: (_) {
-                Navigator.pop(context);
-                _openForm();
-              },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: AppTheme.surfaceDark,
+          title: const Text('ရောင်းချမှု အမျိုးအစား'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<String>(
+                title: const Text('ပုံမှန် ရောင်းချမှု'),
+                subtitle: const Text('ကျောက်စာ စာလုံးတိုက်မှ ရောင်းချခြင်း'),
+                value: 'direct',
+                groupValue: selectedType,
+                onChanged: (value) {
+                  setState(() {
+                    selectedType = value ?? 'direct';
+                  });
+                },
+              ),
+              RadioListTile<String>(
+                title: const Text('ကြေးမုံ ရောင်းချမှု'),
+                subtitle: const Text('ကြေးမုံထံ ရောင်းချခြင်း'),
+                value: 'broker',
+                groupValue: selectedType,
+                onChanged: (value) {
+                  setState(() {
+                    selectedType = value ?? 'broker';
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('ပယ်ဖျက်မည်'),
             ),
-            RadioListTile<String>(
-              title: const Text('ကြေးမုံ ရောင်းချမှု'),
-              subtitle: const Text('ကြေးမုံထံ ရောင်းချခြင်း'),
-              value: 'broker',
-              groupValue: 'broker',
-              onChanged: (_) {
+            TextButton(
+              onPressed: () {
                 Navigator.pop(context);
-                _openBrokerSaleForm();
+                if (selectedType == 'direct') {
+                  _openForm();
+                } else {
+                  _openBrokerSaleForm();
+                }
               },
+              child: const Text('ဆက်လက်မည်'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ပယ်ဖျက်မည်'),
-          ),
-        ],
       ),
     );
   }
