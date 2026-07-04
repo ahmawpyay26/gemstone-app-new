@@ -26,23 +26,39 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
   Gemstone? _gemstone;
   
   // Broker Sales Tracking
-  late TextEditingController _soldQtyController;
-  late TextEditingController _saleAmountController;
-  String? _soldQtyError;
-  String? _saleAmountError;
+  late TextEditingController _quantitySoldController;
+  late TextEditingController _unitPriceController;
+  late TextEditingController _commissionController;
+  late TextEditingController _buyerNameController;
+  late TextEditingController _remarkController;
+  DateTime? _selectedSaleDate;
+  
+  String? _quantitySoldError;
+  String? _unitPriceError;
+  String? _commissionError;
+  
+  // For history
+  List<BrokerSaleRecord> _brokerSaleRecords = [];
 
   @override
   void initState() {
     super.initState();
-    _soldQtyController = TextEditingController();
-    _saleAmountController = TextEditingController();
+    _quantitySoldController = TextEditingController();
+    _unitPriceController = TextEditingController();
+    _commissionController = TextEditingController();
+    _buyerNameController = TextEditingController();
+    _remarkController = TextEditingController();
+    _selectedSaleDate = DateTime.now();
     _loadData();
   }
 
   @override
   void dispose() {
-    _soldQtyController.dispose();
-    _saleAmountController.dispose();
+    _quantitySoldController.dispose();
+    _unitPriceController.dispose();
+    _commissionController.dispose();
+    _buyerNameController.dispose();
+    _remarkController.dispose();
     super.dispose();
   }
 
@@ -54,6 +70,14 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
       if (_brokerConsignment != null) {
         final gemstonesBox = Hive.box<Gemstone>('gemstones');
         _gemstone = gemstonesBox.get(_brokerConsignment!.purchaseId);
+        
+        // Load broker sale records for this consignment
+        final saleRecordsBox = Hive.box<BrokerSaleRecord>('brokerSaleRecords');
+        _brokerSaleRecords = saleRecordsBox.values
+            .where((record) => record.brokerConsignmentId == widget.brokerId)
+            .toList();
+        // Sort by sale date descending (newest first)
+        _brokerSaleRecords.sort((a, b) => b.saleDate.compareTo(a.saleDate));
       }
       setState(() {});
     } catch (e) {
@@ -61,65 +85,157 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
     }
   }
 
-  void _validateSoldQuantity(String value) {
+  void _validateQuantitySold(String value) {
     if (value.isEmpty) {
-      setState(() => _soldQtyError = null);
+      setState(() => _quantitySoldError = null);
       return;
     }
 
-    final soldQty = int.tryParse(value);
-    if (soldQty == null || soldQty <= 0) {
-      setState(() => _soldQtyError = 'အရေအတွက်သည် ၀ထက်ကြီးရမည်ဖြစ်ပါသည်။');
+    final qty = double.tryParse(value);
+    if (qty == null || qty <= 0) {
+      setState(() => _quantitySoldError = 'အရေအတွက်သည် ၀ထက်ကြီးရမည်ဖြစ်ပါသည်။');
       return;
     }
 
-    // Validation: Sold + Returned must not exceed Consigned
-    final totalUsed = soldQty + _brokerConsignment!.returnedQuantity.toInt();
-    if (totalUsed > _brokerConsignment!.consignedQuantity) {
-      setState(() => _soldQtyError = 'ရောင်းချ + ပြန်လည်လက်ခံ သည် အပ်ထားအရေအတွက်ထက် မများရပါ။');
+    if (_brokerConsignment != null && qty > _brokerConsignment!.remainingQuantity) {
+      setState(() => _quantitySoldError = 'ကျန်ရှိအရေအတွက်ထက် မများရပါ။');
       return;
     }
 
-    setState(() => _soldQtyError = null);
+    setState(() => _quantitySoldError = null);
   }
 
-  void _validateSaleAmount(String value) {
+  void _validateUnitPrice(String value) {
     if (value.isEmpty) {
-      setState(() => _saleAmountError = null);
+      setState(() => _unitPriceError = null);
       return;
     }
 
-    final saleAmount = double.tryParse(value);
-    if (saleAmount == null || saleAmount <= 0) {
-      setState(() => _saleAmountError = 'ရောင်းရငွေသည် ၀ထက်ကြီးရမည်ဖြစ်ပါသည်။');
+    final price = double.tryParse(value);
+    if (price == null || price < 0) {
+      setState(() => _unitPriceError = 'ယူနစ်စျေးသည် အနုတ်မဖြစ်ရပါ။');
       return;
     }
 
-    setState(() => _saleAmountError = null);
+    setState(() => _unitPriceError = null);
+  }
+
+  void _validateCommission(String value) {
+    if (value.isEmpty) {
+      setState(() => _commissionError = null);
+      return;
+    }
+
+    final commission = double.tryParse(value);
+    if (commission == null || commission < 0) {
+      setState(() => _commissionError = 'ကော်မရှင်သည် အနုတ်မဖြစ်ရပါ။');
+      return;
+    }
+
+    setState(() => _commissionError = null);
+  }
+
+  double _calculateTotalAmount() {
+    final qty = double.tryParse(_quantitySoldController.text) ?? 0;
+    final price = double.tryParse(_unitPriceController.text) ?? 0;
+    return qty * price;
+  }
+
+  double _calculateNetAmount() {
+    final total = _calculateTotalAmount();
+    final commission = double.tryParse(_commissionController.text) ?? 0;
+    return total - commission;
   }
 
   Future<void> _recordBrokerSale() async {
-    final soldQty = int.tryParse(_soldQtyController.text);
-    final saleAmount = double.tryParse(_saleAmountController.text);
+    final qty = double.tryParse(_quantitySoldController.text);
+    final unitPrice = double.tryParse(_unitPriceController.text);
+    final commission = double.tryParse(_commissionController.text) ?? 0;
+    final buyerName = _buyerNameController.text.trim();
+    final remark = _remarkController.text.trim();
     
-    if (soldQty == null || soldQty <= 0 || _soldQtyError != null) return;
-    if (saleAmount == null || saleAmount <= 0 || _saleAmountError != null) return;
+    if (qty == null || qty <= 0 || _quantitySoldError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('အရေအတွက်ကို စစ်ဆေးပါ။')),
+      );
+      return;
+    }
+    
+    if (unitPrice == null || unitPrice < 0 || _unitPriceError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ယူနစ်စျေးကို စစ်ဆေးပါ။')),
+      );
+      return;
+    }
+    
+    if (_commissionError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ကော်မရှင်ကို စစ်ဆေးပါ။')),
+      );
+      return;
+    }
 
     try {
-      await LocalDb.recordBrokerSale(
+      final totalAmount = qty * unitPrice;
+      final netAmount = totalAmount - commission;
+      
+      // Create BrokerSaleRecord
+      final saleRecord = BrokerSaleRecord(
+        id: LocalDb.genId(),
         brokerConsignmentId: widget.brokerId,
-        soldQuantity: soldQty.toDouble(),
-        saleAmount: saleAmount,
+        purchaseId: _brokerConsignment!.purchaseId,
+        sourceType: _brokerConsignment!.historicalData.sourceType,
+        breakdownItemName: _brokerConsignment!.historicalData.breakdownItemName,
+        soldQuantity: qty,
+        unitPrice: unitPrice,
+        totalSaleAmount: totalAmount,
+        brokerCommission: commission,
+        netAmount: netAmount,
+        buyerName: buyerName.isNotEmpty ? buyerName : null,
+        remark: remark,
+        saleDate: _selectedSaleDate!.millisecondsSinceEpoch,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
       );
-
-      _soldQtyController.clear();
-      _saleAmountController.clear();
+      
+      // Validate the record
+      final validationError = saleRecord.validate();
+      if (validationError != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('အမှားအယွင်း: $validationError')),
+          );
+        }
+        return;
+      }
+      
+      // Save to Hive
+      final saleRecordsBox = Hive.box<BrokerSaleRecord>('brokerSaleRecords');
+      await saleRecordsBox.add(saleRecord);
+      
+      // Update broker consignment
+      _brokerConsignment!.soldQuantity += qty;
+      final brokerBox = Hive.box<BrokerConsignment>('brokerConsignments');
+      await brokerBox.put(widget.brokerId, _brokerConsignment!);
+      
+      // Update product ledger
+      await LocalDb.updateGemstoneProductLedger(_brokerConsignment!.purchaseId);
+      
+      // Clear form
+      _quantitySoldController.clear();
+      _unitPriceController.clear();
+      _commissionController.clear();
+      _buyerNameController.clear();
+      _remarkController.clear();
+      _selectedSaleDate = DateTime.now();
+      
       setState(() {
-        _soldQtyError = null;
-        _saleAmountError = null;
+        _quantitySoldError = null;
+        _unitPriceError = null;
+        _commissionError = null;
       });
+      
       _loadData(); // Refresh data
-
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ရောင်းချမှု အောင်မြင်ပါသည်။')),
@@ -184,6 +300,40 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
           fontWeight: FontWeight.bold,
         ),
       ),
+    );
+  }
+
+  Widget _buildFormField(String label, TextEditingController controller, {
+    TextInputType keyboardType = TextInputType.text,
+    String? errorText,
+    ValueChanged<String>? onChanged,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey[300], fontSize: 12),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintStyle: TextStyle(color: Colors.grey[600]),
+            border: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey[700]!),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            errorText: errorText,
+          ),
+          onChanged: onChanged,
+        ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 
@@ -297,7 +447,7 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                       ),
                     ),
 
-                    // Item Information Section (Historical Data)
+                    // Item Information Section
                     _buildSectionHeader('ကျောက်အချက်အလက်'),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -367,7 +517,7 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                     ),
 
                     // Broker Sales Recording Section
-                    if (_brokerConsignment!.remainingQuantity > 0) ...[  
+                    if (_brokerConsignment!.remainingQuantity > 0) ...[
                       _buildSectionHeader('ရောင်းချမှု မှတ်တမ်းတင်ခြင်း'),
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -379,54 +529,124 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'ရောင်းချမှုအရေအတွက်',
-                              style: TextStyle(color: Colors.grey[300], fontSize: 12),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _soldQtyController,
-                                    keyboardType: TextInputType.number,
-                                    style: const TextStyle(color: Colors.white),
-                                    decoration: InputDecoration(
-                                      hintText: '0',
-                                      hintStyle: TextStyle(color: Colors.grey[600]),
-                                      border: OutlineInputBorder(
-                                        borderSide: BorderSide(color: Colors.grey[700]!),
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      errorText: _soldQtyError,
-                                    ),
-                                    onChanged: _validateSoldQuantity,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'ရောင်းချငွေ',
-                              style: TextStyle(color: Colors.grey[300], fontSize: 12),
-                            ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _saleAmountController,
+                            _buildFormField(
+                              'ရောင်းချအရေအတွက်',
+                              _quantitySoldController,
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              style: const TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                hintText: '0.00',
-                                hintStyle: TextStyle(color: Colors.grey[600]),
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(color: Colors.grey[700]!),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                errorText: _saleAmountError,
+                              errorText: _quantitySoldError,
+                              onChanged: _validateQuantitySold,
+                            ),
+                            _buildFormField(
+                              'ယူနစ်စျေး',
+                              _unitPriceController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              errorText: _unitPriceError,
+                              onChanged: _validateUnitPrice,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(4),
                               ),
-                              onChanged: _validateSaleAmount,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'စုစုပေါင်းပမာဏ',
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                  ),
+                                  Text(
+                                    _currencyFormat.format(_calculateTotalAmount()),
+                                    style: const TextStyle(color: AppTheme.primaryAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 12),
+                            _buildFormField(
+                              'ကော်မရှင်',
+                              _commissionController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              errorText: _commissionError,
+                              onChanged: _validateCommission,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'စုစုပေါင်းငွေ',
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                  ),
+                                  Text(
+                                    _currencyFormat.format(_calculateNetAmount()),
+                                    style: const TextStyle(color: AppTheme.primaryAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildFormField(
+                              'ဝယ်ယူသူအမည်',
+                              _buyerNameController,
+                            ),
+                            GestureDetector(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _selectedSaleDate ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime.now(),
+                                );
+                                if (picked != null) {
+                                  setState(() => _selectedSaleDate = picked);
+                                }
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'ရောင်းချရက်စွဲ',
+                                    style: TextStyle(color: Colors.grey[300], fontSize: 12),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey[700]!),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          _selectedSaleDate != null
+                                              ? _dateFormat.format(_selectedSaleDate!)
+                                              : 'ရက်စွဲရွေးချယ်ပါ',
+                                          style: TextStyle(
+                                            color: _selectedSaleDate != null ? Colors.white : Colors.grey[600],
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        Icon(Icons.calendar_today, color: Colors.grey[500], size: 18),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildFormField(
+                              'မှတ်ချက်',
+                              _remarkController,
+                              maxLines: 3,
+                            ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -435,8 +655,8 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                                   style: TextStyle(color: Colors.grey[400], fontSize: 11),
                                 ),
                                 ElevatedButton(
-                                  onPressed: (_soldQtyError == null && _saleAmountError == null && 
-                                      _soldQtyController.text.isNotEmpty && _saleAmountController.text.isNotEmpty)
+                                  onPressed: (_quantitySoldError == null && _unitPriceError == null && _commissionError == null &&
+                                      _quantitySoldController.text.isNotEmpty && _unitPriceController.text.isNotEmpty)
                                       ? _recordBrokerSale
                                       : null,
                                   child: const Text('မှတ်တမ်းတင်'),
@@ -444,6 +664,69 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                               ],
                             ),
                           ],
+                        ),
+                      ),
+                    ],
+
+                    // Broker Sale History Section
+                    if (_brokerSaleRecords.isNotEmpty) ...[
+                      _buildSectionHeader('ရောင်းချမှု မှတ်တမ်းများ'),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.3)),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.black.withOpacity(0.2),
+                        ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            columnSpacing: 12,
+                            dataRowHeight: 50,
+                            headingRowHeight: 45,
+                            columns: [
+                              DataColumn(label: Text('ရက်စွဲ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('အရေအတွက်', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('ယူနစ်စျေး', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('စုစုပေါင်း', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('ကော်မရှင်', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('စုစုပေါင်းငွေ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                              DataColumn(label: Text('ဝယ်ယူသူ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
+                            ],
+                            rows: _brokerSaleRecords.map((record) {
+                              return DataRow(
+                                cells: [
+                                  DataCell(Text(
+                                    _dateFormat.format(DateTime.fromMillisecondsSinceEpoch(record.saleDate)),
+                                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                                  )),
+                                  DataCell(Text(
+                                    record.soldQuantity.toStringAsFixed(0),
+                                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                                  )),
+                                  DataCell(Text(
+                                    _currencyFormat.format(record.unitPrice),
+                                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                                  )),
+                                  DataCell(Text(
+                                    _currencyFormat.format(record.totalSaleAmount),
+                                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                                  )),
+                                  DataCell(Text(
+                                    _currencyFormat.format(record.brokerCommission),
+                                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                                  )),
+                                  DataCell(Text(
+                                    _currencyFormat.format(record.netAmount),
+                                    style: const TextStyle(color: AppTheme.primaryAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                                  )),
+                                  DataCell(Text(
+                                    record.buyerName ?? '-',
+                                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                                  )),
+                                ],
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ],
