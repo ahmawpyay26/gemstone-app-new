@@ -1360,13 +1360,53 @@ class _SaleFormState extends State<_SaleForm> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryAccent,
+                      disabledBackgroundColor: AppTheme.primaryAccent.withOpacity(0.5),
+                    ),
                     child: const Text(
-                      'Coming in Phase 2B',
+                      'ထည့်မည်',
                       style: TextStyle(
-                        color: Colors.grey,
+                        color: Colors.black,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Temporary Item List Section (UI only - Phase 1)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.primaryAccent.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ထေ့်တွင်တေျြတ်ပ်တေးတွင်မှတ်',
+                        style: const TextStyle(
+                          color: AppTheme.primaryAccent,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Text(
+                          '(ပ်တေျြတ်မှတ်မြတ်မျက်တေး)',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 8),
