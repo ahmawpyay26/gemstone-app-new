@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../widgets/photo_media_box.dart';
 
 /// Temporary model for consignment items during form editing
 class ConsignmentItemTemp {
@@ -45,6 +46,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   
   DateTime _consignmentDate = DateTime.now();
   late String _brokerConsignmentNumber;
+  late String _tempBrokerId; // Temporary ID for form photos
+  List<String> _formPhotoPaths = []; // Photos collected during form
   
   // Items list - confirmed items ready to save
   List<ConsignmentItemTemp> _confirmedItems = [];
@@ -66,6 +69,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     
     _availableGemstones = LocalDb.gemstones().values.toList();
     _generateBrokerConsignmentNumber();
+    _tempBrokerId = DateTime.now().millisecondsSinceEpoch.toString();
     _currentEditingItem = ConsignmentItemTemp(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
     );
@@ -75,6 +79,11 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     final dateStr = _dateNum.format(_consignmentDate);
     final randomSuffix = DateTime.now().millisecondsSinceEpoch % 10000;
     _brokerConsignmentNumber = 'BC-$dateStr-${randomSuffix.toString().padLeft(4, '0')}';
+  }
+
+  void _updateFormPhotoPaths() {
+    // Callback when photos are updated in the media box
+    setState(() {});
   }
 
   double _getTotalConsignmentQuantity() {
@@ -277,6 +286,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           brokerPhone: _brokerPhoneCtrl.text,
           brokerAddress: _brokerAddressCtrl.text,
           brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
+          photoPaths: _formPhotoPaths,
         );
       }
 
@@ -647,6 +657,11 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   return _buildConfirmedItemRow(item);
                 },
               ),
+            
+            const SizedBox(height: 24),
+            
+            // Photo Media Box
+            _buildPhotoMediaBox(),
             
             const SizedBox(height: 24),
             
@@ -1058,6 +1073,34 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     } else {
       return 'Unknown — ${item.consignedQuantity}';
     }
+  }
+
+  /// Build photo media box widget
+  Widget _buildPhotoMediaBox() {
+    // Create a temporary broker consignment for the form
+    // This will be replaced with the real one after save
+    final tempBrokerConsignment = BrokerConsignment(
+      id: _tempBrokerId,
+      purchaseId: '',
+      consignedQuantity: 0,
+      brokerName: _brokerNameCtrl.text,
+      brokerPhone: _brokerPhoneCtrl.text,
+      brokerAddress: _brokerAddressCtrl.text,
+      brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
+      photoPaths: _formPhotoPaths,
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    return PhotoMediaBox(
+      brokerId: _tempBrokerId,
+      brokerConsignment: tempBrokerConsignment,
+      onPhotosUpdated: () {
+        // Update the form photo paths when photos change
+        setState(() {
+          _formPhotoPaths = tempBrokerConsignment.photoPaths;
+        });
+      },
+    );
   }
 
 }

@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
-import '../widgets/photo_media_box.dart';
 
 class BrokerDetailsPage extends StatefulWidget {
   final String brokerId;
@@ -747,13 +746,6 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                           ),
                         ],
                       ),
-                    ),
-
-                    // Photo Media Box Section
-                    PhotoMediaBox(
-                      brokerId: widget.brokerId,
-                      brokerConsignment: _brokerConsignment!,
-                      onPhotosUpdated: _loadData,
                     ),
 
                     // Broker Sales Information Card
