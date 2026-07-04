@@ -690,8 +690,13 @@ class LocalDb {
   // -------------------------------------------------------------------------
   static double totalSales() {
     double t = 0;
+    // Normal sales
     for (final s in sales().values) {
       if (!s.isDeleted) t += s.amount;
+    }
+    // Broker sales (total sale amount)
+    for (final bs in brokerSaleRecords().values) {
+      t += bs.totalSaleAmount;
     }
     return t;
   }
@@ -724,8 +729,13 @@ class LocalDb {
   /// ရောင်းချမှုအားလုံး၏ ရောင်းပွဲခ စုစုပေါင်း။
   static double totalSalesCommission() {
     double t = 0;
+    // Normal sales commission
     for (final s in sales().values) {
       if (!s.isDeleted) t += s.commissionFee;
+    }
+    // Broker commission
+    for (final bs in brokerSaleRecords().values) {
+      t += bs.brokerCommission;
     }
     return t;
   }
