@@ -772,6 +772,81 @@ class _SaleFormState extends State<_SaleForm> {
 
   bool get _isEdit => widget.existing != null && widget.hiveKey != null;
 
+  void _addItemToTemporaryList() {
+    // Validate
+    if (_selectedGemId == null && _manualName.text.isEmpty) {
+      _showError('Please select or enter a gemstone');
+      return;
+    }
+    double qty = double.tryParse(_qty.text) ?? 0;
+    if (qty <= 0) {
+      _showError('Quantity must be greater than 0');
+      return;
+    }
+    double price = double.tryParse(_amount.text) ?? 0;
+    if (price < 0) {
+      _showError('Price must be 0 or greater');
+      return;
+    }
+
+    // Get gemstone name
+    String gemstoneName = _manualName.text;
+    String? gemstoneId;
+    if (_selectedGemId != null) {
+      final gem = LocalDb.getGemstone(_selectedGemId!);
+      gemstoneName = gem?.name ?? 'Unknown';
+      gemstoneId = gem?.id;
+    }
+
+    // Create item
+    final item = _SaleItem(
+      id: const Uuid().v4(),
+      gemstoneId: gemstoneId,
+      gemstoneName: gemstoneName,
+      quantity: qty.toInt(),
+      unitPrice: price,
+      remark: _note.text,
+    );
+
+    // Add to list
+    setState(() {
+      _items.add(item);
+    });
+
+    // Clear form fields
+    setState(() {
+      _selectedGemId = null;
+      _manualName.clear();
+      _qty.clear();
+      _amount.clear();
+      _note.clear();
+      _weight.clear();
+      _cost.clear();
+      _commission.clear();
+    });
+
+    _showSuccess('${item.gemstoneName} added');
+  }
+
+  void _removeItemFromTemporaryList(int index) {
+    setState(() {
+      _items.removeAt(index);
+    });
+    _showSuccess('Item removed');
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppTheme.errorColor),
+    );
+  }
+
+  void _showSuccess(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppTheme.successColor),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1359,10 +1434,9 @@ class _SaleFormState extends State<_SaleForm> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: null,
+                    onPressed: _addItemToTemporaryList,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryAccent,
-                      disabledBackgroundColor: AppTheme.primaryAccent.withOpacity(0.5),
                     ),
                     child: const Text(
                       'ထည့်မည်',
@@ -1374,7 +1448,7 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Temporary Item List Section (UI only - Phase 1)
+                // Temporary Item List Section
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -1389,7 +1463,7 @@ class _SaleFormState extends State<_SaleForm> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'ထေ့်တွင်တေျြတ်ပ်တေးတွင်မှတ်',
+                        'Temporary Items',
                         style: const TextStyle(
                           color: AppTheme.primaryAccent,
                           fontSize: 14,
@@ -1397,15 +1471,76 @@ class _SaleFormState extends State<_SaleForm> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Center(
-                        child: Text(
-                          '(ပ်တေျြတ်မှတ်မြတ်မျက်တေး)',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 12,
+                      if (_items.isEmpty)
+                        Center(
+                          child: Text(
+                            '(No items yet)',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                            ),
                           ),
+                        )
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _items.length,
+                          itemBuilder: (ctx, idx) {
+                            final item = _items[idx];
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.surface,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppTheme.primaryAccent.withOpacity(0.2),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.gemstoneName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Qty: ${item.quantity} | Total: ${_money.format(item.totalAmount.toInt())}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                        if (item.remark.isNotEmpty)
+                                          Text(
+                                            'Note: ${item.remark}',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey[500],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, size: 20),
+                                    color: AppTheme.errorColor,
+                                    onPressed: () => _removeItemFromTemporaryList(idx),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
-                      ),
                     ],
                   ),
                 ),
