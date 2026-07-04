@@ -923,15 +923,6 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                               DataColumn(label: Text('ကော်မရှင်', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
                               DataColumn(label: Text('စုစုပေါင်းငွေ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
                               DataColumn(label: Text('ဝယ်ယူသူ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
-                            ],
-                            columns: [
-                              DataColumn(label: Text('ရက်စွဲ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
-                              DataColumn(label: Text('အရေအတွက်', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
-                              DataColumn(label: Text('ယူနစ်စျေး', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
-                              DataColumn(label: Text('စုစုပေါင်း', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
-                              DataColumn(label: Text('ကော်မရှင်', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
-                              DataColumn(label: Text('စုစုပေါင်းငွေ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
-                              DataColumn(label: Text('ဝယ်ယူသူ', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
                               DataColumn(label: Text('လုပ်ဆောင်ချက်', style: TextStyle(color: Colors.grey[300], fontSize: 11))),
                             ],
                             rows: _brokerSaleRecords.map((record) {
