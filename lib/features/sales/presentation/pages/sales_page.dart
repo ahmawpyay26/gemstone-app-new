@@ -1613,6 +1613,8 @@ class _SaleFormState extends State<_SaleForm> {
                     ),
                   ),
 
+                // Show entire form only for whole stone source
+                if (_saleSource == 'whole_stone') ...[                
                 // Manual name (editable; auto-filled when a gem is selected)
                 _field(_manualName, 'ကျောက်မျက်အမည်', required: true),
 
@@ -1920,6 +1922,7 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                ], // End of if (_saleSource == 'whole_stone')
               ],
             ),
           ),
