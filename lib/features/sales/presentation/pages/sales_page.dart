@@ -1570,7 +1570,7 @@ class _SaleFormState extends State<_SaleForm> {
 
                 // Fragment purchase list (Step 5C-1)
                 if (_saleSource == 'breakdown_item')
-                  _buildFragmentPurchaseList(),
+                  _buildFragmentPurchaseList(gems),
 
                 // Show entire form only for whole stone source
                 if (_saleSource == 'whole_stone') ...[                
@@ -1891,7 +1891,7 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   /// Build read-only list of purchases with breakdown items (Step 5C-1)
-  Widget _buildFragmentPurchaseList() {
+  Widget _buildFragmentPurchaseList(List<Gemstone> gems) {
     final gemsWithBreakdown = gems.where((g) {
       return g.breakdownItems != null && 
              g.breakdownItems!.isNotEmpty &&
