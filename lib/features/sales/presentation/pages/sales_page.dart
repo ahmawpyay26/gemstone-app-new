@@ -770,6 +770,7 @@ class _SaleFormState extends State<_SaleForm> {
   // Sale source selector (Step 5B)
   String _saleSource = 'whole_stone'; // 'whole_stone' or 'breakdown_item'
   String? _selectedFragmentGemstoneId; // Selected fragment purchase (Step 5C-2)
+  String? _selectedFragmentName; // Selected fragment name from dropdown (Step 5C-3)
   
   // Multi-item invoice support
   late List<_SaleItem> _items;
@@ -1573,6 +1574,10 @@ class _SaleFormState extends State<_SaleForm> {
                 if (_saleSource == 'breakdown_item')
                   _buildFragmentPurchaseList(gems),
 
+                // Fragment dropdown (Step 5C-3)
+                if (_saleSource == 'breakdown_item' && _selectedFragmentGemstoneId != null)
+                  _buildFragmentDropdown(gems),
+
                 // Show entire form only for whole stone source
                 if (_saleSource == 'whole_stone') ...[                
                 // Manual name (editable; auto-filled when a gem is selected)
@@ -2017,6 +2022,84 @@ class _SaleFormState extends State<_SaleForm> {
               ),
             );
           }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFragmentDropdown(List<Gemstone> gems) {
+    // Find the selected purchase
+    final selectedPurchase = gems.firstWhereOrNull(
+      (g) => g.id == _selectedFragmentGemstoneId,
+    );
+
+    if (selectedPurchase == null || selectedPurchase.breakdownItems == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Get available breakdown items (quantity > 0)
+    final availableItems = selectedPurchase.breakdownItems!.entries
+        .where((e) => e.value > 0)
+        .toList();
+
+    if (availableItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: Text(
+              'ရောင်းမည့် အစိတ်စိတ်ပိုင်း',
+              style: TextStyle(
+                color: AppTheme.primaryAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceDark,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppTheme.primaryAccent.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: DropdownButton<String>(
+              value: _selectedFragmentName,
+              hint: const Text(
+                'အစိတ်စိတ်ပိုင်း ရွေးချယ်မည်',
+                style: TextStyle(color: Colors.white70),
+              ),
+              isExpanded: true,
+              dropdownColor: AppTheme.surfaceDark,
+              underline: const SizedBox.shrink(),
+              items: availableItems.map((entry) {
+                final displayText = '${entry.key} (${entry.value})';
+                return DropdownMenuItem<String>(
+                  value: entry.key,
+                  child: Text(
+                    displayText,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedFragmentName = value;
+                });
+              },
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
         ],
       ),
     );
