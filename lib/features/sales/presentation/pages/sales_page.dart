@@ -377,7 +377,8 @@ class _SalesPageState extends State<SalesPage> {
                                       )),
                                   Text(
                                       'အရေအတွက်: ${s.quantity}'
-                                      '${s.weightCarat > 0 ? ' • ${s.weightCarat} ${_saleUnit(s)}' : ''}',
+                                      '${s.weightCarat > 0 ? ' • ${s.weightCarat} ${_saleUnit(s)}' : ''}'
+                                      '${s.isFragmentSource && s.fragmentWeight != null ? ' • ${s.fragmentWeight!.toStringAsFixed(2)} kg' : ''}',
                                       style:
                                           TextStyle(color: Colors.grey[400])),
                                   Text(
@@ -735,6 +736,7 @@ class _SaleItem {
   String remark;
   String? fragmentName; // Fragment name if from breakdown_item source
   bool isFragmentSource; // True if this item is from fragment source
+  double? weight; // Weight in kg for fragment items
 
   _SaleItem({
     required this.id,
@@ -745,6 +747,7 @@ class _SaleItem {
     this.remark = '',
     this.fragmentName,
     this.isFragmentSource = false,
+    this.weight,
   });
 
   double get totalAmount => quantity * unitPrice;
@@ -784,6 +787,8 @@ class _SaleFormState extends State<_SaleForm> {
   String? _selectedFragmentName; // Selected fragment name from dropdown (Step 5C-3)
   late final TextEditingController _fragmentQuantity; // Fragment quantity input (Step 5C-4)
   String? _fragmentQuantityError; // Fragment quantity validation error (Step 5C-4)
+  late final TextEditingController _fragmentWeight; // Fragment weight input in kg (Step 6B-1)
+  String? _fragmentWeightError; // Fragment weight validation error (Step 6B-1)
   late final TextEditingController _fragmentUnitPrice; // Fragment unit price input (Step 5D-2)
   
   // Multi-item invoice support
@@ -985,6 +990,9 @@ class _SaleFormState extends State<_SaleForm> {
         _selectedFragmentGemstoneId = item.gemstoneId;
         _selectedFragmentName = item.fragmentName;
         _fragmentQuantity.text = item.quantity.toString();
+        if (item.weight != null) {
+          _fragmentWeight.text = item.weight.toString();
+        }
         _fragmentUnitPrice.text = item.unitPrice.toString();
       } else {
         // Whole-stone item: restore whole-stone fields
@@ -1035,6 +1043,7 @@ class _SaleFormState extends State<_SaleForm> {
     _commission = TextEditingController(
         text: e != null && e.commissionFee > 0 ? _trim(e.commissionFee) : '');
     _fragmentQuantity = TextEditingController();
+    _fragmentWeight = TextEditingController();
     _fragmentUnitPrice = TextEditingController();
     _payment = e?.paymentMethod ?? 'cash';
     _saleDate = e != null
@@ -1068,7 +1077,7 @@ class _SaleFormState extends State<_SaleForm> {
     // Clear preview state (automatic rollback)
     _previewState.clear();
     
-    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission, _fragmentQuantity, _fragmentUnitPrice]) {
+    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission, _fragmentQuantity, _fragmentWeight, _fragmentUnitPrice]) {
       c.dispose();
     }
     super.dispose();
@@ -1388,6 +1397,9 @@ class _SaleFormState extends State<_SaleForm> {
         deletedBy: '',
         deleteReason: '',
         invoiceNumber: invoiceNum,
+        fragmentName: item.fragmentName,
+        isFragmentSource: item.isFragmentSource,
+        fragmentWeight: item.weight,
       );
       
       // Save to Hive
@@ -1834,6 +1846,16 @@ class _SaleFormState extends State<_SaleForm> {
                                       fontSize: 12,
                                     ),
                                   ),
+                                  if (item.isFragmentSource && item.weight != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'အလေးချိန်: ${item.weight!.toStringAsFixed(2)} kg',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                   const SizedBox(height: 4),
                                   // Total amount
                                   Text(
@@ -2179,6 +2201,24 @@ class _SaleFormState extends State<_SaleForm> {
               });
             },
           ),
+          const SizedBox(height: 12),
+          // Weight input field (Step 6B-1)
+          TextFormField(
+            controller: _fragmentWeight,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: 'အလေးချိန်',
+              hintText: 'ဥပမာ - 2.35',
+              errorText: _fragmentWeightError,
+              errorStyle: const TextStyle(color: Colors.red),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _validateFragmentWeight();
+              });
+            },
+          ),
         ],
       ),
     );
@@ -2205,6 +2245,24 @@ class _SaleFormState extends State<_SaleForm> {
     }
 
     _fragmentQuantityError = null;
+  }
+
+  void _validateFragmentWeight() {
+    final input = _fragmentWeight.text.trim();
+    
+    if (input.isEmpty) {
+      _fragmentWeightError = null;
+      return;
+    }
+
+    final weight = double.tryParse(input);
+    
+    if (weight == null || weight <= 0) {
+      _fragmentWeightError = 'အလေးချိန်သည် ၀ထက်ကြီးရမည်';
+      return;
+    }
+
+    _fragmentWeightError = null;
   }
 
   void _addFragmentItemMinimal() {
@@ -2270,6 +2328,7 @@ class _SaleFormState extends State<_SaleForm> {
           unitPrice: unitPrice,
           remark: '',
           fragmentName: _selectedFragmentName,
+          weight: double.tryParse(_fragmentWeight.text.trim()),
           isFragmentSource: true,
         ),
       );
@@ -2282,6 +2341,7 @@ class _SaleFormState extends State<_SaleForm> {
       _selectedFragmentGemstoneId = null;
       _selectedFragmentName = null;
       _fragmentQuantity.clear();
+      _fragmentWeight.clear();
       _fragmentUnitPrice.clear();
       _fragmentQuantityError = null;
     });

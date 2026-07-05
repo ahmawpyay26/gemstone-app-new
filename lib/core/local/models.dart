@@ -315,6 +315,7 @@ class Sale {
   // Fragment Sales Support (NEW - backwards compatible)
   String? fragmentName; // Fragment name if this is a fragment sale
   bool isFragmentSource; // True if this sale is from a fragment source
+  double? fragmentWeight; // Weight in kg for fragment sales (NEW - backwards compatible)
 
   Sale({
     required this.id,
@@ -343,6 +344,7 @@ class Sale {
     this.invoiceNumber = '',
     this.fragmentName,
     this.isFragmentSource = false,
+    this.fragmentWeight,
   });
 }
 
@@ -384,13 +386,14 @@ class SaleAdapter extends TypeAdapter<Sale> {
       invoiceNumber: (fields[23] as String?) ?? '',
       fragmentName: fields[24] as String?,
       isFragmentSource: (fields[25] as bool?) ?? false,
+      fragmentWeight: fields[26] == null ? null : (fields[26] as num).toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(26)
+      ..writeByte(27)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -442,7 +445,9 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(24)
       ..write(obj.fragmentName)
       ..writeByte(25)
-      ..write(obj.isFragmentSource);
+      ..write(obj.isFragmentSource)
+      ..writeByte(26)
+      ..write(obj.fragmentWeight);
   }
 }
 
