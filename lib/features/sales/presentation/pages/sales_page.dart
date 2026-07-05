@@ -726,6 +726,8 @@ class _SaleItem {
   int quantity;
   double unitPrice;
   String remark;
+  String? fragmentName; // Fragment name if from breakdown_item source
+  bool isFragmentSource; // True if this item is from fragment source
 
   _SaleItem({
     required this.id,
@@ -734,6 +736,8 @@ class _SaleItem {
     required this.quantity,
     required this.unitPrice,
     this.remark = '',
+    this.fragmentName,
+    this.isFragmentSource = false,
   });
 
   double get totalAmount => quantity * unitPrice;
@@ -1582,8 +1586,20 @@ class _SaleFormState extends State<_SaleForm> {
                   _buildFragmentDropdown(gems),
 
                 // Fragment quantity field (Step 5C-4)
-                if (_saleSource == 'breakdown_item' && _selectedFragmentName != null)
-                  _buildFragmentQuantityField(gems),
+                if (_saleSource == 'breakdown_item' && _selectedFragmentName != null) ...
+                  [
+                    _buildFragmentQuantityField(gems),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => _addFragmentItemMinimal(gems),
+                          child: const Text('ထည့်မည်'),
+                        ),
+                      ),
+                    ),
+                  ],
 
                 // Show entire form only for whole stone source
                 if (_saleSource == 'whole_stone') ...[                
@@ -2183,6 +2199,67 @@ class _SaleFormState extends State<_SaleForm> {
     }
 
     _fragmentQuantityError = null;
+  }
+
+  void _addFragmentItemMinimal(List<Gemstone> gems) {
+    // Find the selected purchase
+    final selectedPurchase = gems.firstWhereOrNull(
+      (g) => g.id == _selectedFragmentGemstoneId,
+    );
+
+    // Validation
+    if (_selectedFragmentGemstoneId == null) {
+      _toast('ကျောက်အစိတ်စုပေါင်းရွေးချယ်ပါ');
+      return;
+    }
+
+    if (_selectedFragmentName == null || _selectedFragmentName!.isEmpty) {
+      _toast('အစိတ်စိတ်ပိုင်းရွေးချယ်ပါ');
+      return;
+    }
+
+    final qtyInput = _fragmentQuantity.text.trim();
+    if (qtyInput.isEmpty) {
+      _toast('အရေအတွက်ထည့်သွင်းပါ');
+      return;
+    }
+
+    final qty = int.tryParse(qtyInput);
+    if (qty == null || qty <= 0) {
+      _toast('အရေအတွက်သည် ၀ထက်ကြီးရမည်');
+      return;
+    }
+
+    // Check quantity against available
+    final availableQty = selectedPurchase?.breakdownItems?[_selectedFragmentName] ?? 0;
+    if (qty > availableQty) {
+      _toast('လက်ကျန်အစိတ်အရေအတွက်ထက် မကျော်ရပါ');
+      return;
+    }
+
+    // All validations passed - add item to temporary list
+    setState(() {
+      _items.add(
+        _SaleItem(
+          id: const Uuid().v4(),
+          gemstoneId: _selectedFragmentGemstoneId,
+          gemstoneName: selectedPurchase?.gemstoneName ?? 'Unknown',
+          quantity: qty,
+          unitPrice: 0, // No unit price for fragments in this step
+          remark: '',
+          fragmentName: _selectedFragmentName,
+          isFragmentSource: true,
+        ),
+      );
+
+      // Clear fragment-related fields only
+      _selectedFragmentGemstoneId = null;
+      _selectedFragmentName = null;
+      _fragmentQuantity.clear();
+      _fragmentQuantityError = null;
+    });
+
+    _toast('အစိတ်စိတ်ပိုင်းထည့်သွင်းအောင်မြင်ပါသည်');
   }
 
   Widget _field(TextEditingController c, String label,
