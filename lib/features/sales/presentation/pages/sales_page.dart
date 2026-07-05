@@ -2243,7 +2243,7 @@ class _SaleFormState extends State<_SaleForm> {
         _SaleItem(
           id: const Uuid().v4(),
           gemstoneId: _selectedFragmentGemstoneId,
-          gemstoneName: selectedPurchase?.gemstoneName ?? 'Unknown',
+          gemstoneName: selectedPurchase?.name ?? 'Unknown',
           quantity: qty,
           unitPrice: 0, // No unit price for fragments in this step
           remark: '',
