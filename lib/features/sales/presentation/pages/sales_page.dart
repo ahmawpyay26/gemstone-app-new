@@ -1568,50 +1568,9 @@ class _SaleFormState extends State<_SaleForm> {
                     ),
                   ),
 
-                // Fragment selection placeholder (Step 5C)
+                // Fragment purchase list (Step 5C-1)
                 if (_saleSource == 'breakdown_item')
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceDark.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppTheme.primaryAccent.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.info_outline,
-                            color: AppTheme.primaryAccent,
-                            size: 24,
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'ကျောက်အစိတ်စိတ်ပိုင်း ရွေးချယ်မှု',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '(လာမည့် Step 5C တွင် အကောင်အထည်ဖော်မည်)',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  _buildFragmentPurchaseList(),
 
                 // Show entire form only for whole stone source
                 if (_saleSource == 'whole_stone') ...[                
@@ -1927,6 +1886,128 @@ class _SaleFormState extends State<_SaleForm> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Build read-only list of purchases with breakdown items (Step 5C-1)
+  Widget _buildFragmentPurchaseList() {
+    final gemsWithBreakdown = gems.where((g) {
+      return g.breakdownItems != null && 
+             g.breakdownItems!.isNotEmpty &&
+             g.breakdownItems!.values.any((qty) => qty > 0);
+    }).toList();
+
+    if (gemsWithBreakdown.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceDark.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppTheme.primaryAccent.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: const Center(
+            child: Text(
+              'အစိတ်စိတ်ပိုင်း ရွေးချယ်မှု မတ်ရိတ်မောရေ',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: Text(
+              'အစိတ်စိတ်ပိုင်း ရွေးချယ်မှု',
+              style: TextStyle(
+                color: AppTheme.primaryAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ...gemsWithBreakdown.map((gem) {
+            final totalBreakdownQty = gem.breakdownItems!.values
+                .where((qty) => qty > 0)
+                .fold<int>(0, (sum, qty) => sum + qty);
+            final breakdownItemsList = gem.breakdownItems!.entries
+                .where((e) => e.value > 0)
+                .toList();
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceDark,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppTheme.primaryAccent.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    gem.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'စူစူပီင်း အစိတ်အရေအတွက်: $totalBreakdownQty',
+                    style: TextStyle(
+                      color: Colors.grey[300],
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...breakdownItemsList.map((entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        const Text(
+                          '• ',
+                          style: TextStyle(
+                            color: AppTheme.primaryAccent,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '${entry.key} - ${entry.value}',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
       ),
     );
   }
