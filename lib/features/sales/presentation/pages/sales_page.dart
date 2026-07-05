@@ -1958,7 +1958,7 @@ class _SaleFormState extends State<_SaleForm> {
     );
   }
 
-  /// Build read-only list of purchases with breakdown items (Step 5C-1)
+  /// Build compact dropdown for gemstone selection with breakdown items (Step 5C-1)
   Widget _buildFragmentPurchaseList(List<Gemstone> gems) {
     final gemsWithBreakdown = gems.where((g) {
       return g.breakdownItems != null && 
@@ -2001,7 +2001,7 @@ class _SaleFormState extends State<_SaleForm> {
           const Padding(
             padding: EdgeInsets.only(bottom: 8),
             child: Text(
-              'အစိတ်စိတ်ပိုင်း ရွေးချယ်မှု',
+              'ကျောက်အမည်',
               style: TextStyle(
                 color: AppTheme.primaryAccent,
                 fontSize: 13,
@@ -2009,81 +2009,48 @@ class _SaleFormState extends State<_SaleForm> {
               ),
             ),
           ),
-          ...gemsWithBreakdown.map((gem) {
-            final totalBreakdownQty = gem.breakdownItems!.values
-                .where((qty) => qty > 0)
-                .fold<int>(0, (sum, qty) => sum + qty);
-            final breakdownItemsList = gem.breakdownItems!.entries
-                .where((e) => e.value > 0)
-                .toList();
-
-            final isSelected = _selectedFragmentGemstoneId == gem.id;
-            
-            return InkWell(
-              onTap: () {
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceDark,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppTheme.primaryAccent.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: DropdownButton<String>(
+              value: _selectedFragmentGemstoneId,
+              hint: const Text(
+                'ကျောက်အမည် ရွေးချယ်မည်',
+                style: TextStyle(color: Colors.white70),
+              ),
+              isExpanded: true,
+              dropdownColor: AppTheme.surfaceDark,
+              underline: const SizedBox.shrink(),
+              items: gemsWithBreakdown.map((gem) {
+                final totalBreakdownQty = gem.breakdownItems!.values
+                    .where((qty) => qty > 0)
+                    .fold<int>(0, (sum, qty) => sum + qty);
+                final displayText = '${gem.name} ($totalBreakdownQty)';
+                return DropdownMenuItem<String>(
+                  value: gem.id,
+                  child: Text(
+                    displayText,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
                 setState(() {
-                  _selectedFragmentGemstoneId = gem.id;
+                  _selectedFragmentGemstoneId = value;
+                  _selectedFragmentName = null; // Reset fragment selection
                 });
               },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceDark,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isSelected ? AppTheme.primaryAccent : AppTheme.primaryAccent.withOpacity(0.2),
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    gem.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'စူစူပီင်း အစိတ်အရေအတွက်: $totalBreakdownQty',
-                    style: TextStyle(
-                      color: Colors.grey[300],
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...breakdownItemsList.map((entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      children: [
-                        const Text(
-                          '• ',
-                          style: TextStyle(
-                            color: AppTheme.primaryAccent,
-                            fontSize: 12,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '${entry.key} - ${entry.value}',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
-                ],
-              ),
-              ),
-            );
-          }).toList(),
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
         ],
       ),
     );
