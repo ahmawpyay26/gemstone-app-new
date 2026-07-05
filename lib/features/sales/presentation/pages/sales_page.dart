@@ -1392,9 +1392,10 @@ class _SaleFormState extends State<_SaleForm> {
           // Step 5E-2: Deduct from breakdownItems if this is a fragment sale
           if (item.isFragmentSource && item.fragmentName != null && item.fragmentName!.isNotEmpty) {
             if (gemstone.breakdownItems != null) {
-              final currentQty = gemstone.breakdownItems![item.fragmentName] ?? 0;
+              final fragmentName = item.fragmentName!; // Extract non-null value
+              final currentQty = gemstone.breakdownItems![fragmentName] ?? 0;
               if (currentQty >= qty) {
-                gemstone.breakdownItems![item.fragmentName] = currentQty - qty;
+                gemstone.breakdownItems![fragmentName] = currentQty - qty;
               }
             }
           }
