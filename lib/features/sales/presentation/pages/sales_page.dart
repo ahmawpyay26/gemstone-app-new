@@ -769,6 +769,7 @@ class _SaleFormState extends State<_SaleForm> {
   
   // Sale source selector (Step 5B)
   String _saleSource = 'whole_stone'; // 'whole_stone' or 'breakdown_item'
+  String? _selectedFragmentGemstoneId; // Selected fragment purchase (Step 5C-2)
   
   // Multi-item invoice support
   late List<_SaleItem> _items;
@@ -1949,18 +1950,26 @@ class _SaleFormState extends State<_SaleForm> {
                 .where((e) => e.value > 0)
                 .toList();
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceDark,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppTheme.primaryAccent.withOpacity(0.2),
-                  width: 1,
+            final isSelected = _selectedFragmentGemstoneId == gem.id;
+            
+            return InkWell(
+              onTap: () {
+                setState(() {
+                  _selectedFragmentGemstoneId = gem.id;
+                });
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceDark,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? AppTheme.primaryAccent : AppTheme.primaryAccent.withOpacity(0.2),
+                    width: isSelected ? 2 : 1,
+                  ),
                 ),
-              ),
-              child: Column(
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -2004,6 +2013,7 @@ class _SaleFormState extends State<_SaleForm> {
                     ),
                   )).toList(),
                 ],
+              ),
               ),
             );
           }).toList(),

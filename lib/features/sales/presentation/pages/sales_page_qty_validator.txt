@@ -1,0 +1,22 @@
+// Add this method to _SaleFormState class
+
+String? _validateQuantity(String? value) {
+  if (value == null || value.isEmpty) return 'လိုအပ်သည်';
+  final qty = int.tryParse(value);
+  if (qty == null || qty <= 0) return 'အရေအတွက် > 0';
+  
+  // Fragment quantity validation
+  if (_saleSource == 'breakdown_item' && _selectedBreakdownItemQuantity != null) {
+    if (qty > _selectedBreakdownItemQuantity!) {
+      return 'အစိတ်အရေအတွက် $_selectedBreakdownItemQuantity ခုထက် မကျော်ရ';
+    }
+  }
+  
+  return null;
+}
+
+// Then update the quantity field to use this validator:
+_field(_qty, 'အရေအတွက်',
+    number: true, 
+    required: true,
+    validator: _validateQuantity),
