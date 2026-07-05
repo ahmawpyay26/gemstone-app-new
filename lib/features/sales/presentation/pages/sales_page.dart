@@ -771,6 +771,8 @@ class _SaleFormState extends State<_SaleForm> {
   String _saleSource = 'whole_stone'; // 'whole_stone' or 'breakdown_item'
   String? _selectedFragmentGemstoneId; // Selected fragment purchase (Step 5C-2)
   String? _selectedFragmentName; // Selected fragment name from dropdown (Step 5C-3)
+  late final TextEditingController _fragmentQuantity; // Fragment quantity input (Step 5C-4)
+  String? _fragmentQuantityError; // Fragment quantity validation error (Step 5C-4)
   
   // Multi-item invoice support
   late List<_SaleItem> _items;
@@ -1003,6 +1005,7 @@ class _SaleFormState extends State<_SaleForm> {
         text: e != null && e.costPrice > 0 ? _trim(e.costPrice) : '');
     _commission = TextEditingController(
         text: e != null && e.commissionFee > 0 ? _trim(e.commissionFee) : '');
+    _fragmentQuantity = TextEditingController();
     _payment = e?.paymentMethod ?? 'cash';
     _saleDate = e != null
         ? DateTime.fromMillisecondsSinceEpoch(e.saleDate)
@@ -1035,7 +1038,7 @@ class _SaleFormState extends State<_SaleForm> {
     // Clear preview state (automatic rollback)
     _previewState.clear();
     
-    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission]) {
+    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission, _fragmentQuantity]) {
       c.dispose();
     }
     super.dispose();
@@ -1578,6 +1581,10 @@ class _SaleFormState extends State<_SaleForm> {
                 if (_saleSource == 'breakdown_item' && _selectedFragmentGemstoneId != null)
                   _buildFragmentDropdown(gems),
 
+                // Fragment quantity field (Step 5C-4)
+                if (_saleSource == 'breakdown_item' && _selectedFragmentName != null)
+                  _buildFragmentQuantityField(gems),
+
                 // Show entire form only for whole stone source
                 if (_saleSource == 'whole_stone') ...[                
                 // Manual name (editable; auto-filled when a gem is selected)
@@ -2103,6 +2110,79 @@ class _SaleFormState extends State<_SaleForm> {
         ],
       ),
     );
+  }
+
+  Widget _buildFragmentQuantityField(List<Gemstone> gems) {
+    // Find the selected purchase
+    final selectedPurchase = gems.firstWhereOrNull(
+      (g) => g.id == _selectedFragmentGemstoneId,
+    );
+
+    if (selectedPurchase == null || selectedPurchase.breakdownItems == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Get the selected fragment's quantity
+    final selectedFragmentQty = selectedPurchase.breakdownItems![_selectedFragmentName] ?? 0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Available quantity label
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'လက်ကျန်အစိတ်အရေအတွက်: $selectedFragmentQty',
+              style: TextStyle(
+                color: Colors.grey[300],
+                fontSize: 12,
+              ),
+            ),
+          ),
+          // Quantity input field
+          TextFormField(
+            controller: _fragmentQuantity,
+            keyboardType: const TextInputType.numberWithOptions(decimal: false),
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: 'အရေအတွက်',
+              errorText: _fragmentQuantityError,
+              errorStyle: const TextStyle(color: Colors.red),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _validateFragmentQuantity(selectedFragmentQty);
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _validateFragmentQuantity(int availableQty) {
+    final input = _fragmentQuantity.text.trim();
+    
+    if (input.isEmpty) {
+      _fragmentQuantityError = null;
+      return;
+    }
+
+    final qty = int.tryParse(input);
+    
+    if (qty == null || qty <= 0) {
+      _fragmentQuantityError = 'အရေအတွက်သည် ၀ထက်ကြီးရမည်';
+      return;
+    }
+
+    if (qty > availableQty) {
+      _fragmentQuantityError = 'လက်ကျန်အစိတ်အရေအတွက်ထက် မကျော်ရပါ';
+      return;
+    }
+
+    _fragmentQuantityError = null;
   }
 
   Widget _field(TextEditingController c, String label,
