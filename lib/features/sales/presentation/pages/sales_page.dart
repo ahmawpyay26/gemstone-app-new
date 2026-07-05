@@ -767,6 +767,9 @@ class _SaleFormState extends State<_SaleForm> {
   String? _selectedGemId; // null => manual entry
   bool _autoDeduct = true;
   
+  // Sale source selector (Step 5B)
+  String _saleSource = 'whole_stone'; // 'whole_stone' or 'breakdown_item'
+  
   // Multi-item invoice support
   late List<_SaleItem> _items;
   bool _isMultiItemMode = false;
@@ -1458,7 +1461,57 @@ class _SaleFormState extends State<_SaleForm> {
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
 
-                // --- Gemstone picker from inventory ---
+                // --- Sale Source Selector (Step 5B) ---
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'ရောင်းချမည့်အမျိုးအစား',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text(
+                                'အဝယ်စာရင်းမှ ကျောက်',
+                                style: TextStyle(color: Colors.white, fontSize: 13),
+                              ),
+                              value: 'whole_stone',
+                              groupValue: _saleSource,
+                              onChanged: (value) => setState(() => _saleSource = value ?? 'whole_stone'),
+                              activeColor: AppTheme.primaryAccent,
+                            ),
+                          ),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text(
+                                'ကျောက်အစိတ်စိတ်ပိုင်းများ',
+                                style: TextStyle(color: Colors.white, fontSize: 13),
+                              ),
+                              value: 'breakdown_item',
+                              groupValue: _saleSource,
+                              onChanged: (value) => setState(() => _saleSource = value ?? 'whole_stone'),
+                              activeColor: AppTheme.primaryAccent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // --- Gemstone picker from inventory (Whole Stone) ---
+                if (_saleSource == 'whole_stone')
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: DropdownButtonFormField<String?>(
@@ -1486,8 +1539,8 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
 
-                // Available stock hint
-                if (selectedGem != null)
+                // Available stock hint (Whole Stone only)
+                if (_saleSource == 'whole_stone' && selectedGem != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Container(
@@ -1508,6 +1561,51 @@ class _SaleFormState extends State<_SaleForm> {
                               ' • ရောင်းဈေး ${NumberFormat('#,##0').format(selectedGem.sellPrice)}',
                               style: const TextStyle(
                                   color: AppTheme.primaryAccent, fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // Fragment selection placeholder (Step 5C)
+                if (_saleSource == 'breakdown_item')
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceDark.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppTheme.primaryAccent.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: AppTheme.primaryAccent,
+                            size: 24,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'ကျောက်အစိတ်စိတ်ပိုင်း ရွေးချယ်မှု',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '(လာမည့် Step 5C တွင် အကောင်အထည်ဖော်မည်)',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 12,
                             ),
                           ),
                         ],
