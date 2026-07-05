@@ -737,6 +737,7 @@ class _SaleItem {
   String? fragmentName; // Fragment name if from breakdown_item source
   bool isFragmentSource; // True if this item is from fragment source
   double? weight; // Weight in kg for fragment items
+  List<String> photoPaths; // Photo attachment paths for fragment items (Step 6C-1)
 
   _SaleItem({
     required this.id,
@@ -748,6 +749,7 @@ class _SaleItem {
     this.fragmentName,
     this.isFragmentSource = false,
     this.weight,
+    this.photoPaths = const [],
   });
 
   double get totalAmount => quantity * unitPrice;
@@ -790,6 +792,7 @@ class _SaleFormState extends State<_SaleForm> {
   late final TextEditingController _fragmentWeight; // Fragment weight input in kg (Step 6B-1)
   String? _fragmentWeightError; // Fragment weight validation error (Step 6B-1)
   late final TextEditingController _fragmentUnitPrice; // Fragment unit price input (Step 5D-2)
+  List<String> _fragmentPhotoPaths = []; // Fragment photo attachment paths (Step 6C-2)
   
   // Multi-item invoice support
   late List<_SaleItem> _items;
@@ -994,6 +997,7 @@ class _SaleFormState extends State<_SaleForm> {
           _fragmentWeight.text = item.weight.toString();
         }
         _fragmentUnitPrice.text = item.unitPrice.toString();
+        _fragmentPhotoPaths = List.from(item.photoPaths);
       } else {
         // Whole-stone item: restore whole-stone fields
         _saleSource = 'whole_stone';
@@ -1391,7 +1395,7 @@ class _SaleFormState extends State<_SaleForm> {
         profitGenerated: 0,
         remainingCostAfterSale: 0,
         accumulatedProfit: 0,
-        photoPaths: i == 0 ? _photoPaths : [],
+        photoPaths: i == 0 ? _photoPaths : (item.isFragmentSource ? item.photoPaths : []),
         isDeleted: false,
         deletedAt: null,
         deletedBy: '',
@@ -1640,6 +1644,7 @@ class _SaleFormState extends State<_SaleForm> {
                   [
                     _buildFragmentQuantityField(gems),
                     _field(_fragmentUnitPrice, 'ရောင်းဈေး (ကျပ်)', number: true),
+                    _buildFragmentPhotoAttachmentSection(),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child:                 SizedBox(
@@ -1850,6 +1855,16 @@ class _SaleFormState extends State<_SaleForm> {
                                     const SizedBox(height: 4),
                                     Text(
                                       'အလေးချိန်: ${item.weight!.toStringAsFixed(2)} kg',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                  if (item.photoPaths.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'ဓါတ်ပုံ: ${item.photoPaths.length} ပုံ',
                                       style: const TextStyle(
                                         color: Colors.white70,
                                         fontSize: 12,
@@ -2265,6 +2280,19 @@ class _SaleFormState extends State<_SaleForm> {
     _fragmentWeightError = null;
   }
 
+  Widget _buildFragmentPhotoAttachmentSection() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: PhotoAttachmentWidget(
+        photoPaths: _fragmentPhotoPaths,
+        onPhotosChanged: (photos) {
+          setState(() => _fragmentPhotoPaths = photos);
+        },
+        recordType: 'sale',
+      ),
+    );
+  }
+
   void _addFragmentItemMinimal() {
     // Obtain the gemstone list (matching build method logic)
     final gems = LocalDb.gemstones().values.where((g) => g.quantity > 0).toList();
@@ -2330,6 +2358,7 @@ class _SaleFormState extends State<_SaleForm> {
           fragmentName: _selectedFragmentName,
           weight: double.tryParse(_fragmentWeight.text.trim()),
           isFragmentSource: true,
+          photoPaths: List.from(_fragmentPhotoPaths),
         ),
       );
 
@@ -2342,6 +2371,7 @@ class _SaleFormState extends State<_SaleForm> {
       _selectedFragmentName = null;
       _fragmentQuantity.clear();
       _fragmentWeight.clear();
+      _fragmentPhotoPaths.clear();
       _fragmentUnitPrice.clear();
       _fragmentQuantityError = null;
     });
