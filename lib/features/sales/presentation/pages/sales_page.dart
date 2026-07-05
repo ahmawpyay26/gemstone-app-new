@@ -1402,7 +1402,7 @@ class _SaleFormState extends State<_SaleForm> {
           await LocalDb.gemstones().put(item.gemstoneId!, gemstone);
           gemstonesUpdated.add(item.gemstoneId!);
         }
-      }
+        }
       }
 
       // PHASE 4: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
