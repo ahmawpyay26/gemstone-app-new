@@ -1606,13 +1606,13 @@ class _SaleFormState extends State<_SaleForm> {
                     _field(_fragmentUnitPrice, 'ရောင်းဈေး (ကျပ်)', number: true),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => _addFragmentItemMinimal(gems),
-                          child: const Text('ထည့်မည်'),
-                        ),
-                      ),
+                      child:                 SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saleSource == 'breakdown_item' ? _addFragmentItemMinimal : _addItemToTemporaryList,
+                    child: const Text('ထည့်မည်'),
+                  ),
+                ),
                     ),
                   ],
 
@@ -2216,7 +2216,10 @@ class _SaleFormState extends State<_SaleForm> {
     _fragmentQuantityError = null;
   }
 
-  void _addFragmentItemMinimal(List<Gemstone> gems) {
+  void _addFragmentItemMinimal() {
+    // Obtain the gemstone list (matching build method logic)
+    final gems = LocalDb.gemstones().values.where((g) => g.quantity > 0).toList();
+    
     // Find the selected purchase
     final selectedPurchase = gems.firstWhereOrNull(
       (g) => g.id == _selectedFragmentGemstoneId,
