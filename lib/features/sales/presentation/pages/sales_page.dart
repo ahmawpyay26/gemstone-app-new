@@ -1388,6 +1388,17 @@ class _SaleFormState extends State<_SaleForm> {
             // Fallback: recalculate if no preview (should not happen in normal flow)
             LocalDb.applyCostRecovery(gemstone, netSale);
           }
+          
+          // Step 5E-2: Deduct from breakdownItems if this is a fragment sale
+          if (item.isFragmentSource && item.fragmentName != null && item.fragmentName!.isNotEmpty) {
+            if (gemstone.breakdownItems != null) {
+              final currentQty = gemstone.breakdownItems![item.fragmentName] ?? 0;
+              if (currentQty >= qty) {
+                gemstone.breakdownItems![item.fragmentName] = currentQty - qty;
+              }
+            }
+          }
+          
           await LocalDb.gemstones().put(item.gemstoneId!, gemstone);
           gemstonesUpdated.add(item.gemstoneId!);
         }
