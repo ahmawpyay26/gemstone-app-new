@@ -777,6 +777,7 @@ class _SaleFormState extends State<_SaleForm> {
   String? _selectedFragmentName; // Selected fragment name from dropdown (Step 5C-3)
   late final TextEditingController _fragmentQuantity; // Fragment quantity input (Step 5C-4)
   String? _fragmentQuantityError; // Fragment quantity validation error (Step 5C-4)
+  late final TextEditingController _fragmentUnitPrice; // Fragment unit price input (Step 5D-2)
   
   // Multi-item invoice support
   late List<_SaleItem> _items;
@@ -1010,6 +1011,7 @@ class _SaleFormState extends State<_SaleForm> {
     _commission = TextEditingController(
         text: e != null && e.commissionFee > 0 ? _trim(e.commissionFee) : '');
     _fragmentQuantity = TextEditingController();
+    _fragmentUnitPrice = TextEditingController();
     _payment = e?.paymentMethod ?? 'cash';
     _saleDate = e != null
         ? DateTime.fromMillisecondsSinceEpoch(e.saleDate)
@@ -1042,7 +1044,7 @@ class _SaleFormState extends State<_SaleForm> {
     // Clear preview state (automatic rollback)
     _previewState.clear();
     
-    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission, _fragmentQuantity]) {
+    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission, _fragmentQuantity, _fragmentUnitPrice]) {
       c.dispose();
     }
     super.dispose();
@@ -1589,6 +1591,7 @@ class _SaleFormState extends State<_SaleForm> {
                 if (_saleSource == 'breakdown_item' && _selectedFragmentName != null) ...
                   [
                     _buildFragmentQuantityField(gems),
+                    _field(_fragmentUnitPrice, 'ရောင်းဈေး (ကျပ်)', number: true),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: SizedBox(
@@ -2237,6 +2240,19 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
 
+    // Validate unit price
+    final priceInput = _fragmentUnitPrice.text.trim();
+    if (priceInput.isEmpty) {
+      _toast('ရောင်းဈေးထည့်သွင်းပါ');
+      return;
+    }
+
+    final unitPrice = double.tryParse(priceInput);
+    if (unitPrice == null || unitPrice < 0) {
+      _toast('ရောင်းဈေးသည် ၀နှင့်အညီ သို့မဟုတ် ၀ထက်ကြီးရမည်');
+      return;
+    }
+
     // All validations passed - add item to temporary list
     setState(() {
       _items.add(
@@ -2245,7 +2261,7 @@ class _SaleFormState extends State<_SaleForm> {
           gemstoneId: _selectedFragmentGemstoneId,
           gemstoneName: selectedPurchase?.name ?? 'Unknown',
           quantity: qty,
-          unitPrice: 0, // No unit price for fragments in this step
+          unitPrice: unitPrice,
           remark: '',
           fragmentName: _selectedFragmentName,
           isFragmentSource: true,
@@ -2256,6 +2272,7 @@ class _SaleFormState extends State<_SaleForm> {
       _selectedFragmentGemstoneId = null;
       _selectedFragmentName = null;
       _fragmentQuantity.clear();
+      _fragmentUnitPrice.clear();
       _fragmentQuantityError = null;
     });
 
