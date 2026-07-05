@@ -2268,6 +2268,10 @@ class _SaleFormState extends State<_SaleForm> {
         ),
       );
 
+      // Update preview state for fragment item (Step 5E-1)
+      final netSale = qty * unitPrice;
+      _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale);
+
       // Clear fragment-related fields only
       _selectedFragmentGemstoneId = null;
       _selectedFragmentName = null;
