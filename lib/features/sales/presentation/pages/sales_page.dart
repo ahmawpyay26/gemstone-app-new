@@ -1083,6 +1083,127 @@ class _SaleFormState extends State<_SaleForm> {
     });
   }
 
+  /// Display preview values from temporary items
+  Widget _previewValuesDisplay() {
+    if (_items.isEmpty || _previewState.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Calculate totals from preview state
+    double totalRecoveredCost = 0;
+    double totalRemainingCost = 0;
+    double totalEstimatedProfit = 0;
+    int totalItemTypes = 0;
+
+    for (final entry in _previewState.entries) {
+      final preview = entry.value as Map<String, dynamic>;
+      totalRecoveredCost += (preview['previewRecoveredCost'] as double? ?? 0);
+      totalRemainingCost += (preview['previewRemainingCost'] as double? ?? 0);
+      totalEstimatedProfit += (preview['previewTotalProfit'] as double? ?? 0);
+      totalItemTypes++;
+    }
+
+    final m = NumberFormat('#,##0');
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryAccent.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppTheme.primaryAccent.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'ခန့်မှန်းမြင်တွေ့ချက် (အခြေခံ)',
+            style: TextStyle(
+              color: AppTheme.primaryAccent,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ပစ္စည်းအမျိုးအစား:',
+                style: TextStyle(color: Colors.grey[400], fontSize: 11),
+              ),
+              Text(
+                '$totalItemTypes',
+                style: const TextStyle(
+                  color: AppTheme.primaryAccent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ပြန်လည်ရယူထားသောအရင်း:',
+                style: TextStyle(color: Colors.grey[400], fontSize: 11),
+              ),
+              Text(
+                '${m.format(totalRecoveredCost)} ကျပ်',
+                style: const TextStyle(
+                  color: Colors.lightGreen,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ကျန်ရှိသောအရင်း:',
+                style: TextStyle(color: Colors.grey[400], fontSize: 11),
+              ),
+              Text(
+                '${m.format(totalRemainingCost)} ကျပ်',
+                style: const TextStyle(
+                  color: Colors.amber,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ခန့်မှန်းအမြတ်:',
+                style: TextStyle(color: Colors.grey[400], fontSize: 11),
+              ),
+              Text(
+                '${m.format(totalEstimatedProfit)} ကျပ်',
+                style: TextStyle(
+                  color: totalEstimatedProfit > 0 ? AppTheme.successColor : Colors.grey,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Live profit/loss preview based on currently entered amount and cost.
   Widget _profitPreview() {
     final amount = double.tryParse(_amount.text.trim()) ?? 0;
@@ -1455,6 +1576,7 @@ class _SaleFormState extends State<_SaleForm> {
                 _field(_commission, 'ရောင်းပွဲခ (ဝင်ငွေထဲမှ နှုတ်)',
                     number: true),
                 _profitPreview(),
+                _previewValuesDisplay(),
                 _field(_note, 'မှတ်ချက်'),
                 const SizedBox(height: 20),
                 PhotoAttachmentWidget(
