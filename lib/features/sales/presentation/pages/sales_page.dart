@@ -771,7 +771,114 @@ class _SaleFormState extends State<_SaleForm> {
   late List<_SaleItem> _items;
   bool _isMultiItemMode = false;
 
+  // Preview state (in-memory only, never persisted to Hive)
+  final Map<String, dynamic> _previewState = {}; // Stores preview values for each gemstone
+
   bool get _isEdit => widget.existing != null && widget.hiveKey != null;
+
+  /// Calculate preview state for a gemstone when an item is added
+  void _updatePreviewForGemstone(String? gemstoneId, double netSale) {
+    if (gemstoneId == null || gemstoneId.isEmpty) return;
+    
+    final originalGem = LocalDb.gemstoneById(gemstoneId);
+    if (originalGem == null) return;
+    
+    if (!_previewState.containsKey(gemstoneId)) {
+      _previewState[gemstoneId] = {
+        'originalRemainingCost': originalGem.remainingCost,
+        'originalRemainingQuantity': originalGem.remainingQuantity,
+        'originalRecoveredCost': originalGem.recoveredCost,
+        'originalTotalProfit': originalGem.totalProfit ?? 0,
+        'originalRemainingCostBalance': originalGem.remainingCostBalance,
+        'totalNetSale': 0.0,
+      };
+    }
+    
+    _previewState[gemstoneId]['totalNetSale'] += netSale;
+    
+    final preview = _previewState[gemstoneId];
+    final totalNetSale = preview['totalNetSale'] as double;
+    final originalBalance = preview['originalRemainingCostBalance'] as double;
+    
+    double recoveredAmount = 0;
+    double profitAmount = 0;
+    double remainingBalance = originalBalance;
+    
+    if (totalNetSale <= remainingBalance) {
+      recoveredAmount = totalNetSale;
+      remainingBalance -= totalNetSale;
+    } else {
+      recoveredAmount = remainingBalance;
+      profitAmount = totalNetSale - remainingBalance;
+      remainingBalance = 0;
+    }
+    
+    preview['previewRecoveredCost'] = (preview['originalRecoveredCost'] as double) + recoveredAmount;
+    preview['previewRemainingCostBalance'] = remainingBalance.clamp(0, double.infinity);
+    preview['previewTotalProfit'] = (preview['originalTotalProfit'] as double) + profitAmount;
+    preview['previewRemainingCost'] = remainingBalance.clamp(0, double.infinity);
+    preview['previewRemainingQuantity'] = preview['originalRemainingQuantity'];
+  }
+  
+  /// Recalculate preview state from all items in temporary list
+  void _recalculatePreview() {
+    _previewState.clear();
+    
+    for (final item in _items) {
+      if (item.gemstoneId != null && item.gemstoneId!.isNotEmpty) {
+        final netSale = (item.quantity * item.unitPrice) - (double.tryParse(_commission.text.trim()) ?? 0);
+        _updatePreviewForGemstone(item.gemstoneId, netSale);
+      }
+    }
+  }
+  
+  /// Get preview value for remaining cost
+  double _getPreviewRemainingCost(String? gemstoneId) {
+    if (gemstoneId == null || gemstoneId.isEmpty) return 0;
+    
+    if (_previewState.containsKey(gemstoneId)) {
+      return _previewState[gemstoneId]['previewRemainingCost'] as double? ?? 0;
+    }
+    
+    final gem = LocalDb.gemstoneById(gemstoneId);
+    return gem?.remainingCost ?? 0;
+  }
+  
+  /// Get preview value for remaining quantity
+  int _getPreviewRemainingQuantity(String? gemstoneId) {
+    if (gemstoneId == null || gemstoneId.isEmpty) return 0;
+    
+    if (_previewState.containsKey(gemstoneId)) {
+      return (_previewState[gemstoneId]['previewRemainingQuantity'] as int?) ?? 0;
+    }
+    
+    final gem = LocalDb.gemstoneById(gemstoneId);
+    return gem?.remainingQuantity ?? 0;
+  }
+  
+  /// Get preview value for recovered cost
+  double _getPreviewRecoveredCost(String? gemstoneId) {
+    if (gemstoneId == null || gemstoneId.isEmpty) return 0;
+    
+    if (_previewState.containsKey(gemstoneId)) {
+      return _previewState[gemstoneId]['previewRecoveredCost'] as double? ?? 0;
+    }
+    
+    final gem = LocalDb.gemstoneById(gemstoneId);
+    return gem?.recoveredCost ?? 0;
+  }
+  
+  /// Get preview value for estimated profit
+  double _getPreviewEstimatedProfit(String? gemstoneId) {
+    if (gemstoneId == null || gemstoneId.isEmpty) return 0;
+    
+    if (_previewState.containsKey(gemstoneId)) {
+      return _previewState[gemstoneId]['previewTotalProfit'] as double? ?? 0;
+    }
+    
+    final gem = LocalDb.gemstoneById(gemstoneId);
+    return gem?.totalProfit ?? 0;
+  }
 
   void _addItemToTemporaryList() {
     // Validate
@@ -814,6 +921,12 @@ class _SaleFormState extends State<_SaleForm> {
       _items.add(item);
     });
 
+    // Update preview state for this item
+    if (gemstoneId != null && gemstoneId.isNotEmpty) {
+      final netSale = (item.quantity * item.unitPrice) - (double.tryParse(_commission.text.trim()) ?? 0);
+      _updatePreviewForGemstone(gemstoneId, netSale);
+    }
+
     // Clear form fields
     setState(() {
       _selectedGemId = null;
@@ -833,6 +946,7 @@ class _SaleFormState extends State<_SaleForm> {
     setState(() {
       _items.removeAt(index);
     });
+    _recalculatePreview();
     _showSuccess('Item removed');
   }
 
@@ -850,6 +964,7 @@ class _SaleFormState extends State<_SaleForm> {
     setState(() {
       _items.removeAt(index);
     });
+    _recalculatePreview();
     _showSuccess('Item loaded for editing');
   }
 
@@ -912,6 +1027,9 @@ class _SaleFormState extends State<_SaleForm> {
 
   @override
   void dispose() {
+    // Clear preview state (automatic rollback)
+    _previewState.clear();
+    
     for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission]) {
       c.dispose();
     }
@@ -1233,7 +1351,7 @@ class _SaleFormState extends State<_SaleForm> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'လက်ကျန်: ${LocalDb.gemstoneRemainingQuantity(selectedGem)} ခု'
+                              'လက်ကျန်: ${_getPreviewRemainingQuantity(_selectedGemId)} ခု'
                               '${selectedGem.weightCarat > 0 ? ' • ${_trim(selectedGem.weightCarat)} ${LocalDb.unitLabel(selectedGem.weightUnit)}' : ''}'
                               ' • ရောင်းဈေး ${NumberFormat('#,##0').format(selectedGem.sellPrice)}',
                               style: const TextStyle(
