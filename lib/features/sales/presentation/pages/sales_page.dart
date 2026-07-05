@@ -1303,11 +1303,13 @@ class _SaleFormState extends State<_SaleForm> {
     final invoiceNum = 'INV-$dateStr-${(existingInvoices + 1).toString().padLeft(3, '0')}';
 
     // PHASE 3: SAVE LOOP - Save each item as separate Sale record
+    // Use Preview State values (Step 4D: Commit Preview to Database)
     final Set<String> gemstonesUpdated = {};
     final sellCommission = double.tryParse(_commission.text.trim()) ?? 0;
     final perUnitCost = double.tryParse(_cost.text.trim()) ?? 0;
     
-    for (int i = 0; i < _items.length; i++) {
+    try {
+      for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
       final qty = item.quantity;
       final unitPrice = item.unitPrice;
@@ -1356,25 +1358,54 @@ class _SaleFormState extends State<_SaleForm> {
       // Update customer ledger
       await LocalDb.applySaleCustomerLedger(newSale);
       
-      // Update gemstone cost recovery
+      // Update gemstone cost recovery using Preview State values
       if (item.gemstoneId!.isNotEmpty) {
         final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
         if (gemstone != null) {
-          LocalDb.applyCostRecovery(gemstone, netSale);
+          // Use preview state values instead of recalculating
+          if (_previewState.containsKey(item.gemstoneId)) {
+            final preview = _previewState[item.gemstoneId] as Map<String, dynamic>;
+            // Apply preview values directly from preview state
+            gemstone.recoveredCost = preview['previewRecoveredCost'] as double? ?? gemstone.recoveredCost;
+            gemstone.remainingCostBalance = preview['previewRemainingCostBalance'] as double? ?? gemstone.remainingCostBalance;
+            gemstone.totalProfit = preview['previewTotalProfit'] as double? ?? gemstone.totalProfit;
+            gemstone.remainingCost = preview['previewRemainingCost'] as double? ?? gemstone.remainingCost;
+          } else {
+            // Fallback: recalculate if no preview (should not happen in normal flow)
+            LocalDb.applyCostRecovery(gemstone, netSale);
+          }
           await LocalDb.gemstones().put(item.gemstoneId!, gemstone);
           gemstonesUpdated.add(item.gemstoneId!);
         }
       }
-    }
+      }
 
-    // PHASE 4: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
-    for (final gemId in gemstonesUpdated) {
-      await LocalDb.updateGemstoneProductLedger(gemId);
+      // PHASE 4: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
+      for (final gemId in gemstonesUpdated) {
+        await LocalDb.updateGemstoneProductLedger(gemId);
+      }
+      
+      // PHASE 5: CLEAR PREVIEW STATE AND FORM
+      _previewState.clear();
+      _items.clear();
+      _selectedGemId = null;
+      _manualName.clear();
+      _qty.clear();
+      _amount.clear();
+      _note.clear();
+      _weight.clear();
+      _cost.clear();
+      _commission.clear();
+      _photoPaths.clear();
+      
+      // Show success and close form
+      _toast('Invoice $invoiceNum သိမ်းဆည်းပြီးပါပြီ');
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      // FAILURE: Keep preview state and temporary list for retry
+      _toast('အမှားအယွင်း: $e');
+      // Do NOT clear preview state or items - allow user to retry
     }
-    
-    // Show success and close form
-    _toast('Invoice $invoiceNum သိမ်းဆည်းပြီးပါပြီ');
-    if (mounted) Navigator.pop(context);
   }
 
   void _toast(String msg) {
