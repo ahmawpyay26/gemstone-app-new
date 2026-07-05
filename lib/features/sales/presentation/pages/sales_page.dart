@@ -369,6 +369,13 @@ class _SalesPageState extends State<SalesPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
+                                      '${s.isFragmentSource ? "အစိတ်စိတ်ပိုင်း" : "အဝယ်စာရင်း"}${s.fragmentName != null ? " (${s.fragmentName})" : ""}',
+                                      style: TextStyle(
+                                        color: s.isFragmentSource ? AppTheme.primaryAccent : Colors.grey[400],
+                                        fontSize: 11,
+                                        fontWeight: s.isFragmentSource ? FontWeight.w600 : FontWeight.normal,
+                                      )),
+                                  Text(
                                       'အရေအတွက်: ${s.quantity}'
                                       '${s.weightCarat > 0 ? ' • ${s.weightCarat} ${_saleUnit(s)}' : ''}',
                                       style:
@@ -789,7 +796,7 @@ class _SaleFormState extends State<_SaleForm> {
   bool get _isEdit => widget.existing != null && widget.hiveKey != null;
 
   /// Calculate preview state for a gemstone when an item is added
-  void _updatePreviewForGemstone(String? gemstoneId, double netSale) {
+  void _updatePreviewForGemstone(String? gemstoneId, double netSale, {int? fragmentQtyDeducted}) {
     if (gemstoneId == null || gemstoneId.isEmpty) return;
     
     final originalGem = LocalDb.gemstoneById(gemstoneId);
@@ -803,6 +810,7 @@ class _SaleFormState extends State<_SaleForm> {
         'originalTotalProfit': originalGem.totalProfit ?? 0,
         'originalRemainingCostBalance': originalGem.remainingCostBalance,
         'totalNetSale': 0.0,
+        'totalFragmentQtyDeducted': 0,
       };
     }
     
@@ -829,7 +837,11 @@ class _SaleFormState extends State<_SaleForm> {
     preview['previewRemainingCostBalance'] = remainingBalance.clamp(0, double.infinity);
     preview['previewTotalProfit'] = (preview['originalTotalProfit'] as double) + profitAmount;
     preview['previewRemainingCost'] = remainingBalance.clamp(0, double.infinity);
-    preview['previewRemainingQuantity'] = preview['originalRemainingQuantity'];
+    // Track fragment quantity deduction in preview
+    if (fragmentQtyDeducted != null && fragmentQtyDeducted > 0) {
+      preview['totalFragmentQtyDeducted'] = (preview['totalFragmentQtyDeducted'] as int? ?? 0) + fragmentQtyDeducted;
+    }
+    preview['previewRemainingQuantity'] = (preview['originalRemainingQuantity'] as int) - (preview['totalFragmentQtyDeducted'] as int? ?? 0);
   }
   
   /// Recalculate preview state from all items in temporary list
@@ -964,13 +976,25 @@ class _SaleFormState extends State<_SaleForm> {
 
   void _editItemFromTemporaryList(int index) {
     final item = _items[index];
+    
     // Load item data back into form fields
     setState(() {
-      _selectedGemId = item.gemstoneId;
-      _manualName.text = item.gemstoneName;
-      _qty.text = item.quantity.toString();
-      _amount.text = item.unitPrice.toString();
-      _note.text = item.remark;
+      if (item.isFragmentSource) {
+        // Fragment item: restore all fragment fields
+        _saleSource = 'breakdown_item';
+        _selectedFragmentGemstoneId = item.gemstoneId;
+        _selectedFragmentName = item.fragmentName;
+        _fragmentQuantity.text = item.quantity.toString();
+        _fragmentUnitPrice.text = item.unitPrice.toString();
+      } else {
+        // Whole-stone item: restore whole-stone fields
+        _saleSource = 'whole_stone';
+        _selectedGemId = item.gemstoneId;
+        _manualName.text = item.gemstoneName;
+        _qty.text = item.quantity.toString();
+        _amount.text = item.unitPrice.toString();
+        _note.text = item.remark;
+      }
     });
     // Remove from temporary list
     setState(() {
@@ -2285,7 +2309,7 @@ class _SaleFormState extends State<_SaleForm> {
 
       // Update preview state for fragment item (Step 5E-1)
       final netSale = qty * unitPrice;
-      _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale);
+      _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale, fragmentQtyDeducted: qty);
 
       // Clear fragment-related fields only
       _selectedFragmentGemstoneId = null;

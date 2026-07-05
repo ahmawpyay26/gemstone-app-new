@@ -311,6 +311,10 @@ class Sale {
   
   // Multi-Item Invoice Support
   String invoiceNumber; // Invoice number for grouping multiple sales (e.g., INV-2026-07-04-0001)
+  
+  // Fragment Sales Support (NEW - backwards compatible)
+  String? fragmentName; // Fragment name if this is a fragment sale
+  bool isFragmentSource; // True if this sale is from a fragment source
 
   Sale({
     required this.id,
@@ -337,6 +341,8 @@ class Sale {
     this.deleteReason,
     this.photoPaths = const [],
     this.invoiceNumber = '',
+    this.fragmentName,
+    this.isFragmentSource = false,
   });
 }
 
@@ -376,13 +382,15 @@ class SaleAdapter extends TypeAdapter<Sale> {
       deleteReason: fields[20] as String?,
       photoPaths: (fields[21] as List<dynamic>?)?.cast<String>() ?? [],
       invoiceNumber: (fields[23] as String?) ?? '',
+      fragmentName: fields[24] as String?,
+      isFragmentSource: (fields[25] as bool?) ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(24)
+      ..writeByte(26)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -430,7 +438,11 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(22)
       ..write(obj.customerId)
       ..writeByte(23)
-      ..write(obj.invoiceNumber);
+      ..write(obj.invoiceNumber)
+      ..writeByte(24)
+      ..write(obj.fragmentName)
+      ..writeByte(25)
+      ..write(obj.isFragmentSource);
   }
 }
 
