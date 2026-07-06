@@ -94,7 +94,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   List<Gemstone> _getPurchasesWithBreakdownItems() {
     return _availableGemstones.where((gemstone) {
       return gemstone.breakdownItems.isNotEmpty &&
-          gemstone.breakdownItems.values.any((qty) => qty > 0);
+          gemstone.breakdownItems.values.any((item) {
+            final qty = (item is Map ? (item['quantity'] as int?) : item as int?) ?? 0;
+            return qty > 0;
+          });
     }).toList();
   }
 
@@ -243,8 +246,13 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       _currentEditingItem.selectedPurchase = purchase;
       _currentEditingItem.selectedBreakdownItem = null;
       if (purchase != null && purchase.breakdownItems.isNotEmpty) {
-        _currentEditingItem.availableBreakdownItems = Map.from(purchase.breakdownItems);
-        _currentEditingItem.availableBreakdownItems.removeWhere((_, qty) => qty <= 0);
+        _currentEditingItem.availableBreakdownItems = {};
+        purchase.breakdownItems.forEach((name, item) {
+          final qty = (item is Map ? (item['quantity'] as int?) : item as int?) ?? 0;
+          if (qty > 0) {
+            _currentEditingItem.availableBreakdownItems[name] = qty;
+          }
+        });
       } else {
         _currentEditingItem.availableBreakdownItems = {};
       }
