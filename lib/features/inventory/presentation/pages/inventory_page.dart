@@ -1047,9 +1047,9 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         if (_breakdownItemNames.isNotEmpty)
           Column(
             children: _breakdownItemNames.map((itemName) {
-              final itemData = _breakdownItems[itemName] as Map<String, dynamic>? ?? {};
+              final itemData = (_breakdownItems[itemName] ?? {}) as Map<String, dynamic>;
               final qty = (itemData['quantity'] as int?) ?? 0;
-              final weight = itemData['weight'] as double?;
+              final weight = (itemData['weight'] as num?)?.toDouble();
               final weightUnit = itemData['weightUnit'] as String?;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
