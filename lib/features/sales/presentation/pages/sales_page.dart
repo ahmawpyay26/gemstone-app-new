@@ -1833,14 +1833,53 @@ class _SaleFormState extends State<_SaleForm> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Item name
-                                  Text(
-                                    'ကျောက်မျက်အမည်: ${item.gemstoneName}',
-                                    style: const TextStyle(
-                                      color: AppTheme.primaryAccent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
+                                  // Header with item name and menu
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'ကျောက်မျက်အမည်: ${item.gemstoneName}',
+                                          style: const TextStyle(
+                                            color: AppTheme.primaryAccent,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                      PopupMenuButton<String>(
+                                        onSelected: (value) {
+                                          if (value == 'edit') {
+                                            _editItemFromTemporaryList(idx);
+                                          } else if (value == 'delete') {
+                                            _removeItemFromTemporaryList(idx);
+                                          }
+                                        },
+                                        itemBuilder: (BuildContext context) => [
+                                          const PopupMenuItem<String>(
+                                            value: 'edit',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.edit, size: 18),
+                                                SizedBox(width: 8),
+                                                Text('ပြုပြင်ရန်'),
+                                              ],
+                                            ),
+                                          ),
+                                          PopupMenuItem<String>(
+                                            value: 'delete',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.delete, size: 18, color: AppTheme.errorColor),
+                                                SizedBox(width: 8),
+                                                Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                        child: Icon(Icons.more_vert, size: 20, color: AppTheme.primaryAccent),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 8),
                                   // Quantity
@@ -1888,28 +1927,6 @@ class _SaleFormState extends State<_SaleForm> {
                                     ),
                                   )],
                                   const SizedBox(height: 8),
-                                  // Action buttons (Edit and Delete)
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      TextButton.icon(
-                                        onPressed: () => _editItemFromTemporaryList(idx),
-                                        icon: const Icon(Icons.edit, size: 16),
-                                        label: const Text('ပြုပြင်ရန်'),
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: AppTheme.primaryAccent,
-                                        ),
-                                      ),
-                                      TextButton.icon(
-                                        onPressed: () => _removeItemFromTemporaryList(idx),
-                                        icon: const Icon(Icons.close, size: 16),
-                                        label: const Text('ဖျက်ရန်'),
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: AppTheme.errorColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                 ],
                               ),
                             );
