@@ -93,11 +93,13 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   /// Get purchases that have breakdown items with quantity > 0
   List<Gemstone> _getPurchasesWithBreakdownItems() {
     return _availableGemstones.where((gemstone) {
-      return gemstone.breakdownItems.isNotEmpty &&
-          gemstone.breakdownItems.values.any((item) {
-            final qty = (item is Map ? (item['quantity'] as int?) : item as int?) ?? 0;
-            return qty > 0;
-          });
+      if (gemstone.breakdownItems.isEmpty) return false;
+      return gemstone.breakdownItems.values.any((item) {
+        final itemData = item as Map<String, dynamic>?;
+        if (itemData == null) return false;
+        final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+        return quantity > 0;
+      });
     }).toList();
   }
 

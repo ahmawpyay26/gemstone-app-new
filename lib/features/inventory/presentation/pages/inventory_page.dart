@@ -565,7 +565,12 @@ class _InventoryPageState extends State<InventoryPage> {
     
     // Filter breakdown items with quantity > 0
     final activeItems = gemstone.breakdownItems.entries
-        .where((e) => e.value > 0)
+        .where((e) {
+          final itemData = e.value as Map<String, dynamic>?;
+          if (itemData == null) return false;
+          final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+          return quantity > 0;
+        })
         .toList();
     
     if (activeItems.isEmpty) {

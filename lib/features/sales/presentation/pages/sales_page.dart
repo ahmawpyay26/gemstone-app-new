@@ -1506,14 +1506,16 @@ class _SaleFormState extends State<_SaleForm> {
           // Step 5E-2: Deduct from breakdownItems if this is a fragment sale
           if (item.isFragmentSource && item.fragmentName != null && item.fragmentName!.isNotEmpty) {
             if (gemstone.breakdownItems != null) {
-              final fragmentName = item.fragmentName!; // Extract non-null value
-              final itemData = gemstone.breakdownItems![fragmentName] as Map<String, dynamic>? ?? {};
-              final currentQty = (itemData['quantity'] as int?) ?? 0;
+              final fragmentName = item.fragmentName!;
+              final itemData = gemstone.breakdownItems![fragmentName];
+              if (itemData == null) continue;
+              final itemMap = itemData as Map<String, dynamic>;
+              final currentQty = (itemMap['quantity'] as num?)?.toInt() ?? 0;
               if (currentQty >= qty) {
                 gemstone.breakdownItems![fragmentName] = {
                   'quantity': currentQty - qty,
-                  'weight': itemData['weight'],
-                  'weightUnit': itemData['weightUnit']
+                  'weight': itemMap['weight'],
+                  'weightUnit': itemMap['weightUnit']
                 };
               }
             }
@@ -2339,12 +2341,13 @@ class _SaleFormState extends State<_SaleForm> {
   /// Build compact dropdown for gemstone selection with breakdown items (Step 5C-1)
   Widget _buildFragmentPurchaseList(List<Gemstone> gems) {
     final gemsWithBreakdown = gems.where((g) {
-      return g.breakdownItems != null && 
-             g.breakdownItems!.isNotEmpty &&
-             g.breakdownItems!.values.any((item) {
-               final qty = (item is Map ? (item['quantity'] as int?) : item as int?) ?? 0;
-               return qty > 0;
-             });
+      if (g.breakdownItems == null || g.breakdownItems!.isEmpty) return false;
+      return g.breakdownItems!.values.any((item) {
+        final itemData = item as Map<String, dynamic>?;
+        if (itemData == null) return false;
+        final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+        return quantity > 0;
+      });
     }).toList();
 
     if (gemsWithBreakdown.isEmpty) {
@@ -2413,13 +2416,17 @@ class _SaleFormState extends State<_SaleForm> {
               items: gemsWithBreakdown.map((gem) {
                 final totalBreakdownQty = gem.breakdownItems!.values
                     .where((item) {
-                      final qty = (item is Map ? (item['quantity'] as int?) : item as int?) ?? 0;
-                      return qty > 0;
+                      final itemData = item as Map<String, dynamic>?;
+                      if (itemData == null) return false;
+                      final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+                      return quantity > 0;
                     })
                     .fold<int>(0, (sum, item) {
-                      final qty = (item is Map ? (item['quantity'] as int?) : item as int?) ?? 0;
-                      return sum + qty;
-                    });}
+                      final itemData = item as Map<String, dynamic>?;
+                      if (itemData == null) return sum;
+                      final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+                      return sum + quantity;
+                    });
                 final displayText = '${gem.name} ($totalBreakdownQty)';
                 return DropdownMenuItem<String>(
                   value: gem.id,
@@ -2456,8 +2463,10 @@ class _SaleFormState extends State<_SaleForm> {
     // Get available breakdown items (quantity > 0)
     final availableItems = selectedPurchase.breakdownItems!.entries
         .where((e) {
-          final qty = (e.value is Map ? (e.value['quantity'] as int?) : e.value as int?) ?? 0;
-          return qty > 0;
+          final itemData = e.value as Map<String, dynamic>?;
+          if (itemData == null) return false;
+          final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+          return quantity > 0;
         })
         .toList();
 
@@ -2541,8 +2550,10 @@ class _SaleFormState extends State<_SaleForm> {
     }
 
     // Get the selected fragment's quantity
-    final itemData = selectedPurchase.breakdownItems![_selectedFragmentName] as Map<String, dynamic>? ?? {};
-    final selectedFragmentQty = (itemData['quantity'] as int?) ?? 0;
+    final itemData = selectedPurchase.breakdownItems![_selectedFragmentName];
+    if (itemData == null) return const SizedBox.shrink();
+    final itemMap = itemData as Map<String, dynamic>;
+    final selectedFragmentQty = (itemMap['quantity'] as num?)?.toInt() ?? 0;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -2721,8 +2732,13 @@ class _SaleFormState extends State<_SaleForm> {
     }
 
     // Check quantity against available
-    final itemData = selectedPurchase?.breakdownItems?[_selectedFragmentName] as Map<String, dynamic>? ?? {};
-    final availableQty = (itemData['quantity'] as int?) ?? 0;
+    final itemData = selectedPurchase?.breakdownItems?[_selectedFragmentName];
+    if (itemData == null) {
+      _toast('အစိတ်အပိုင်းအချက်အလက် မတွေ့ရှိ');
+      return;
+    }
+    final itemMap = itemData as Map<String, dynamic>;
+    final availableQty = (itemMap['quantity'] as num?)?.toInt() ?? 0;
     if (qty > availableQty) {
       _toast('လက်ကျန်အစိတ်အရေအတွက်ထက် မကျော်ရပါ');
       return;
