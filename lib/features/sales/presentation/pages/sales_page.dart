@@ -378,7 +378,7 @@ class _SalesPageState extends State<SalesPage> {
                                   Text(
                                       'အရေအတွက်: ${s.quantity}'
                                       '${s.weightCarat > 0 ? ' • ${s.weightCarat} ${_saleUnit(s)}' : ''}'
-                                      '${s.isFragmentSource && s.fragmentWeight != null ? ' • ${s.fragmentWeight!.toStringAsFixed(2)} kg' : ''}',
+                                      '${s.isFragmentSource && s.fragmentWeight != null ? ' • ${s.fragmentWeight!.toStringAsFixed(2)} ${s.fragmentWeightUnit ?? "kg"}' : ''}',
                                       style:
                                           TextStyle(color: Colors.grey[400])),
                                   Text(
@@ -737,6 +737,7 @@ class _SaleItem {
   String? fragmentName; // Fragment name if from breakdown_item source
   bool isFragmentSource; // True if this item is from fragment source
   double? weight; // Weight in kg for fragment items
+  String? weightUnit; // Weight unit for fragment items (ပိသာ|ကျပ်သား|ကာရက်|kg|g|lb|oz)
   List<String> photoPaths; // Photo attachment paths for fragment items (Step 6C-1)
 
   _SaleItem({
@@ -749,6 +750,7 @@ class _SaleItem {
     this.fragmentName,
     this.isFragmentSource = false,
     this.weight,
+    this.weightUnit,
     this.photoPaths = const [],
   });
 
@@ -791,6 +793,7 @@ class _SaleFormState extends State<_SaleForm> {
   String? _fragmentQuantityError; // Fragment quantity validation error (Step 5C-4)
   late final TextEditingController _fragmentWeight; // Fragment weight input in kg (Step 6B-1)
   String? _fragmentWeightError; // Fragment weight validation error (Step 6B-1)
+  String _fragmentWeightUnit = 'kg'; // Fragment weight unit (Step 6B-2)
   late final TextEditingController _fragmentUnitPrice; // Fragment unit price input (Step 5D-2)
   List<String> _fragmentPhotoPaths = []; // Fragment photo attachment paths (Step 6C-2)
   
@@ -991,6 +994,7 @@ class _SaleFormState extends State<_SaleForm> {
       _selectedFragmentName = item.fragmentName;
       _fragmentQuantity.text = item.quantity.toString();
       _fragmentWeight.text = item.weight?.toString() ?? '';
+      _fragmentWeightUnit = item.weightUnit ?? 'kg';
       _fragmentUnitPrice.text = item.unitPrice.toString();
       _photoPaths = item.photoPaths ?? [];
       _fragmentItems.removeAt(index);
@@ -1027,6 +1031,7 @@ class _SaleFormState extends State<_SaleForm> {
       _selectedFragmentName = null;
       _fragmentQuantity.clear();
       _fragmentWeight.clear();
+      _fragmentWeightUnit = 'kg';
       _fragmentUnitPrice.clear();
       _photoPaths.clear();
       
@@ -1472,6 +1477,7 @@ class _SaleFormState extends State<_SaleForm> {
         fragmentName: item.fragmentName,
         isFragmentSource: item.isFragmentSource,
         fragmentWeight: item.weight,
+        fragmentWeightUnit: item.weightUnit,
       );
       
       // Save to Hive
@@ -1859,7 +1865,7 @@ class _SaleFormState extends State<_SaleForm> {
                                         ),
                                         if (item.weight != null && item.weight! > 0)
                                           Text(
-                                            'အလေးချိန်: ${item.weight} kg',
+                                            'အလေးချိန်: ${item.weight} ${item.weightUnit ?? "kg"}',
                                             style: const TextStyle(color: Colors.white70, fontSize: 12),
                                           ),
                                       ],
@@ -2183,7 +2189,7 @@ class _SaleFormState extends State<_SaleForm> {
                                       ),
                                       if (item.isFragmentSource && item.weight != null)
                                         Text(
-                                          'အလေးချိန်: ${item.weight!.toStringAsFixed(2)} kg',
+                                          'အလေးချိန်: ${item.weight!.toStringAsFixed(2)} ${item.weightUnit ?? "kg"}',
                                           style: const TextStyle(color: Colors.white70, fontSize: 11),
                                         ),
                                     ],
@@ -2553,22 +2559,57 @@ class _SaleFormState extends State<_SaleForm> {
             },
           ),
           const SizedBox(height: 12),
-          // Weight input field (Step 6B-1)
-          TextFormField(
-            controller: _fragmentWeight,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              labelText: 'အလေးချိန်',
-              hintText: 'ဥပမာ - 2.35',
-              errorText: _fragmentWeightError,
-              errorStyle: const TextStyle(color: Colors.red),
-            ),
-            onChanged: (value) {
-              setState(() {
-                _validateFragmentWeight();
-              });
-            },
+          // Weight input field with unit dropdown (Step 6B-1 & 6B-2)
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextFormField(
+                  controller: _fragmentWeight,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'အလေးချိန်',
+                    hintText: 'ဥပမာ - 2.35',
+                    errorText: _fragmentWeightError,
+                    errorStyle: const TextStyle(color: Colors.red),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _validateFragmentWeight();
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: DropdownButtonFormField<String>(
+                  value: _fragmentWeightUnit,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'ယူနစ်',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'ပိသာ', child: Text('ပိသာ')),
+                    DropdownMenuItem(value: 'ကျပ်သား', child: Text('ကျပ်သား')),
+                    DropdownMenuItem(value: 'ကာရက်', child: Text('ကာရက်')),
+                    DropdownMenuItem(value: 'kg', child: Text('kg')),
+                    DropdownMenuItem(value: 'g', child: Text('g')),
+                    DropdownMenuItem(value: 'lb', child: Text('lb')),
+                    DropdownMenuItem(value: 'oz', child: Text('oz')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _fragmentWeightUnit = value ?? 'kg';
+                    });
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -2694,6 +2735,7 @@ class _SaleFormState extends State<_SaleForm> {
           fragmentName: _selectedFragmentName,
           weight: double.tryParse(_fragmentWeight.text.trim()),
           isFragmentSource: true,
+          weightUnit: _fragmentWeightUnit,
           photoPaths: List.from(_fragmentPhotoPaths),
         ),
       );
@@ -2707,6 +2749,7 @@ class _SaleFormState extends State<_SaleForm> {
       _selectedFragmentName = null;
       _fragmentQuantity.clear();
       _fragmentWeight.clear();
+      _fragmentWeightUnit = 'kg';
       _fragmentPhotoPaths.clear();
       _fragmentUnitPrice.clear();
       _fragmentQuantityError = null;

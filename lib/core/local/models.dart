@@ -316,6 +316,7 @@ class Sale {
   String? fragmentName; // Fragment name if this is a fragment sale
   bool isFragmentSource; // True if this sale is from a fragment source
   double? fragmentWeight; // Weight in kg for fragment sales (NEW - backwards compatible)
+  String? fragmentWeightUnit; // Weight unit for fragment sales (ပိသာ|ကျပ်သား|ကာရက်|kg|g|lb|oz)
 
   Sale({
     required this.id,
@@ -345,6 +346,7 @@ class Sale {
     this.fragmentName,
     this.isFragmentSource = false,
     this.fragmentWeight,
+    this.fragmentWeightUnit,
   });
 }
 
@@ -387,13 +389,14 @@ class SaleAdapter extends TypeAdapter<Sale> {
       fragmentName: fields[24] as String?,
       isFragmentSource: (fields[25] as bool?) ?? false,
       fragmentWeight: fields[26] == null ? null : (fields[26] as num).toDouble(),
+      fragmentWeightUnit: fields[27] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(27)
+      ..writeByte(28)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -447,7 +450,9 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(25)
       ..write(obj.isFragmentSource)
       ..writeByte(26)
-      ..write(obj.fragmentWeight);
+      ..write(obj.fragmentWeight)
+      ..writeByte(27)
+      ..write(obj.fragmentWeightUnit);
   }
 }
 
