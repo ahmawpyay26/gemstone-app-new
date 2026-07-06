@@ -721,6 +721,8 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _note;
   late final TextEditingController _breakdownItemNameCtrl; // breakdown item name input
   late final TextEditingController _breakdownItemQtyCtrl; // breakdown item quantity input
+  late final TextEditingController _breakdownItemWeightCtrl; // breakdown item weight input
+  String _breakdownItemWeightUnit = 'kg'; // breakdown item weight unit
   String _weightUnit = 'kg';
   late List<String> _photoPaths;
   late Map<String, Map<String, dynamic>> _breakdownItems; // breakdown item name -> {quantity, weight, weightUnit}
@@ -771,6 +773,8 @@ class _GemstoneFormState extends State<_GemstoneForm> {
     _note = TextEditingController(text: e?.note ?? '');
     _breakdownItemNameCtrl = TextEditingController();
     _breakdownItemQtyCtrl = TextEditingController();
+    _breakdownItemWeightCtrl = TextEditingController();
+    _breakdownItemWeightUnit = 'kg';
   }
 
   @override
@@ -792,7 +796,8 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       _origin,
       _note,
       _breakdownItemNameCtrl,
-      _breakdownItemQtyCtrl
+      _breakdownItemQtyCtrl,
+      _breakdownItemWeightCtrl
     ]) {
       c.dispose();
     }
@@ -802,7 +807,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   double _d(String s) => double.tryParse(s.trim()) ?? 0;
   int _i(String s) => int.tryParse(s.trim()) ?? 0;
 
-  void _addBreakdownItem(String itemName, int quantity) {
+  void _addBreakdownItem(String itemName, int quantity, [double weight = 0.0, String weightUnit = 'kg']) {
     if (itemName.isEmpty || quantity <= 0) return;
     setState(() {
       if (!_breakdownItems.containsKey(itemName)) {
@@ -810,8 +815,8 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       }
       _breakdownItems[itemName] = {
         'quantity': quantity,
-        'weight': null,
-        'weightUnit': null,
+        'weight': weight > 0 ? weight : null,
+        'weightUnit': weight > 0 ? weightUnit : null,
       };
       _customItemName = null;
     });
@@ -1141,16 +1146,60 @@ class _GemstoneFormState extends State<_GemstoneForm> {
           ],
         ),
         const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _breakdownItemWeightCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'အလေးချိန်',
+                  hintText: '0',
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _breakdownItemWeightUnit,
+                style: const TextStyle(color: Colors.white),
+                dropdownColor: AppTheme.surfaceDark,
+                decoration: const InputDecoration(
+                  labelText: 'ယူနစ်',
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'ပိသာ', child: Text('ပိသာ')),
+                  DropdownMenuItem(value: 'ကျပ်သား', child: Text('ကျပ်သား')),
+                  DropdownMenuItem(value: 'ကာရက်', child: Text('ကာရက်')),
+                  DropdownMenuItem(value: 'kg', child: Text('ကီလို (kg)')),
+                  DropdownMenuItem(value: 'g', child: Text('ဂရမ် (g)')),
+                  DropdownMenuItem(value: 'lb', child: Text('ပေါင် (lb)')),
+                  DropdownMenuItem(value: 'oz', child: Text('အောင်စ (oz)')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _breakdownItemWeightUnit = value ?? 'kg';
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
             onPressed: () {
               final itemName = _breakdownItemNameCtrl.text.trim();
               final qty = int.tryParse(_breakdownItemQtyCtrl.text.trim()) ?? 0;
+              final weight = double.tryParse(_breakdownItemWeightCtrl.text.trim()) ?? 0.0;
               if (itemName.isNotEmpty && qty > 0) {
-                _addBreakdownItem(itemName, qty);
+                _addBreakdownItem(itemName, qty, weight, _breakdownItemWeightUnit);
                 _breakdownItemNameCtrl.clear();
                 _breakdownItemQtyCtrl.clear();
+                _breakdownItemWeightCtrl.clear();
+                _breakdownItemWeightUnit = 'kg';
               }
             },
             child: const Text(
