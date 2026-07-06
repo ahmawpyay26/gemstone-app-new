@@ -1822,7 +1822,7 @@ class _SaleFormState extends State<_SaleForm> {
                             final item = _items[idx];
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 color: AppTheme.surfaceDark,
                                 borderRadius: BorderRadius.circular(8),
@@ -1833,18 +1833,38 @@ class _SaleFormState extends State<_SaleForm> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Header with item name and menu
+                                  // Header: Title + Badge + Menu
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Expanded(
-                                        child: Text(
-                                          'ကျောက်မျက်အမည်: ${item.gemstoneName}',
-                                          style: const TextStyle(
-                                            color: AppTheme.primaryAccent,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.gemstoneName,
+                                              style: const TextStyle(
+                                                color: AppTheme.primaryAccent,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: item.isFragmentSource ? AppTheme.primaryAccent.withOpacity(0.2) : Colors.grey[700],
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                item.isFragmentSource ? 'အစိတ်စိတ်ပိုင်း' : 'အဝယ်စာရင်း',
+                                                style: TextStyle(
+                                                  color: item.isFragmentSource ? AppTheme.primaryAccent : Colors.grey[300],
+                                                  fontSize: 10,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                       PopupMenuButton<String>(
@@ -1881,52 +1901,57 @@ class _SaleFormState extends State<_SaleForm> {
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  // Quantity
-                                  Text(
-                                    'အရေအတွက်: ${item.quantity}',
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
+                                  const SizedBox(height: 6),
+                                  // Row 1: Quantity + Weight
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'အရေအတွက်: ${item.quantity}',
+                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                      ),
+                                      if (item.isFragmentSource && item.weight != null)
+                                        Text(
+                                          'အလေးချိန်: ${item.weight!.toStringAsFixed(2)} kg',
+                                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                        ),
+                                    ],
                                   ),
-                                  if (item.isFragmentSource && item.weight != null) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'အလေးချိန်: ${item.weight!.toStringAsFixed(2)} kg',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                  if (item.photoPaths.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'ဓါတ်ပုံ: ${item.photoPaths.length} ပုံ',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
                                   const SizedBox(height: 4),
-                                  // Total amount
-                                  Text(
-                                    'ခန့်မှန်းရောင်းငွေ: ${NumberFormat('#,##0', 'en_US').format(item.totalAmount.toInt())} ကျပ်',
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
+                                  // Row 2: Unit Price + Total Amount
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'ယူနစ်: ${NumberFormat('#,##0', 'en_US').format(item.unitPrice.toInt())} ကျပ်',
+                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                      ),
+                                      Text(
+                                        'စုစုပေါင်း: ${NumberFormat('#,##0', 'en_US').format(item.totalAmount.toInt())} ကျပ်',
+                                        style: const TextStyle(color: AppTheme.primaryAccent, fontSize: 11, fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
                                   ),
-                                  if (item.remark.isNotEmpty) ...[const SizedBox(height: 4), Text(
-                                    'မှတ်ချက်: ${item.remark}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[500],
-                                    ),
-                                  )],
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 4),
+                                  // Row 3: Photos + Remark
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        item.photoPaths.isNotEmpty ? '📷 ${item.photoPaths.length} ပုံ' : '📷 --',
+                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                      ),
+                                      if (item.remark.isNotEmpty)
+                                        Expanded(
+                                          child: Text(
+                                            'မှတ်ချက်: ${item.remark}',
+                                            style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.end,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             );
