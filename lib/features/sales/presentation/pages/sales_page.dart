@@ -1007,6 +1007,34 @@ class _SaleFormState extends State<_SaleForm> {
     _showSuccess('Fragment item removed');
   }
 
+  // Transfer fragment items to main list (Step 6K)
+  void _transferFragmentItemsToMainList() {
+    if (_fragmentItems.isEmpty) {
+      _showError('No fragment items to transfer');
+      return;
+    }
+
+    setState(() {
+      // Move all fragment items to main temporary list
+      _items.addAll(_fragmentItems);
+      _fragmentItems.clear();
+
+      // Switch back to whole-stone source
+      _saleSource = 'whole_stone';
+
+      // Clear fragment form fields
+      _selectedFragmentGemstoneId = null;
+      _selectedFragmentName = null;
+      _fragmentQuantity.clear();
+      _fragmentWeight.clear();
+      _fragmentUnitPrice.clear();
+      _photoPaths.clear();
+    });
+
+    _recalculatePreview();
+    _showSuccess('Fragment items transferred to temporary list');
+  }
+
   void _editItemFromTemporaryList(int index) {
     final item = _items[index];
     
@@ -1878,7 +1906,7 @@ class _SaleFormState extends State<_SaleForm> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: (_items.isNotEmpty || _fragmentItems.isNotEmpty) ? _save : null,
+                      onPressed: _fragmentItems.isNotEmpty ? _transferFragmentItemsToMainList : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryAccent,
                         disabledBackgroundColor: Colors.grey[700],
