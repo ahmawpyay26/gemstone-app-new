@@ -965,8 +965,17 @@ class LocalDb {
   /// ပစ္စည်းတစ်ခုချင်းစီ၏ ကျန်ရှိအရေအတွက်
   /// Accounts for sales deductions AND broker consignment deductions
   static int gemstoneRemainingQuantity(Gemstone g) {
-    // Use the stored remainingQuantity field which accounts for broker deductions
-    return g.remainingQuantity;
+    // Calculate actual remaining: original quantity - sold - active broker consigned
+    final sold = gemstoneSoldQuantity(g.id);
+    int brokerHeld = 0;
+    final activeBrokers = getActiveBrokerConsignmentsForPurchase(g.id);
+    for (final bc in activeBrokers) {
+      // Net held by broker = consigned - returned - sold by broker
+      final held = (bc.consignedQuantity - bc.returnedQuantity - bc.soldQuantity).toInt();
+      if (held > 0) brokerHeld += held;
+    }
+    final remaining = g.quantity - sold - brokerHeld;
+    return remaining < 0 ? 0 : remaining;
   }
 
   /// ပစ္စည်းတစ်ခုချင်းစီ၏ အရောင်းအကြိမ်အရေအတွက် (ဘယ်နှစ်ကြိမ် ရောင်းခဲ့သည်)
