@@ -2291,6 +2291,23 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Main final save button (Step 6L)
+                if (_items.isNotEmpty)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _items.isNotEmpty ? _save : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryAccent,
+                        disabledBackgroundColor: Colors.grey[700],
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text(
+                        'သိမ်းမည်',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
                 ], // End of if (_saleSource == 'whole_stone')
               ],
             ),
