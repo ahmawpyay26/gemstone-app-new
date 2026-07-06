@@ -1723,7 +1723,12 @@ class LocalDb {
       if (broker.historicalData.sourceType == 'breakdown_item') {
         final itemName = broker.historicalData.breakdownItemName ?? '';
         if (itemName.isNotEmpty && purchase.breakdownItems.containsKey(itemName)) {
-          final oldQty = (purchase.breakdownItems[itemName]?['quantity'] as int?) ?? 0; purchase.breakdownItems[itemName] = {'quantity': oldQty + returnedQuantity.toInt(), 'weight': purchase.breakdownItems[itemName]?['weight'], 'weightUnit': purchase.breakdownItems[itemName]?['weightUnit']};
+          final oldQty = (purchase.breakdownItems[itemName]?['quantity'] as int?) ?? 0;
+          purchase.breakdownItems[itemName] = {
+            'quantity': oldQty + returnedQuantity.toInt(),
+            'weight': purchase.breakdownItems[itemName]?['weight'],
+            'weightUnit': purchase.breakdownItems[itemName]?['weightUnit']
+          };
         }
       } else {
         // Restore to whole stone remaining quantity
@@ -1773,7 +1778,12 @@ class LocalDb {
       if (broker.historicalData.sourceType == 'breakdown_item') {
         final itemName = broker.historicalData.breakdownItemName ?? '';
         if (itemName.isNotEmpty && purchase.breakdownItems.containsKey(itemName)) {
-          final oldQty = (purchase.breakdownItems[itemName]?['quantity'] as int?) ?? 0; purchase.breakdownItems[itemName] = {'quantity': oldQty + remainingToRestore.toInt(), 'weight': purchase.breakdownItems[itemName]?['weight'], 'weightUnit': purchase.breakdownItems[itemName]?['weightUnit']};
+          final oldQty = (purchase.breakdownItems[itemName]?['quantity'] as int?) ?? 0;
+          purchase.breakdownItems[itemName] = {
+            'quantity': oldQty + remainingToRestore.toInt(),
+            'weight': purchase.breakdownItems[itemName]?['weight'],
+            'weightUnit': purchase.breakdownItems[itemName]?['weightUnit']
+          };
         }
       } else {
         // Restore to whole stone remaining quantity
@@ -1936,7 +1946,12 @@ class LocalDb {
     if (bc.historicalData.sourceType == 'breakdown_item') {
       final itemName = bc.historicalData.breakdownItemName ?? '';
       if (itemName.isNotEmpty && purchase.breakdownItems.containsKey(itemName)) {
-        final oldQty = (purchase.breakdownItems[itemName]?['quantity'] as int?) ?? 0; purchase.breakdownItems[itemName] = {'quantity': oldQty + returnedQuantity.toInt(), 'weight': purchase.breakdownItems[itemName]?['weight'], 'weightUnit': purchase.breakdownItems[itemName]?['weightUnit']};
+        final oldQty = (purchase.breakdownItems[itemName]?['quantity'] as int?) ?? 0;
+        purchase.breakdownItems[itemName] = {
+          'quantity': oldQty + returnedQuantity.toInt(),
+          'weight': purchase.breakdownItems[itemName]?['weight'],
+          'weightUnit': purchase.breakdownItems[itemName]?['weightUnit']
+        };
       }
     } else {
       // Restore to whole stone remaining quantity
