@@ -627,29 +627,47 @@ class _InventoryPageState extends State<InventoryPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ...activeItems.map((entry) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          entry.key,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
+                  ...activeItems.map((entry) {
+                    String displayText = '';
+                    if (entry.value is int) {
+                      displayText = '${entry.value} ခု';
+                    } else if (entry.value is Map<String, dynamic>) {
+                      final itemData = entry.value as Map<String, dynamic>;
+                      final qty = (itemData['quantity'] as int?) ?? 0;
+                      final weight = (itemData['weight'] as num?)?.toDouble();
+                      final unit = itemData['weightUnit'] as String?;
+                      if (weight != null && weight > 0) {
+                        displayText = '$qty ခု — ${weight.toStringAsFixed(1)} ${unit ?? "kg"}';
+                      } else {
+                        displayText = '$qty ခု';
+                      }
+                    } else {
+                      displayText = '${entry.value}';
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            entry.key,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${entry.value}',
-                          style: TextStyle(
-                            color: AppTheme.primaryAccent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                          Text(
+                            displayText,
+                            style: TextStyle(
+                              color: AppTheme.primaryAccent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ],
               )
             else
