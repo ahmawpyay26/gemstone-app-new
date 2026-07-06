@@ -718,7 +718,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   late final TextEditingController _breakdownItemQtyCtrl; // breakdown item quantity input
   String _weightUnit = 'kg';
   late List<String> _photoPaths;
-  late Map<String, int> _breakdownItems; // breakdown item name -> quantity
+  late Map<String, Map<String, dynamic>> _breakdownItems; // breakdown item name -> {quantity, weight, weightUnit}
   late List<String> _breakdownItemNames; // list of added breakdown item names (for ordering)
   String? _customItemName; // for custom item input
   bool _breakdownExpanded = false; // Track if breakdown section is expanded
@@ -803,7 +803,11 @@ class _GemstoneFormState extends State<_GemstoneForm> {
       if (!_breakdownItems.containsKey(itemName)) {
         _breakdownItemNames.add(itemName);
       }
-      _breakdownItems[itemName] = quantity;
+      _breakdownItems[itemName] = {
+        'quantity': quantity,
+        'weight': null,
+        'weightUnit': null,
+      };
       _customItemName = null;
     });
   }
@@ -1043,7 +1047,10 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         if (_breakdownItemNames.isNotEmpty)
           Column(
             children: _breakdownItemNames.map((itemName) {
-              final qty = _breakdownItems[itemName] ?? 0;
+              final itemData = _breakdownItems[itemName] as Map<String, dynamic>? ?? {};
+              final qty = (itemData['quantity'] as int?) ?? 0;
+              final weight = itemData['weight'] as double?;
+              final weightUnit = itemData['weightUnit'] as String?;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
@@ -1055,13 +1062,26 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                     ),
                     Row(
                       children: [
-                        Text(
-                          '— $qty',
-                          style: TextStyle(
-                            color: AppTheme.primaryAccent,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '— $qty',
+                              style: TextStyle(
+                                color: AppTheme.primaryAccent,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (weight != null && weight > 0)
+                              Text(
+                                '${weight.toStringAsFixed(2)} ${weightUnit ?? "kg"}',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 11,
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(width: 8),
                         GestureDetector(

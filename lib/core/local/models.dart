@@ -110,7 +110,7 @@ class Gemstone {
   int remainingQuantity; // ကျန်ရှိအရေအတွက်
   int soldQuantity; // ရောင်းပြီးအရေအတွက်
   List<String> photoPaths; // ဓာတ်ပုံ file paths
-  Map<String, int> breakdownItems; // breakdown item name -> quantity
+  Map<String, Map<String, dynamic>> breakdownItems; // breakdown item name -> {quantity, weight, weightUnit}
   
   // Cost/Profit Tracking for Breakdown Items
   double originalPurchaseCost; // ကုန်ကျစာရင်း (Set once, never changes)
@@ -158,6 +158,22 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
   @override
   final int typeId = 2;
 
+  // Migrate old breakdownItems format (Map<String, int>) to new format (Map<String, Map<String, dynamic>>)
+  Map<String, Map<String, dynamic>> _migrateBreakdownItems(Map<dynamic, dynamic>? oldMap) {
+    if (oldMap == null) return {};
+    final result = <String, Map<String, dynamic>>{};
+    oldMap.forEach((key, value) {
+      if (value is int) {
+        // Old format: just quantity
+        result[key.toString()] = {'quantity': value, 'weight': null, 'weightUnit': null};
+      } else if (value is Map) {
+        // New format: already has structure
+        result[key.toString()] = Map<String, dynamic>.from(value);
+      }
+    });
+    return result;
+  }
+
   @override
   Gemstone read(BinaryReader reader) {
     final count = reader.readByte();
@@ -197,7 +213,7 @@ class GemstoneAdapter extends TypeAdapter<Gemstone> {
       remainingQuantity: fields[22] == null ? 0 : (fields[22] as int),
       soldQuantity: fields[23] == null ? 0 : (fields[23] as int),
       photoPaths: (fields[24] as List<dynamic>?)?.cast<String>() ?? [],
-      breakdownItems: (fields[25] as Map<dynamic, dynamic>?)?.cast<String, int>() ?? {},
+      breakdownItems: _migrateBreakdownItems(fields[25] as Map<dynamic, dynamic>?),
       originalPurchaseCost: fields[26] == null ? 0 : (fields[26] as num).toDouble(),
       remainingCostBalance: fields[27] == null ? 0 : (fields[27] as num).toDouble(),
       recoveredCost: fields[28] == null ? 0 : (fields[28] as num).toDouble(),
@@ -457,7 +473,36 @@ class SaleAdapter extends TypeAdapter<Sale> {
 }
 
 // ---------------------------------------------------------------------------
-// Expense (အသုံးစရိတ်)
+// BreakdownItem (မှနေတြေတ် တွက်)
+// ---------------------------------------------------------------------------
+class BreakdownItem {
+  int quantity; // အရေအတွက်
+  double? weight; // အလေးချိန် (ပိသားတွက်)
+  String? weightUnit; // အလေးချိန် ဢါနေ (ပိသာ|ကာရက်|kg|g|lb|oz)
+
+  BreakdownItem({
+    required this.quantity,
+    this.weight,
+    this.weightUnit,
+  });
+
+  // Convert to Map for storage
+  Map<String, dynamic> toMap() => {
+    'quantity': quantity,
+    'weight': weight,
+    'weightUnit': weightUnit,
+  };
+
+  // Create from Map
+  factory BreakdownItem.fromMap(Map<String, dynamic> map) => BreakdownItem(
+    quantity: map['quantity'] as int? ?? 0,
+    weight: map['weight'] as double?,
+    weightUnit: map['weightUnit'] as String?,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Expense (အရေအတွက်)
 // ---------------------------------------------------------------------------
 class Expense {
   String id;

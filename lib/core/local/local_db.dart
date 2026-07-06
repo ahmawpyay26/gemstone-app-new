@@ -1578,7 +1578,7 @@ class LocalDb {
       if (!purchase.breakdownItems.containsKey(breakdownItemName)) {
         throw Exception('Breakdown item not found');
       }
-      final availableQty = purchase.breakdownItems[breakdownItemName] ?? 0;
+      final availableQty = (purchase.breakdownItems[breakdownItemName]?['quantity'] as int?) ?? 0;
       if (consignedQuantity > availableQty) {
         throw Exception('လက်ကျန်အရေအတွက် မလုံလောက်ပါ။');
       }
@@ -1621,12 +1621,12 @@ class LocalDb {
     // Deduct quantity based on source type
     if (sourceType == 'breakdown_item' && breakdownItemName != null) {
       // Deduct from breakdown item
-      final currentQty = purchase.breakdownItems[breakdownItemName] ?? 0;
+      final currentQty = (purchase.breakdownItems[breakdownItemName]?['quantity'] as int?) ?? 0;
       final newQty = currentQty - consignedQuantity.toInt();
       if (newQty < 0) {
         throw Exception('Breakdown item quantity cannot go below zero');
       }
-      purchase.breakdownItems[breakdownItemName] = newQty;
+      purchase.breakdownItems[breakdownItemName] = {'quantity': newQty, 'weight': null, 'weightUnit': null};
     } else {
       // Deduct from whole stone remaining quantity
       purchase.remainingQuantity -= consignedQuantity.toInt();
@@ -1723,7 +1723,7 @@ class LocalDb {
       if (broker.historicalData.sourceType == 'breakdown_item') {
         final itemName = broker.historicalData.breakdownItemName ?? '';
         if (itemName.isNotEmpty && purchase.breakdownItems.containsKey(itemName)) {
-          purchase.breakdownItems[itemName] = (purchase.breakdownItems[itemName] ?? 0) + returnedQuantity.toInt();
+          final oldQty = (purchase.breakdownItems[itemName]?['quantity'] as int?) ?? 0; purchase.breakdownItems[itemName] = {'quantity': oldQty + returnedQuantity.toInt(), 'weight': purchase.breakdownItems[itemName]?['weight'], 'weightUnit': purchase.breakdownItems[itemName]?['weightUnit']};
         }
       } else {
         // Restore to whole stone remaining quantity
@@ -1773,7 +1773,7 @@ class LocalDb {
       if (broker.historicalData.sourceType == 'breakdown_item') {
         final itemName = broker.historicalData.breakdownItemName ?? '';
         if (itemName.isNotEmpty && purchase.breakdownItems.containsKey(itemName)) {
-          purchase.breakdownItems[itemName] = (purchase.breakdownItems[itemName] ?? 0) + remainingToRestore.toInt();
+          final oldQty = (purchase.breakdownItems[itemName]?['quantity'] as int?) ?? 0; purchase.breakdownItems[itemName] = {'quantity': oldQty + remainingToRestore.toInt(), 'weight': purchase.breakdownItems[itemName]?['weight'], 'weightUnit': purchase.breakdownItems[itemName]?['weightUnit']};
         }
       } else {
         // Restore to whole stone remaining quantity
@@ -1936,7 +1936,7 @@ class LocalDb {
     if (bc.historicalData.sourceType == 'breakdown_item') {
       final itemName = bc.historicalData.breakdownItemName ?? '';
       if (itemName.isNotEmpty && purchase.breakdownItems.containsKey(itemName)) {
-        purchase.breakdownItems[itemName] = (purchase.breakdownItems[itemName] ?? 0) + returnedQuantity.toInt();
+        final oldQty = (purchase.breakdownItems[itemName]?['quantity'] as int?) ?? 0; purchase.breakdownItems[itemName] = {'quantity': oldQty + returnedQuantity.toInt(), 'weight': purchase.breakdownItems[itemName]?['weight'], 'weightUnit': purchase.breakdownItems[itemName]?['weightUnit']};
       }
     } else {
       // Restore to whole stone remaining quantity
