@@ -1997,10 +1997,10 @@ class _SaleFormState extends State<_SaleForm> {
                           labelText: 'ယူနစ်',
                           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                         ),
-                        items: LocalDb.weightUnits.map((unit) =>
+                        items: LocalDb.weightUnits.keys.map((unit) =>
                           DropdownMenuItem(
                             value: unit,
-                            child: Text(LocalDb.unitLabel(unit)),
+                            child: Text(LocalDb.weightUnits[unit] ?? unit),
                           ),
                         ).toList(),
                         onChanged: (value) {
