@@ -928,22 +928,25 @@ class _GemstoneFormState extends State<_GemstoneForm> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[700],
-                      borderRadius: BorderRadius.circular(2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: AppTheme.primaryAccent),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                  ),
+                    Expanded(
+                      child: Center(
+                        child: Text(isEdit ? 'ကျောက်မျက် ပြင်ဆင်ရန်' : 'ကျောက်မျက်အသစ်',
+                            style: const TextStyle(
+                                color: AppTheme.primaryAccent,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    SizedBox(width: 48),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(isEdit ? 'ကျောက်မျက် ပြင်ဆင်ရန်' : 'ကျောက်မျက်အသစ်',
-                    style: const TextStyle(
-                        color: AppTheme.primaryAccent,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 _field(_name, 'အမည်', required: true),
                 _field(_type, 'အမျိုးအစား (ဥပမာ - ပတ္တမြား)'),
