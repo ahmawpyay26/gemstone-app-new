@@ -796,6 +796,7 @@ class _SaleFormState extends State<_SaleForm> {
   
   // Multi-item invoice support
   late List<_SaleItem> _items;
+  late List<_SaleItem> _fragmentItems; // Separate temporary list for fragment sales (Step 6G)
   bool _isMultiItemMode = false;
 
   // Preview state (in-memory only, never persisted to Hive)
@@ -1071,6 +1072,9 @@ class _SaleFormState extends State<_SaleForm> {
         remark: e?.note ?? '',
       ),
     ];
+    
+    // Initialize fragment temporary list (Step 6G)
+    _fragmentItems = [];
   }
 
   static String _trim(double v) =>
@@ -1301,6 +1305,10 @@ class _SaleFormState extends State<_SaleForm> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // PHASE 0: MERGE TEMPORARY LISTS (Step 6G)
+    // Merge fragment items into main items list before processing
+    _items.addAll(_fragmentItems);
+
     // PHASE 1: VALIDATE ALL ITEMS BEFORE SAVING ANY
     for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
@@ -1451,9 +1459,10 @@ class _SaleFormState extends State<_SaleForm> {
         await LocalDb.updateGemstoneProductLedger(gemId);
       }
       
-      // PHASE 5: CLEAR PREVIEW STATE AND FORM
+      // PHASE 5: CLEAR PREVIEW STATE AND FORM (Step 6G: Clear both temporary lists)
       _previewState.clear();
       _items.clear();
+      _fragmentItems.clear(); // Clear fragment temporary list after successful save
       _selectedGemId = null;
       _manualName.clear();
       _qty.clear();
@@ -2387,9 +2396,9 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
 
-    // All validations passed - add item to temporary list
+    // All validations passed - add item to fragment temporary list (Step 6G)
     setState(() {
-      _items.add(
+      _fragmentItems.add(
         _SaleItem(
           id: const Uuid().v4(),
           gemstoneId: _selectedFragmentGemstoneId,
