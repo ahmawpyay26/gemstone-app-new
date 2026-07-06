@@ -1029,6 +1029,18 @@ class _SaleFormState extends State<_SaleForm> {
       _fragmentWeight.clear();
       _fragmentUnitPrice.clear();
       _photoPaths.clear();
+      
+      // Clear whole-stone form fields (Step 6M)
+      _selectedGemstoneId = null;
+      _selectedCustomerId = null;
+      _quantitySoldController.clear();
+      _weight.clear();
+      _unitPriceController.clear();
+      _remarkController.clear();
+      
+      // Reset validation error states
+      _quantityError = null;
+      _unitPriceError = null;
     });
 
     _recalculatePreview();
