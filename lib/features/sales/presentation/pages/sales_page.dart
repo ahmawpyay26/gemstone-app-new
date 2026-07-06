@@ -2200,7 +2200,13 @@ class _SaleFormState extends State<_SaleForm> {
               dropdownColor: AppTheme.surfaceDark,
               underline: const SizedBox.shrink(),
               items: availableItems.map((entry) {
-                final displayText = '${entry.key} (${entry.value})';
+                // Get remaining quantity from Preview State (Step 6H)
+                final preview = _previewState[_selectedFragmentGemstoneId];
+                final previewRemainingQty = preview != null
+                    ? (entry.value as int) - (preview['totalFragmentQtyDeducted'] as int? ?? 0)
+                    : entry.value;
+                final displayQty = previewRemainingQty.clamp(0, entry.value as int);
+                final displayText = '${entry.key} ($displayQty)';
                 return DropdownMenuItem<String>(
                   value: entry.key,
                   child: Text(
