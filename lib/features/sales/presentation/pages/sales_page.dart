@@ -1031,22 +1031,17 @@ class _SaleFormState extends State<_SaleForm> {
       _photoPaths.clear();
       
       // Clear whole-stone form fields (Step 6M)
-      _selectedGemstoneId = null;
+      _selectedGemId = null;
       _selectedCustomerId = null;
-      _quantitySoldController.clear();
+      _qty.clear();
       _weight.clear();
-      _unitPriceController.clear();
-      _remarkController.clear();
-      
-      // Reset validation error states
-      _quantityError = null;
-      _unitPriceError = null;
+      _amount.clear();
+      _note.clear();
     });
 
     _recalculatePreview();
     _showSuccess('Fragment items transferred to temporary list');
   }
-    // Step 6M: Form reset after fragment transfer - Complete
 
   void _editItemFromTemporaryList(int index) {
     final item = _items[index];
