@@ -67,21 +67,34 @@ class LocalDb {
 
   /// Supported weight units. value => Burmese display label.
   static const Map<String, String> weightUnits = {
+    'viss': 'ပိသာ',
+    'kyat': 'ကျပ်သား',
     'carat': 'ကာရက်',
     'kg': 'ကီလို (kg)',
-    'viss': 'ပိဿာ',
+    'g': 'ဂရမ် (g)',
+    'lb': 'ပေါင် (lb)',
+    'oz': 'အောင်စ (oz)',
   };
 
   /// Short label used inline next to numbers.
   static String unitLabel(String unit) {
     switch (unit) {
+      case 'viss':
+        return 'ပိသာ';
+      case 'kyat':
+        return 'ကျပ်သား';
+      case 'carat':
+        return 'ကာရက်';
       case 'kg':
         return 'kg';
-      case 'viss':
-        return 'ပိဿာ';
-      case 'carat':
+      case 'g':
+        return 'g';
+      case 'lb':
+        return 'lb';
+      case 'oz':
+        return 'oz';
       default:
-        return 'ကာရက်';
+        return 'kg';
     }
   }
 
