@@ -983,6 +983,30 @@ class _SaleFormState extends State<_SaleForm> {
     _showSuccess('Item removed');
   }
 
+  // Fragment temporary list handlers (Step 6G-UI)
+  void _editFragmentItemFromList(int index) {
+    final item = _fragmentItems[index];
+    setState(() {
+      _selectedFragmentGemstoneId = item.gemstoneId;
+      _selectedFragmentName = item.fragmentName;
+      _fragmentQuantity.text = item.quantity.toString();
+      _fragmentWeight.text = item.weight?.toString() ?? '';
+      _fragmentUnitPrice.text = item.unitPrice.toString();
+      _photoPaths = item.photoPaths ?? [];
+      _fragmentItems.removeAt(index);
+    });
+    _recalculatePreview();
+    _showSuccess('Fragment item restored for editing');
+  }
+
+  void _removeFragmentItemFromList(int index) {
+    setState(() {
+      _fragmentItems.removeAt(index);
+    });
+    _recalculatePreview();
+    _showSuccess('Fragment item removed');
+  }
+
   void _editItemFromTemporaryList(int index) {
     final item = _items[index];
     
@@ -1665,6 +1689,191 @@ class _SaleFormState extends State<_SaleForm> {
                 ),
                     ),
                   ],
+
+                // Fragment temporary list (Step 6G-UI: Display only in Fragment Dialog)
+                if (_saleSource == 'breakdown_item') ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceDark.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.primaryAccent.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ထည့်ထားသော ကျောက်အစိတ်စိတ်ပိုင်းများ',
+                          style: const TextStyle(
+                            color: AppTheme.primaryAccent,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (_fragmentItems.isEmpty)
+                          Center(
+                            child: Text(
+                              '(အစိတ်စိတ်ပိုင်းများ ထည့်ထားမရှိသေးပါ)',
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 12,
+                              ),
+                            ),
+                          )
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _fragmentItems.length,
+                            itemBuilder: (ctx, idx) {
+                              final item = _fragmentItems[idx];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.surfaceDark,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: AppTheme.primaryAccent.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Header: Title + Badge + Menu
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                item.gemstoneName,
+                                                style: const TextStyle(
+                                                  color: AppTheme.primaryAccent,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.primaryAccent.withOpacity(0.2),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: const Text(
+                                                  'အစိတ်စိတ်ပိုင်း',
+                                                  style: TextStyle(
+                                                    color: AppTheme.primaryAccent,
+                                                    fontSize: 10,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuButton<String>(
+                                          onSelected: (value) {
+                                            if (value == 'edit') {
+                                              _editFragmentItemFromList(idx);
+                                            } else if (value == 'delete') {
+                                              _removeFragmentItemFromList(idx);
+                                            }
+                                          },
+                                          itemBuilder: (BuildContext context) => [
+                                            const PopupMenuItem<String>(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, size: 18),
+                                                  SizedBox(width: 8),
+                                                  Text('ပြုပြင်ရန်'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem<String>(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.delete, size: 18),
+                                                  SizedBox(width: 8),
+                                                  Text('ဖျက်ရန်'),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    // Row 1: Quantity + Weight
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'အရေအတွက်: ${item.quantity}',
+                                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                        ),
+                                        if (item.weight != null && item.weight! > 0)
+                                          Text(
+                                            'အလေးချိန်: ${item.weight} kg',
+                                            style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    // Row 2: Unit Price + Total
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'ယူနစ်ဈေး: ${item.unitPrice}',
+                                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                        ),
+                                        Text(
+                                          'စုစုပေါင်း: ${item.totalAmount}',
+                                          style: const TextStyle(color: AppTheme.primaryAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    // Row 3: Photos
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          item.photoPaths != null && item.photoPaths!.isNotEmpty
+                                              ? '📷 ${item.photoPaths!.length} ပုံ'
+                                              : '📷 --',
+                                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                        ),
+                                        if (item.remark != null && item.remark!.isNotEmpty)
+                                          Expanded(
+                                            child: Text(
+                                              'မှတ်ချက်: ${item.remark}',
+                                              style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
 
                 // Show entire form only for whole stone source
                 if (_saleSource == 'whole_stone') ...[                
