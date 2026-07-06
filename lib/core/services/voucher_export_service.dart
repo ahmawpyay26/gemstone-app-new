@@ -127,7 +127,7 @@ class VoucherExportService {
                           pw.Padding(
                             padding: const pw.EdgeInsets.all(8),
                             child: pw.Text(
-                                '${_trim(sale.weightCarat)} kg'),
+                                '${_trim(sale.weightCarat)} ${_getWeightUnit(sale)}'),
                           ),
                         ],
                       ),
@@ -244,6 +244,19 @@ class VoucherExportService {
       print('Error generating PDF voucher: $e');
       return null;
     }
+  }
+
+  String _getWeightUnit(Sale sale) {
+    // Use Sale's weightUnit if available (whole-stone sales)
+    if (sale.weightUnit != null && sale.weightUnit!.isNotEmpty) {
+      return LocalDb.unitLabel(sale.weightUnit!);
+    }
+    // Fallback to fragment weight unit
+    if (sale.fragmentWeightUnit != null && sale.fragmentWeightUnit!.isNotEmpty) {
+      return LocalDb.unitLabel(sale.fragmentWeightUnit!);
+    }
+    // Default to kg
+    return 'kg';
   }
 
   /// Print voucher

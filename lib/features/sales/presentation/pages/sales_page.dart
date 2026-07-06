@@ -576,6 +576,11 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   String _saleUnit(Sale s) {
+    // Use Sale's weightUnit if available (whole-stone sales with selected unit)
+    if (s.weightUnit != null && s.weightUnit!.isNotEmpty) {
+      return LocalDb.unitLabel(s.weightUnit!);
+    }
+    // Fallback to gemstone's weight unit
     if (s.gemstoneId.isNotEmpty) {
       final g = LocalDb.gemstoneById(s.gemstoneId);
       if (g != null) return LocalDb.unitLabel(g.weightUnit);
@@ -794,6 +799,7 @@ class _SaleFormState extends State<_SaleForm> {
   late final TextEditingController _fragmentWeight; // Fragment weight input in kg (Step 6B-1)
   String? _fragmentWeightError; // Fragment weight validation error (Step 6B-1)
   String _fragmentWeightUnit = 'kg'; // Fragment weight unit (Step 6B-2)
+  String _weightUnit = 'kg'; // Whole-stone weight unit (Step 6T)
   late final TextEditingController _fragmentUnitPrice; // Fragment unit price input (Step 5D-2)
   List<String> _fragmentPhotoPaths = []; // Fragment photo attachment paths (Step 6C-2)
   
@@ -950,6 +956,8 @@ class _SaleFormState extends State<_SaleForm> {
       quantity: qty.toInt(),
       unitPrice: price,
       remark: _note.text,
+      weight: double.tryParse(_weight.text.trim()),
+      weightUnit: _weightUnit,
     );
 
     // Add to list
@@ -971,6 +979,7 @@ class _SaleFormState extends State<_SaleForm> {
       _amount.clear();
       _note.clear();
       _weight.clear();
+      _weightUnit = 'kg';
       _cost.clear();
       _commission.clear();
     });
@@ -1040,6 +1049,7 @@ class _SaleFormState extends State<_SaleForm> {
       _selectedCustomerId = null;
       _qty.clear();
       _weight.clear();
+      _weightUnit = 'kg';
       _amount.clear();
       _note.clear();
     });
@@ -1072,6 +1082,10 @@ class _SaleFormState extends State<_SaleForm> {
         _qty.text = item.quantity.toString();
         _amount.text = item.unitPrice.toString();
         _note.text = item.remark;
+        if (item.weight != null) {
+          _weight.text = item.weight.toString();
+        }
+        _weightUnit = item.weightUnit ?? 'kg';
       }
     });
     // Remove from temporary list
@@ -1119,6 +1133,8 @@ class _SaleFormState extends State<_SaleForm> {
     _saleDate = e != null
         ? DateTime.fromMillisecondsSinceEpoch(e.saleDate)
         : DateTime.now();
+    _weightUnit = e?.weightUnit ?? 'kg';
+    _fragmentWeightUnit = e?.fragmentWeightUnit ?? 'kg';
 
     // Preselect gemstone if the sale was linked to one and it still exists.
     if (e != null && e.gemstoneId.isNotEmpty &&
@@ -1135,6 +1151,8 @@ class _SaleFormState extends State<_SaleForm> {
         quantity: e?.quantity ?? 1,
         unitPrice: e?.amount ?? 0,
         remark: e?.note ?? '',
+        weight: e?.weightCarat,
+        weightUnit: _weightUnit,
       ),
     ];
     
@@ -1459,7 +1477,7 @@ class _SaleFormState extends State<_SaleForm> {
         costPrice: cost,
         commissionFee: sellCommission,
         quantity: qty,
-        weightCarat: 0,
+        weightCarat: item.weight ?? 0,
         paymentMethod: _payment,
         note: item.remark,
         saleDate: _saleDate.millisecondsSinceEpoch,
@@ -1478,6 +1496,7 @@ class _SaleFormState extends State<_SaleForm> {
         isFragmentSource: item.isFragmentSource,
         fragmentWeight: item.weight,
         fragmentWeightUnit: item.weightUnit,
+        weightUnit: item.isFragmentSource ? null : item.weightUnit,
       );
       
       // Save to Hive
@@ -1542,6 +1561,7 @@ class _SaleFormState extends State<_SaleForm> {
       _amount.clear();
       _note.clear();
       _weight.clear();
+      _weightUnit = 'kg';
       _cost.clear();
       _commission.clear();
       _photoPaths.clear();
@@ -1956,12 +1976,42 @@ class _SaleFormState extends State<_SaleForm> {
                       child: _field(_qty, 'အရေအတွက်',
                           number: true, required: true)),
                 ]),
-                _field(
-                    _weight,
-                    selectedGem != null
-                        ? 'အလေးချိန် (${LocalDb.unitLabel(selectedGem.weightUnit)}) — မဖြည့်လည်းရ'
-                        : 'အလေးချိန် — မဖြည့်လည်းရ',
-                    number: true),
+                // Weight and unit fields
+                Row(children: [
+                  Expanded(
+                    flex: 2,
+                    child: _field(
+                        _weight,
+                        'အလေးချိန်ဖြည့်ရန်',
+                        number: true),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: DropdownButtonFormField<String>(
+                        value: _weightUnit,
+                        dropdownColor: AppTheme.surfaceLight,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          labelText: 'ယူနစ်',
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        ),
+                        items: LocalDb.weightUnits.map((unit) =>
+                          DropdownMenuItem(
+                            value: unit,
+                            child: Text(LocalDb.unitLabel(unit)),
+                          ),
+                        ).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _weightUnit = value);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ]),
 
                 // Auto-deduct toggle (only meaningful when linked to inventory)
                 if (_selectedGemId != null)
