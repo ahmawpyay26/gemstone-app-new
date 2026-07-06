@@ -2516,7 +2516,7 @@ class _SaleFormState extends State<_SaleForm> {
                 final previewRemainingQty = preview != null
                     ? (entry.value as int) - (preview['totalFragmentQtyDeducted'] as int? ?? 0)
                     : entry.value;
-                final displayQty = previewRemainingQty.clamp(0, entry.value as int);
+                final displayQty = ((previewRemainingQty as num?)?.toInt() ?? 0).clamp(0, entry.value as int);
                 final displayText = '${entry.key} ($displayQty)';
                 return DropdownMenuItem<String>(
                   value: entry.key,
