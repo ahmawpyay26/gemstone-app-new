@@ -140,8 +140,9 @@ class BottomSheetDropdown<T> extends StatelessWidget {
                                 )
                               : null,
                           onTap: () {
-                            onChanged(item.value);
                             Navigator.pop(context);
+                            // Delay onChanged to ensure navigation completes first
+                            Future.microtask(() => onChanged(item.value));
                           },
                         );
                       },
