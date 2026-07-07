@@ -45,7 +45,7 @@ class _SalesPageState extends State<SalesPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _SaleForm(existing: existing, hiveKey: key),
+      builder: (_) => _SaleForm(existing: existing, hiveKey: key, parentContext: context),
     );
   }
 
@@ -770,7 +770,8 @@ class _SaleItem {
 class _SaleForm extends StatefulWidget {
   final Sale? existing;
   final dynamic hiveKey;
-  const _SaleForm({this.existing, this.hiveKey});
+  final BuildContext? parentContext;
+  const _SaleForm({this.existing, this.hiveKey, this.parentContext});
 
   @override
   State<_SaleForm> createState() => _SaleFormState();
@@ -791,6 +792,9 @@ class _SaleFormState extends State<_SaleForm> {
   late DateTime _saleDate;
   late List<String> _photoPaths;
   final _money = NumberFormat('#,##0', 'en_US');
+  
+  // Parent context for SnackBar visibility
+  late BuildContext _parentContext;
 
   String? _selectedGemId; // null => manual entry
   bool _autoDeduct = true;
@@ -1113,13 +1117,13 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(_parentContext).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: AppTheme.errorColor),
     );
   }
 
   void _showSuccess(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(_parentContext).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: AppTheme.successColor),
     );
   }
@@ -1127,6 +1131,7 @@ class _SaleFormState extends State<_SaleForm> {
   @override
   void initState() {
     super.initState();
+    _parentContext = widget.parentContext ?? context;
     final e = widget.existing;
     _photoPaths = List.from(e?.photoPaths ?? []);
     _selectedCustomerId = e?.customerId;
@@ -1627,7 +1632,7 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   void _toast(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(_parentContext).showSnackBar(
       SnackBar(
         content: Text(msg),
         backgroundColor: AppTheme.errorColor,
