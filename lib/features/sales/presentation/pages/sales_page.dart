@@ -13,6 +13,7 @@ import '../../../../core/services/voucher_export_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 import '../widgets/bottom_sheet_dropdown.dart';
+import '../widgets/inline_selector.dart';
 
 class SalesPage extends StatefulWidget {
   const SalesPage({Key? key}) : super(key: key);
@@ -2458,7 +2459,7 @@ class _SaleFormState extends State<_SaleForm> {
               ),
             ),
           ),
-          BottomSheetDropdown<String>(
+          InlineSelector<String>(
             value: _selectedFragmentGemstoneId,
             hint: 'ကျောက်အမည် ရွေးချယ်မည်',
             borderColor: AppTheme.primaryAccent,
@@ -2539,7 +2540,7 @@ class _SaleFormState extends State<_SaleForm> {
               ),
             ),
           ),
-          BottomSheetDropdown<String>(
+          InlineSelector<String>(
             value: _selectedFragmentName,
             hint: 'အတ်တ်တ်တ်ပြတ်တ် ရွေးချယ်မည်',
             borderColor: AppTheme.primaryAccent,

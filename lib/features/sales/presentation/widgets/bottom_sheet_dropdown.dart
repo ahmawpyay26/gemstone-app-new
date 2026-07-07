@@ -85,6 +85,7 @@ class _BottomSheetDropdownState<T> extends State<BottomSheetDropdown<T>> {
 
   Future<void> _showPickerBottomSheet(BuildContext context) async {
     // Use rootNavigator to avoid issues with nested modals
+    debugPrint('[BottomSheetDropdown] Picker opened');
     final selectedValue = await showModalBottomSheet<T?>(
       context: context,
       isScrollControlled: true,
@@ -147,8 +148,10 @@ class _BottomSheetDropdownState<T> extends State<BottomSheetDropdown<T>> {
                                 )
                               : null,
                           onTap: () {
+                            debugPrint('[BottomSheetDropdown] Item tapped: ${item.value}');
                             // Return the selected value through Navigator.pop
                             // This closes the modal and returns the value
+                            debugPrint('[BottomSheetDropdown] Calling Navigator.pop with value: ${item.value}');
                             Navigator.of(context, rootNavigator: true).pop(item.value);
                           },
                         );
@@ -165,10 +168,18 @@ class _BottomSheetDropdownState<T> extends State<BottomSheetDropdown<T>> {
 
     // Only call onChanged after the bottom sheet has fully closed
     // and the returned value is available
-    if (!mounted) return;
+    debugPrint('[BottomSheetDropdown] showModalBottomSheet returned: $selectedValue');
+    if (!mounted) {
+      debugPrint('[BottomSheetDropdown] Widget not mounted, returning');
+      return;
+    }
     
     if (selectedValue != null) {
+      debugPrint('[BottomSheetDropdown] Calling onChanged with: $selectedValue');
       widget.onChanged(selectedValue);
+      debugPrint('[BottomSheetDropdown] onChanged completed');
+    } else {
+      debugPrint('[BottomSheetDropdown] selectedValue is null');
     }
   }
 }
