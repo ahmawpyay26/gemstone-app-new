@@ -946,8 +946,8 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
     double price = double.tryParse(_amount.text) ?? 0;
-    if (price < 0) {
-      _showError('Price must be 0 or greater');
+    if (price <= 0) {
+      _showError('Price must be greater than 0');
       return;
     }
 
@@ -1120,15 +1120,27 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(_parentContext).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppTheme.errorColor),
-    );
+    // Try to use current context first, fall back to parent context
+    final messenger = ScaffoldMessenger.maybeOf(context) ?? ScaffoldMessenger.maybeOf(_parentContext);
+    if (messenger != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: AppTheme.errorColor),
+      );
+    } else {
+      developer.log('[ERROR] ScaffoldMessenger not available: $msg');
+    }
   }
 
   void _showSuccess(String msg) {
-    ScaffoldMessenger.of(_parentContext).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppTheme.successColor),
-    );
+    // Try to use current context first, fall back to parent context
+    final messenger = ScaffoldMessenger.maybeOf(context) ?? ScaffoldMessenger.maybeOf(_parentContext);
+    if (messenger != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: AppTheme.successColor),
+      );
+    } else {
+      developer.log('[SUCCESS] ScaffoldMessenger not available: $msg');
+    }
   }
 
   @override
@@ -1454,10 +1466,17 @@ class _SaleFormState extends State<_SaleForm> {
         return;
       }
       
-      // Check unit price >= 0
-      if (item.unitPrice < 0) {
-        developer.log('[Sale] Validation failed at item $i: unitPrice < 0 (price=${item.unitPrice})');
-        _toast('အရည်အသွေး $i: အတ်နိတ်တိုပ် >= 0 ဖြစ်ရမည်');
+      // Check unit price > 0
+      if (item.unitPrice <= 0) {
+        developer.log('[Sale] Validation failed at item $i: unitPrice <= 0 (price=${item.unitPrice})');
+        _showError('ပစ္စည်း $i: ရောင်းရငွေ > 0 ဖြစ်ရမည်');
+        return;
+      }
+      
+      // Check gemstone name not blank
+      if (item.gemstoneName.isEmpty) {
+        developer.log('[Sale] Validation failed at item $i: gemstoneName is blank');
+        _showError('ပစ္စည်း $i: ကျောက်မျက်အမည် မည်သည့်မျှ မဖြည့်စွက်ရသေးပါ');
         return;
       }
       
@@ -1655,13 +1674,19 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   void _toast(String msg) {
-    ScaffoldMessenger.of(_parentContext).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: AppTheme.errorColor,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Try to use current context first, fall back to parent context
+    final messenger = ScaffoldMessenger.maybeOf(context) ?? ScaffoldMessenger.maybeOf(_parentContext);
+    if (messenger != null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: AppTheme.errorColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      developer.log('[TOAST] ScaffoldMessenger not available: $msg');
+    }
   }
 
   @override
