@@ -1008,15 +1008,18 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                   height: 60,
                   child: ElevatedButton(
                     onPressed: _save,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Center(
                       child: Text(
                         isEdit ? 'သိမ်းဆည်းမည်' : 'ထည့်သွင်းမည်',
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          height: 1.3,
                         ),
                       ),
                     ),
