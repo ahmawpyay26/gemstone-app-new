@@ -247,7 +247,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
-                      height: 52,
+                      height: 60,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleLogin,
                         style: ElevatedButton.styleFrom(
@@ -267,12 +267,19 @@ class _LoginPageState extends State<LoginPage> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
-                                'ဝင်ရောက်မည်',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                            : Center(
+                                child: Text(
+                                  'ဝင်ရောက်မည်',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.visible,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                    height: 1.3,
+                                  ),
                                 ),
                               ),
                       ),
