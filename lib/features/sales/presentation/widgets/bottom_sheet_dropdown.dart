@@ -27,7 +27,7 @@ class BottomSheetDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showPickerBottomSheet(context),
+      onTap: () async => await _showPickerBottomSheet(context),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
