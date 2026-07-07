@@ -2539,12 +2539,67 @@ class _SaleFormState extends State<_SaleForm> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _items.isNotEmpty ? () {
+                      onPressed: _items.isNotEmpty ? () async {
                         developer.log('[SaleFinalButton] tapped - _items.length: ${_items.length}');
                         setState(() {
                           _saveDebugStatus = 'BUTTON_TAPPED';
                         });
-                        _save();
+
+                        final sale = Sale(
+                          id: LocalDb.genId(),
+                          invoiceNumber: 'TEST',
+                          gemstoneId: '',
+                          gemstoneName: 'TEST',
+                          customerId: '',
+                          customerName: '',
+                          amount: 100,
+                          costPrice: 0,
+                          commissionFee: 0,
+                          quantity: 1,
+                          weightCarat: 0,
+                          paymentMethod: 'cash',
+                          note: '',
+                          saleDate: DateTime.now().millisecondsSinceEpoch,
+                          netSale: 100,
+                          costUsed: 0,
+                          profitGenerated: 0,
+                          remainingCostAfterSale: 0,
+                          accumulatedProfit: 0,
+                          photoPaths: [],
+                          isDeleted: false,
+                          deletedAt: null,
+                          deletedBy: '',
+                          deleteReason: '',
+                          fragmentName: null,
+                          isFragmentSource: false,
+                          fragmentWeight: null,
+                          fragmentWeightUnit: null,
+                          weightUnit: null,
+                        );
+
+                        try {
+                          developer.log('[MINIMAL_TEST] Adding sale to Hive');
+                          await LocalDb.sales().add(sale);
+                          developer.log('[MINIMAL_TEST] Sale added successfully');
+
+                          if (!mounted) return;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('TEST SAVE SUCCESS'))
+                          );
+
+                          developer.log('[MINIMAL_TEST] Navigating back');
+                          Navigator.of(context).pop(true);
+
+                        } catch (e, st) {
+                          developer.log('[MINIMAL_TEST] SAVE FAILED', error: e, stackTrace: st);
+
+                          if (!mounted) return;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('SAVE FAILED: $e'))
+                          );
+                        }
                       } : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryAccent,
