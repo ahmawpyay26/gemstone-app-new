@@ -1607,10 +1607,12 @@ class _SaleFormState extends State<_SaleForm> {
       
       // Show success and close form
       developer.log('[Sale] Save completed successfully. Showing success message and closing form');
-      _toast('Invoice $invoiceNum သိမ်းဆည်းပြီးပါပြီ');
+      _toast('အရောင်းချပါပြီ အောင်းချမည်ပါပြီ');
       if (mounted) {
-        developer.log('[Sale] Closing sale form');
+        developer.log('[Sale] Closing sale form and returning to Sales History');
+        // Pop the sale form bottom sheet
         Navigator.pop(context);
+        // The Sales History page will automatically refresh when we return
       }
     } catch (e) {
       // FAILURE: Keep preview state and temporary list for retry
@@ -2462,7 +2464,7 @@ class _SaleFormState extends State<_SaleForm> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: const Text(
-                        'သိမ်းမည်',
+                        'ရောင်းချမည်',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
