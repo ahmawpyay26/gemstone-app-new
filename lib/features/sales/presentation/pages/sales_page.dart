@@ -1451,18 +1451,31 @@ class _SaleFormState extends State<_SaleForm> {
       developer.log('[PHASE_B_START] Starting validation of ${_items.length} items');
       for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
+      developer.log('[PHASE_B_ITEM_$i] gemstoneId=${item.gemstoneId}, gemstoneName=${item.gemstoneName}, qty=${item.quantity}, price=${item.unitPrice}, isFragment=${item.isFragmentSource}');
       
-      // Check gemstone selected
-      if (item.gemstoneId == null || item.gemstoneId!.isEmpty) {
-        developer.log('[Sale] Validation failed at item $i: gemstone not selected');
-        _toast('အရည်အသွေး $i: ကျောက်မျက်ရွေးချယ်ပါ');
+      // Check gemstoneName not blank (required for all items)
+      if (item.gemstoneName.isEmpty) {
+        developer.log('[Sale] Validation failed at item $i: gemstoneName is blank');
+        _showError('ပစ္စည်း $i: ကျောက်မျက်အမည် မည်သည့်မျှ မဖြည့်စွက်ရသေးပါ');
         return;
+      }
+      
+      // Try to resolve gemstoneId from name if not set
+      String? resolvedGemstoneId = item.gemstoneId;
+      if ((resolvedGemstoneId == null || resolvedGemstoneId.isEmpty) && item.gemstoneName.isNotEmpty) {
+        // Try to find gemstone by name
+        final allGems = LocalDb.gemstones().values.toList();
+        final matchedGem = allGems.firstWhereOrNull((g) => g.name == item.gemstoneName);
+        if (matchedGem != null) {
+          resolvedGemstoneId = matchedGem.id;
+          developer.log('[Sale] Resolved gemstoneId from name: $resolvedGemstoneId');
+        }
       }
       
       // Check quantity > 0
       if (item.quantity <= 0) {
         developer.log('[Sale] Validation failed at item $i: quantity <= 0 (qty=${item.quantity})');
-        _toast('အရည်အသွေး $i: အရေအတွက် > 0 ဖြစ်ရမည်');
+        _showError('ပစ္စည်း $i: အရေအတွက် > 0 ဖြစ်ရမည်');
         return;
       }
       
@@ -1473,35 +1486,33 @@ class _SaleFormState extends State<_SaleForm> {
         return;
       }
       
-      // Check gemstone name not blank
-      if (item.gemstoneName.isEmpty) {
-        developer.log('[Sale] Validation failed at item $i: gemstoneName is blank');
-        _showError('ပစ္စည်း $i: ကျောက်မျက်အမည် မည်သည့်မျှ မဖြည့်စွက်ရသေးပါ');
-        return;
-      }
-      
-      // Check gemstone exists
-      final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
-      if (gemstone == null) {
-        developer.log('[Sale] Validation failed at item $i: gemstone not found (id=${item.gemstoneId})');
-        _toast('အရည်အသွေး $i: ကျောက်မျက်မတ်တေးချယ်ပါ');
-        return;
-      }
-      
-      // Check inventory if auto-deduct enabled
-      if (_autoDeduct) {
-        final remaining = LocalDb.gemstoneRemainingQuantity(gemstone);
-        developer.log('[Sale] Auto-deduct enabled. Remaining qty: $remaining');
-        if (remaining <= 0) {
-          developer.log('[Sale] Validation failed at item $i: no remaining inventory');
-          _toast('အရည်အသွေး $i: အရောင်းအဆုံးဖြစ်နေ');
+      // If gemstoneId is available, validate it exists
+      if (resolvedGemstoneId != null && resolvedGemstoneId.isNotEmpty) {
+        final gemstone = LocalDb.gemstoneById(resolvedGemstoneId);
+        if (gemstone == null) {
+          developer.log('[Sale] Validation failed at item $i: gemstone not found (id=$resolvedGemstoneId)');
+          _showError('ပစ္စည်း $i: ကျောက်မျက် ID မရှိပါ — ထည့်မည် logic ကို ပြင်ရန်လိုအပ်သည်');
           return;
         }
-        if (item.quantity > remaining) {
-          developer.log('[Sale] Validation failed at item $i: qty ${item.quantity} > remaining $remaining');
-          _toast('အရည်အသွေး $i: Stock မတ်တေးတင်ပါ — ကျောတ် $remaining ခ်ပါ ရိးတေးချယ်ပါ');
-          return;
+        
+        // Check inventory if auto-deduct enabled
+        if (_autoDeduct) {
+          final remaining = LocalDb.gemstoneRemainingQuantity(gemstone);
+          developer.log('[Sale] Auto-deduct enabled. Remaining qty: $remaining');
+          if (remaining <= 0) {
+            developer.log('[Sale] Validation failed at item $i: no remaining inventory');
+            _showError('ပစ္စည်း $i: အရောင်းအဆုံးဖြစ်နေ');
+            return;
+          }
+          if (item.quantity > remaining) {
+            developer.log('[Sale] Validation failed at item $i: qty ${item.quantity} > remaining $remaining');
+            _showError('ပစ္စည်း $i: Stock မတ်တေးတင်ပါ — ကျောတ် $remaining ခ်ပါ ရိးတေးချယ်ပါ');
+            return;
+          }
         }
+      } else {
+        // Manual entry without gemstoneId - allow it for now
+        developer.log('[Sale] Item $i is manual entry (no gemstoneId), allowing save');
       }
       }
       developer.log('[PHASE_B_SUCCESS] All validations passed');
