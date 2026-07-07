@@ -78,11 +78,12 @@ class BottomSheetDropdown<T> extends StatelessWidget {
     return hint;
   }
 
-  void _showPickerBottomSheet(BuildContext context) {
-    showModalBottomSheet(
+  void _showPickerBottomSheet(BuildContext context) async {
+    final selectedValue = await showModalBottomSheet<T?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
           initialChildSize: 0.6,
@@ -139,11 +140,7 @@ class BottomSheetDropdown<T> extends StatelessWidget {
                                   color: Color(0xFFD4AF37),
                                 )
                               : null,
-                          onTap: () {
-                            Navigator.pop(context);
-                            // Delay onChanged to ensure navigation completes first
-                            Future.microtask(() => onChanged(item.value));
-                          },
+                          onTap: () => Navigator.pop(context, item.value),
                         );
                       },
                     ),
@@ -155,5 +152,10 @@ class BottomSheetDropdown<T> extends StatelessWidget {
         );
       },
     );
+    
+    // Only call onChanged after the bottom sheet has fully closed
+    if (selectedValue != null) {
+      onChanged(selectedValue);
+    }
   }
 }
