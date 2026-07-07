@@ -1406,8 +1406,10 @@ class _SaleFormState extends State<_SaleForm> {
     developer.log('[Sale] _items.length: ${_items.length}');
     developer.log('[Sale] _fragmentItems.length: ${_fragmentItems.length}');
     
-    if (!_formKey.currentState!.validate()) {
-      developer.log('[Sale] Form validation failed');
+    // Check if temporary sale list is empty
+    if (_items.isEmpty && _fragmentItems.isEmpty) {
+      developer.log('[Sale] No items to save - both lists are empty');
+      _toast('ရောင်းချမည့်ပစ္စည်း မရှိသေးပါ');
       return;
     }
 
