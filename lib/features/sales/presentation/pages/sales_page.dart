@@ -1431,36 +1431,44 @@ class _SaleFormState extends State<_SaleForm> {
       
       // Check quantity > 0
       if (item.quantity <= 0) {
+        developer.log('[Sale] Validation failed at item $i: quantity <= 0 (qty=${item.quantity})');
         _toast('အရည်အသွေး $i: အရေအတွက် > 0 ဖြစ်ရမည်');
         return;
       }
       
       // Check unit price >= 0
       if (item.unitPrice < 0) {
-        _toast('အရည်အသွေး $i: ယူနစ်ဈေးနှုန်း >= 0 ဖြစ်ရမည်');
+        developer.log('[Sale] Validation failed at item $i: unitPrice < 0 (price=${item.unitPrice})');
+        _toast('အရည်အသွေး $i: အတ်နိတ်တိုပ် >= 0 ဖြစ်ရမည်');
         return;
       }
       
       // Check gemstone exists
       final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
       if (gemstone == null) {
-        _toast('အရည်အသွေး $i: ကျောက်မျက်မတွေ့ရှိ');
+        developer.log('[Sale] Validation failed at item $i: gemstone not found (id=${item.gemstoneId})');
+        _toast('အရည်အသွေး $i: ကျောက်မျက်မတ်တေးချယ်ပါ');
         return;
       }
       
       // Check inventory if auto-deduct enabled
       if (_autoDeduct) {
         final remaining = LocalDb.gemstoneRemainingQuantity(gemstone);
+        developer.log('[Sale] Auto-deduct enabled. Remaining qty: $remaining');
         if (remaining <= 0) {
+          developer.log('[Sale] Validation failed at item $i: no remaining inventory');
           _toast('အရည်အသွေး $i: အရောင်းအဆုံးဖြစ်နေ');
           return;
         }
         if (item.quantity > remaining) {
-          _toast('အရည်အသွေး $i: Stock မလောက်ပါ — ကျန် $remaining ခုသာ ရှိသည်');
+          developer.log('[Sale] Validation failed at item $i: qty ${item.quantity} > remaining $remaining');
+          _toast('အရည်အသွေး $i: Stock မတ်တေးတင်ပါ — ကျောတ် $remaining ခ်ပါ ရိးတေးချယ်ပါ');
           return;
         }
       }
     }
+    
+    developer.log('[Sale] All validations passed. Proceeding to save');
 
     // PHASE 2: GENERATE INVOICE NUMBER
     final now = DateTime.now();
