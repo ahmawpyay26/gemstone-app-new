@@ -1749,13 +1749,24 @@ class _SaleFormState extends State<_SaleForm> {
                     _buildFragmentPhotoAttachmentSection(),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child:                 SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saleSource == 'breakdown_item' ? _addFragmentItemMinimal : _addItemToTemporaryList,
-                    child: const Text('ထည့်မည်'),
-                  ),
-                ),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 60,
+                        child: ElevatedButton(
+                          onPressed: _saleSource == 'breakdown_item' ? _addFragmentItemMinimal : _addItemToTemporaryList,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text(
+                            'ထည့်မည်',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
 
@@ -2098,17 +2109,20 @@ class _SaleFormState extends State<_SaleForm> {
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 60,
                   child: ElevatedButton(
                     onPressed: _addItemToTemporaryList,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryAccent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: const Text(
                       'ထည့်မည်',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
                   ),
