@@ -1410,7 +1410,7 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   Future<void> _save() async {
-    _toast('DEBUG: ရောင်းချမည် နှိပ်ပြီးပါပြီ');
+    developer.log('ENTERED_SAVE - _save() method called');
     developer.log('[Sale] _save() called - Final save button tapped');
     developer.log('[Sale] _items.length: ${_items.length}');
     developer.log('[Sale] _fragmentItems.length: ${_fragmentItems.length}');
