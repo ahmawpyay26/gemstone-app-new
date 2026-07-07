@@ -1005,12 +1005,21 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 60,
                   child: ElevatedButton(
                     onPressed: _save,
-                    child: Text(isEdit ? 'သိမ်းဆည်းမည်' : 'ထည့်သွင်းမည်',
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        isEdit ? 'သိမ်းဆည်းမည်' : 'ထည့်သွင်းမည်',
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
-                            color: Colors.black, fontWeight: FontWeight.bold)),
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
