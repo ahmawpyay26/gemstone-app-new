@@ -95,6 +95,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     return _availableGemstones.where((gemstone) {
       if (gemstone.breakdownItems.isEmpty) return false;
       return gemstone.breakdownItems.values.any((item) {
+        // Extract quantity from nested map (new format: Map<String, dynamic>)
         final itemData = item as Map<String, dynamic>?;
         if (itemData == null) return false;
         final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
@@ -250,7 +251,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       if (purchase != null && purchase.breakdownItems.isNotEmpty) {
         _currentEditingItem.availableBreakdownItems = {};
         purchase.breakdownItems.forEach((name, item) {
-          final qty = (item is Map ? (item['quantity'] as int?) : item as int?) ?? 0;
+          // Extract quantity from nested map (new format: Map<String, dynamic>)
+          final itemData = item as Map<String, dynamic>?;
+          final qty = (itemData?['quantity'] as num?)?.toInt() ?? 0;
           if (qty > 0) {
             _currentEditingItem.availableBreakdownItems[name] = qty;
           }
