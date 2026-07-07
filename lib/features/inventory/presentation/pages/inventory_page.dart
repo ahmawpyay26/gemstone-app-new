@@ -7,6 +7,7 @@ import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../shared/widgets/photo_attachment_widget.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
+import '../../../../shared/utils/breakdown_formatter.dart';
 
 
 extension DateTimeExtension on DateTime {
@@ -578,9 +579,11 @@ class _InventoryPageState extends State<InventoryPage> {
     }
     
     // Build summary text (collapsed view) - one item per line
-    final summaryText = activeItems
-        .map((e) => '${e.key} — ${e.value}')
-        .join('\n');
+    // Do not display raw breakdownItems Map directly.
+    final summaryText = BreakdownFormatter.formatSummary(
+      gemstone.breakdownItems,
+      filterByQuantity: true,
+    );
     
     return GestureDetector(
       onTap: () => setState(() {
@@ -628,22 +631,9 @@ class _InventoryPageState extends State<InventoryPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ...activeItems.map((entry) {
-                    String displayText = '';
-                    if (entry.value is int) {
-                      displayText = '${entry.value} ခု';
-                    } else if (entry.value is Map<String, dynamic>) {
-                      final itemData = entry.value as Map<String, dynamic>;
-                      final qty = (itemData['quantity'] as int?) ?? 0;
-                      final weight = (itemData['weight'] as num?)?.toDouble();
-                      final unit = itemData['weightUnit'] as String?;
-                      if (weight != null && weight > 0) {
-                        displayText = '$qty ခု — ${weight.toStringAsFixed(1)} ${unit ?? "kg"}';
-                      } else {
-                        displayText = '$qty ခု';
-                      }
-                    } else {
-                      displayText = '${entry.value}';
-                    }
+                    // Do not display raw breakdownItems Map directly.
+                    final displayText = BreakdownFormatter.formatItem(entry.value);
+                    
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
