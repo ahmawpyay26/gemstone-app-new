@@ -1027,16 +1027,26 @@ class _SaleFormState extends State<_SaleForm> {
 
   // Transfer fragment items to main list (Step 6K)
   void _transferFragmentItemsToMainList() {
+    developer.log('[Fragment] _transferFragmentItemsToMainList called');
+    developer.log('[Fragment] _fragmentItems.length: ${_fragmentItems.length}');
+    developer.log('[Fragment] _items.length before transfer: ${_items.length}');
+    
     if (_fragmentItems.isEmpty) {
+      developer.log('[Fragment] ERROR: _fragmentItems is empty, cannot transfer');
       _showError('No fragment items to transfer');
       return;
     }
 
     setState(() {
+      developer.log('[Fragment] Transferring ${_fragmentItems.length} items to main list');
+      
       // Move all fragment items to main temporary list
       _items.addAll(_fragmentItems);
       _fragmentItems.clear();
 
+      developer.log('[Fragment] Transfer complete. _items.length after transfer: ${_items.length}');
+      developer.log('[Fragment] Switching to whole_stone mode');
+      
       // Switch back to whole-stone source
       _saleSource = 'whole_stone';
 
@@ -1060,6 +1070,7 @@ class _SaleFormState extends State<_SaleForm> {
     });
 
     _recalculatePreview();
+    developer.log('[Fragment] Preview recalculated');
     _showSuccess('Fragment items transferred to temporary list');
   }
 
@@ -2650,6 +2661,7 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   void _addFragmentItemMinimal() {
+    developer.log('[Fragment] _addFragmentItemMinimal called');
     // Obtain the gemstone list (matching build method logic)
     final gems = LocalDb.gemstones().values.where((g) => g.quantity > 0).toList();
     
@@ -2660,6 +2672,7 @@ class _SaleFormState extends State<_SaleForm> {
 
     // Validation
     if (_selectedFragmentGemstoneId == null) {
+      developer.log('[Fragment] Validation failed: gemstone not selected');
       _toast('ကျောက်အစိတ်စုပေါင်းရွေးချယ်ပါ');
       return;
     }
@@ -2708,6 +2721,7 @@ class _SaleFormState extends State<_SaleForm> {
     }
 
     // All validations passed - add item to fragment temporary list (Step 6G)
+    developer.log('[Fragment] All validations passed. Adding to _fragmentItems. Current count: ${_fragmentItems.length}');
     setState(() {
       _fragmentItems.add(
         _SaleItem(
@@ -2725,6 +2739,8 @@ class _SaleFormState extends State<_SaleForm> {
         ),
       );
 
+      developer.log('[Fragment] Item added. New _fragmentItems.length: ${_fragmentItems.length}');
+      
       // Update preview state for fragment item (Step 5E-1)
       final netSale = qty * unitPrice;
       _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale, fragmentQtyDeducted: qty);
