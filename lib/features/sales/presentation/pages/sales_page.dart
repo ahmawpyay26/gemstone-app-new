@@ -1749,7 +1749,36 @@ class _SaleFormState extends State<_SaleForm> {
                 // Fragment quantity field (Step 5C-4)
                 if (_saleSource == 'breakdown_item' && _selectedFragmentName != null) ...
                   [
-                    _buildFragmentQuantityField(gems),
+                    _buildFragmentDetailsDisplay(gems),
+                    _field(_fragmentQuantity, 'ရောင်းမည့် အရေအတွက်', number: true),
+                    _field(_fragmentWeight, 'ရောင်းမည့် အလေးချိန်', number: true),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: DropdownButtonFormField<String>(
+                        value: _fragmentWeightUnit,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'အလေးချိန် ယူနစ်',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'ပိသာ', child: Text('ပိသာ')),
+                          DropdownMenuItem(value: 'ကျပ်သား', child: Text('ကျပ်သား')),
+                          DropdownMenuItem(value: 'ကာရက်', child: Text('ကာရက်')),
+                          DropdownMenuItem(value: 'kg', child: Text('kg')),
+                          DropdownMenuItem(value: 'g', child: Text('g')),
+                          DropdownMenuItem(value: 'lb', child: Text('lb')),
+                          DropdownMenuItem(value: 'oz', child: Text('oz')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _fragmentWeightUnit = value ?? 'kg';
+                          });
+                        },
+                      ),
+                    ),
                     _field(_fragmentUnitPrice, 'ရောင်းဈေး (ကျပ်)', number: true),
                     _buildFragmentPhotoAttachmentSection(),
                     Padding(
@@ -1758,7 +1787,7 @@ class _SaleFormState extends State<_SaleForm> {
                         width: double.infinity,
                         height: 60,
                         child: ElevatedButton(
-                          onPressed: _saleSource == 'breakdown_item' ? _addFragmentItemMinimal : _addItemToTemporaryList,
+                          onPressed: _addFragmentItemMinimal,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
@@ -3386,6 +3415,81 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: const Text('သိမ်းဆည်းမည်'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Display selected fragment details as read-only information
+  Widget _buildFragmentDetailsDisplay(List<Gemstone> gems) {
+    final selectedGemstone = gems.firstWhereOrNull(
+      (g) => g.id == _selectedFragmentGemstoneId,
+    );
+
+    if (selectedGemstone == null || selectedGemstone.breakdownItems == null) {
+      return const SizedBox.shrink();
+    }
+
+    final itemData = selectedGemstone.breakdownItems![_selectedFragmentName];
+    if (itemData == null) return const SizedBox.shrink();
+
+    final itemMap = itemData as Map<String, dynamic>;
+    final remainingQty = (itemMap['quantity'] as num?)?.toInt() ?? 0;
+    final remainingWeight = (itemMap['weight'] as num?)?.toDouble() ?? 0.0;
+    final weightUnit = itemMap['weightUnit'] as String? ?? 'kg';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceDark.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: AppTheme.primaryAccent.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Gemstone name
+            Text(
+              'ကျောက်အစိတ်စုပေါင်း: ${selectedGemstone.name}',
+              style: const TextStyle(
+                color: AppTheme.primaryAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Fragment name
+            Text(
+              'အစိတ်စိတ်ပိုင်း: $_selectedFragmentName',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Remaining quantity
+            Text(
+              'လက်ကျန် အရေအတွက်: $remainingQty ခု',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // Remaining weight
+            Text(
+              'လက်ကျန် အလေးချိန်: ${remainingWeight.toStringAsFixed(2)} $weightUnit',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
               ),
             ),
           ],
