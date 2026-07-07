@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Custom dropdown picker that works properly inside bottom sheets
 /// Replaces DropdownButton to avoid grey overlay and stuck screen issues
-class BottomSheetDropdown<T> extends StatelessWidget {
+class BottomSheetDropdown<T> extends StatefulWidget {
   final T? value;
   final String hint;
   final List<DropdownMenuItem<T>> items;
@@ -25,19 +25,22 @@ class BottomSheetDropdown<T> extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<BottomSheetDropdown<T>> createState() => _BottomSheetDropdownState<T>();
+}
+
+class _BottomSheetDropdownState<T> extends State<BottomSheetDropdown<T>> {
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        _showPickerBottomSheet(context);
-      },
+      onTap: () => _showPickerBottomSheet(context),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: backgroundColor,
+          color: widget.backgroundColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: borderColor.withOpacity(0.3),
+            color: widget.borderColor.withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -47,14 +50,14 @@ class BottomSheetDropdown<T> extends StatelessWidget {
             Expanded(
               child: Text(
                 _getDisplayText(),
-                style: style ?? const TextStyle(color: Colors.white),
+                style: widget.style ?? const TextStyle(color: Colors.white),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(width: 8),
             Icon(
               Icons.arrow_drop_down,
-              color: borderColor.withOpacity(0.7),
+              color: widget.borderColor.withOpacity(0.7),
               size: 24,
             ),
           ],
@@ -64,27 +67,29 @@ class BottomSheetDropdown<T> extends StatelessWidget {
   }
 
   String _getDisplayText() {
-    if (value == null) {
-      return hint;
+    if (widget.value == null) {
+      return widget.hint;
     }
-    final selectedItem = items.firstWhere(
-      (item) => item.value == value,
+    final selectedItem = widget.items.firstWhere(
+      (item) => item.value == widget.value,
       orElse: () => DropdownMenuItem(
-        value: value,
-        child: Text(hint),
+        value: widget.value,
+        child: Text(widget.hint),
       ),
     );
     if (selectedItem.child is Text) {
-      return (selectedItem.child as Text).data ?? hint;
+      return (selectedItem.child as Text).data ?? widget.hint;
     }
-    return hint;
+    return widget.hint;
   }
 
-  void _showPickerBottomSheet(BuildContext context) {
-    showModalBottomSheet<T?>(
+  Future<void> _showPickerBottomSheet(BuildContext context) async {
+    // Use rootNavigator to avoid issues with nested modals
+    final selectedValue = await showModalBottomSheet<T?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      useRootNavigator: true,
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
           initialChildSize: 0.6,
@@ -114,7 +119,7 @@ class BottomSheetDropdown<T> extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
-                      hint,
+                      widget.hint,
                       style: const TextStyle(
                         color: Color(0xFFD4AF37),
                         fontSize: 16,
@@ -127,10 +132,10 @@ class BottomSheetDropdown<T> extends StatelessWidget {
                   Expanded(
                     child: ListView.builder(
                       controller: scrollController,
-                      itemCount: items.length,
+                      itemCount: widget.items.length,
                       itemBuilder: (BuildContext context, int index) {
-                        final item = items[index];
-                        final isSelected = item.value == value;
+                        final item = widget.items[index];
+                        final isSelected = item.value == widget.value;
                         return ListTile(
                           title: item.child,
                           selected: isSelected,
@@ -142,12 +147,9 @@ class BottomSheetDropdown<T> extends StatelessWidget {
                                 )
                               : null,
                           onTap: () {
-                            // Pop the bottom sheet first
-                            Navigator.pop(context);
-                            // Then call onChanged in the next frame to ensure modal is fully closed
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              onChanged(item.value);
-                            });
+                            // Return the selected value through Navigator.pop
+                            // This closes the modal and returns the value
+                            Navigator.of(context, rootNavigator: true).pop(item.value);
                           },
                         );
                       },
@@ -160,5 +162,13 @@ class BottomSheetDropdown<T> extends StatelessWidget {
         );
       },
     );
+
+    // Only call onChanged after the bottom sheet has fully closed
+    // and the returned value is available
+    if (!mounted) return;
+    
+    if (selectedValue != null) {
+      widget.onChanged(selectedValue);
+    }
   }
 }
