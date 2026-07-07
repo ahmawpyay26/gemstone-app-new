@@ -1402,18 +1402,29 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    developer.log('[Sale] _save() called - Final save button tapped');
+    developer.log('[Sale] _items.length: ${_items.length}');
+    developer.log('[Sale] _fragmentItems.length: ${_fragmentItems.length}');
+    
+    if (!_formKey.currentState!.validate()) {
+      developer.log('[Sale] Form validation failed');
+      return;
+    }
 
     // PHASE 0: MERGE TEMPORARY LISTS (Step 6G)
     // Merge fragment items into main items list before processing
+    developer.log('[Sale] Merging fragment items into main list');
     _items.addAll(_fragmentItems);
+    developer.log('[Sale] After merge: _items.length = ${_items.length}');
 
     // PHASE 1: VALIDATE ALL ITEMS BEFORE SAVING ANY
+    developer.log('[Sale] Starting validation of ${_items.length} items');
     for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
       
       // Check gemstone selected
       if (item.gemstoneId == null || item.gemstoneId!.isEmpty) {
+        developer.log('[Sale] Validation failed at item $i: gemstone not selected');
         _toast('အရည်အသွေး $i: ကျောက်မျက်ရွေးချယ်ပါ');
         return;
       }
@@ -1563,9 +1574,13 @@ class _SaleFormState extends State<_SaleForm> {
       }
 
       // PHASE 4: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
+      developer.log('[Sale] Updating product ledger for ${gemstonesUpdated.length} gemstones');
       for (final gemId in gemstonesUpdated) {
         await LocalDb.updateGemstoneProductLedger(gemId);
       }
+      
+      developer.log('[Sale] All sales saved successfully. Invoice: $invoiceNum');
+      developer.log('[Sale] Clearing preview state and form');
       
       // PHASE 5: CLEAR PREVIEW STATE AND FORM (Step 6G: Clear both temporary lists)
       _previewState.clear();
@@ -1583,11 +1598,17 @@ class _SaleFormState extends State<_SaleForm> {
       _photoPaths.clear();
       
       // Show success and close form
+      developer.log('[Sale] Save completed successfully. Showing success message and closing form');
       _toast('Invoice $invoiceNum သိမ်းဆည်းပြီးပါပြီ');
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        developer.log('[Sale] Closing sale form');
+        Navigator.pop(context);
+      }
     } catch (e) {
       // FAILURE: Keep preview state and temporary list for retry
-      _toast('အမှားအယွင်း: $e');
+      developer.log('[Sale] ERROR during save: $e');
+      developer.log('[Sale] Stack trace: ${StackTrace.current}');
+      _toast('အမ်အမ်အမ်: $e');
       // Do NOT clear preview state or items - allow user to retry
     }
   }
