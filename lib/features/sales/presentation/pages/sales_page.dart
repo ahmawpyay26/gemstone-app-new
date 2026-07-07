@@ -12,6 +12,7 @@ import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
 import '../../../../core/services/voucher_export_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
+import '../widgets/bottom_sheet_dropdown.dart';
 
 class SalesPage extends StatefulWidget {
   const SalesPage({Key? key}) : super(key: key);
@@ -2457,57 +2458,41 @@ class _SaleFormState extends State<_SaleForm> {
               ),
             ),
           ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceDark,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppTheme.primaryAccent.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: DropdownButton<String>(
-              value: _selectedFragmentGemstoneId,
-              hint: const Text(
-                'ကျောက်အမည် ရွေးချယ်မည်',
-                style: TextStyle(color: Colors.white70),
-              ),
-              isExpanded: true,
-              dropdownColor: AppTheme.surfaceDark,
-              underline: const SizedBox.shrink(),
-              items: gemsWithBreakdown.map((gem) {
-                final totalBreakdownQty = gem.breakdownItems!.values
-                    .where((item) {
-                      final itemData = item as Map<String, dynamic>?;
-                      if (itemData == null) return false;
-                      final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
-                      return quantity > 0;
-                    })
-                    .fold<int>(0, (sum, item) {
-                      final itemData = item as Map<String, dynamic>?;
-                      if (itemData == null) return sum;
-                      final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
-                      return sum + quantity;
-                    });
-                final displayText = '${gem.name} ($totalBreakdownQty)';
-                return DropdownMenuItem<String>(
-                  value: gem.id,
-                  child: Text(
-                    displayText,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedFragmentGemstoneId = value;
-                  _selectedFragmentName = null; // Reset fragment selection
-                });
-              },
-              style: const TextStyle(color: Colors.white),
-            ),
+          BottomSheetDropdown<String>(
+            value: _selectedFragmentGemstoneId,
+            hint: 'ကျောက်အမည် ရွေးချယ်မည်',
+            borderColor: AppTheme.primaryAccent,
+            backgroundColor: AppTheme.surfaceDark,
+            style: const TextStyle(color: Colors.white),
+            items: gemsWithBreakdown.map((gem) {
+              final totalBreakdownQty = gem.breakdownItems!.values
+                  .where((item) {
+                    final itemData = item as Map<String, dynamic>?;
+                    if (itemData == null) return false;
+                    final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+                    return quantity > 0;
+                  })
+                  .fold<int>(0, (sum, item) {
+                    final itemData = item as Map<String, dynamic>?;
+                    if (itemData == null) return sum;
+                    final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+                    return sum + quantity;
+                  });
+              final displayText = '${gem.name} ($totalBreakdownQty)';
+              return DropdownMenuItem<String>(
+                value: gem.id,
+                child: Text(
+                  displayText,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedFragmentGemstoneId = value;
+                _selectedFragmentName = null;
+              });
+            },
           ),
         ],
       ),
@@ -2554,49 +2539,32 @@ class _SaleFormState extends State<_SaleForm> {
               ),
             ),
           ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceDark,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppTheme.primaryAccent.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: DropdownButton<String>(
-              value: _selectedFragmentName,
-              hint: const Text(
-                'အစိတ်စိတ်ပိုင်း ရွေးချယ်မည်',
-                style: TextStyle(color: Colors.white70),
-              ),
-              isExpanded: true,
-              dropdownColor: AppTheme.surfaceDark,
-              underline: const SizedBox.shrink(),
-              items: availableItems.map((entry) {
-                // Get remaining quantity from Preview State (Step 6H)
-                final preview = _previewState[_selectedFragmentGemstoneId];
-                final previewRemainingQty = preview != null
-                    ? (entry.value as int) - (preview['totalFragmentQtyDeducted'] as int? ?? 0)
-                    : entry.value;
-                final displayQty = ((previewRemainingQty as num?)?.toInt() ?? 0).clamp(0, entry.value as int);
-                final displayText = '${entry.key} ($displayQty)';
-                return DropdownMenuItem<String>(
-                  value: entry.key,
-                  child: Text(
-                    displayText,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedFragmentName = value;
-                });
-              },
-              style: const TextStyle(color: Colors.white),
-            ),
+          BottomSheetDropdown<String>(
+            value: _selectedFragmentName,
+            hint: 'အတ်တ်တ်တ်ပြတ်တ် ရွေးချယ်မည်',
+            borderColor: AppTheme.primaryAccent,
+            backgroundColor: AppTheme.surfaceDark,
+            style: const TextStyle(color: Colors.white),
+            items: availableItems.map((entry) {
+              final preview = _previewState[_selectedFragmentGemstoneId];
+              final previewRemainingQty = preview != null
+                  ? (entry.value as int) - (preview['totalFragmentQtyDeducted'] as int? ?? 0)
+                  : entry.value;
+              final displayQty = ((previewRemainingQty as num?)?.toInt() ?? 0).clamp(0, entry.value as int);
+              final displayText = '${entry.key} ($displayQty)';
+              return DropdownMenuItem<String>(
+                value: entry.key,
+                child: Text(
+                  displayText,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedFragmentName = value;
+              });
+            },
           ),
         ],
       ),
