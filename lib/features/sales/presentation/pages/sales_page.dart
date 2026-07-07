@@ -2459,7 +2459,10 @@ class _SaleFormState extends State<_SaleForm> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _items.isNotEmpty ? _save : null,
+                      onPressed: _items.isNotEmpty ? () {
+                        developer.log('[SaleFinalButton] tapped - _items.length: ${_items.length}');
+                        _save();
+                      } : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryAccent,
                         disabledBackgroundColor: Colors.grey[700],
