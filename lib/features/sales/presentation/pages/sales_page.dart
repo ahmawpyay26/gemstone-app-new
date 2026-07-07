@@ -12,8 +12,11 @@ import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
 import '../../../../core/services/voucher_export_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:developer' as developer;
 import '../widgets/bottom_sheet_dropdown.dart';
 import '../widgets/inline_selector.dart';
+import '../widgets/fragment_gemstone_selector.dart';
+import '../widgets/fragment_item_selector.dart';
 
 class SalesPage extends StatefulWidget {
   const SalesPage({Key? key}) : super(key: key);
@@ -2406,170 +2409,55 @@ class _SaleFormState extends State<_SaleForm> {
 
   /// Build compact dropdown for gemstone selection with breakdown items (Step 5C-1)
   Widget _buildFragmentPurchaseList(List<Gemstone> gems) {
-    final gemsWithBreakdown = gems.where((g) {
-      if (g.breakdownItems == null || g.breakdownItems!.isEmpty) return false;
-      return g.breakdownItems!.values.any((item) {
-        final itemData = item as Map<String, dynamic>?;
-        if (itemData == null) return false;
-        final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
-        return quantity > 0;
-      });
-    }).toList();
-
-    if (gemsWithBreakdown.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceDark.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: AppTheme.primaryAccent.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: const Center(
-            child: Text(
-              'အစိတ်စိတ်ပိုင်း ရွေးချယ်မှု မတ်ရိတ်မောရေ',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 8),
-            child: Text(
-              'ကျောက်အမည်',
-              style: TextStyle(
-                color: AppTheme.primaryAccent,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          InlineSelector<String>(
-            value: _selectedFragmentGemstoneId,
-            hint: 'ကျောက်အမည် ရွေးချယ်မည်',
-            borderColor: AppTheme.primaryAccent,
-            backgroundColor: AppTheme.surfaceDark,
-            style: const TextStyle(color: Colors.white),
-            items: gemsWithBreakdown.map((gem) {
-              final totalBreakdownQty = gem.breakdownItems!.values
-                  .where((item) {
-                    final itemData = item as Map<String, dynamic>?;
-                    if (itemData == null) return false;
-                    final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
-                    return quantity > 0;
-                  })
-                  .fold<int>(0, (sum, item) {
-                    final itemData = item as Map<String, dynamic>?;
-                    if (itemData == null) return sum;
-                    final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
-                    return sum + quantity;
-                  });
-              final displayText = '${gem.name} ($totalBreakdownQty)';
-              return DropdownMenuItem<String>(
-                value: gem.id,
-                child: Text(
-                  displayText,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedFragmentGemstoneId = value;
-                _selectedFragmentName = null;
-              });
-            },
-          ),
-        ],
-      ),
+    return FragmentGemstoneSelector(
+      selectedGemstoneId: _selectedFragmentGemstoneId,
+      onChanged: (value) {
+        setState(() {
+          _selectedFragmentGemstoneId = value;
+          _selectedFragmentName = null; // Reset fragment name when gemstone changes
+          developer.log('[Fragment] Gemstone selected: $value');
+        });
+      },
     );
   }
 
   Widget _buildFragmentDropdown(List<Gemstone> gems) {
-    // Find the selected purchase
-    final selectedPurchase = gems.firstWhereOrNull(
-      (g) => g.id == _selectedFragmentGemstoneId,
+    return FragmentItemSelector(
+      selectedGemstoneId: _selectedFragmentGemstoneId,
+      selectedFragmentName: _selectedFragmentName,
+      onChanged: (value) {
+        setState(() {
+          _selectedFragmentName = value;
+          developer.log('[Fragment] Item selected: $value');
+          
+          // Auto-populate form fields from selected fragment
+          if (value != null && _selectedFragmentGemstoneId != null) {
+            _populateFragmentFormFields(value);
+          }
+        });
+      },
     );
-
-    if (selectedPurchase == null || selectedPurchase.breakdownItems == null) {
-      return const SizedBox.shrink();
-    }
-
-    // Get available breakdown items (quantity > 0)
-    final availableItems = selectedPurchase.breakdownItems!.entries
-        .where((e) {
-          final itemData = e.value as Map<String, dynamic>?;
-          if (itemData == null) return false;
-          final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
-          return quantity > 0;
-        })
-        .toList();
-
-    if (availableItems.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 8),
-            child: Text(
-              'ရောင်းမည့် အစိတ်စိတ်ပိုင်း',
-              style: TextStyle(
-                color: AppTheme.primaryAccent,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          InlineSelector<String>(
-            value: _selectedFragmentName,
-            hint: 'အတ်တ်တ်တ်ပြတ်တ် ရွေးချယ်မည်',
-            borderColor: AppTheme.primaryAccent,
-            backgroundColor: AppTheme.surfaceDark,
-            style: const TextStyle(color: Colors.white),
-            items: availableItems.map((entry) {
-              final preview = _previewState[_selectedFragmentGemstoneId];
-              final previewRemainingQty = preview != null
-                  ? (entry.value as int) - (preview['totalFragmentQtyDeducted'] as int? ?? 0)
-                  : entry.value;
-              final displayQty = ((previewRemainingQty as num?)?.toInt() ?? 0).clamp(0, entry.value as int);
-              final displayText = '${entry.key} ($displayQty)';
-              return DropdownMenuItem<String>(
-                value: entry.key,
-                child: Text(
-                  displayText,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedFragmentName = value;
-              });
-            },
-          ),
-        ],
-      ),
-    );
+  }
+  
+  /// Auto-populate form fields when a fragment item is selected
+  void _populateFragmentFormFields(String fragmentName) {
+    final gem = LocalDb.gemstoneById(_selectedFragmentGemstoneId!);
+    if (gem == null || gem.breakdownItems == null) return;
+    
+    final itemData = gem.breakdownItems![fragmentName] as Map<String, dynamic>?;
+    if (itemData == null) return;
+    
+    // Extract values from the nested map (NEVER cast directly to int)
+    final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
+    final weight = (itemData['weight'] as num?)?.toDouble();
+    final weightUnit = itemData['weightUnit'] as String? ?? 'kg';
+    
+    // Pre-fill the form with fragment details
+    _fragmentQuantity.text = quantity.toString();
+    _fragmentWeight.text = weight?.toString() ?? '';
+    _fragmentWeightUnit = weightUnit;
+    
+    developer.log('[Fragment] Form populated: qty=$quantity, weight=$weight, unit=$weightUnit');
   }
 
   Widget _buildFragmentQuantityField(List<Gemstone> gems) {
