@@ -799,6 +799,9 @@ class _SaleFormState extends State<_SaleForm> {
   String? _selectedGemId; // null => manual entry
   bool _autoDeduct = true;
   
+  // Debug state for button tap verification
+  String _saveDebugStatus = '';
+  
   // Sale source selector (Step 5B)
   String _saleSource = 'whole_stone'; // 'whole_stone' or 'breakdown_item'
   String? _selectedFragmentGemstoneId; // Selected fragment purchase (Step 5C-2)
@@ -2480,6 +2483,21 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Debug status display
+                if (_saveDebugStatus.isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: _saveDebugStatus == 'BUTTON_TAPPED' ? Colors.yellow[700] : Colors.red[700],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'DEBUG: $_saveDebugStatus',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 // Main final save button (Step 6L)
                 if (_items.isNotEmpty)
                   SizedBox(
@@ -2487,6 +2505,9 @@ class _SaleFormState extends State<_SaleForm> {
                     child: ElevatedButton(
                       onPressed: _items.isNotEmpty ? () {
                         developer.log('[SaleFinalButton] tapped - _items.length: ${_items.length}');
+                        setState(() {
+                          _saveDebugStatus = 'BUTTON_TAPPED';
+                        });
                         _save();
                       } : null,
                       style: ElevatedButton.styleFrom(
@@ -2494,9 +2515,9 @@ class _SaleFormState extends State<_SaleForm> {
                         disabledBackgroundColor: Colors.grey[700],
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text(
-                        'ရောင်းချမည်',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      child: Text(
+                        _saveDebugStatus == 'BUTTON_TAPPED' ? 'နှိပ်ပြီးပါပြီ' : 'ရောင်းချမည်',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
