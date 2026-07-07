@@ -1583,10 +1583,10 @@ class _SaleFormState extends State<_SaleForm> {
       await box.add(newSale);
       developer.log('[PHASE_D_ITEM_${i}_SUCCESS] Saved to Hive');
       
-      // PHASE E: Update customer ledger
-      developer.log('[PHASE_E_ITEM_${i}_START] Updating customer ledger');
-      await LocalDb.applySaleCustomerLedger(newSale);
-      developer.log('[PHASE_E_ITEM_${i}_SUCCESS] Customer ledger updated');
+      // PHASE E: Update customer ledger - DISABLED FOR ISOLATION TEST
+      developer.log('[PHASE_E_ITEM_${i}_START] Updating customer ledger - SKIPPED FOR TEST');
+      // await LocalDb.applySaleCustomerLedger(newSale);
+      developer.log('[PHASE_E_ITEM_${i}_SUCCESS] Customer ledger update skipped');
       
       // PHASE F: Update gemstone cost recovery using Preview State values
       developer.log('[PHASE_F_ITEM_${i}_START] Updating gemstone inventory');
@@ -1631,12 +1631,12 @@ class _SaleFormState extends State<_SaleForm> {
       }
       }
 
-      // PHASE G: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
-      developer.log('[PHASE_G_START] Updating product ledger for ${gemstonesUpdated.length} gemstones');
-      for (final gemId in gemstonesUpdated) {
-        await LocalDb.updateGemstoneProductLedger(gemId);
-      }
-      developer.log('[PHASE_G_SUCCESS] Product ledger updated');
+      // PHASE G: POST-SAVE UPDATES - DISABLED FOR ISOLATION TEST
+      developer.log('[PHASE_G_START] Updating product ledger - SKIPPED FOR TEST');
+      // for (final gemId in gemstonesUpdated) {
+      //   await LocalDb.updateGemstoneProductLedger(gemId);
+      // }
+      developer.log('[PHASE_G_SUCCESS] Product ledger update skipped');
       
       developer.log('[PHASE_H_START] Clearing preview state and form');
       _previewState.clear();
@@ -1654,13 +1654,13 @@ class _SaleFormState extends State<_SaleForm> {
       _photoPaths.clear();
       developer.log('[PHASE_H_SUCCESS] Preview state and form cleared');
       
-      // Show success and close form
+      // Show success and close form - IMMEDIATE CLOSE FOR ISOLATION TEST
       developer.log('[PHASE_I_START] Closing sale form');
-      _toast('အရောင်းချပါပြီ အောင်းချမည်ပါပြီ');
+      _showSuccess('အရောင်းစာရင်း အောင်မြင်စွာ သိမ်းပြီးပါပြီ');
       if (mounted) {
         developer.log('[PHASE_I_SUCCESS] Navigating back to Sales History');
         // Pop the sale form bottom sheet
-        Navigator.pop(context);
+        Navigator.pop(context, true);
         // The Sales History page will automatically refresh when we return
       }
     } catch (e) {
