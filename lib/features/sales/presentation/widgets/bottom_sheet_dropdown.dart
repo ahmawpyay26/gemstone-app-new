@@ -27,7 +27,9 @@ class BottomSheetDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () async => await _showPickerBottomSheet(context),
+      onTap: () {
+        _showPickerBottomSheet(context);
+      },
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -78,12 +80,11 @@ class BottomSheetDropdown<T> extends StatelessWidget {
     return hint;
   }
 
-  void _showPickerBottomSheet(BuildContext context) async {
-    final selectedValue = await showModalBottomSheet<T?>(
+  void _showPickerBottomSheet(BuildContext context) {
+    showModalBottomSheet<T?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierDismissible: true,
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
           initialChildSize: 0.6,
@@ -140,7 +141,14 @@ class BottomSheetDropdown<T> extends StatelessWidget {
                                   color: Color(0xFFD4AF37),
                                 )
                               : null,
-                          onTap: () => Navigator.pop(context, item.value),
+                          onTap: () {
+                            // Pop the bottom sheet first
+                            Navigator.pop(context);
+                            // Then call onChanged in the next frame to ensure modal is fully closed
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              onChanged(item.value);
+                            });
+                          },
                         );
                       },
                     ),
@@ -152,10 +160,5 @@ class BottomSheetDropdown<T> extends StatelessWidget {
         );
       },
     );
-    
-    // Only call onChanged after the bottom sheet has fully closed
-    if (selectedValue != null) {
-      onChanged(selectedValue);
-    }
   }
 }
