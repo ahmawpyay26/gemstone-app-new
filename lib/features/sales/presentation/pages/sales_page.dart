@@ -1419,15 +1419,22 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
 
-    // PHASE 0: MERGE TEMPORARY LISTS (Step 6G)
+    // PHASE A: MERGE TEMPORARY LISTS (Step 6G)
     // Merge fragment items into main items list before processing
-    developer.log('[Sale] Merging fragment items into main list');
-    _items.addAll(_fragmentItems);
-    developer.log('[Sale] After merge: _items.length = ${_items.length}');
+    try {
+      developer.log('[PHASE_A_START] Merging fragment items into main list');
+      _items.addAll(_fragmentItems);
+      developer.log('[PHASE_A_SUCCESS] After merge: _items.length = ${_items.length}');
+    } catch (e) {
+      developer.log('[PHASE_A_FAILED] Exception: $e');
+      _toast('Phase A Error: $e');
+      return;
+    }
 
-    // PHASE 1: VALIDATE ALL ITEMS BEFORE SAVING ANY
-    developer.log('[Sale] Starting validation of ${_items.length} items');
-    for (int i = 0; i < _items.length; i++) {
+    // PHASE B: VALIDATE ALL ITEMS BEFORE SAVING ANY
+    try {
+      developer.log('[PHASE_B_START] Starting validation of ${_items.length} items');
+      for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
       
       // Check gemstone selected
@@ -1474,11 +1481,15 @@ class _SaleFormState extends State<_SaleForm> {
           return;
         }
       }
+      }
+      developer.log('[PHASE_B_SUCCESS] All validations passed');
+    } catch (e) {
+      developer.log('[PHASE_B_FAILED] Exception: $e');
+      _toast('Phase B Error: $e');
+      return;
     }
-    
-    developer.log('[Sale] All validations passed. Proceeding to save');
 
-    // PHASE 2: GENERATE INVOICE NUMBER
+    // PHASE C: GENERATE INVOICE NUMBER
     final now = DateTime.now();
     final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
     final box = LocalDb.sales();
@@ -1487,13 +1498,14 @@ class _SaleFormState extends State<_SaleForm> {
         .length;
     final invoiceNum = 'INV-$dateStr-${(existingInvoices + 1).toString().padLeft(3, '0')}';
 
-    // PHASE 3: SAVE LOOP - Save each item as separate Sale record
+    // PHASE C-D-E-F-G: SAVE LOOP - Save each item as separate Sale record
     // Use Preview State values (Step 4D: Commit Preview to Database)
     final Set<String> gemstonesUpdated = {};
     final sellCommission = double.tryParse(_commission.text.trim()) ?? 0;
     final perUnitCost = double.tryParse(_cost.text.trim()) ?? 0;
     
     try {
+      developer.log('[PHASE_C_START] Creating and saving Sale objects');
       for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
       final qty = item.quantity;
@@ -1509,7 +1521,8 @@ class _SaleFormState extends State<_SaleForm> {
         cost = perUnitCost;
       }
       
-      // Create Sale record
+      // PHASE C: Create Sale record
+      developer.log('[PHASE_C_ITEM_${i}_START] Creating Sale object for item $i');
       final newSale = Sale(
         id: LocalDb.genId(),
         gemstoneId: item.gemstoneId ?? '',
@@ -1541,14 +1554,20 @@ class _SaleFormState extends State<_SaleForm> {
         fragmentWeightUnit: item.weightUnit,
         weightUnit: item.isFragmentSource ? null : item.weightUnit,
       );
+      developer.log('[PHASE_C_ITEM_${i}_SUCCESS] Sale object created: ${newSale.id}');
       
-      // Save to Hive
+      // PHASE D: Save to Hive
+      developer.log('[PHASE_D_ITEM_${i}_START] Saving to Hive box');
       await box.add(newSale);
+      developer.log('[PHASE_D_ITEM_${i}_SUCCESS] Saved to Hive');
       
-      // Update customer ledger
+      // PHASE E: Update customer ledger
+      developer.log('[PHASE_E_ITEM_${i}_START] Updating customer ledger');
       await LocalDb.applySaleCustomerLedger(newSale);
+      developer.log('[PHASE_E_ITEM_${i}_SUCCESS] Customer ledger updated');
       
-      // Update gemstone cost recovery using Preview State values
+      // PHASE F: Update gemstone cost recovery using Preview State values
+      developer.log('[PHASE_F_ITEM_${i}_START] Updating gemstone inventory');
       if (item.gemstoneId!.isNotEmpty) {
         final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
         if (gemstone != null) {
@@ -1585,20 +1604,19 @@ class _SaleFormState extends State<_SaleForm> {
           
           await LocalDb.gemstones().put(item.gemstoneId!, gemstone);
           gemstonesUpdated.add(item.gemstoneId!);
-        }
+          developer.log('[PHASE_F_ITEM_${i}_SUCCESS] Gemstone inventory updated');
         }
       }
+      }
 
-      // PHASE 4: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
-      developer.log('[Sale] Updating product ledger for ${gemstonesUpdated.length} gemstones');
+      // PHASE G: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
+      developer.log('[PHASE_G_START] Updating product ledger for ${gemstonesUpdated.length} gemstones');
       for (final gemId in gemstonesUpdated) {
         await LocalDb.updateGemstoneProductLedger(gemId);
       }
+      developer.log('[PHASE_G_SUCCESS] Product ledger updated');
       
-      developer.log('[Sale] All sales saved successfully. Invoice: $invoiceNum');
-      developer.log('[Sale] Clearing preview state and form');
-      
-      // PHASE 5: CLEAR PREVIEW STATE AND FORM (Step 6G: Clear both temporary lists)
+      developer.log('[PHASE_H_START] Clearing preview state and form');
       _previewState.clear();
       _items.clear();
       _fragmentItems.clear(); // Clear fragment temporary list after successful save
@@ -1612,21 +1630,23 @@ class _SaleFormState extends State<_SaleForm> {
       _cost.clear();
       _commission.clear();
       _photoPaths.clear();
+      developer.log('[PHASE_H_SUCCESS] Preview state and form cleared');
       
       // Show success and close form
-      developer.log('[Sale] Save completed successfully. Showing success message and closing form');
+      developer.log('[PHASE_I_START] Closing sale form');
       _toast('အရောင်းချပါပြီ အောင်းချမည်ပါပြီ');
       if (mounted) {
-        developer.log('[Sale] Closing sale form and returning to Sales History');
+        developer.log('[PHASE_I_SUCCESS] Navigating back to Sales History');
         // Pop the sale form bottom sheet
         Navigator.pop(context);
         // The Sales History page will automatically refresh when we return
       }
     } catch (e) {
       // FAILURE: Keep preview state and temporary list for retry
-      developer.log('[Sale] ERROR during save: $e');
-      developer.log('[Sale] Stack trace: ${StackTrace.current}');
-      _toast('အမ်အမ်အမ်: $e');
+      developer.log('[SAVE_EXCEPTION] ERROR during save: $e');
+      developer.log('[SAVE_EXCEPTION] Stack trace: ${StackTrace.current}');
+      developer.log('[SAVE_EXCEPTION] Exception type: ${e.runtimeType}');
+      _toast('Error: $e');
       // Do NOT clear preview state or items - allow user to retry
     }
   }
