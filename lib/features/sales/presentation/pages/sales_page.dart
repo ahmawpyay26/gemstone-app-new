@@ -1594,10 +1594,10 @@ class _SaleFormState extends State<_SaleForm> {
       await box.add(newSale);
       developer.log('[PHASE_D_ITEM_${i}_SUCCESS] Saved to Hive');
       
-      // PHASE E: Update customer ledger - DISABLED FOR ISOLATION TEST
-      developer.log('[PHASE_E_ITEM_${i}_START] Updating customer ledger - SKIPPED FOR TEST');
-      // await LocalDb.applySaleCustomerLedger(newSale);
-      developer.log('[PHASE_E_ITEM_${i}_SUCCESS] Customer ledger update skipped');
+      // PHASE E: Update customer ledger
+      developer.log('[PHASE_E_ITEM_${i}_START] Updating customer ledger');
+      await LocalDb.applySaleCustomerLedger(newSale);
+      developer.log('[PHASE_E_ITEM_${i}_SUCCESS] Customer ledger updated');
       
       // PHASE F: Update gemstone cost recovery using Preview State values
       developer.log('[PHASE_F_ITEM_${i}_START] Updating gemstone inventory');
@@ -1642,12 +1642,12 @@ class _SaleFormState extends State<_SaleForm> {
       }
       }
 
-      // PHASE G: POST-SAVE UPDATES - DISABLED FOR ISOLATION TEST
-      developer.log('[PHASE_G_START] Updating product ledger - SKIPPED FOR TEST');
-      // for (final gemId in gemstonesUpdated) {
-      //   await LocalDb.updateGemstoneProductLedger(gemId);
-      // }
-      developer.log('[PHASE_G_SUCCESS] Product ledger update skipped');
+      // PHASE G: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
+      developer.log('[PHASE_G_START] Updating product ledger for ${gemstonesUpdated.length} gemstones');
+      for (final gemId in gemstonesUpdated) {
+        await LocalDb.updateGemstoneProductLedger(gemId);
+      }
+      developer.log('[PHASE_G_SUCCESS] Product ledger updated');
       
       developer.log('[PHASE_H_START] Clearing preview state and form');
       _previewState.clear();
@@ -1665,13 +1665,13 @@ class _SaleFormState extends State<_SaleForm> {
       _photoPaths.clear();
       developer.log('[PHASE_H_SUCCESS] Preview state and form cleared');
       
-      // Show success and close form - IMMEDIATE CLOSE FOR ISOLATION TEST
+      // Show success and close form
       developer.log('[PHASE_I_START] Closing sale form');
-      _showSuccess('အရောင်းစာရင်း အောင်မြင်စွာ သိမ်းပြီးပါပြီ');
+      _toast('အရောင်းချပါပြီ အောင်ချမည်ပါပြီ');
       if (mounted) {
         developer.log('[PHASE_I_SUCCESS] Navigating back to Sales History');
         // Pop the sale form bottom sheet
-        Navigator.pop(context, true);
+        Navigator.pop(context);
         // The Sales History page will automatically refresh when we return
       }
     } catch (e) {
@@ -2539,67 +2539,12 @@ class _SaleFormState extends State<_SaleForm> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _items.isNotEmpty ? () async {
+                      onPressed: _items.isNotEmpty ? () {
                         developer.log('[SaleFinalButton] tapped - _items.length: ${_items.length}');
                         setState(() {
                           _saveDebugStatus = 'BUTTON_TAPPED';
                         });
-
-                        final sale = Sale(
-                          id: LocalDb.genId(),
-                          invoiceNumber: 'TEST',
-                          gemstoneId: '',
-                          gemstoneName: 'TEST',
-                          customerId: '',
-                          customerName: '',
-                          amount: 100,
-                          costPrice: 0,
-                          commissionFee: 0,
-                          quantity: 1,
-                          weightCarat: 0,
-                          paymentMethod: 'cash',
-                          note: '',
-                          saleDate: DateTime.now().millisecondsSinceEpoch,
-                          netSale: 100,
-                          costUsed: 0,
-                          profitGenerated: 0,
-                          remainingCostAfterSale: 0,
-                          accumulatedProfit: 0,
-                          photoPaths: [],
-                          isDeleted: false,
-                          deletedAt: null,
-                          deletedBy: '',
-                          deleteReason: '',
-                          fragmentName: null,
-                          isFragmentSource: false,
-                          fragmentWeight: null,
-                          fragmentWeightUnit: null,
-                          weightUnit: null,
-                        );
-
-                        try {
-                          developer.log('[MINIMAL_TEST] Adding sale to Hive');
-                          await LocalDb.sales().add(sale);
-                          developer.log('[MINIMAL_TEST] Sale added successfully');
-
-                          if (!mounted) return;
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('TEST SAVE SUCCESS'))
-                          );
-
-                          developer.log('[MINIMAL_TEST] Navigating back');
-                          Navigator.of(context).pop(true);
-
-                        } catch (e, st) {
-                          developer.log('[MINIMAL_TEST] SAVE FAILED', error: e, stackTrace: st);
-
-                          if (!mounted) return;
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('SAVE FAILED: $e'))
-                          );
-                        }
+                        _save();
                       } : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryAccent,
