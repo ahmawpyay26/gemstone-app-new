@@ -1459,6 +1459,7 @@ class _SaleFormState extends State<_SaleForm> {
       // Check gemstoneName not blank (required for all items)
       if (item.gemstoneName.isEmpty) {
         developer.log('[Sale] Validation failed at item $i: gemstoneName is blank');
+        setState(() => _saveDebugStatus = 'PHASE_B_FAILED: EMPTY_NAME item $i');
         _showError('ပစ္စည်း $i: ကျောက်မျက်အမည် မည်သည့်မျှ မဖြည့်စွက်ရသေးပါ');
         return;
       }
@@ -1479,6 +1480,7 @@ class _SaleFormState extends State<_SaleForm> {
       // Check quantity > 0
       if (item.quantity <= 0) {
         developer.log('[Sale] Validation failed at item $i: quantity <= 0 (qty=${item.quantity})');
+        setState(() => _saveDebugStatus = 'PHASE_B_FAILED: QTY_ZERO item $i');
         _showError('ပစ္စည်း $i: အရေအတွက် > 0 ဖြစ်ရမည်');
         return;
       }
@@ -1486,6 +1488,7 @@ class _SaleFormState extends State<_SaleForm> {
       // Check unit price > 0
       if (item.unitPrice <= 0) {
         developer.log('[Sale] Validation failed at item $i: unitPrice <= 0 (price=${item.unitPrice})');
+        setState(() => _saveDebugStatus = 'PHASE_B_FAILED: PRICE_ZERO item $i');
         _showError('ပစ္စည်း $i: ရောင်းရငွေ > 0 ဖြစ်ရမည်');
         return;
       }
@@ -1495,6 +1498,7 @@ class _SaleFormState extends State<_SaleForm> {
         final gemstone = LocalDb.gemstoneById(resolvedGemstoneId);
         if (gemstone == null) {
           developer.log('[Sale] Validation failed at item $i: gemstone not found (id=$resolvedGemstoneId)');
+          setState(() => _saveDebugStatus = 'PHASE_B_FAILED: GEM_NOT_FOUND item $i');
           _showError('ပစ္စည်း $i: ကျောက်မျက် ID မရှိပါ — ထည့်မည် logic ကို ပြင်ရန်လိုအပ်သည်');
           return;
         }
@@ -1505,11 +1509,13 @@ class _SaleFormState extends State<_SaleForm> {
           developer.log('[Sale] Auto-deduct enabled. Remaining qty: $remaining');
           if (remaining <= 0) {
             developer.log('[Sale] Validation failed at item $i: no remaining inventory');
+            setState(() => _saveDebugStatus = 'PHASE_B_FAILED: NO_STOCK item $i');
             _showError('ပစ္စည်း $i: အရောင်းအဆုံးဖြစ်နေ');
             return;
           }
           if (item.quantity > remaining) {
             developer.log('[Sale] Validation failed at item $i: qty ${item.quantity} > remaining $remaining');
+            setState(() => _saveDebugStatus = 'PHASE_B_FAILED: OVER_STOCK item $i');
             _showError('ပစ္စည်း $i: Stock မတ်တေးတင်ပါ — ကျောတ် $remaining ခ်ပါ ရိးတေးချယ်ပါ');
             return;
           }
@@ -1522,7 +1528,8 @@ class _SaleFormState extends State<_SaleForm> {
       developer.log('[PHASE_B_SUCCESS] All validations passed');
     } catch (e) {
       developer.log('[PHASE_B_FAILED] Exception: $e');
-      _toast('Phase B Error: $e');
+      setState(() => _saveDebugStatus = 'PHASE_B_FAILED: EXCEPTION');
+      _showError('Validation Error: $e');
       return;
     }
 
