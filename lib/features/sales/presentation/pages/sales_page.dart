@@ -1437,8 +1437,10 @@ class _SaleFormState extends State<_SaleForm> {
     // PHASE A: MERGE TEMPORARY LISTS (Step 6G)
     // Merge fragment items into main items list before processing
     try {
+      setState(() => _saveDebugStatus = 'PHASE_A_START');
       developer.log('[PHASE_A_START] Merging fragment items into main list');
       _items.addAll(_fragmentItems);
+      setState(() => _saveDebugStatus = 'PHASE_A_SUCCESS');
       developer.log('[PHASE_A_SUCCESS] After merge: _items.length = ${_items.length}');
     } catch (e) {
       developer.log('[PHASE_A_FAILED] Exception: $e');
@@ -1448,6 +1450,7 @@ class _SaleFormState extends State<_SaleForm> {
 
     // PHASE B: VALIDATE ALL ITEMS BEFORE SAVING ANY
     try {
+      setState(() => _saveDebugStatus = 'PHASE_B_START');
       developer.log('[PHASE_B_START] Starting validation of ${_items.length} items');
       for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
@@ -1538,6 +1541,7 @@ class _SaleFormState extends State<_SaleForm> {
     final perUnitCost = double.tryParse(_cost.text.trim()) ?? 0;
     
     try {
+      setState(() => _saveDebugStatus = 'PHASE_C_START');
       developer.log('[PHASE_C_START] Creating and saving Sale objects');
       for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
@@ -1590,6 +1594,7 @@ class _SaleFormState extends State<_SaleForm> {
       developer.log('[PHASE_C_ITEM_${i}_SUCCESS] Sale object created: ${newSale.id}');
       
       // PHASE D: Save to Hive
+      setState(() => _saveDebugStatus = 'PHASE_D_$i');
       developer.log('[PHASE_D_ITEM_${i}_START] Saving to Hive box');
       try {
         await box.add(newSale);
@@ -1602,6 +1607,7 @@ class _SaleFormState extends State<_SaleForm> {
       }
       
       // PHASE E: Update customer ledger
+      setState(() => _saveDebugStatus = 'PHASE_E_$i');
       developer.log('[PHASE_E_ITEM_${i}_START] Updating customer ledger');
       try {
         await LocalDb.applySaleCustomerLedger(newSale);
@@ -1614,6 +1620,7 @@ class _SaleFormState extends State<_SaleForm> {
       }
       
       // PHASE F: Update gemstone cost recovery using Preview State values
+      setState(() => _saveDebugStatus = 'PHASE_F_$i');
       developer.log('[PHASE_F_ITEM_${i}_START] Updating gemstone inventory');
       if (item.gemstoneId!.isNotEmpty) {
         final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
@@ -1664,9 +1671,11 @@ class _SaleFormState extends State<_SaleForm> {
       }
 
       // PHASE G: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
+      setState(() => _saveDebugStatus = 'PHASE_G_START');
       developer.log('[PHASE_G_START] Updating product ledger for ${gemstonesUpdated.length} gemstones');
       try {
         for (final gemId in gemstonesUpdated) {
+          setState(() => _saveDebugStatus = 'PHASE_G_$gemId');
           developer.log('[PHASE_G_ITEM] Processing gemId: $gemId');
           await LocalDb.updateGemstoneProductLedger(gemId);
           developer.log('[PHASE_G_ITEM_SUCCESS] Completed for gemId: $gemId');
@@ -1679,6 +1688,7 @@ class _SaleFormState extends State<_SaleForm> {
         rethrow;
       }
       
+      setState(() => _saveDebugStatus = 'PHASE_H_START');
       developer.log('[PHASE_H_START] Clearing preview state and form');
       _previewState.clear();
       _items.clear();
@@ -1696,12 +1706,15 @@ class _SaleFormState extends State<_SaleForm> {
       developer.log('[PHASE_H_SUCCESS] Preview state and form cleared');
       
       // Show success and close form
+      setState(() => _saveDebugStatus = 'PHASE_I_START');
       developer.log('[PHASE_I_START] Closing sale form');
       _toast('အရောင်းချပါပြီ အောင်ချမည်ပါပြီ');
       if (mounted) {
         developer.log('[PHASE_I_START] Navigating back to Sales History');
         try {
+          setState(() => _saveDebugStatus = 'PHASE_I_POP');
           Navigator.pop(context);
+          setState(() => _saveDebugStatus = 'PHASE_I_SUCCESS');
           developer.log('[PHASE_I_SUCCESS] Navigation completed');
         } catch (e, st) {
           developer.log('[PHASE_I_FAILED] BLOCKED AT: Navigator.pop()');
