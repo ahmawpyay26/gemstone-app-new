@@ -1591,13 +1591,27 @@ class _SaleFormState extends State<_SaleForm> {
       
       // PHASE D: Save to Hive
       developer.log('[PHASE_D_ITEM_${i}_START] Saving to Hive box');
-      await box.add(newSale);
-      developer.log('[PHASE_D_ITEM_${i}_SUCCESS] Saved to Hive');
+      try {
+        await box.add(newSale);
+        developer.log('[PHASE_D_ITEM_${i}_SUCCESS] Saved to Hive');
+      } catch (e, st) {
+        developer.log('[PHASE_D_FAILED] BLOCKED AT: box.add(newSale)');
+        developer.log('[PHASE_D_FAILED] Error: $e');
+        developer.log('[PHASE_D_FAILED] Stack: $st');
+        rethrow;
+      }
       
       // PHASE E: Update customer ledger
       developer.log('[PHASE_E_ITEM_${i}_START] Updating customer ledger');
-      await LocalDb.applySaleCustomerLedger(newSale);
-      developer.log('[PHASE_E_ITEM_${i}_SUCCESS] Customer ledger updated');
+      try {
+        await LocalDb.applySaleCustomerLedger(newSale);
+        developer.log('[PHASE_E_ITEM_${i}_SUCCESS] Customer ledger updated');
+      } catch (e, st) {
+        developer.log('[PHASE_E_FAILED] BLOCKED AT: applySaleCustomerLedger');
+        developer.log('[PHASE_E_FAILED] Error: $e');
+        developer.log('[PHASE_E_FAILED] Stack: $st');
+        rethrow;
+      }
       
       // PHASE F: Update gemstone cost recovery using Preview State values
       developer.log('[PHASE_F_ITEM_${i}_START] Updating gemstone inventory');
@@ -1635,19 +1649,35 @@ class _SaleFormState extends State<_SaleForm> {
             }
           }
           
-          await LocalDb.gemstones().put(item.gemstoneId!, gemstone);
-          gemstonesUpdated.add(item.gemstoneId!);
-          developer.log('[PHASE_F_ITEM_${i}_SUCCESS] Gemstone inventory updated');
+          try {
+            await LocalDb.gemstones().put(item.gemstoneId!, gemstone);
+            gemstonesUpdated.add(item.gemstoneId!);
+            developer.log('[PHASE_F_ITEM_${i}_SUCCESS] Gemstone inventory updated');
+          } catch (e, st) {
+            developer.log('[PHASE_F_FAILED] BLOCKED AT: gemstones().put()');
+            developer.log('[PHASE_F_FAILED] Error: $e');
+            developer.log('[PHASE_F_FAILED] Stack: $st');
+            rethrow;
+          }
         }
       }
       }
 
       // PHASE G: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
       developer.log('[PHASE_G_START] Updating product ledger for ${gemstonesUpdated.length} gemstones');
-      for (final gemId in gemstonesUpdated) {
-        await LocalDb.updateGemstoneProductLedger(gemId);
+      try {
+        for (final gemId in gemstonesUpdated) {
+          developer.log('[PHASE_G_ITEM] Processing gemId: $gemId');
+          await LocalDb.updateGemstoneProductLedger(gemId);
+          developer.log('[PHASE_G_ITEM_SUCCESS] Completed for gemId: $gemId');
+        }
+        developer.log('[PHASE_G_SUCCESS] Product ledger updated');
+      } catch (e, st) {
+        developer.log('[PHASE_G_FAILED] BLOCKED AT: updateGemstoneProductLedger');
+        developer.log('[PHASE_G_FAILED] Error: $e');
+        developer.log('[PHASE_G_FAILED] Stack: $st');
+        rethrow;
       }
-      developer.log('[PHASE_G_SUCCESS] Product ledger updated');
       
       developer.log('[PHASE_H_START] Clearing preview state and form');
       _previewState.clear();
@@ -1669,10 +1699,16 @@ class _SaleFormState extends State<_SaleForm> {
       developer.log('[PHASE_I_START] Closing sale form');
       _toast('အရောင်းချပါပြီ အောင်ချမည်ပါပြီ');
       if (mounted) {
-        developer.log('[PHASE_I_SUCCESS] Navigating back to Sales History');
-        // Pop the sale form bottom sheet
-        Navigator.pop(context);
-        // The Sales History page will automatically refresh when we return
+        developer.log('[PHASE_I_START] Navigating back to Sales History');
+        try {
+          Navigator.pop(context);
+          developer.log('[PHASE_I_SUCCESS] Navigation completed');
+        } catch (e, st) {
+          developer.log('[PHASE_I_FAILED] BLOCKED AT: Navigator.pop()');
+          developer.log('[PHASE_I_FAILED] Error: $e');
+          developer.log('[PHASE_I_FAILED] Stack: $st');
+          rethrow;
+        }
       }
     } catch (e) {
       // FAILURE: Keep preview state and temporary list for retry
