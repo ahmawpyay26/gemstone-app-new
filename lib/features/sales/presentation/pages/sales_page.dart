@@ -1471,6 +1471,7 @@ class _SaleFormState extends State<_SaleForm> {
         final matchedGem = allGems.firstWhereOrNull((g) => g.name == item.gemstoneName);
         if (matchedGem != null) {
           resolvedGemstoneId = matchedGem.id;
+          item.gemstoneId = resolvedGemstoneId; // Assign back to item
           developer.log('[Sale] Resolved gemstoneId from name: $resolvedGemstoneId');
         }
       }
@@ -1552,7 +1553,7 @@ class _SaleFormState extends State<_SaleForm> {
       
       // Calculate cost
       double cost;
-      if (item.gemstoneId!.isNotEmpty) {
+      if (item.gemstoneId != null && item.gemstoneId!.isNotEmpty) {
         cost = perUnitCost * qty;
       } else {
         cost = perUnitCost;
@@ -1622,7 +1623,7 @@ class _SaleFormState extends State<_SaleForm> {
       // PHASE F: Update gemstone cost recovery using Preview State values
       setState(() => _saveDebugStatus = 'PHASE_F_$i');
       developer.log('[PHASE_F_ITEM_${i}_START] Updating gemstone inventory');
-      if (item.gemstoneId!.isNotEmpty) {
+      if (item.gemstoneId != null && item.gemstoneId!.isNotEmpty) {
         final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
         if (gemstone != null) {
           // Use preview state values instead of recalculating
@@ -1657,8 +1658,11 @@ class _SaleFormState extends State<_SaleForm> {
           }
           
           try {
-            await LocalDb.gemstones().put(item.gemstoneId!, gemstone);
-            gemstonesUpdated.add(item.gemstoneId!);
+            final gemId = item.gemstoneId;
+            if (gemId != null && gemId.isNotEmpty) {
+              await LocalDb.gemstones().put(gemId, gemstone);
+              gemstonesUpdated.add(gemId);
+            }
             developer.log('[PHASE_F_ITEM_${i}_SUCCESS] Gemstone inventory updated');
           } catch (e, st) {
             developer.log('[PHASE_F_FAILED] BLOCKED AT: gemstones().put()');
@@ -1714,8 +1718,8 @@ class _SaleFormState extends State<_SaleForm> {
         try {
           setState(() => _saveDebugStatus = 'PHASE_I_POP');
           Navigator.pop(context);
-          setState(() => _saveDebugStatus = 'PHASE_I_SUCCESS');
           developer.log('[PHASE_I_SUCCESS] Navigation completed');
+          return;
         } catch (e, st) {
           developer.log('[PHASE_I_FAILED] BLOCKED AT: Navigator.pop()');
           developer.log('[PHASE_I_FAILED] Error: $e');
