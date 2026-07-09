@@ -968,7 +968,7 @@ class LocalDb {
   static int gemstoneSoldQuantity(String gemstoneId) {
     int total = 0;
     for (final s in sales().values) {
-      if (!s.isDeleted && s.gemstoneId == gemstoneId) {
+      if (!s.isDeleted && s.gemstoneId == gemstoneId && !s.isFragmentSource) {
         total += s.quantity;
       }
     }
