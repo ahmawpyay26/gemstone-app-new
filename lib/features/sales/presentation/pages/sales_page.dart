@@ -1509,12 +1509,27 @@ class _SaleFormState extends State<_SaleForm> {
         // already-persisted sales, not items in current _items list
         developer.log('[Sale] Item $i gemstone found. Inventory check deferred to PHASE F');
         
-        // Only do a quick sanity check: if _autoDeduct and qty is unreasonably large
-        if (_autoDeduct && item.quantity > gemstone.quantity) {
-          developer.log('[Sale] Validation failed at item $i: qty ${item.quantity} > total gemstone qty ${gemstone.quantity}');
-          setState(() => _saveDebugStatus = 'PHASE_B_FAILED: QTY_EXCEEDS_TOTAL item $i');
-          _showError('ပစ္စည်း $i: အရေအတွက် စုစုပေါင်း ပစ္စည်းအရေအတွက်ထက် ပိုများသည်');
-          return;
+        // Sanity check: qty cannot exceed available quantity
+        if (_autoDeduct) {
+          int maxQty = gemstone.quantity;
+          
+          // For fragment items, check against fragment's remaining quantity
+          if (item.isFragmentSource && item.fragmentName != null && item.fragmentName!.isNotEmpty) {
+            if (gemstone.breakdownItems != null) {
+              final fragmentData = gemstone.breakdownItems![item.fragmentName!] as Map<String, dynamic>?;
+              if (fragmentData != null) {
+                maxQty = (fragmentData['quantity'] as num?)?.toInt() ?? 0;
+                developer.log('[Sale] Item $i is fragment. Fragment qty: $maxQty');
+              }
+            }
+          }
+          
+          if (item.quantity > maxQty) {
+            developer.log('[Sale] Validation failed at item $i: qty ${item.quantity} > max available $maxQty');
+            setState(() => _saveDebugStatus = 'PHASE_B_FAILED: QTY_EXCEEDS_TOTAL item $i');
+            _showError('ပစ္စည်း $i: အရေအတွက် စုစုပေါင်း ပစ္စည်းအရေအတွက်ထက် ပိုများသည်');
+            return;
+          }
         }
       } else {
         // Manual entry without gemstoneId - allow it for now
