@@ -1503,22 +1503,18 @@ class _SaleFormState extends State<_SaleForm> {
           return;
         }
         
-        // Check inventory if auto-deduct enabled
-        if (_autoDeduct) {
-          final remaining = LocalDb.gemstoneRemainingQuantity(gemstone);
-          developer.log('[Sale] Auto-deduct enabled. Remaining qty: $remaining');
-          if (remaining <= 0) {
-            developer.log('[Sale] Validation failed at item $i: no remaining inventory');
-            setState(() => _saveDebugStatus = 'PHASE_B_FAILED: NO_STOCK item $i');
-            _showError('ပစ္စည်း $i: အရောင်းအဆုံးဖြစ်နေ');
-            return;
-          }
-          if (item.quantity > remaining) {
-            developer.log('[Sale] Validation failed at item $i: qty ${item.quantity} > remaining $remaining');
-            setState(() => _saveDebugStatus = 'PHASE_B_FAILED: OVER_STOCK item $i');
-            _showError('ပစ္စည်း $i: Stock မတ်တေးတင်ပါ — ကျောတ် $remaining ခ်ပါ ရိးတေးချယ်ပါ');
-            return;
-          }
+        // Inventory validation deferred to PHASE F (actual deduction phase)
+        // Checking inventory here causes false OVER_STOCK errors when multiple items
+        // are being saved in one transaction, because gemstoneSoldQuantity() counts
+        // already-persisted sales, not items in current _items list
+        developer.log('[Sale] Item $i gemstone found. Inventory check deferred to PHASE F');
+        
+        // Only do a quick sanity check: if _autoDeduct and qty is unreasonably large
+        if (_autoDeduct && item.quantity > gemstone.quantity) {
+          developer.log('[Sale] Validation failed at item $i: qty ${item.quantity} > total gemstone qty ${gemstone.quantity}');
+          setState(() => _saveDebugStatus = 'PHASE_B_FAILED: QTY_EXCEEDS_TOTAL item $i');
+          _showError('ပစ္စည်း $i: အရေအတွက် စုစုပေါင်း ပစ္စည်းအရေအတွက်ထက် ပိုများသည်');
+          return;
         }
       } else {
         // Manual entry without gemstoneId - allow it for now
