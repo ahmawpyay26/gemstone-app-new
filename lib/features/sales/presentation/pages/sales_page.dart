@@ -1684,8 +1684,13 @@ class _SaleFormState extends State<_SaleForm> {
           try {
             final gemId = item.gemstoneId;
             if (gemId != null && gemId.isNotEmpty) {
-              await LocalDb.gemstones().put(gemId, gemstone);
-              gemstonesUpdated.add(gemId);
+              final hiveKey = LocalDb.gemstoneKeyById(gemId);
+              if (hiveKey != null) {
+                await LocalDb.gemstones().put(hiveKey, gemstone);
+                gemstonesUpdated.add(gemId);
+              } else {
+                developer.log('[PHASE_F_ITEM_${i}_WARNING] Gemstone key not found for ID: $gemId');
+              }
             }
             developer.log('[PHASE_F_ITEM_${i}_SUCCESS] Gemstone inventory updated');
           } catch (e, st) {
