@@ -1662,15 +1662,21 @@ class _SaleFormState extends State<_SaleForm> {
             if (gemstone.breakdownItems != null) {
               final fragmentName = item.fragmentName!;
               final itemData = gemstone.breakdownItems![fragmentName];
-              if (itemData == null) continue;
-              final itemMap = itemData as Map<String, dynamic>;
-              final currentQty = (itemMap['quantity'] as num?)?.toInt() ?? 0;
-              if (currentQty >= qty) {
-                gemstone.breakdownItems![fragmentName] = {
-                  'quantity': currentQty - qty,
-                  'weight': itemMap['weight'],
-                  'weightUnit': itemMap['weightUnit']
-                };
+              if (itemData != null) {
+                final itemMap = itemData as Map<String, dynamic>;
+                final currentQty = (itemMap['quantity'] as num?)?.toInt() ?? 0;
+                if (currentQty >= qty) {
+                  gemstone.breakdownItems![fragmentName] = {
+                    'quantity': currentQty - qty,
+                    'weight': itemMap['weight'],
+                    'weightUnit': itemMap['weightUnit']
+                  };
+                  developer.log('[PHASE_F_FRAGMENT] Deducted $qty from fragment $fragmentName. New qty: ${currentQty - qty}');
+                } else {
+                  developer.log('[PHASE_F_FRAGMENT] WARNING: Fragment qty $currentQty < selling qty $qty');
+                }
+              } else {
+                developer.log('[PHASE_F_FRAGMENT] WARNING: Fragment data not found for: $fragmentName');
               }
             }
           }
