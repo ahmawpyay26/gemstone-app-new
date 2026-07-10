@@ -2041,7 +2041,13 @@ class _SaleFormState extends State<_SaleForm> {
     final gemsWithBreakdown = gems.where((g) {
       return g.breakdownItems != null && 
              g.breakdownItems!.isNotEmpty &&
-             g.breakdownItems!.values.any((qty) => (qty is num) && (qty as num) > 0);
+             g.breakdownItems!.values.any((item) {
+               if (item is Map<String, dynamic>) {
+                 final qty = (item['quantity'] as num?)?.toInt() ?? 0;
+                 return qty > 0;
+               }
+               return (item is num) && (item as num) > 0;
+             });
     }).toList();
 
     if (gemsWithBreakdown.isEmpty) {
@@ -2088,11 +2094,14 @@ class _SaleFormState extends State<_SaleForm> {
             ),
           ),
           ...gemsWithBreakdown.map((gem) {
-            final totalBreakdownQty = gem.breakdownItems!.values
-                .where((qty) => (qty is num) && (qty as num) > 0)
-                .fold<int>(0, (sum, qty) => sum + ((qty is num) ? (qty as num).toInt() : 0));
             final breakdownItemsList = gem.breakdownItems!.entries
-                .where((e) => (e.value is num) && (e.value as num) > 0)
+                .where((e) {
+                  if (e.value is Map<String, dynamic>) {
+                    final qty = (e.value['quantity'] as num?)?.toInt() ?? 0;
+                    return qty > 0;
+                  }
+                  return (e.value is num) && (e.value as num) > 0;
+                })
                 .toList();
 
             final isSelected = _selectedFragmentGemstoneId == gem.id;
@@ -2104,61 +2113,53 @@ class _SaleFormState extends State<_SaleForm> {
                 });
               },
               child: Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppTheme.surfaceDark,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(
                     color: isSelected ? AppTheme.primaryAccent : AppTheme.primaryAccent.withOpacity(0.2),
                     width: isSelected ? 2 : 1,
                   ),
                 ),
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    gem.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'စူစူပီင်း အစိတ်အရေအတွက်: $totalBreakdownQty',
-                    style: TextStyle(
-                      color: Colors.grey[300],
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...breakdownItemsList.map((entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      children: [
-                        const Text(
-                          '• ',
-                          style: TextStyle(
-                            color: AppTheme.primaryAccent,
-                            fontSize: 12,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: breakdownItemsList.map((entry) {
+                    final itemData = entry.value as Map<String, dynamic>?;
+                    final quantity = (itemData?['quantity'] as num?)?.toInt() ?? (entry.value is num ? (entry.value as num).toInt() : 0);
+                    final weight = (itemData?['weight'] as num?)?.toDouble() ?? 0;
+                    final weightUnit = itemData?['weightUnit'] as String? ?? '';
+                    final weightDisplay = weight > 0 ? ' — $weight $weightUnit' : '';
+                    
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.key,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '${entry.key} - ${entry.value}',
-                            style: const TextStyle(
-                              color: Colors.white70,
+                          const SizedBox(width: 8),
+                          Text(
+                            '$quantity ခု$weightDisplay',
+                            style: TextStyle(
+                              color: Colors.grey[300],
                               fontSize: 11,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
-                ],
-              ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
             );
           }).toList(),
@@ -2172,20 +2173,22 @@ class _SaleFormState extends State<_SaleForm> {
     final selectedPurchase = gems.firstWhereOrNull(
       (g) => g.id == _selectedFragmentGemstoneId,
     );
-
     if (selectedPurchase == null || selectedPurchase.breakdownItems == null) {
       return const SizedBox.shrink();
     }
-
     // Get available breakdown items (quantity > 0)
     final availableItems = selectedPurchase.breakdownItems!.entries
-        .where((e) => (e.value is num) && (e.value as num) > 0)
+        .where((e) {
+          if (e.value is Map<String, dynamic>) {
+            final qty = (e.value['quantity'] as num?)?.toInt() ?? 0;
+            return qty > 0;
+          }
+          return (e.value is num) && (e.value as num) > 0;
+        })
         .toList();
-
     if (availableItems.isEmpty) {
       return const SizedBox.shrink();
     }
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -2194,7 +2197,7 @@ class _SaleFormState extends State<_SaleForm> {
           const Padding(
             padding: EdgeInsets.only(bottom: 8),
             child: Text(
-              'ရောင်းမည့် အစိတ်စိတ်ပိုင်း',
+              'ရနှနွတ်မျတ် အစိတ်စိတ်ပြီင်',
               style: TextStyle(
                 color: AppTheme.primaryAccent,
                 fontSize: 13,
@@ -2216,18 +2219,23 @@ class _SaleFormState extends State<_SaleForm> {
             child: DropdownButton<String>(
               value: _selectedFragmentName,
               hint: const Text(
-                'အစိတ်စိတ်ပိုင်း ရွေးချယ်မည်',
+                'အစိတ်စိတ်ပြီင် ရနှနွတ်မျ',
                 style: TextStyle(color: Colors.white70),
               ),
               isExpanded: true,
               dropdownColor: AppTheme.surfaceDark,
               underline: const SizedBox.shrink(),
               items: availableItems.map((entry) {
-                final displayText = '${entry.key} (${entry.value})';
+                final itemData = entry.value as Map<String, dynamic>?;
+                final quantity = (itemData?['quantity'] as num?)?.toInt() ?? (entry.value is num ? (entry.value as num).toInt() : 0);
+                final weight = (itemData?['weight'] as num?)?.toDouble() ?? 0;
+                final weightUnit = itemData?['weightUnit'] as String? ?? '';
+                final weightDisplay = weight > 0 ? ' — $weight $weightUnit' : '';
+                final displayText = '$quantityခ်$weightDisplay';
                 return DropdownMenuItem<String>(
                   value: entry.key,
                   child: Text(
-                    displayText,
+                    '${entry.key} ($displayText)',
                     style: const TextStyle(color: Colors.white),
                   ),
                 );
