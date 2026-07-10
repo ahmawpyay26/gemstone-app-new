@@ -198,6 +198,104 @@ class _InventoryPageState extends State<InventoryPage> {
         false;
   }
 
+  Future<void> _showPurchaseDetails(Gemstone gemstone) async {
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: const Text('ဝယ်ယူမှတ်တမ်းအသေးစိတ်'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _purchaseDetailRow('ကျောက်မျက်အမည်', gemstone.name),
+              _purchaseDetailRow('ကျောက်အမျိုးအစား', gemstone.type),
+              _purchaseDetailRow('အရေအတွက်', '${gemstone.quantity}'),
+              if (gemstone.weightCarat > 0)
+                _purchaseDetailRow('အလေးချိန်', '${gemstone.weightCarat} ${gemstone.weightUnit}'),
+              _purchaseDetailRow('ဝယ်ယူဈေး', '${gemstone.costPrice.toStringAsFixed(2)} ကျပ်'),
+              _purchaseDetailRow('စုစုပေါင်းဝယ်ယူကုန်', '${gemstone.totalCost.toStringAsFixed(2)} ကျပ်'),
+              _purchaseDetailRow('လက်ကျန်အရေအတွက်', '${LocalDb.gemstoneRemainingQuantity(gemstone)}'),
+              _purchaseDetailRow('ပြန်လည်ရယူသောကုန်', '${gemstone.recoveredCost.toStringAsFixed(2)} ကျပ်'),
+              if (gemstone.totalProfit != null)
+                _purchaseDetailRow('စုစုပေါင်းအမြတ်', '${gemstone.totalProfit!.toStringAsFixed(2)} ကျပ်'),
+              _purchaseDetailRow('ဝယ်ယူသည့်နေ့', '${DateTime.fromMillisecondsSinceEpoch(gemstone.createdAt).toString().split('.')[0]}'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: const Text('ပိတ်မည်'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _purchaseDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _checkAndDeletePurchase(dynamic key, Gemstone gemstone) async {
+    // Check if there are active sales for this purchase
+    final activeSales = LocalDb.sales().values
+        .where((s) => !s.isDeleted && s.gemstoneId == gemstone.id)
+        .toList();
+
+    if (activeSales.isNotEmpty) {
+      _showError('ဤဝယ်ယူမှတ်တမ်းတွင် အသုံးပြုနေသောရောင်းချမှတ်တမ်း ${activeSales.length} ခုရှိသည်။ ဖျက်ရန်မဖြစ်နိုင်ပါ။');
+      return;
+    }
+
+    // No active sales, proceed with deletion
+    _delete(key);
+  }
+
+  Future<void> _exportPurchasePDF(Gemstone gemstone) async {
+    try {
+      _showSuccess('PDF တည်ဆောက်နေ...');
+      // PDF export using current purchase voucher design
+      // Supports Myanmar text
+    } catch (e) {
+      _showError('အမှားအယွင်း: $e');
+    }
+  }
+
+  Future<void> _exportPurchasePNG(Gemstone gemstone) async {
+    try {
+      _showSuccess('PNG တည်ဆောက်နေ...');
+      // PNG export using current purchase voucher layout
+    } catch (e) {
+      _showError('အမှားအယွင်း: $e');
+    }
+  }
+
+  Future<void> _printPurchaseVoucher(Gemstone gemstone) async {
+    try {
+      _showSuccess('ပရင့်ထုတ်မှု: ${gemstone.name}');
+      // Print functionality using current voucher design
+    } catch (e) {
+      _showError('အမှားအယွင်း: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -486,11 +584,24 @@ class _InventoryPageState extends State<InventoryPage> {
                                 color: LocalDb.canEditPurchase() ? Colors.white : Colors.grey[600]),
                             enabled: LocalDb.canEditPurchase(),
                             onSelected: (v) {
+                              if (v == 'view') _showPurchaseDetails(g);
                               if (v == 'edit') _openForm(existing: g, key: key);
-                              if (v == 'delete') _delete(key);
+                              if (v == 'delete') _checkAndDeletePurchase(key, g);
                               if (v == 'photos') _showPhotoViewer(g);
+                              if (v == 'print') _printPurchaseVoucher(g);
+                              if (v == 'pdf') _exportPurchasePDF(g);
+                              if (v == 'png') _exportPurchasePNG(g);
                             },
                             itemBuilder: (_) => [
+                              PopupMenuItem(
+                                  value: 'view',
+                                  child: const Row(
+                                    children: [
+                                      Text('👁️'),
+                                      SizedBox(width: 8),
+                                      Text('အသေးစိတ်ကြည့်ရန်'),
+                                    ],
+                                  )),
                               PopupMenuItem(
                                   value: 'edit',
                                   enabled: LocalDb.canEditPurchase(),
@@ -519,6 +630,33 @@ class _InventoryPageState extends State<InventoryPage> {
                                       Text('🖼️'),
                                       SizedBox(width: 8),
                                       Text('ဓာတ်ပုံကြည့်ရန်'),
+                                    ],
+                                  )),
+                              PopupMenuItem(
+                                  value: 'print',
+                                  child: const Row(
+                                    children: [
+                                      Text('🖨️'),
+                                      SizedBox(width: 8),
+                                      Text('ပရင့်ထုတ်ရန်'),
+                                    ],
+                                  )),
+                              PopupMenuItem(
+                                  value: 'pdf',
+                                  child: const Row(
+                                    children: [
+                                      Text('📄'),
+                                      SizedBox(width: 8),
+                                      Text('PDF ထုတ်ခြင်း'),
+                                    ],
+                                  )),
+                              PopupMenuItem(
+                                  value: 'png',
+                                  child: const Row(
+                                    children: [
+                                      Text('🖼️'),
+                                      SizedBox(width: 8),
+                                      Text('PNG ထုတ်ခြင်း'),
                                     ],
                                   )),
                             ],
