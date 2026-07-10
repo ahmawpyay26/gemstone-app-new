@@ -1683,6 +1683,20 @@ class _SaleFormState extends State<_SaleForm> {
                         ),
                       ),
                     ]),
+                    // Fragment gallery section
+                    if (_saleSource == 'breakdown_item' && _selectedFragmentName != null) ...
+                      [
+                        const SizedBox(height: 16),
+                        const Text('ပြခန်း', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
+                        PhotoAttachmentWidget(
+                          photoPaths: _photoPaths,
+                          onPhotosChanged: (photos) {
+                            setState(() => _photoPaths = photos);
+                          },
+                          recordType: 'sale',
+                        ),
+                      ],
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child:                 SizedBox(
