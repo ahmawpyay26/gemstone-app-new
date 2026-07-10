@@ -368,27 +368,92 @@ class _SalesPageState extends State<SalesPage> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                      '${s.isFragmentSource ? "အစိတ်စိတ်ပိုင်း" : "အဝယ်စာရင်း"}${s.fragmentName != null ? " (${s.fragmentName})" : ""}',
+                                  // Fragment Sale header with badge
+                                  if (s.isFragmentSource)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 6),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.primaryAccent.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(
+                                                color: AppTheme.primaryAccent,
+                                                width: 0.5,
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              'အစိတ်စိတ်ပိုင်း',
+                                              style: TextStyle(
+                                                color: AppTheme.primaryAccent,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          if (s.photoPaths.isNotEmpty)
+                                            GestureDetector(
+                                              onTap: () => _showPhotoViewer(s),
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue.withOpacity(0.2),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(
+                                                    color: Colors.blue,
+                                                    width: 0.5,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  '📷 ${s.photoPaths.length}',
+                                                  style: const TextStyle(
+                                                    color: Colors.blue,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  // Fragment name
+                                  if (s.isFragmentSource && s.fragmentName != null)
+                                    Text(
+                                      'အစိတ်စိတ်အမည်: ${s.fragmentName}',
                                       style: TextStyle(
-                                        color: s.isFragmentSource ? AppTheme.primaryAccent : Colors.grey[400],
+                                        color: Colors.grey[300],
                                         fontSize: 11,
-                                        fontWeight: s.isFragmentSource ? FontWeight.w600 : FontWeight.normal,
-                                      )),
+                                      ),
+                                    ),
+                                  // Quantity and weight
                                   Text(
                                       'အရေအတွက်: ${s.quantity}'
                                       '${s.weightCarat > 0 ? ' • ${s.weightCarat} ${_saleUnit(s)}' : ''}',
                                       style:
-                                          TextStyle(color: Colors.grey[400])),
+                                          TextStyle(color: Colors.grey[400], fontSize: 11)),
+                                  // Commission (for fragment sales)
+                                  if (s.isFragmentSource && s.commissionFee > 0)
+                                    Text(
+                                      'ရောင်းပွဲခ: ${_money.format(s.commissionFee)} ကျပ်',
+                                      style: TextStyle(
+                                        color: Colors.amber[300],
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  // Customer and payment
                                   Text(
                                       'ဝယ်သူ: ${_getCustomerName(s)}',
                                       style:
-                                          TextStyle(color: Colors.grey[400])),
+                                          TextStyle(color: Colors.grey[400], fontSize: 11)),
                                   Text(
                                       '${_date.format(DateTime.fromMillisecondsSinceEpoch(s.saleDate))} • ${_payLabel(s.paymentMethod)}',
                                       style: TextStyle(
                                           color: Colors.grey[500],
-                                          fontSize: 12)),
+                                          fontSize: 10)),
                                 ],
                               ),
                               trailing: Column(
