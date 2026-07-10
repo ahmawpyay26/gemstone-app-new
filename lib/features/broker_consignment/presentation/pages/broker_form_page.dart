@@ -889,13 +889,17 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                       value: null,
                       child: Text('— မှတ်တမ်းရွေးချယ်ပါ —'),
                     ),
-                    ..._getPurchasesWithBreakdownItems().map((g) => DropdownMenuItem<String?>(
-                      value: g.id,
-                      child: Text(
-                        '${g.name} (${g.type} • ID: ${g.id.substring(0, 8)}...)',
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    )).toList(),
+                    ..._getPurchasesWithBreakdownItems().map((g) {
+                      final fragmentCount = g.breakdownItems?.length ?? 0;
+                      final fragmentDisplay = fragmentCount > 0 ? ' • အစိတ်စိတ်: $fragmentCount' : '';
+                      return DropdownMenuItem<String?>(
+                        value: g.id,
+                        child: Text(
+                          '${g.name} (${g.type}$fragmentDisplay • ID: ${g.id.substring(0, 8)}...)',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
                   ],
                   onChanged: (String? gemstoneId) {
                     if (gemstoneId != null) {
@@ -965,10 +969,17 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                         value: null,
                         child: Text('— အစိတ်စိတ်ရွေးချယ်ပါ —'),
                       ),
-                      ..._currentEditingItem.availableBreakdownItems.entries.map((e) => DropdownMenuItem<String?>(
-                        value: e.key,
-                        child: Text('${e.key} (ကျန်: ${e.value})'),
-                      )).toList(),
+                      ..._currentEditingItem.availableBreakdownItems.entries.map((e) {
+                        final gemstone = _currentEditingItem.gemstone;
+                        final itemData = gemstone?.breakdownItems?[e.key] as Map<String, dynamic>?;
+                        final weight = (itemData?['weight'] as num?)?.toDouble() ?? 0;
+                        final weightUnit = itemData?['weightUnit'] as String? ?? '';
+                        final weightDisplay = weight > 0 ? ' — $weight $weightUnit' : '';
+                        return DropdownMenuItem<String?>(
+                          value: e.key,
+                          child: Text('${e.key} (ကျန်: ${e.value}$weightDisplay)'),
+                        );
+                      }).toList(),
                     ],
                     onChanged: (String? breakdownItem) {
                       _updateCurrentItemBreakdownItem(breakdownItem);
@@ -976,6 +987,24 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   ),
                 const SizedBox(height: 8),
               ],
+            ),
+          
+          // Display remaining weight for breakdown items
+          if (_currentEditingItem.sourceType == 'breakdown_item' && _currentEditingItem.selectedBreakdownItem != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Builder(
+                builder: (context) {
+                  final gemstone = _currentEditingItem.gemstone;
+                  final itemData = gemstone?.breakdownItems?[_currentEditingItem.selectedBreakdownItem] as Map<String, dynamic>?;
+                  final weight = (itemData?['weight'] as num?)?.toDouble() ?? 0;
+                  final weightUnit = itemData?['weightUnit'] as String? ?? '';
+                  return Text(
+                    'ကျန်ရှိအလေးချိန်: $weight $weightUnit',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                  );
+                },
+              ),
             ),
           
           // Quantity input
