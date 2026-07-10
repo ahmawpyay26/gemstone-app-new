@@ -1445,6 +1445,15 @@ class _SaleFormState extends State<_SaleForm> {
                 if (currentQty >= qty) {
                   itemData['quantity'] = currentQty - qty;
                 }
+                
+                // Deduct weight if available
+                if (fragmentWeight != null && fragmentWeight! > 0) {
+                  final currentWeightObj = itemData['weight'];
+                  final currentWeight = (currentWeightObj is num) ? (currentWeightObj as num) : 0;
+                  if (currentWeight >= fragmentWeight!) {
+                    itemData['weight'] = currentWeight - fragmentWeight!;
+                  }
+                }
               }
             }
           }
