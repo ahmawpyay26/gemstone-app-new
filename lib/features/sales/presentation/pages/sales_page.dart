@@ -1705,6 +1705,7 @@ class _SaleFormState extends State<_SaleForm> {
                           },
                           recordType: 'sale',
                         ),
+                        if (_photoPaths.isNotEmpty) ...[const SizedBox(height: 12), _buildFragmentGalleryPreview()],
                       ],
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -2250,6 +2251,150 @@ class _SaleFormState extends State<_SaleForm> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Build gallery preview for fragment sale with horizontal scroll
+  Widget _buildFragmentGalleryPreview() {
+    if (_photoPaths.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'ရွေးချယ်ထားသောပုံများ (${_photoPaths.length})',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _photoPaths.length,
+            itemBuilder: (context, index) {
+              final photoPath = _photoPaths[index];
+              return Padding(
+                padding: EdgeInsets.only(right: index < _photoPaths.length - 1 ? 8 : 0),
+                child: GestureDetector(
+                  onTap: () {
+                    // Show full-screen preview
+                    showDialog(
+                      context: context,
+                      builder: (_) => Dialog(
+                        backgroundColor: Colors.transparent,
+                        insetPadding: EdgeInsets.zero,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Stack(
+                            children: [
+                              Center(
+                                child: Image.network(
+                                  photoPath,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.image_not_supported,
+                                    color: Colors.white,
+                                    size: 48,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 16,
+                                right: 16,
+                                child: GestureDetector(
+                                  onTap: () => Navigator.pop(context),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.5),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  onLongPress: () {
+                    // Show remove option on long press
+                    showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        backgroundColor: AppTheme.surfaceDark,
+                        title: const Text('ပုံကိုဖျက်မည်?'),
+                        content: const Text('ဤပုံကိုဖျက်ရန်သည်ကိုအတည်ပြုပါ။'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('ပယ်ဖျက်မည်'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              setState(() {
+                                _photoPaths.removeAt(index);
+                              });
+                            },
+                            child: const Text(
+                              'ဖျက်ရန်',
+                              style: TextStyle(color: AppTheme.errorColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.primaryAccent.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        photoPath,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: AppTheme.surfaceLight,
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'ပုံကိုဖျက်ရန် ရှည်ကိုင်ပါ | အပြည့်အစုံကြည့်ရှုရန် တို့ပါ',
+          style: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 
