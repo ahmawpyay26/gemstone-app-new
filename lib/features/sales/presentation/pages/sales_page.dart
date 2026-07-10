@@ -785,6 +785,7 @@ class _SaleFormState extends State<_SaleForm> {
   late final TextEditingController _fragmentQuantity; // Fragment quantity input (Step 5C-4)
   String? _fragmentQuantityError; // Fragment quantity validation error (Step 5C-4)
   late final TextEditingController _fragmentUnitPrice; // Fragment unit price input (Step 5D-2)
+  late final TextEditingController _fragmentCommission; // Fragment commission input (Step 1 UI)
   
   // Multi-item invoice support
   late List<_SaleItem> _items;
@@ -1036,6 +1037,7 @@ class _SaleFormState extends State<_SaleForm> {
         text: e != null && e.commissionFee > 0 ? _trim(e.commissionFee) : '');
     _fragmentQuantity = TextEditingController();
     _fragmentUnitPrice = TextEditingController();
+    _fragmentCommission = TextEditingController(text: '0');
     _payment = e?.paymentMethod ?? 'cash';
     _saleDate = e != null
         ? DateTime.fromMillisecondsSinceEpoch(e.saleDate)
@@ -1068,7 +1070,7 @@ class _SaleFormState extends State<_SaleForm> {
     // Clear preview state (automatic rollback)
     _previewState.clear();
     
-    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission, _fragmentQuantity, _fragmentUnitPrice]) {
+    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission, _fragmentQuantity, _fragmentUnitPrice, _fragmentCommission]) {
       c.dispose();
     }
     super.dispose();
@@ -1628,6 +1630,7 @@ class _SaleFormState extends State<_SaleForm> {
                   [
                     _buildFragmentQuantityField(gems),
                     _field(_fragmentUnitPrice, 'ရောင်းဈေး (ကျပ်)', number: true),
+                    _field(_fragmentCommission, 'အရောင်းပွဲခ (ကျပ်)', number: true),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child:                 SizedBox(
