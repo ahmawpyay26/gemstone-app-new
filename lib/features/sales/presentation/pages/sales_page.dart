@@ -735,6 +735,7 @@ class _SaleItem {
   String remark;
   String? fragmentName; // Fragment name if from breakdown_item source
   bool isFragmentSource; // True if this item is from fragment source
+  double commission; // Commission fee for this item
 
   _SaleItem({
     required this.id,
@@ -745,6 +746,7 @@ class _SaleItem {
     this.remark = '',
     this.fragmentName,
     this.isFragmentSource = false,
+    this.commission = 0,
   });
 
   double get totalAmount => quantity * unitPrice;
@@ -1354,7 +1356,9 @@ class _SaleFormState extends State<_SaleForm> {
       final qty = item.quantity;
       final unitPrice = item.unitPrice;
       final amount = qty * unitPrice;
-      final netSale = amount - sellCommission;
+      // Use item-specific commission for fragments, otherwise use form commission
+      final itemCommission = item.isFragmentSource ? item.commission : sellCommission;
+      final netSale = amount - itemCommission;
       
       // Calculate cost
       double cost;
@@ -1373,7 +1377,7 @@ class _SaleFormState extends State<_SaleForm> {
         customerName: _customer.text.trim(),
         amount: amount,
         costPrice: cost,
-        commissionFee: sellCommission,
+        commissionFee: itemCommission,
         quantity: qty,
         weightCarat: 0,
         paymentMethod: _payment,
@@ -2295,6 +2299,14 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
 
+    // Validate and parse commission
+    final commissionInput = _fragmentCommission.text.trim();
+    final commission = double.tryParse(commissionInput) ?? 0;
+    if (commission < 0) {
+      _toast('အရောင်းပွဲခသည် အနုတ်မဖြစ်ရပါ');
+      return;
+    }
+
     // All validations passed - add item to temporary list
     setState(() {
       _items.add(
@@ -2307,6 +2319,7 @@ class _SaleFormState extends State<_SaleForm> {
           remark: '',
           fragmentName: _selectedFragmentName,
           isFragmentSource: true,
+          commission: commission,
         ),
       );
 
@@ -2319,6 +2332,7 @@ class _SaleFormState extends State<_SaleForm> {
       _selectedFragmentName = null;
       _fragmentQuantity.clear();
       _fragmentUnitPrice.clear();
+      _fragmentCommission.text = '0';
       _fragmentQuantityError = null;
     });
 
