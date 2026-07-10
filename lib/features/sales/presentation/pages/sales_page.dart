@@ -736,6 +736,8 @@ class _SaleItem {
   String? fragmentName; // Fragment name if from breakdown_item source
   bool isFragmentSource; // True if this item is from fragment source
   double commission; // Commission fee for this item
+  double? weight; // Fragment weight (optional)
+  String? weightUnit; // Fragment weight unit
 
   _SaleItem({
     required this.id,
@@ -747,6 +749,8 @@ class _SaleItem {
     this.fragmentName,
     this.isFragmentSource = false,
     this.commission = 0,
+    this.weight,
+    this.weightUnit,
   });
 
   double get totalAmount => quantity * unitPrice;
@@ -788,6 +792,8 @@ class _SaleFormState extends State<_SaleForm> {
   String? _fragmentQuantityError; // Fragment quantity validation error (Step 5C-4)
   late final TextEditingController _fragmentUnitPrice; // Fragment unit price input (Step 5D-2)
   late final TextEditingController _fragmentCommission; // Fragment commission input (Step 1 UI)
+  late final TextEditingController _fragmentWeight; // Fragment weight input (optional)
+  late String _fragmentWeightUnit; // Fragment weight unit selector
   
   // Multi-item invoice support
   late List<_SaleItem> _items;
@@ -989,6 +995,8 @@ class _SaleFormState extends State<_SaleForm> {
         _selectedFragmentName = item.fragmentName;
         _fragmentQuantity.text = item.quantity.toString();
         _fragmentUnitPrice.text = item.unitPrice.toString();
+        _fragmentWeight.text = (item.weight ?? 0).toString();
+        _fragmentWeightUnit = item.weightUnit ?? 'kg';
       } else {
         // Whole-stone item: restore whole-stone fields
         _saleSource = 'whole_stone';
@@ -1040,6 +1048,8 @@ class _SaleFormState extends State<_SaleForm> {
     _fragmentQuantity = TextEditingController();
     _fragmentUnitPrice = TextEditingController();
     _fragmentCommission = TextEditingController(text: '0');
+    _fragmentWeight = TextEditingController();
+    _fragmentWeightUnit = 'kg';
     _payment = e?.paymentMethod ?? 'cash';
     _saleDate = e != null
         ? DateTime.fromMillisecondsSinceEpoch(e.saleDate)
@@ -1369,6 +1379,9 @@ class _SaleFormState extends State<_SaleForm> {
       }
       
       // Create Sale record
+      final fragmentWeight = item.isFragmentSource ? (double.tryParse(_fragmentWeight.text.trim()) ?? 0) : null;
+      final fragmentWeightUnit = item.isFragmentSource ? _fragmentWeightUnit : null;
+      
       final newSale = Sale(
         id: LocalDb.genId(),
         gemstoneId: item.gemstoneId ?? '',
@@ -1394,6 +1407,8 @@ class _SaleFormState extends State<_SaleForm> {
         deletedBy: '',
         deleteReason: '',
         invoiceNumber: invoiceNum,
+        fragmentWeight: fragmentWeight,
+        fragmentWeightUnit: fragmentWeightUnit,
       );
       
       // Save to Hive
@@ -1639,6 +1654,35 @@ class _SaleFormState extends State<_SaleForm> {
                     _buildFragmentQuantityField(gems),
                     _field(_fragmentUnitPrice, 'ရောင်းဈေး (ကျပ်)', number: true),
                     _field(_fragmentCommission, 'အရောင်းပွဲခ (ကျပ်)', number: true),
+                    // Fragment weight field
+                    Row(children: [
+                      Expanded(
+                        child: _field(_fragmentWeight, 'အလေးချိန်', number: true),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _fragmentWeightUnit,
+                          items: ['ပိသာ', 'ကျပ်သား', 'ကာရက်', 'kg', 'g', 'lb', 'oz']
+                              .map((unit) => DropdownMenuItem(
+                                    value: unit,
+                                    child: Text(unit),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _fragmentWeightUnit = value ?? 'kg';
+                            });
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'ယူနစ်',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ]),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child:                 SizedBox(
@@ -2326,6 +2370,8 @@ class _SaleFormState extends State<_SaleForm> {
           fragmentName: _selectedFragmentName,
           isFragmentSource: true,
           commission: commission,
+          weight: double.tryParse(_fragmentWeight.text.trim()),
+          weightUnit: _fragmentWeightUnit,
         ),
       );
 
@@ -2339,6 +2385,8 @@ class _SaleFormState extends State<_SaleForm> {
       _fragmentQuantity.clear();
       _fragmentUnitPrice.clear();
       _fragmentCommission.text = '0';
+      _fragmentWeight.clear();
+      _fragmentWeightUnit = 'kg';
       _fragmentQuantityError = null;
     });
 
