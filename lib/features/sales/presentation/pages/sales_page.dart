@@ -12,11 +12,6 @@ import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
 import '../../../../core/services/voucher_export_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:developer' as developer;
-import '../widgets/bottom_sheet_dropdown.dart';
-import '../widgets/inline_selector.dart';
-import '../widgets/fragment_gemstone_selector.dart';
-import '../widgets/fragment_item_selector.dart';
 
 class SalesPage extends StatefulWidget {
   const SalesPage({Key? key}) : super(key: key);
@@ -45,7 +40,7 @@ class _SalesPageState extends State<SalesPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _SaleForm(existing: existing, hiveKey: key, parentContext: context),
+      builder: (_) => _SaleForm(existing: existing, hiveKey: key),
     );
   }
 
@@ -382,8 +377,7 @@ class _SalesPageState extends State<SalesPage> {
                                       )),
                                   Text(
                                       'အရေအတွက်: ${s.quantity}'
-                                      '${s.weightCarat > 0 ? ' • ${s.weightCarat} ${_saleUnit(s)}' : ''}'
-                                      '${s.isFragmentSource && s.fragmentWeight != null ? ' • ${s.fragmentWeight!.toStringAsFixed(2)} ${s.fragmentWeightUnit ?? "kg"}' : ''}',
+                                      '${s.weightCarat > 0 ? ' • ${s.weightCarat} ${_saleUnit(s)}' : ''}',
                                       style:
                                           TextStyle(color: Colors.grey[400])),
                                   Text(
@@ -581,11 +575,6 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   String _saleUnit(Sale s) {
-    // Use Sale's weightUnit if available (whole-stone sales with selected unit)
-    if (s.weightUnit != null && s.weightUnit!.isNotEmpty) {
-      return LocalDb.unitLabel(s.weightUnit!);
-    }
-    // Fallback to gemstone's weight unit
     if (s.gemstoneId.isNotEmpty) {
       final g = LocalDb.gemstoneById(s.gemstoneId);
       if (g != null) return LocalDb.unitLabel(g.weightUnit);
@@ -746,9 +735,7 @@ class _SaleItem {
   String remark;
   String? fragmentName; // Fragment name if from breakdown_item source
   bool isFragmentSource; // True if this item is from fragment source
-  double? weight; // Weight in kg for fragment items
-  String? weightUnit; // Weight unit for fragment items (ပိသာ|ကျပ်သား|ကာရက်|kg|g|lb|oz)
-  List<String> photoPaths; // Photo attachment paths for fragment items (Step 6C-1)
+  double commission; // Commission fee for this item
 
   _SaleItem({
     required this.id,
@@ -759,9 +746,7 @@ class _SaleItem {
     this.remark = '',
     this.fragmentName,
     this.isFragmentSource = false,
-    this.weight,
-    this.weightUnit,
-    this.photoPaths = const [],
+    this.commission = 0,
   });
 
   double get totalAmount => quantity * unitPrice;
@@ -770,8 +755,7 @@ class _SaleItem {
 class _SaleForm extends StatefulWidget {
   final Sale? existing;
   final dynamic hiveKey;
-  final BuildContext? parentContext;
-  const _SaleForm({this.existing, this.hiveKey, this.parentContext});
+  const _SaleForm({this.existing, this.hiveKey});
 
   @override
   State<_SaleForm> createState() => _SaleFormState();
@@ -792,15 +776,9 @@ class _SaleFormState extends State<_SaleForm> {
   late DateTime _saleDate;
   late List<String> _photoPaths;
   final _money = NumberFormat('#,##0', 'en_US');
-  
-  // Parent context for SnackBar visibility
-  late BuildContext _parentContext;
 
   String? _selectedGemId; // null => manual entry
   bool _autoDeduct = true;
-  
-  // Debug state for button tap verification
-  String _saveDebugStatus = '';
   
   // Sale source selector (Step 5B)
   String _saleSource = 'whole_stone'; // 'whole_stone' or 'breakdown_item'
@@ -808,16 +786,11 @@ class _SaleFormState extends State<_SaleForm> {
   String? _selectedFragmentName; // Selected fragment name from dropdown (Step 5C-3)
   late final TextEditingController _fragmentQuantity; // Fragment quantity input (Step 5C-4)
   String? _fragmentQuantityError; // Fragment quantity validation error (Step 5C-4)
-  late final TextEditingController _fragmentWeight; // Fragment weight input in kg (Step 6B-1)
-  String? _fragmentWeightError; // Fragment weight validation error (Step 6B-1)
-  String _fragmentWeightUnit = 'kg'; // Fragment weight unit (Step 6B-2)
-  String _weightUnit = 'kg'; // Whole-stone weight unit (Step 6T)
   late final TextEditingController _fragmentUnitPrice; // Fragment unit price input (Step 5D-2)
-  List<String> _fragmentPhotoPaths = []; // Fragment photo attachment paths (Step 6C-2)
+  late final TextEditingController _fragmentCommission; // Fragment commission input (Step 1 UI)
   
   // Multi-item invoice support
   late List<_SaleItem> _items;
-  late List<_SaleItem> _fragmentItems; // Separate temporary list for fragment sales (Step 6G)
   bool _isMultiItemMode = false;
 
   // Preview state (in-memory only, never persisted to Hive)
@@ -946,8 +919,8 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
     double price = double.tryParse(_amount.text) ?? 0;
-    if (price <= 0) {
-      _showError('Price must be greater than 0');
+    if (price < 0) {
+      _showError('Price must be 0 or greater');
       return;
     }
 
@@ -968,8 +941,6 @@ class _SaleFormState extends State<_SaleForm> {
       quantity: qty.toInt(),
       unitPrice: price,
       remark: _note.text,
-      weight: double.tryParse(_weight.text.trim()),
-      weightUnit: _weightUnit,
     );
 
     // Add to list
@@ -991,7 +962,6 @@ class _SaleFormState extends State<_SaleForm> {
       _amount.clear();
       _note.clear();
       _weight.clear();
-      _weightUnit = 'kg';
       _cost.clear();
       _commission.clear();
     });
@@ -1007,80 +977,6 @@ class _SaleFormState extends State<_SaleForm> {
     _showSuccess('Item removed');
   }
 
-  // Fragment temporary list handlers (Step 6G-UI)
-  void _editFragmentItemFromList(int index) {
-    final item = _fragmentItems[index];
-    setState(() {
-      _selectedFragmentGemstoneId = item.gemstoneId;
-      _selectedFragmentName = item.fragmentName;
-      _fragmentQuantity.text = item.quantity.toString();
-      _fragmentWeight.text = item.weight?.toString() ?? '';
-      _fragmentWeightUnit = item.weightUnit ?? 'kg';
-      _fragmentUnitPrice.text = item.unitPrice.toString();
-      _photoPaths = item.photoPaths ?? [];
-      _fragmentItems.removeAt(index);
-    });
-    _recalculatePreview();
-    _showSuccess('Fragment item restored for editing');
-  }
-
-  void _removeFragmentItemFromList(int index) {
-    setState(() {
-      _fragmentItems.removeAt(index);
-    });
-    _recalculatePreview();
-    _showSuccess('Fragment item removed');
-  }
-
-  // Transfer fragment items to main list (Step 6K)
-  void _transferFragmentItemsToMainList() {
-    developer.log('[Fragment] _transferFragmentItemsToMainList called');
-    developer.log('[Fragment] _fragmentItems.length: ${_fragmentItems.length}');
-    developer.log('[Fragment] _items.length before transfer: ${_items.length}');
-    
-    if (_fragmentItems.isEmpty) {
-      developer.log('[Fragment] ERROR: _fragmentItems is empty, cannot transfer');
-      _showError('No fragment items to transfer');
-      return;
-    }
-
-    setState(() {
-      developer.log('[Fragment] Transferring ${_fragmentItems.length} items to main list');
-      
-      // Move all fragment items to main temporary list
-      _items.addAll(_fragmentItems);
-      _fragmentItems.clear();
-
-      developer.log('[Fragment] Transfer complete. _items.length after transfer: ${_items.length}');
-      developer.log('[Fragment] Switching to whole_stone mode');
-      
-      // Switch back to whole-stone source
-      _saleSource = 'whole_stone';
-
-      // Clear fragment form fields
-      _selectedFragmentGemstoneId = null;
-      _selectedFragmentName = null;
-      _fragmentQuantity.clear();
-      _fragmentWeight.clear();
-      _fragmentWeightUnit = 'kg';
-      _fragmentUnitPrice.clear();
-      _photoPaths.clear();
-      
-      // Clear whole-stone form fields (Step 6M)
-      _selectedGemId = null;
-      _selectedCustomerId = null;
-      _qty.clear();
-      _weight.clear();
-      _weightUnit = 'kg';
-      _amount.clear();
-      _note.clear();
-    });
-
-    _recalculatePreview();
-    developer.log('[Fragment] Preview recalculated');
-    _showSuccess('Fragment items transferred to temporary list');
-  }
-
   void _editItemFromTemporaryList(int index) {
     final item = _items[index];
     
@@ -1092,11 +988,7 @@ class _SaleFormState extends State<_SaleForm> {
         _selectedFragmentGemstoneId = item.gemstoneId;
         _selectedFragmentName = item.fragmentName;
         _fragmentQuantity.text = item.quantity.toString();
-        if (item.weight != null) {
-          _fragmentWeight.text = item.weight.toString();
-        }
         _fragmentUnitPrice.text = item.unitPrice.toString();
-        _fragmentPhotoPaths = List.from(item.photoPaths);
       } else {
         // Whole-stone item: restore whole-stone fields
         _saleSource = 'whole_stone';
@@ -1105,10 +997,6 @@ class _SaleFormState extends State<_SaleForm> {
         _qty.text = item.quantity.toString();
         _amount.text = item.unitPrice.toString();
         _note.text = item.remark;
-        if (item.weight != null) {
-          _weight.text = item.weight.toString();
-        }
-        _weightUnit = item.weightUnit ?? 'kg';
       }
     });
     // Remove from temporary list
@@ -1120,33 +1008,20 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   void _showError(String msg) {
-    // Try to use current context first, fall back to parent context
-    final messenger = ScaffoldMessenger.maybeOf(context) ?? ScaffoldMessenger.maybeOf(_parentContext);
-    if (messenger != null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: AppTheme.errorColor),
-      );
-    } else {
-      developer.log('[ERROR] ScaffoldMessenger not available: $msg');
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppTheme.errorColor),
+    );
   }
 
   void _showSuccess(String msg) {
-    // Try to use current context first, fall back to parent context
-    final messenger = ScaffoldMessenger.maybeOf(context) ?? ScaffoldMessenger.maybeOf(_parentContext);
-    if (messenger != null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: AppTheme.successColor),
-      );
-    } else {
-      developer.log('[SUCCESS] ScaffoldMessenger not available: $msg');
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppTheme.successColor),
+    );
   }
 
   @override
   void initState() {
     super.initState();
-    _parentContext = widget.parentContext ?? context;
     final e = widget.existing;
     _photoPaths = List.from(e?.photoPaths ?? []);
     _selectedCustomerId = e?.customerId;
@@ -1163,14 +1038,12 @@ class _SaleFormState extends State<_SaleForm> {
     _commission = TextEditingController(
         text: e != null && e.commissionFee > 0 ? _trim(e.commissionFee) : '');
     _fragmentQuantity = TextEditingController();
-    _fragmentWeight = TextEditingController();
     _fragmentUnitPrice = TextEditingController();
+    _fragmentCommission = TextEditingController(text: '0');
     _payment = e?.paymentMethod ?? 'cash';
     _saleDate = e != null
         ? DateTime.fromMillisecondsSinceEpoch(e.saleDate)
         : DateTime.now();
-    _weightUnit = e?.weightUnit ?? 'kg';
-    _fragmentWeightUnit = e?.fragmentWeightUnit ?? 'kg';
 
     // Preselect gemstone if the sale was linked to one and it still exists.
     if (e != null && e.gemstoneId.isNotEmpty &&
@@ -1187,13 +1060,8 @@ class _SaleFormState extends State<_SaleForm> {
         quantity: e?.quantity ?? 1,
         unitPrice: e?.amount ?? 0,
         remark: e?.note ?? '',
-        weight: e?.weightCarat,
-        weightUnit: _weightUnit,
       ),
     ];
-    
-    // Initialize fragment temporary list (Step 6G)
-    _fragmentItems = [];
   }
 
   static String _trim(double v) =>
@@ -1204,7 +1072,7 @@ class _SaleFormState extends State<_SaleForm> {
     // Clear preview state (automatic rollback)
     _previewState.clear();
     
-    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission, _fragmentQuantity, _fragmentWeight, _fragmentUnitPrice]) {
+    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission, _fragmentQuantity, _fragmentUnitPrice, _fragmentCommission]) {
       c.dispose();
     }
     super.dispose();
@@ -1422,129 +1290,52 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   Future<void> _save() async {
-    developer.log('ENTERED_SAVE - _save() method called');
-    developer.log('[Sale] _save() called - Final save button tapped');
-    developer.log('[Sale] _items.length: ${_items.length}');
-    developer.log('[Sale] _fragmentItems.length: ${_fragmentItems.length}');
-    
-    // Check if temporary sale list is empty
-    if (_items.isEmpty && _fragmentItems.isEmpty) {
-      developer.log('[Sale] No items to save - both lists are empty');
-      _toast('ရောင်းချမည့်ပစ္စည်း မရှိသေးပါ');
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    // PHASE A: MERGE TEMPORARY LISTS (Step 6G)
-    // Merge fragment items into main items list before processing
-    try {
-      setState(() => _saveDebugStatus = 'PHASE_A_START');
-      developer.log('[PHASE_A_START] Merging fragment items into main list');
-      _items.addAll(_fragmentItems);
-      setState(() => _saveDebugStatus = 'PHASE_A_SUCCESS');
-      developer.log('[PHASE_A_SUCCESS] After merge: _items.length = ${_items.length}');
-    } catch (e) {
-      developer.log('[PHASE_A_FAILED] Exception: $e');
-      _toast('Phase A Error: $e');
-      return;
-    }
-
-    // PHASE B: VALIDATE ALL ITEMS BEFORE SAVING ANY
-    try {
-      setState(() => _saveDebugStatus = 'PHASE_B_START');
-      developer.log('[PHASE_B_START] Starting validation of ${_items.length} items');
-      for (int i = 0; i < _items.length; i++) {
+    // PHASE 1: VALIDATE ALL ITEMS BEFORE SAVING ANY
+    for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
-      developer.log('[PHASE_B_ITEM_$i] gemstoneId=${item.gemstoneId}, gemstoneName=${item.gemstoneName}, qty=${item.quantity}, price=${item.unitPrice}, isFragment=${item.isFragmentSource}');
       
-      // Check gemstoneName not blank (required for all items)
-      if (item.gemstoneName.isEmpty) {
-        developer.log('[Sale] Validation failed at item $i: gemstoneName is blank');
-        setState(() => _saveDebugStatus = 'PHASE_B_FAILED: EMPTY_NAME item $i');
-        _showError('ပစ္စည်း $i: ကျောက်မျက်အမည် မည်သည့်မျှ မဖြည့်စွက်ရသေးပါ');
+      // Check gemstone selected
+      if (item.gemstoneId == null || item.gemstoneId!.isEmpty) {
+        _toast('အရည်အသွေး $i: ကျောက်မျက်ရွေးချယ်ပါ');
         return;
-      }
-      
-      // Try to resolve gemstoneId from name if not set
-      String? resolvedGemstoneId = item.gemstoneId;
-      if ((resolvedGemstoneId == null || resolvedGemstoneId.isEmpty) && item.gemstoneName.isNotEmpty) {
-        // Try to find gemstone by name
-        final allGems = LocalDb.gemstones().values.toList();
-        final matchedGem = allGems.firstWhereOrNull((g) => g.name == item.gemstoneName);
-        if (matchedGem != null) {
-          resolvedGemstoneId = matchedGem.id;
-          item.gemstoneId = resolvedGemstoneId; // Assign back to item
-          developer.log('[Sale] Resolved gemstoneId from name: $resolvedGemstoneId');
-        }
       }
       
       // Check quantity > 0
       if (item.quantity <= 0) {
-        developer.log('[Sale] Validation failed at item $i: quantity <= 0 (qty=${item.quantity})');
-        setState(() => _saveDebugStatus = 'PHASE_B_FAILED: QTY_ZERO item $i');
-        _showError('ပစ္စည်း $i: အရေအတွက် > 0 ဖြစ်ရမည်');
+        _toast('အရည်အသွေး $i: အရေအတွက် > 0 ဖြစ်ရမည်');
         return;
       }
       
-      // Check unit price > 0
-      if (item.unitPrice <= 0) {
-        developer.log('[Sale] Validation failed at item $i: unitPrice <= 0 (price=${item.unitPrice})');
-        setState(() => _saveDebugStatus = 'PHASE_B_FAILED: PRICE_ZERO item $i');
-        _showError('ပစ္စည်း $i: ရောင်းရငွေ > 0 ဖြစ်ရမည်');
+      // Check unit price >= 0
+      if (item.unitPrice < 0) {
+        _toast('အရည်အသွေး $i: ယူနစ်ဈေးနှုန်း >= 0 ဖြစ်ရမည်');
         return;
       }
       
-      // If gemstoneId is available, validate it exists
-      if (resolvedGemstoneId != null && resolvedGemstoneId.isNotEmpty) {
-        final gemstone = LocalDb.gemstoneById(resolvedGemstoneId);
-        if (gemstone == null) {
-          developer.log('[Sale] Validation failed at item $i: gemstone not found (id=$resolvedGemstoneId)');
-          setState(() => _saveDebugStatus = 'PHASE_B_FAILED: GEM_NOT_FOUND item $i');
-          _showError('ပစ္စည်း $i: ကျောက်မျက် ID မရှိပါ — ထည့်မည် logic ကို ပြင်ရန်လိုအပ်သည်');
+      // Check gemstone exists
+      final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
+      if (gemstone == null) {
+        _toast('အရည်အသွေး $i: ကျောက်မျက်မတွေ့ရှိ');
+        return;
+      }
+      
+      // Check inventory if auto-deduct enabled
+      if (_autoDeduct) {
+        final remaining = LocalDb.gemstoneRemainingQuantity(gemstone);
+        if (remaining <= 0) {
+          _toast('အရည်အသွေး $i: အရောင်းအဆုံးဖြစ်နေ');
           return;
         }
-        
-        // Inventory validation deferred to PHASE F (actual deduction phase)
-        // Checking inventory here causes false OVER_STOCK errors when multiple items
-        // are being saved in one transaction, because gemstoneSoldQuantity() counts
-        // already-persisted sales, not items in current _items list
-        developer.log('[Sale] Item $i gemstone found. Inventory check deferred to PHASE F');
-        
-        // Sanity check: qty cannot exceed available quantity
-        if (_autoDeduct) {
-          int maxQty = gemstone.quantity;
-          
-          // For fragment items, check against fragment's remaining quantity
-          if (item.isFragmentSource && item.fragmentName != null && item.fragmentName!.isNotEmpty) {
-            if (gemstone.breakdownItems != null) {
-              final fragmentData = gemstone.breakdownItems![item.fragmentName!] as Map<String, dynamic>?;
-              if (fragmentData != null) {
-                maxQty = (fragmentData['quantity'] as num?)?.toInt() ?? 0;
-                developer.log('[Sale] Item $i is fragment. Fragment qty: $maxQty');
-              }
-            }
-          }
-          
-          if (item.quantity > maxQty) {
-            developer.log('[Sale] Validation failed at item $i: qty ${item.quantity} > max available $maxQty');
-            setState(() => _saveDebugStatus = 'PHASE_B_FAILED: QTY_EXCEEDS_TOTAL item $i');
-            _showError('ပစ္စည်း $i: အရေအတွက် စုစုပေါင်း ပစ္စည်းအရေအတွက်ထက် ပိုများသည်');
-            return;
-          }
+        if (item.quantity > remaining) {
+          _toast('အရည်အသွေး $i: Stock မလောက်ပါ — ကျန် $remaining ခုသာ ရှိသည်');
+          return;
         }
-      } else {
-        // Manual entry without gemstoneId - allow it for now
-        developer.log('[Sale] Item $i is manual entry (no gemstoneId), allowing save');
       }
-      }
-      developer.log('[PHASE_B_SUCCESS] All validations passed');
-    } catch (e) {
-      developer.log('[PHASE_B_FAILED] Exception: $e');
-      setState(() => _saveDebugStatus = 'PHASE_B_FAILED: EXCEPTION');
-      _showError('Validation Error: $e');
-      return;
     }
 
-    // PHASE C: GENERATE INVOICE NUMBER
+    // PHASE 2: GENERATE INVOICE NUMBER
     final now = DateTime.now();
     final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
     final box = LocalDb.sales();
@@ -1553,32 +1344,31 @@ class _SaleFormState extends State<_SaleForm> {
         .length;
     final invoiceNum = 'INV-$dateStr-${(existingInvoices + 1).toString().padLeft(3, '0')}';
 
-    // PHASE C-D-E-F-G: SAVE LOOP - Save each item as separate Sale record
+    // PHASE 3: SAVE LOOP - Save each item as separate Sale record
     // Use Preview State values (Step 4D: Commit Preview to Database)
     final Set<String> gemstonesUpdated = {};
     final sellCommission = double.tryParse(_commission.text.trim()) ?? 0;
     final perUnitCost = double.tryParse(_cost.text.trim()) ?? 0;
     
     try {
-      setState(() => _saveDebugStatus = 'PHASE_C_START');
-      developer.log('[PHASE_C_START] Creating and saving Sale objects');
       for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
       final qty = item.quantity;
       final unitPrice = item.unitPrice;
       final amount = qty * unitPrice;
-      final netSale = amount - sellCommission;
+      // Use item-specific commission for fragments, otherwise use form commission
+      final itemCommission = item.isFragmentSource ? item.commission : sellCommission;
+      final netSale = amount - itemCommission;
       
       // Calculate cost
       double cost;
-      if (item.gemstoneId != null && item.gemstoneId!.isNotEmpty) {
+      if (item.gemstoneId!.isNotEmpty) {
         cost = perUnitCost * qty;
       } else {
         cost = perUnitCost;
       }
       
-      // PHASE C: Create Sale record
-      developer.log('[PHASE_C_ITEM_${i}_START] Creating Sale object for item $i');
+      // Create Sale record
       final newSale = Sale(
         id: LocalDb.genId(),
         gemstoneId: item.gemstoneId ?? '',
@@ -1587,9 +1377,9 @@ class _SaleFormState extends State<_SaleForm> {
         customerName: _customer.text.trim(),
         amount: amount,
         costPrice: cost,
-        commissionFee: sellCommission,
+        commissionFee: itemCommission,
         quantity: qty,
-        weightCarat: item.weight ?? 0,
+        weightCarat: 0,
         paymentMethod: _payment,
         note: item.remark,
         saleDate: _saleDate.millisecondsSinceEpoch,
@@ -1598,50 +1388,22 @@ class _SaleFormState extends State<_SaleForm> {
         profitGenerated: 0,
         remainingCostAfterSale: 0,
         accumulatedProfit: 0,
-        photoPaths: i == 0 ? _photoPaths : (item.isFragmentSource ? item.photoPaths : []),
+        photoPaths: i == 0 ? _photoPaths : [],
         isDeleted: false,
         deletedAt: null,
         deletedBy: '',
         deleteReason: '',
         invoiceNumber: invoiceNum,
-        fragmentName: item.fragmentName,
-        isFragmentSource: item.isFragmentSource,
-        fragmentWeight: item.weight,
-        fragmentWeightUnit: item.weightUnit,
-        weightUnit: item.isFragmentSource ? null : item.weightUnit,
       );
-      developer.log('[PHASE_C_ITEM_${i}_SUCCESS] Sale object created: ${newSale.id}');
       
-      // PHASE D: Save to Hive
-      setState(() => _saveDebugStatus = 'PHASE_D_$i');
-      developer.log('[PHASE_D_ITEM_${i}_START] Saving to Hive box');
-      try {
-        await box.add(newSale);
-        developer.log('[PHASE_D_ITEM_${i}_SUCCESS] Saved to Hive');
-      } catch (e, st) {
-        developer.log('[PHASE_D_FAILED] BLOCKED AT: box.add(newSale)');
-        developer.log('[PHASE_D_FAILED] Error: $e');
-        developer.log('[PHASE_D_FAILED] Stack: $st');
-        rethrow;
-      }
+      // Save to Hive
+      await box.add(newSale);
       
-      // PHASE E: Update customer ledger
-      setState(() => _saveDebugStatus = 'PHASE_E_$i');
-      developer.log('[PHASE_E_ITEM_${i}_START] Updating customer ledger');
-      try {
-        await LocalDb.applySaleCustomerLedger(newSale);
-        developer.log('[PHASE_E_ITEM_${i}_SUCCESS] Customer ledger updated');
-      } catch (e, st) {
-        developer.log('[PHASE_E_FAILED] BLOCKED AT: applySaleCustomerLedger');
-        developer.log('[PHASE_E_FAILED] Error: $e');
-        developer.log('[PHASE_E_FAILED] Stack: $st');
-        rethrow;
-      }
+      // Update customer ledger
+      await LocalDb.applySaleCustomerLedger(newSale);
       
-      // PHASE F: Update gemstone cost recovery using Preview State values
-      setState(() => _saveDebugStatus = 'PHASE_F_$i');
-      developer.log('[PHASE_F_ITEM_${i}_START] Updating gemstone inventory');
-      if (item.gemstoneId != null && item.gemstoneId!.isNotEmpty) {
+      // Update gemstone cost recovery using Preview State values
+      if (item.gemstoneId!.isNotEmpty) {
         final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
         if (gemstone != null) {
           // Use preview state values instead of recalculating
@@ -1660,126 +1422,56 @@ class _SaleFormState extends State<_SaleForm> {
           // Step 5E-2: Deduct from breakdownItems if this is a fragment sale
           if (item.isFragmentSource && item.fragmentName != null && item.fragmentName!.isNotEmpty) {
             if (gemstone.breakdownItems != null) {
-              final fragmentName = item.fragmentName!;
-              final itemData = gemstone.breakdownItems![fragmentName];
-              if (itemData != null) {
-                final itemMap = itemData as Map<String, dynamic>;
-                final currentQty = (itemMap['quantity'] as num?)?.toInt() ?? 0;
-                if (currentQty >= qty) {
-                  gemstone.breakdownItems![fragmentName] = {
-                    'quantity': currentQty - qty,
-                    'weight': itemMap['weight'],
-                    'weightUnit': itemMap['weightUnit']
-                  };
-                  developer.log('[PHASE_F_FRAGMENT] Deducted $qty from fragment $fragmentName. New qty: ${currentQty - qty}');
-                } else {
-                  developer.log('[PHASE_F_FRAGMENT] WARNING: Fragment qty $currentQty < selling qty $qty');
-                }
-              } else {
-                developer.log('[PHASE_F_FRAGMENT] WARNING: Fragment data not found for: $fragmentName');
+              final fragmentName = item.fragmentName!; // Extract non-null value
+              final currentQty = gemstone.breakdownItems![fragmentName] ?? 0;
+              if (currentQty >= qty) {
+                gemstone.breakdownItems![fragmentName] = currentQty - qty;
               }
             }
           }
           
-          try {
-            final gemId = item.gemstoneId;
-            if (gemId != null && gemId.isNotEmpty) {
-              final hiveKey = LocalDb.gemstoneKeyById(gemId);
-              if (hiveKey != null) {
-                await LocalDb.gemstones().put(hiveKey, gemstone);
-                gemstonesUpdated.add(gemId);
-              } else {
-                developer.log('[PHASE_F_ITEM_${i}_WARNING] Gemstone key not found for ID: $gemId');
-              }
-            }
-            developer.log('[PHASE_F_ITEM_${i}_SUCCESS] Gemstone inventory updated');
-          } catch (e, st) {
-            developer.log('[PHASE_F_FAILED] BLOCKED AT: gemstones().put()');
-            developer.log('[PHASE_F_FAILED] Error: $e');
-            developer.log('[PHASE_F_FAILED] Stack: $st');
-            rethrow;
-          }
+          await LocalDb.gemstones().put(item.gemstoneId!, gemstone);
+          gemstonesUpdated.add(item.gemstoneId!);
         }
-      }
+        }
       }
 
-      // PHASE G: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
-      setState(() => _saveDebugStatus = 'PHASE_G_START');
-      developer.log('[PHASE_G_START] Updating product ledger for ${gemstonesUpdated.length} gemstones');
-      try {
-        for (final gemId in gemstonesUpdated) {
-          setState(() => _saveDebugStatus = 'PHASE_G_$gemId');
-          developer.log('[PHASE_G_ITEM] Processing gemId: $gemId');
-          await LocalDb.updateGemstoneProductLedger(gemId);
-          developer.log('[PHASE_G_ITEM_SUCCESS] Completed for gemId: $gemId');
-        }
-        developer.log('[PHASE_G_SUCCESS] Product ledger updated');
-      } catch (e, st) {
-        developer.log('[PHASE_G_FAILED] BLOCKED AT: updateGemstoneProductLedger');
-        developer.log('[PHASE_G_FAILED] Error: $e');
-        developer.log('[PHASE_G_FAILED] Stack: $st');
-        rethrow;
+      // PHASE 4: POST-SAVE UPDATES - Recalculate product ledger for all changed gemstones
+      for (final gemId in gemstonesUpdated) {
+        await LocalDb.updateGemstoneProductLedger(gemId);
       }
       
-      setState(() => _saveDebugStatus = 'PHASE_H_START');
-      developer.log('[PHASE_H_START] Clearing preview state and form');
+      // PHASE 5: CLEAR PREVIEW STATE AND FORM
       _previewState.clear();
       _items.clear();
-      _fragmentItems.clear(); // Clear fragment temporary list after successful save
       _selectedGemId = null;
       _manualName.clear();
       _qty.clear();
       _amount.clear();
       _note.clear();
       _weight.clear();
-      _weightUnit = 'kg';
       _cost.clear();
       _commission.clear();
       _photoPaths.clear();
-      developer.log('[PHASE_H_SUCCESS] Preview state and form cleared');
       
       // Show success and close form
-      setState(() => _saveDebugStatus = 'PHASE_I_START');
-      developer.log('[PHASE_I_START] Closing sale form');
-      _toast('အရောင်းချပါပြီ အောင်ချမည်ပါပြီ');
-      if (mounted) {
-        developer.log('[PHASE_I_START] Navigating back to Sales History');
-        try {
-          setState(() => _saveDebugStatus = 'PHASE_I_POP');
-          Navigator.pop(context);
-          developer.log('[PHASE_I_SUCCESS] Navigation completed');
-          return;
-        } catch (e, st) {
-          developer.log('[PHASE_I_FAILED] BLOCKED AT: Navigator.pop()');
-          developer.log('[PHASE_I_FAILED] Error: $e');
-          developer.log('[PHASE_I_FAILED] Stack: $st');
-          rethrow;
-        }
-      }
+      _toast('Invoice $invoiceNum သိမ်းဆည်းပြီးပါပြီ');
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       // FAILURE: Keep preview state and temporary list for retry
-      developer.log('[SAVE_EXCEPTION] ERROR during save: $e');
-      developer.log('[SAVE_EXCEPTION] Stack trace: ${StackTrace.current}');
-      developer.log('[SAVE_EXCEPTION] Exception type: ${e.runtimeType}');
-      _toast('Error: $e');
+      _toast('အမှားအယွင်း: $e');
       // Do NOT clear preview state or items - allow user to retry
     }
   }
 
   void _toast(String msg) {
-    // Try to use current context first, fall back to parent context
-    final messenger = ScaffoldMessenger.maybeOf(context) ?? ScaffoldMessenger.maybeOf(_parentContext);
-    if (messenger != null) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: AppTheme.errorColor,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } else {
-      developer.log('[TOAST] ScaffoldMessenger not available: $msg');
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: AppTheme.errorColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -1940,262 +1632,20 @@ class _SaleFormState extends State<_SaleForm> {
                 // Fragment quantity field (Step 5C-4)
                 if (_saleSource == 'breakdown_item' && _selectedFragmentName != null) ...
                   [
-                    _buildFragmentDetailsDisplay(gems),
-                    _field(_fragmentQuantity, 'ရောင်းမည့် အရေအတွက်', number: true),
-                    _field(_fragmentWeight, 'ရောင်းမည့် အလေးချိန်', number: true),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: DropdownButtonFormField<String>(
-                        value: _fragmentWeightUnit,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'အလေးချိန် ယူနစ်',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(value: 'ပိသာ', child: Text('ပိသာ')),
-                          DropdownMenuItem(value: 'ကျပ်သား', child: Text('ကျပ်သား')),
-                          DropdownMenuItem(value: 'ကာရက်', child: Text('ကာရက်')),
-                          DropdownMenuItem(value: 'kg', child: Text('kg')),
-                          DropdownMenuItem(value: 'g', child: Text('g')),
-                          DropdownMenuItem(value: 'lb', child: Text('lb')),
-                          DropdownMenuItem(value: 'oz', child: Text('oz')),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _fragmentWeightUnit = value ?? 'kg';
-                          });
-                        },
-                      ),
-                    ),
+                    _buildFragmentQuantityField(gems),
                     _field(_fragmentUnitPrice, 'ရောင်းဈေး (ကျပ်)', number: true),
-                    _buildFragmentPhotoAttachmentSection(),
+                    _field(_fragmentCommission, 'အရောင်းပွဲခ (ကျပ်)', number: true),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: ElevatedButton(
-                          onPressed: _addFragmentItemMinimal,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: const Text(
-                            'ထည့်မည်',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
+                      child:                 SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saleSource == 'breakdown_item' ? _addFragmentItemMinimal : _addItemToTemporaryList,
+                    child: const Text('ထည့်မည်'),
+                  ),
+                ),
                     ),
                   ],
-
-                // Fragment temporary list (Step 6G-UI: Display only in Fragment Dialog)
-                if (_saleSource == 'breakdown_item') ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceDark.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppTheme.primaryAccent.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ထည့်ထားသော ကျောက်အစိတ်စိတ်ပိုင်းများ',
-                          style: const TextStyle(
-                            color: AppTheme.primaryAccent,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        if (_fragmentItems.isEmpty)
-                          Center(
-                            child: Text(
-                              '(အစိတ်စိတ်ပိုင်းများ ထည့်ထားမရှိသေးပါ)',
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 12,
-                              ),
-                            ),
-                          )
-                        else
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _fragmentItems.length,
-                            itemBuilder: (ctx, idx) {
-                              final item = _fragmentItems[idx];
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.surfaceDark,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: AppTheme.primaryAccent.withOpacity(0.2),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Header: Title + Badge + Menu
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                item.gemstoneName,
-                                                style: const TextStyle(
-                                                  color: AppTheme.primaryAccent,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: AppTheme.primaryAccent.withOpacity(0.2),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                ),
-                                                child: const Text(
-                                                  'အစိတ်စိတ်ပိုင်း',
-                                                  style: TextStyle(
-                                                    color: AppTheme.primaryAccent,
-                                                    fontSize: 10,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        PopupMenuButton<String>(
-                                          onSelected: (value) {
-                                            if (value == 'edit') {
-                                              _editFragmentItemFromList(idx);
-                                            } else if (value == 'delete') {
-                                              _removeFragmentItemFromList(idx);
-                                            }
-                                          },
-                                          itemBuilder: (BuildContext context) => [
-                                            const PopupMenuItem<String>(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('ပြုပြင်ရန်'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem<String>(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.delete, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('ဖျက်ရန်'),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    // Row 1: Quantity + Weight
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          'အရေအတွက်: ${item.quantity}',
-                                          style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                        ),
-                                        if (item.weight != null && item.weight! > 0)
-                                          Text(
-                                            'အလေးချိန်: ${item.weight} ${item.weightUnit ?? "kg"}',
-                                            style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    // Row 2: Unit Price + Total
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          'ယူနစ်ဈေး: ${item.unitPrice}',
-                                          style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                        ),
-                                        Text(
-                                          'စုစုပေါင်း: ${item.totalAmount}',
-                                          style: const TextStyle(color: AppTheme.primaryAccent, fontWeight: FontWeight.bold, fontSize: 12),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    // Row 3: Photos
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          item.photoPaths != null && item.photoPaths!.isNotEmpty
-                                              ? '📷 ${item.photoPaths!.length} ပုံ'
-                                              : '📷 --',
-                                          style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                        ),
-                                        if (item.remark != null && item.remark!.isNotEmpty)
-                                          Expanded(
-                                            child: Text(
-                                              'မှတ်ချက်: ${item.remark}',
-                                              style: const TextStyle(color: Colors.white70, fontSize: 11),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Save button for Fragment Sales (Step 6J)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _fragmentItems.isNotEmpty ? _transferFragmentItemsToMainList : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryAccent,
-                        disabledBackgroundColor: Colors.grey[700],
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text(
-                        'သိမ်းမည်',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
 
                 // Show entire form only for whole stone source
                 if (_saleSource == 'whole_stone') ...[                
@@ -2212,42 +1662,12 @@ class _SaleFormState extends State<_SaleForm> {
                       child: _field(_qty, 'အရေအတွက်',
                           number: true, required: true)),
                 ]),
-                // Weight and unit fields
-                Row(children: [
-                  Expanded(
-                    flex: 2,
-                    child: _field(
-                        _weight,
-                        'အလေးချိန်ဖြည့်ရန်',
-                        number: true),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: DropdownButtonFormField<String>(
-                        value: _weightUnit,
-                        dropdownColor: AppTheme.surfaceLight,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          labelText: 'ယူနစ်',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        ),
-                        items: LocalDb.weightUnits.keys.map((unit) =>
-                          DropdownMenuItem(
-                            value: unit,
-                            child: Text(LocalDb.weightUnits[unit] ?? unit),
-                          ),
-                        ).toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _weightUnit = value);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ]),
+                _field(
+                    _weight,
+                    selectedGem != null
+                        ? 'အလေးချိန် (${LocalDb.unitLabel(selectedGem.weightUnit)}) — မဖြည့်လည်းရ'
+                        : 'အလေးချိန် — မဖြည့်လည်းရ',
+                    number: true),
 
                 // Auto-deduct toggle (only meaningful when linked to inventory)
                 if (_selectedGemId != null)
@@ -2334,20 +1754,17 @@ class _SaleFormState extends State<_SaleForm> {
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  height: 60,
+                  height: 50,
                   child: ElevatedButton(
                     onPressed: _addItemToTemporaryList,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: const Text(
                       'ထည့်မည်',
-                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
                       ),
                     ),
                   ),
@@ -2395,7 +1812,7 @@ class _SaleFormState extends State<_SaleForm> {
                             final item = _items[idx];
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: AppTheme.surfaceDark,
                                 borderRadius: BorderRadius.circular(8),
@@ -2406,123 +1823,61 @@ class _SaleFormState extends State<_SaleForm> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Header: Title + Badge + Menu
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              item.gemstoneName,
-                                              style: const TextStyle(
-                                                color: AppTheme.primaryAccent,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: item.isFragmentSource ? AppTheme.primaryAccent.withOpacity(0.2) : Colors.grey[700],
-                                                borderRadius: BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                item.isFragmentSource ? 'အစိတ်စိတ်ပိုင်း' : 'အဝယ်စာရင်း',
-                                                style: TextStyle(
-                                                  color: item.isFragmentSource ? AppTheme.primaryAccent : Colors.grey[300],
-                                                  fontSize: 10,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      PopupMenuButton<String>(
-                                        onSelected: (value) {
-                                          if (value == 'edit') {
-                                            _editItemFromTemporaryList(idx);
-                                          } else if (value == 'delete') {
-                                            _removeItemFromTemporaryList(idx);
-                                          }
-                                        },
-                                        itemBuilder: (BuildContext context) => [
-                                          const PopupMenuItem<String>(
-                                            value: 'edit',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.edit, size: 18),
-                                                SizedBox(width: 8),
-                                                Text('ပြုပြင်ရန်'),
-                                              ],
-                                            ),
-                                          ),
-                                          PopupMenuItem<String>(
-                                            value: 'delete',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.delete, size: 18, color: AppTheme.errorColor),
-                                                SizedBox(width: 8),
-                                                Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                        child: Icon(Icons.more_vert, size: 20, color: AppTheme.primaryAccent),
-                                      ),
-                                    ],
+                                  // Item name
+                                  Text(
+                                    'ကျောက်မျက်အမည်: ${item.gemstoneName}',
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryAccent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  // Row 1: Quantity + Weight
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'အရေအတွက်: ${item.quantity}',
-                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
-                                      ),
-                                      if (item.isFragmentSource && item.weight != null)
-                                        Text(
-                                          'အလေးချိန်: ${item.weight!.toStringAsFixed(2)} ${item.weightUnit ?? "kg"}',
-                                          style: const TextStyle(color: Colors.white70, fontSize: 11),
-                                        ),
-                                    ],
+                                  const SizedBox(height: 8),
+                                  // Quantity
+                                  Text(
+                                    'အရေအတွက်: ${item.quantity}',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
-                                  // Row 2: Unit Price + Total Amount
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'ယူနစ်: ${NumberFormat('#,##0', 'en_US').format(item.unitPrice.toInt())} ကျပ်',
-                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
-                                      ),
-                                      Text(
-                                        'စုစုပေါင်း: ${NumberFormat('#,##0', 'en_US').format(item.totalAmount.toInt())} ကျပ်',
-                                        style: const TextStyle(color: AppTheme.primaryAccent, fontSize: 11, fontWeight: FontWeight.w500),
-                                      ),
-                                    ],
+                                  // Total amount
+                                  Text(
+                                    'ခန့်မှန်းရောင်းငွေ: ${NumberFormat('#,##0', 'en_US').format(item.totalAmount.toInt())} ကျပ်',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  // Row 3: Photos + Remark
+                                  if (item.remark.isNotEmpty) ...[const SizedBox(height: 4), Text(
+                                    'မှတ်ချက်: ${item.remark}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[500],
+                                    ),
+                                  )],
+                                  const SizedBox(height: 8),
+                                  // Action buttons (Edit and Delete)
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      Text(
-                                        item.photoPaths.isNotEmpty ? '📷 ${item.photoPaths.length} ပုံ' : '📷 --',
-                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
-                                      ),
-                                      if (item.remark.isNotEmpty)
-                                        Expanded(
-                                          child: Text(
-                                            'မှတ်ချက်: ${item.remark}',
-                                            style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-                                            overflow: TextOverflow.ellipsis,
-                                            textAlign: TextAlign.end,
-                                          ),
+                                      TextButton.icon(
+                                        onPressed: () => _editItemFromTemporaryList(idx),
+                                        icon: const Icon(Icons.edit, size: 16),
+                                        label: const Text('ပြုပြင်ရန်'),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: AppTheme.primaryAccent,
                                         ),
+                                      ),
+                                      TextButton.icon(
+                                        onPressed: () => _removeItemFromTemporaryList(idx),
+                                        icon: const Icon(Icons.close, size: 16),
+                                        label: const Text('ဖျက်ရန်'),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: AppTheme.errorColor,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -2601,44 +1956,6 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Debug status display
-                if (_saveDebugStatus.isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: _saveDebugStatus == 'BUTTON_TAPPED' ? Colors.yellow[700] : Colors.red[700],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'DEBUG: $_saveDebugStatus',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                // Main final save button (Step 6L)
-                if (_items.isNotEmpty)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _items.isNotEmpty ? () {
-                        developer.log('[SaleFinalButton] tapped - _items.length: ${_items.length}');
-                        setState(() {
-                          _saveDebugStatus = 'BUTTON_TAPPED';
-                        });
-                        _save();
-                      } : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryAccent,
-                        disabledBackgroundColor: Colors.grey[700],
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: Text(
-                        _saveDebugStatus == 'BUTTON_TAPPED' ? 'နှိပ်ပြီးပါပြီ' : 'ရောင်းချမည်',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
                 ], // End of if (_saleSource == 'whole_stone')
               ],
             ),
@@ -2648,57 +1965,213 @@ class _SaleFormState extends State<_SaleForm> {
     );
   }
 
-  /// Build compact dropdown for gemstone selection with breakdown items (Step 5C-1)
+  /// Build read-only list of purchases with breakdown items (Step 5C-1)
   Widget _buildFragmentPurchaseList(List<Gemstone> gems) {
-    return FragmentGemstoneSelector(
-      selectedGemstoneId: _selectedFragmentGemstoneId,
-      onChanged: (value) {
-        setState(() {
-          _selectedFragmentGemstoneId = value;
-          _selectedFragmentName = null; // Reset fragment name when gemstone changes
-          developer.log('[Fragment] Gemstone selected: $value');
-        });
-      },
+    final gemsWithBreakdown = gems.where((g) {
+      return g.breakdownItems != null && 
+             g.breakdownItems!.isNotEmpty &&
+             g.breakdownItems!.values.any((qty) => qty > 0);
+    }).toList();
+
+    if (gemsWithBreakdown.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceDark.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppTheme.primaryAccent.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: const Center(
+            child: Text(
+              'အစိတ်စိတ်ပိုင်း ရွေးချယ်မှု မတ်ရိတ်မောရေ',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: Text(
+              'အစိတ်စိတ်ပိုင်း ရွေးချယ်မှု',
+              style: TextStyle(
+                color: AppTheme.primaryAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ...gemsWithBreakdown.map((gem) {
+            final totalBreakdownQty = gem.breakdownItems!.values
+                .where((qty) => qty > 0)
+                .fold<int>(0, (sum, qty) => sum + qty);
+            final breakdownItemsList = gem.breakdownItems!.entries
+                .where((e) => e.value > 0)
+                .toList();
+
+            final isSelected = _selectedFragmentGemstoneId == gem.id;
+            
+            return InkWell(
+              onTap: () {
+                setState(() {
+                  _selectedFragmentGemstoneId = gem.id;
+                });
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceDark,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? AppTheme.primaryAccent : AppTheme.primaryAccent.withOpacity(0.2),
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    gem.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'စူစူပီင်း အစိတ်အရေအတွက်: $totalBreakdownQty',
+                    style: TextStyle(
+                      color: Colors.grey[300],
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...breakdownItemsList.map((entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        const Text(
+                          '• ',
+                          style: TextStyle(
+                            color: AppTheme.primaryAccent,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '${entry.key} - ${entry.value}',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                ],
+              ),
+              ),
+            );
+          }).toList(),
+        ],
+      ),
     );
   }
 
   Widget _buildFragmentDropdown(List<Gemstone> gems) {
-    return FragmentItemSelector(
-      selectedGemstoneId: _selectedFragmentGemstoneId,
-      selectedFragmentName: _selectedFragmentName,
-      onChanged: (value) {
-        setState(() {
-          _selectedFragmentName = value;
-          developer.log('[Fragment] Item selected: $value');
-          
-          // Auto-populate form fields from selected fragment
-          if (value != null && _selectedFragmentGemstoneId != null) {
-            _populateFragmentFormFields(value);
-          }
-        });
-      },
+    // Find the selected purchase
+    final selectedPurchase = gems.firstWhereOrNull(
+      (g) => g.id == _selectedFragmentGemstoneId,
     );
-  }
-  
-  /// Auto-populate form fields when a fragment item is selected
-  void _populateFragmentFormFields(String fragmentName) {
-    final gem = LocalDb.gemstoneById(_selectedFragmentGemstoneId!);
-    if (gem == null || gem.breakdownItems == null) return;
-    
-    final itemData = gem.breakdownItems![fragmentName] as Map<String, dynamic>?;
-    if (itemData == null) return;
-    
-    // Extract values from the nested map (NEVER cast directly to int)
-    final quantity = (itemData['quantity'] as num?)?.toInt() ?? 0;
-    final weight = (itemData['weight'] as num?)?.toDouble();
-    final weightUnit = itemData['weightUnit'] as String? ?? 'kg';
-    
-    // Pre-fill the form with fragment details
-    _fragmentQuantity.text = quantity.toString();
-    _fragmentWeight.text = weight?.toString() ?? '';
-    _fragmentWeightUnit = weightUnit;
-    
-    developer.log('[Fragment] Form populated: qty=$quantity, weight=$weight, unit=$weightUnit');
+
+    if (selectedPurchase == null || selectedPurchase.breakdownItems == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Get available breakdown items (quantity > 0)
+    final availableItems = selectedPurchase.breakdownItems!.entries
+        .where((e) => e.value > 0)
+        .toList();
+
+    if (availableItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: Text(
+              'ရောင်းမည့် အစိတ်စိတ်ပိုင်း',
+              style: TextStyle(
+                color: AppTheme.primaryAccent,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceDark,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppTheme.primaryAccent.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: DropdownButton<String>(
+              value: _selectedFragmentName,
+              hint: const Text(
+                'အစိတ်စိတ်ပိုင်း ရွေးချယ်မည်',
+                style: TextStyle(color: Colors.white70),
+              ),
+              isExpanded: true,
+              dropdownColor: AppTheme.surfaceDark,
+              underline: const SizedBox.shrink(),
+              items: availableItems.map((entry) {
+                final displayText = '${entry.key} (${entry.value})';
+                return DropdownMenuItem<String>(
+                  value: entry.key,
+                  child: Text(
+                    displayText,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedFragmentName = value;
+                });
+              },
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFragmentQuantityField(List<Gemstone> gems) {
@@ -2712,10 +2185,7 @@ class _SaleFormState extends State<_SaleForm> {
     }
 
     // Get the selected fragment's quantity
-    final itemData = selectedPurchase.breakdownItems![_selectedFragmentName];
-    if (itemData == null) return const SizedBox.shrink();
-    final itemMap = itemData as Map<String, dynamic>;
-    final selectedFragmentQty = (itemMap['quantity'] as num?)?.toInt() ?? 0;
+    final selectedFragmentQty = selectedPurchase.breakdownItems![_selectedFragmentName] ?? 0;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -2749,59 +2219,6 @@ class _SaleFormState extends State<_SaleForm> {
               });
             },
           ),
-          const SizedBox(height: 12),
-          // Weight input field with unit dropdown (Step 6B-1 & 6B-2)
-          Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: TextFormField(
-                  controller: _fragmentWeight,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'အလေးချိန်',
-                    hintText: 'ဥပမာ - 2.35',
-                    errorText: _fragmentWeightError,
-                    errorStyle: const TextStyle(color: Colors.red),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _validateFragmentWeight();
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: DropdownButtonFormField<String>(
-                  value: _fragmentWeightUnit,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'ယူနစ်',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'ပိသာ', child: Text('ပိသာ')),
-                    DropdownMenuItem(value: 'ကျပ်သား', child: Text('ကျပ်သား')),
-                    DropdownMenuItem(value: 'ကာရက်', child: Text('ကာရက်')),
-                    DropdownMenuItem(value: 'kg', child: Text('kg')),
-                    DropdownMenuItem(value: 'g', child: Text('g')),
-                    DropdownMenuItem(value: 'lb', child: Text('lb')),
-                    DropdownMenuItem(value: 'oz', child: Text('oz')),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _fragmentWeightUnit = value ?? 'kg';
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -2830,39 +2247,7 @@ class _SaleFormState extends State<_SaleForm> {
     _fragmentQuantityError = null;
   }
 
-  void _validateFragmentWeight() {
-    final input = _fragmentWeight.text.trim();
-    
-    if (input.isEmpty) {
-      _fragmentWeightError = null;
-      return;
-    }
-
-    final weight = double.tryParse(input);
-    
-    if (weight == null || weight <= 0) {
-      _fragmentWeightError = 'အလေးချိန်သည် ၀ထက်ကြီးရမည်';
-      return;
-    }
-
-    _fragmentWeightError = null;
-  }
-
-  Widget _buildFragmentPhotoAttachmentSection() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: PhotoAttachmentWidget(
-        photoPaths: _fragmentPhotoPaths,
-        onPhotosChanged: (photos) {
-          setState(() => _fragmentPhotoPaths = photos);
-        },
-        recordType: 'sale',
-      ),
-    );
-  }
-
   void _addFragmentItemMinimal() {
-    developer.log('[Fragment] _addFragmentItemMinimal called');
     // Obtain the gemstone list (matching build method logic)
     final gems = LocalDb.gemstones().values.where((g) => g.quantity > 0).toList();
     
@@ -2873,7 +2258,6 @@ class _SaleFormState extends State<_SaleForm> {
 
     // Validation
     if (_selectedFragmentGemstoneId == null) {
-      developer.log('[Fragment] Validation failed: gemstone not selected');
       _toast('ကျောက်အစိတ်စုပေါင်းရွေးချယ်ပါ');
       return;
     }
@@ -2896,13 +2280,7 @@ class _SaleFormState extends State<_SaleForm> {
     }
 
     // Check quantity against available
-    final itemData = selectedPurchase?.breakdownItems?[_selectedFragmentName];
-    if (itemData == null) {
-      _toast('အစိတ်အပိုင်းအချက်အလက် မတွေ့ရှိ');
-      return;
-    }
-    final itemMap = itemData as Map<String, dynamic>;
-    final availableQty = (itemMap['quantity'] as num?)?.toInt() ?? 0;
+    final availableQty = selectedPurchase?.breakdownItems?[_selectedFragmentName] ?? 0;
     if (qty > availableQty) {
       _toast('လက်ကျန်အစိတ်အရေအတွက်ထက် မကျော်ရပါ');
       return;
@@ -2921,10 +2299,17 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
 
-    // All validations passed - add item to fragment temporary list (Step 6G)
-    developer.log('[Fragment] All validations passed. Adding to _fragmentItems. Current count: ${_fragmentItems.length}');
+    // Validate and parse commission
+    final commissionInput = _fragmentCommission.text.trim();
+    final commission = double.tryParse(commissionInput) ?? 0;
+    if (commission < 0) {
+      _toast('အရောင်းပွဲခသည် အနုတ်မဖြစ်ရပါ');
+      return;
+    }
+
+    // All validations passed - add item to temporary list
     setState(() {
-      _fragmentItems.add(
+      _items.add(
         _SaleItem(
           id: const Uuid().v4(),
           gemstoneId: _selectedFragmentGemstoneId,
@@ -2933,15 +2318,11 @@ class _SaleFormState extends State<_SaleForm> {
           unitPrice: unitPrice,
           remark: '',
           fragmentName: _selectedFragmentName,
-          weight: double.tryParse(_fragmentWeight.text.trim()),
           isFragmentSource: true,
-          weightUnit: _fragmentWeightUnit,
-          photoPaths: List.from(_fragmentPhotoPaths),
+          commission: commission,
         ),
       );
 
-      developer.log('[Fragment] Item added. New _fragmentItems.length: ${_fragmentItems.length}');
-      
       // Update preview state for fragment item (Step 5E-1)
       final netSale = qty * unitPrice;
       _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale, fragmentQtyDeducted: qty);
@@ -2950,10 +2331,8 @@ class _SaleFormState extends State<_SaleForm> {
       _selectedFragmentGemstoneId = null;
       _selectedFragmentName = null;
       _fragmentQuantity.clear();
-      _fragmentWeight.clear();
-      _fragmentWeightUnit = 'kg';
-      _fragmentPhotoPaths.clear();
       _fragmentUnitPrice.clear();
+      _fragmentCommission.text = '0';
       _fragmentQuantityError = null;
     });
 
@@ -3318,81 +2697,6 @@ class _SaleFormState extends State<_SaleForm> {
       ),
     );
   }
-
-  /// Display selected fragment details as read-only information
-  Widget _buildFragmentDetailsDisplay(List<Gemstone> gems) {
-    final selectedGemstone = gems.firstWhereOrNull(
-      (g) => g.id == _selectedFragmentGemstoneId,
-    );
-
-    if (selectedGemstone == null || selectedGemstone.breakdownItems == null) {
-      return const SizedBox.shrink();
-    }
-
-    final itemData = selectedGemstone.breakdownItems![_selectedFragmentName];
-    if (itemData == null) return const SizedBox.shrink();
-
-    final itemMap = itemData as Map<String, dynamic>;
-    final remainingQty = (itemMap['quantity'] as num?)?.toInt() ?? 0;
-    final remainingWeight = (itemMap['weight'] as num?)?.toDouble() ?? 0.0;
-    final weightUnit = itemMap['weightUnit'] as String? ?? 'kg';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceDark.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: AppTheme.primaryAccent.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Gemstone name
-            Text(
-              'ကျောက်အစိတ်စုပေါင်း: ${selectedGemstone.name}',
-              style: const TextStyle(
-                color: AppTheme.primaryAccent,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Fragment name
-            Text(
-              'အစိတ်စိတ်ပိုင်း: $_selectedFragmentName',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Remaining quantity
-            Text(
-              'လက်ကျန် အရေအတွက်: $remainingQty ခု',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 4),
-            // Remaining weight
-            Text(
-              'လက်ကျန် အလေးချိန်: ${remainingWeight.toStringAsFixed(2)} $weightUnit',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _BrokerSaleForm extends StatefulWidget {
@@ -3714,5 +3018,4 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
       ),
     );
   }
-
 }
