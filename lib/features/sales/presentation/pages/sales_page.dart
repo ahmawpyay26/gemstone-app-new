@@ -1772,6 +1772,9 @@ class _SaleFormState extends State<_SaleForm> {
                         ),
                         if (_photoPaths.isNotEmpty) ...[const SizedBox(height: 12), _buildFragmentGalleryPreview()],
                       ],
+                    // Fragment Sale Summary Panel
+                    if (_saleSource == 'breakdown_item' && _selectedFragmentName != null)
+                      _buildFragmentSalarySummary(gems),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child:                 SizedBox(
@@ -2460,6 +2463,203 @@ class _SaleFormState extends State<_SaleForm> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Build Fragment Sale Summary Panel with live updates
+  Widget _buildFragmentSalarySummary(List<Gemstone> gems) {
+    if (_selectedFragmentName == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Get selected purchase and fragment data
+    final selectedPurchase = gems.firstWhereOrNull(
+      (g) => g.id == _selectedFragmentGemstoneId,
+    );
+    if (selectedPurchase == null || selectedPurchase.breakdownItems == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Extract fragment data
+    final fragmentData = selectedPurchase.breakdownItems![_selectedFragmentName];
+    final remainingQtyBefore = (fragmentData is Map<String, dynamic>)
+        ? (fragmentData['quantity'] as num?)?.toInt() ?? 0
+        : (fragmentData is num ? (fragmentData as num).toInt() : 0);
+    final remainingWeightBefore = (fragmentData is Map<String, dynamic>)
+        ? (fragmentData['weight'] as num?)?.toDouble() ?? 0
+        : 0.0;
+    final weightUnit = (fragmentData is Map<String, dynamic>)
+        ? (fragmentData['weightUnit'] as String? ?? 'kg')
+        : 'kg';
+
+    // Get sale inputs
+    final saleQty = int.tryParse(_fragmentQuantity.text) ?? 0;
+    final saleWeight = double.tryParse(_fragmentWeight.text) ?? 0.0;
+    final saleAmount = double.tryParse(_fragmentUnitPrice.text) ?? 0.0;
+    final commission = double.tryParse(_fragmentCommission.text) ?? 0.0;
+
+    // Calculate remaining values
+    final remainingQtyAfter = remainingQtyBefore - saleQty;
+    final remainingWeightAfter = remainingWeightBefore - saleWeight;
+    final netSale = (saleAmount * saleQty) - commission;
+
+    // Check for invalid values
+    final isQtyInvalid = remainingQtyAfter < 0;
+    final isWeightInvalid = remainingWeightAfter < 0;
+    final hasError = isQtyInvalid || isWeightInvalid;
+
+    final m = NumberFormat('#,##0.00');
+    final mInt = NumberFormat('#,##0');
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: hasError ? AppTheme.errorColor.withOpacity(0.1) : AppTheme.primaryAccent.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: hasError ? AppTheme.errorColor : AppTheme.primaryAccent,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'အစိတ်စိတ်ရောင်းချမှုအကျဉ်းချုပ်',
+            style: TextStyle(
+              color: hasError ? AppTheme.errorColor : AppTheme.primaryAccent,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Fragment name
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'အစိတ်စိတ်အမည်:',
+                style: TextStyle(color: Colors.grey[400], fontSize: 11),
+              ),
+              Text(
+                _selectedFragmentName ?? '-',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Quantity section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ကျန်ရှိသောအရေအတွက်:',
+                style: TextStyle(color: Colors.grey[400], fontSize: 10),
+              ),
+              Text(
+                '$remainingQtyBefore → $saleQty → $remainingQtyAfter',
+                style: TextStyle(
+                  color: isQtyInvalid ? AppTheme.errorColor : Colors.lightGreen,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Weight section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ကျန်ရှိသောအလေးချိန်:',
+                style: TextStyle(color: Colors.grey[400], fontSize: 10),
+              ),
+              Text(
+                '$remainingWeightBefore → $saleWeight → $remainingWeightAfter $weightUnit',
+                style: TextStyle(
+                  color: isWeightInvalid ? AppTheme.errorColor : Colors.lightGreen,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Divider(color: Colors.grey[600], height: 1),
+          const SizedBox(height: 8),
+          // Sale amount
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ရောင်းရငွေ:',
+                style: TextStyle(color: Colors.grey[400], fontSize: 11),
+              ),
+              Text(
+                '${m.format(saleAmount * saleQty)} ကျပ်',
+                style: const TextStyle(
+                  color: AppTheme.successColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Commission
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ရောင်းပွဲခ:',
+                style: TextStyle(color: Colors.grey[400], fontSize: 11),
+              ),
+              Text(
+                '${m.format(commission)} ကျပ်',
+                style: const TextStyle(
+                  color: Colors.amber,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Net Sale
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'အသားတင်ရောင်းချမှု:',
+                style: TextStyle(color: Colors.grey[400], fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+              Text(
+                '${m.format(netSale)} ကျပ်',
+                style: const TextStyle(
+                  color: Colors.lightGreen,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          if (hasError) ...[const SizedBox(height: 8), Text(
+            isQtyInvalid ? '⚠️ ကျန်ရှိသောအရေအတွက်မလုံလောက်ပါ' : '⚠️ ကျန်ရှိသောအလေးချိန်မလုံလောက်ပါ',
+            style: const TextStyle(
+              color: AppTheme.errorColor,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          )],
+        ],
+      ),
     );
   }
 
