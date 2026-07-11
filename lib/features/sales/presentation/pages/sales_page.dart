@@ -1780,13 +1780,13 @@ class _SaleFormState extends State<_SaleForm> {
                     ),
                   ),
 
-                // Fragment purchase list (Step 5C-1)
+                // Fragment Level 1 Dropdown - Select Purchase (Step 5C-1)
                 if (_saleSource == 'breakdown_item')
-                  _buildFragmentPurchaseList(gems),
+                  _buildFragmentPurchaseDropdown(gems),
 
-                // Fragment dropdown (Step 5C-3)
+                // Fragment Level 2 Dropdown - Select Fragment (Step 5C-3)
                 if (_saleSource == 'breakdown_item' && _selectedFragmentGemstoneId != null)
-                  _buildFragmentDropdown(gems),
+                  _buildFragmentNameDropdown(gems),
 
                 // Fragment quantity field (Step 5C-4)
                 if (_saleSource == 'breakdown_item' && _selectedFragmentName != null) ...
@@ -2273,18 +2273,19 @@ class _SaleFormState extends State<_SaleForm> {
     );
   }
 
-  /// Build read-only list of purchases with breakdown items (Step 5C-1)
-  Widget _buildFragmentPurchaseList(List<Gemstone> gems) {
+  /// Level 1 Dropdown: Select original purchase with breakdown items
+  Widget _buildFragmentPurchaseDropdown(List<Gemstone> gems) {
+    // Filter purchases with breakdowns and available fragments
     final gemsWithBreakdown = gems.where((g) {
-      return g.breakdownItems != null && 
-             g.breakdownItems!.isNotEmpty &&
-             g.breakdownItems!.values.any((item) {
-               if (item is Map<String, dynamic>) {
-                 final qty = (item['quantity'] as num?)?.toInt() ?? 0;
-                 return qty > 0;
-               }
-               return (item is num) && (item as num) > 0;
-             });
+      if (g.breakdownItems == null || g.breakdownItems!.isEmpty) return false;
+      return g.breakdownItems!.values.any((item) {
+        if (item is Map<String, dynamic>) {
+          final qty = (item['quantity'] as num?)?.toInt() ?? 0;
+          final weight = (item['weight'] as num?)?.toDouble() ?? 0;
+          return qty > 0 || weight > 0;
+        }
+        return (item is num) && (item as num) > 0;
+      });
     }).toList();
 
     if (gemsWithBreakdown.isEmpty) {
@@ -2322,7 +2323,7 @@ class _SaleFormState extends State<_SaleForm> {
           const Padding(
             padding: EdgeInsets.only(bottom: 8),
             child: Text(
-              'အစိတ်စိတ်ပိုင်း ရွေးချယ်မှု',
+              'မူလအဝယ်စာရင်းမှ ကျောက်ရွေးပါ',
               style: TextStyle(
                 color: AppTheme.primaryAccent,
                 fontSize: 13,
@@ -2330,95 +2331,81 @@ class _SaleFormState extends State<_SaleForm> {
               ),
             ),
           ),
-          ...gemsWithBreakdown.map((gem) {
-            final breakdownItemsList = gem.breakdownItems!.entries
-                .where((e) {
-                  if (e.value is Map<String, dynamic>) {
-                    final qty = (e.value['quantity'] as num?)?.toInt() ?? 0;
-                    return qty > 0;
-                  }
-                  return (e.value is num) && (e.value as num) > 0;
-                })
-                .toList();
-
-            final isSelected = _selectedFragmentGemstoneId == gem.id;
-            
-            return InkWell(
-              onTap: () {
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceDark,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: _selectedFragmentGemstoneId != null 
+                  ? AppTheme.primaryAccent 
+                  : AppTheme.primaryAccent.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: DropdownButton<String>(
+              value: _selectedFragmentGemstoneId,
+              hint: const Text(
+                'ကျောက်မျိုးရွေးပါ',
+                style: TextStyle(color: Colors.white70),
+              ),
+              isExpanded: true,
+              dropdownColor: AppTheme.surfaceDark,
+              underline: const SizedBox.shrink(),
+              items: gemsWithBreakdown.map((gem) {
+                final availableFragments = gem.breakdownItems!.values
+                    .where((item) {
+                      if (item is Map<String, dynamic>) {
+                        final qty = (item['quantity'] as num?)?.toInt() ?? 0;
+                        final weight = (item['weight'] as num?)?.toDouble() ?? 0;
+                        return qty > 0 || weight > 0;
+                      }
+                      return (item is num) && (item as num) > 0;
+                    })
+                    .length;
+                
+                final shortId = gem.id.length > 6 ? gem.id.substring(0, 6) : gem.id;
+                final displayText = '${gem.name} • အစိတ်စိတ် $availableFragments မျိုး • ID: $shortId';
+                
+                return DropdownMenuItem<String>(
+                  value: gem.id,
+                  child: Text(
+                    displayText,
+                    style: const TextStyle(color: Colors.white),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
                 setState(() {
-                  _selectedFragmentGemstoneId = gem.id;
+                  _selectedFragmentGemstoneId = value;
+                  _selectedFragmentName = null;
                 });
               },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceDark,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: isSelected ? AppTheme.primaryAccent : AppTheme.primaryAccent.withOpacity(0.2),
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: breakdownItemsList.map((entry) {
-                    final itemData = entry.value as Map<String, dynamic>?;
-                    final quantity = (itemData?['quantity'] as num?)?.toInt() ?? (entry.value is num ? (entry.value as num).toInt() : 0);
-                    final weight = (itemData?['weight'] as num?)?.toDouble() ?? 0;
-                    final weightUnit = itemData?['weightUnit'] as String? ?? '';
-                    final weightDisplay = weight > 0 ? ' — $weight $weightUnit' : '';
-                    
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              entry.key,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$quantity ခု$weightDisplay',
-                            style: TextStyle(
-                              color: Colors.grey[300],
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            );
-          }).toList(),
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildFragmentDropdown(List<Gemstone> gems) {
-    // Find the selected purchase
+  /// Level 2 Dropdown: Select fragment from selected purchase
+  Widget _buildFragmentNameDropdown(List<Gemstone> gems) {
     final selectedPurchase = gems.firstWhereOrNull(
       (g) => g.id == _selectedFragmentGemstoneId,
     );
     if (selectedPurchase == null || selectedPurchase.breakdownItems == null) {
       return const SizedBox.shrink();
     }
-    // Get available breakdown items (quantity > 0)
+    // Get available breakdown items (quantity > 0 OR weight > 0)
     final availableItems = selectedPurchase.breakdownItems!.entries
         .where((e) {
           if (e.value is Map<String, dynamic>) {
             final qty = (e.value['quantity'] as num?)?.toInt() ?? 0;
-            return qty > 0;
+            final weight = (e.value['weight'] as num?)?.toDouble() ?? 0;
+            return qty > 0 || weight > 0;
           }
           return (e.value is num) && (e.value as num) > 0;
         })
@@ -2434,7 +2421,7 @@ class _SaleFormState extends State<_SaleForm> {
           const Padding(
             padding: EdgeInsets.only(bottom: 8),
             child: Text(
-              'ရနှနွတ်မျတ် အစိတ်စိတ်ပြီင်',
+              'ရောင်းချမည့် အစိတ်စိတ်ပိုင်းရွေးပါ',
               style: TextStyle(
                 color: AppTheme.primaryAccent,
                 fontSize: 13,
@@ -2449,14 +2436,16 @@ class _SaleFormState extends State<_SaleForm> {
               color: AppTheme.surfaceDark,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: AppTheme.primaryAccent.withOpacity(0.3),
+                color: _selectedFragmentName != null 
+                  ? AppTheme.primaryAccent 
+                  : AppTheme.primaryAccent.withOpacity(0.3),
                 width: 1,
               ),
             ),
             child: DropdownButton<String>(
               value: _selectedFragmentName,
               hint: const Text(
-                'အစိတ်စိတ်ပြီင် ရနှနွတ်မျ',
+                'အစိတ်စိတ်ပိုင်းရွေးပါ',
                 style: TextStyle(color: Colors.white70),
               ),
               isExpanded: true,
@@ -2467,13 +2456,15 @@ class _SaleFormState extends State<_SaleForm> {
                 final quantity = (itemData?['quantity'] as num?)?.toInt() ?? (entry.value is num ? (entry.value as num).toInt() : 0);
                 final weight = (itemData?['weight'] as num?)?.toDouble() ?? 0;
                 final weightUnit = itemData?['weightUnit'] as String? ?? '';
-                final weightDisplay = weight > 0 ? ' — $weight $weightUnit' : '';
-                final displayText = '$quantityခ်$weightDisplay';
+                final weightDisplay = weight > 0 ? ' • ကျန် $weight $weightUnit' : '';
+                final qtyDisplay = quantity > 0 ? 'ကျန် $quantity ခု' : '';
+                final displayText = '$qtyDisplay$weightDisplay';
                 return DropdownMenuItem<String>(
                   value: entry.key,
                   child: Text(
-                    '${entry.key} ($displayText)',
+                    '${entry.key} • $displayText',
                     style: const TextStyle(color: Colors.white),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 );
               }).toList(),
