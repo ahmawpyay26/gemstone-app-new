@@ -2051,14 +2051,65 @@ class _SaleFormState extends State<_SaleForm> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Item name
-                                  Text(
-                                    'ကျောက်မျက်အမည်: ${item.gemstoneName}',
-                                    style: const TextStyle(
-                                      color: AppTheme.primaryAccent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
+                                  // Header with name and menu
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'ကျောက်မျက်အမည်: ${item.gemstoneName}',
+                                          style: const TextStyle(
+                                            color: AppTheme.primaryAccent,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      PopupMenuButton<String>(
+                                        onSelected: (value) {
+                                          if (value == 'edit') {
+                                            _editItemFromTemporaryList(idx);
+                                          } else if (value == 'delete') {
+                                            _removeItemFromTemporaryList(idx);
+                                          } else if (value == 'view_photos') {
+                                            _viewItemPhotos(item);
+                                          }
+                                        },
+                                        itemBuilder: (BuildContext context) => [
+                                          const PopupMenuItem<String>(
+                                            value: 'edit',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.edit, size: 18, color: AppTheme.primaryAccent),
+                                                SizedBox(width: 8),
+                                                Text('ပြုပြင်ရန်'),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem<String>(
+                                            value: 'delete',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.delete, size: 18, color: AppTheme.errorColor),
+                                                SizedBox(width: 8),
+                                                Text('ဖျက်ရန်'),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem<String>(
+                                            value: 'view_photos',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.image, size: 18, color: AppTheme.primaryAccent),
+                                                SizedBox(width: 8),
+                                                Text('ပုံကြည့်ရန်'),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 8),
                                   // Quantity
@@ -2085,29 +2136,6 @@ class _SaleFormState extends State<_SaleForm> {
                                       color: Colors.grey[500],
                                     ),
                                   )],
-                                  const SizedBox(height: 8),
-                                  // Action buttons (Edit and Delete)
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      TextButton.icon(
-                                        onPressed: () => _editItemFromTemporaryList(idx),
-                                        icon: const Icon(Icons.edit, size: 16),
-                                        label: const Text('ပြုပြင်ရန်'),
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: AppTheme.primaryAccent,
-                                        ),
-                                      ),
-                                      TextButton.icon(
-                                        onPressed: () => _removeItemFromTemporaryList(idx),
-                                        icon: const Icon(Icons.close, size: 16),
-                                        label: const Text('ဖျက်ရန်'),
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: AppTheme.errorColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                 ],
                               ),
                             );
@@ -3276,6 +3304,136 @@ class _SaleFormState extends State<_SaleForm> {
             },
             child: const Text('သိမ်းဆည်းမည်'),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// View photos for a temporary item
+  void _viewItemPhotos(dynamic item) {
+    // Check if item has photos
+    final photoPaths = item.photoPaths;
+    if (photoPaths == null || photoPaths.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ဤပစ္စည်းတွင် ပုံမရှိသေးပါ'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Open gallery viewer
+    showDialog(
+      context: context,
+      builder: (context) => _PhotoViewerDialog(photoPaths: photoPaths),
+    );
+  }
+}
+
+class _PhotoViewerDialog extends StatefulWidget {
+  final List<dynamic> photoPaths;
+
+  const _PhotoViewerDialog({Key? key, required this.photoPaths})
+      : super(key: key);
+
+  @override
+  State<_PhotoViewerDialog> createState() => _PhotoViewerDialogState();
+}
+
+class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
+  late PageController _pageController;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.black,
+      insetPadding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          // Photo viewer
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() => _currentIndex = index);
+            },
+            itemCount: widget.photoPaths.length,
+            itemBuilder: (context, index) {
+              final path = widget.photoPaths[index];
+              return GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Image.file(
+                  File(path.toString()),
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.image_not_supported,
+                              color: Colors.white54, size: 48),
+                          const SizedBox(height: 16),
+                          Text(
+                            'ပုံမဖွင့်နိုင်ပါ',
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+          // Close button
+          Positioned(
+            top: 16,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white),
+              ),
+            ),
+          ),
+          // Photo counter
+          if (widget.photoPaths.length > 1)
+            Positioned(
+              bottom: 16,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${_currentIndex + 1} / ${widget.photoPaths.length}',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
