@@ -2252,14 +2252,71 @@ class _SaleFormState extends State<_SaleForm> {
                             ),
                           ],
                         ),
-                      )],
+                      ),
                     ],
                   ),
                 ),
-                    const SizedBox(height: 16),
-                    ], // End of if (_saleSource == 'whole_stone')
-                  ],
-                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+            // Finalize Sale Button (Two-Stage Confirmation) - Outside scroll
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _items.isEmpty || _isSaving ? null : _finalizeAndSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _items.isEmpty || _isSaving
+                          ? AppTheme.primaryAccent.withOpacity(0.5)
+                          : AppTheme.primaryAccent,
+                      disabledBackgroundColor: AppTheme.primaryAccent.withOpacity(0.5),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    ),
+                    child: _isSaving
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Flexible(
+                                child: Text(
+                                  'သိမ်းဆည်းနေသည်...',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          )
+                        : const Text(
+                            'ရောင်းချမည်',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                  ),
                 ),
               ),
             ),
@@ -2326,6 +2383,7 @@ class _SaleFormState extends State<_SaleForm> {
       ),
     );
   }
+}
 
   /// Build read-only list of purchases with breakdown items (Step 5C-1)
   Widget _buildFragmentPurchaseList(List<Gemstone> gems) {
@@ -3866,3 +3924,6 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
     );
   }
 }
+]
+)
+]
