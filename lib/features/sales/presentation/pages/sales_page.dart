@@ -1148,14 +1148,7 @@ class _SaleFormState extends State<_SaleForm> {
     });
 
     _toast('အစိတ်စိတ်ပိုင်းထည့်သွင်းအောင်မြင်ပါသည်');
-
-    // Navigate back to parent after successful addition
-    // The item has been added to the parent's _items list via setState()
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        Navigator.pop(context);
-      }
-    });
+    // Form stays open so user can add more items
   }
 
   void _removeItemFromTemporaryList(int index) {
