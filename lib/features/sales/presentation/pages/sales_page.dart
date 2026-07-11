@@ -1899,7 +1899,7 @@ class _SaleFormState extends State<_SaleForm> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryAccent,
                             foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           ),
                           child: const Text(
                             'ထည့်မည်',
@@ -1907,8 +1907,10 @@ class _SaleFormState extends State<_SaleForm> {
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
+                              height: 1.2,
                             ),
                             textAlign: TextAlign.center,
+                            maxLines: 1,
                           ),
                         ),
                       ),
