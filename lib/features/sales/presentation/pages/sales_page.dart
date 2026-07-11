@@ -1612,7 +1612,18 @@ class _SaleFormState extends State<_SaleForm> {
   @override
   Widget build(BuildContext context) {
     // Filter out sold out products (quantity <= 0)
-    final gems = LocalDb.gemstones().values.where((g) => g.quantity > 0).toList();
+    final allGems = LocalDb.gemstones().values.where((g) => g.quantity > 0).toList();
+    
+    // Deduplicate by gemstone ID - keep only the first occurrence of each unique ID
+    final seenIds = <String>{};
+    final gems = <Gemstone>[];
+    for (final g in allGems) {
+      if (!seenIds.contains(g.id)) {
+        seenIds.add(g.id);
+        gems.add(g);
+      }
+    }
+    
     final selectedGem =
         _selectedGemId != null ? LocalDb.gemstoneById(_selectedGemId!) : null;
 
