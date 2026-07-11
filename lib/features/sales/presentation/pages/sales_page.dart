@@ -1139,7 +1139,7 @@ class _SaleFormState extends State<_SaleForm> {
 
       // Clear only quantity/price/weight fields - KEEP fragment selections
       // This allows user to continue adding more items from the same fragment
-      _qty.clear();
+      _qty.text = '1'; // Default to 1 for next item (not empty!)
       _amount.clear();
       _commission.text = '0';
       _weight.clear();
