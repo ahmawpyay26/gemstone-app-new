@@ -1896,13 +1896,27 @@ class _SaleFormState extends State<_SaleForm> {
                       _buildFragmentSalarySummary(gems),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child:                 SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saleSource == 'breakdown_item' ? _addFragmentItemMinimal : _addItemToTemporaryList,
-                    child: const Text('ထည့်မည်'),
-                  ),
-                ),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _saleSource == 'breakdown_item' ? _addFragmentItemMinimal : _addItemToTemporaryList,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryAccent,
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          ),
+                          child: const Text(
+                            'ထည့်မည်',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
 
@@ -2250,49 +2264,60 @@ class _SaleFormState extends State<_SaleForm> {
               ),
             ),
             // Finalize Sale Button (Two-Stage Confirmation) - Outside scroll
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _items.isEmpty || _isSaving ? null : _finalizeAndSave,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _items.isEmpty || _isSaving
-                        ? AppTheme.primaryAccent.withOpacity(0.5)
-                        : AppTheme.primaryAccent,
-                    disabledBackgroundColor: AppTheme.primaryAccent.withOpacity(0.5),
-                  ),
-                  child: _isSaving
-                      ? const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _items.isEmpty || _isSaving ? null : _finalizeAndSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _items.isEmpty || _isSaving
+                          ? AppTheme.primaryAccent.withOpacity(0.5)
+                          : AppTheme.primaryAccent,
+                      disabledBackgroundColor: AppTheme.primaryAccent.withOpacity(0.5),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    ),
+                    child: _isSaving
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 12),
-                            Text(
-                              'သိမ်းဆည်းနေသည်...',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
+                              SizedBox(width: 12),
+                              Flexible(
+                                child: Text(
+                                  'သိမ်းဆည်းနေသည်...',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
+                            ],
+                          )
+                        : const Text(
+                            'ရောင်းချမည်',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
-                          ],
-                        )
-                      : Text(
-                          'ရောင်းချမည်',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
+                  ),
                 ),
               ),
             ),
