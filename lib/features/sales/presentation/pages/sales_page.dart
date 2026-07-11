@@ -2932,8 +2932,11 @@ class _SaleFormState extends State<_SaleForm> {
     }
 
     // Check quantity against available
+    // breakdownItems stores fragments as: {'quantity': int, 'weight': double, 'weightUnit': string}
     final availableQtyObj = selectedPurchase?.breakdownItems?[_selectedFragmentName];
-    final availableQty = (availableQtyObj is num) ? (availableQtyObj as num).toDouble() : 0.0;
+    final availableQty = (availableQtyObj is Map<String, dynamic>) 
+      ? ((availableQtyObj['quantity'] as int?) ?? 0).toDouble()
+      : (availableQtyObj is num ? (availableQtyObj as num).toDouble() : 0.0);
     if (qty > availableQty) {
       _toast('လက်ကျန်အစိတ်အရေအတွက်ထက် မကျော်ရပါ');
       return;
