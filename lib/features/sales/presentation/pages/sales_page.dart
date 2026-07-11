@@ -1060,19 +1060,28 @@ class _SaleFormState extends State<_SaleForm> {
       (g) => g.id == _selectedFragmentGemstoneId,
     );
 
+    // DEBUG: Log the state
+    print('DEBUG _addFragmentItem: _selectedFragmentGemstoneId=$_selectedFragmentGemstoneId');
+    print('DEBUG _addFragmentItem: _selectedFragmentName=$_selectedFragmentName');
+    print('DEBUG _addFragmentItem: selectedPurchase=${selectedPurchase?.name}');
+
     // Validation
     if (_selectedFragmentGemstoneId == null) {
+      print('DEBUG: Validation failed - gemstone ID is null');
       _toast('ကျောက်အစိတ်စုပေါင်းရွေးချယ်ပါ');
       return;
     }
 
     if (_selectedFragmentName == null || _selectedFragmentName!.isEmpty) {
+      print('DEBUG: Validation failed - fragment name is null or empty');
       _toast('အစိတ်စိတ်ပိုင်းရွေးချယ်ပါ');
       return;
     }
 
     final qtyInput = _qty.text.trim();
+    print('DEBUG: qtyInput="$qtyInput"');
     if (qtyInput.isEmpty) {
+      print('DEBUG: Validation failed - qty is empty');
       _toast('အရေအတွက်ထည့်သွင်းပါ');
       return;
     }
@@ -1116,6 +1125,7 @@ class _SaleFormState extends State<_SaleForm> {
     }
 
     // All validations passed - add item to temporary list
+    print('DEBUG: All validations passed! Adding item to _items');
     setState(() {
       _items.add(
         _SaleItem(
