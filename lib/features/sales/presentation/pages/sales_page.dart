@@ -956,6 +956,9 @@ class _SaleFormState extends State<_SaleForm> {
   // Preview state (in-memory only, never persisted to Hive)
   final Map<String, dynamic> _previewState = {}; // Stores preview values for each gemstone
 
+  // Duplicate-save protection flag
+  bool _isSaving = false;
+
   bool get _isEdit => widget.existing != null && widget.hiveKey != null;
 
   /// Calculate preview state for a gemstone when an item is added
@@ -1453,7 +1456,29 @@ class _SaleFormState extends State<_SaleForm> {
     );
   }
 
-  Future<void> _save() async {
+  Future<void> _finalizeAndSave() async {
+    // Prevent duplicate saves
+    if (_isSaving) {
+      _toast('ရောင်းချမှု သိမ်းဆည်းနေသည်...');
+      return;
+    }
+    
+    setState(() {
+      _isSaving = true;
+    });
+    
+    try {
+      await _performFinalSave();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _performFinalSave() async {
     if (!_formKey.currentState!.validate()) return;
 
     // PHASE 1: VALIDATE ALL ITEMS BEFORE SAVING ANY
@@ -2213,6 +2238,55 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Finalize Sale Button (Two-Stage Confirmation)
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _items.isEmpty || _isSaving ? null : _finalizeAndSave,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _items.isEmpty || _isSaving
+                              ? AppTheme.primaryAccent.withOpacity(0.5)
+                              : AppTheme.primaryAccent,
+                          disabledBackgroundColor: AppTheme.primaryAccent.withOpacity(0.5),
+                        ),
+                        child: _isSaving
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    'သိမ်းဆည်းနေသည်...',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                'ရောင်းချမည်',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
                 ], // End of if (_saleSource == 'whole_stone')
               ],
             ),
