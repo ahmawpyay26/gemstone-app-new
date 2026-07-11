@@ -2754,7 +2754,7 @@ class _SaleFormState extends State<_SaleForm> {
               if (index > 0)
                 IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                  onPressed: () => _removeItem(index),
+                  onPressed: () => _removeItemFromTemporaryList(index),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
