@@ -36,16 +36,29 @@ jobs:
       - name: Build APK (Release)
         run: flutter build apk --release --no-shrink
 
+      - name: Locate APK
+        id: apk_path
+        run: |
+          APK_PATH=$(find build -name "app-release.apk" -o -name "*.apk" | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "ERROR: APK not found!"
+            find build -type f -name "*.apk"
+            exit 1
+          fi
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "Found APK at: $APK_PATH"
+
       - name: Calculate APK SHA-256
         run: |
-          sha256sum build/app/outputs/flutter-app.apk > apk-sha256.txt
+          APK_PATH="${{ steps.apk_path.outputs.apk_path }}"
+          sha256sum "$APK_PATH" > apk-sha256.txt
           cat apk-sha256.txt
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: build/app/outputs/flutter-app.apk
+          path: ${{ steps.apk_path.outputs.apk_path }}
           retention-days: 30
 
       - name: Upload SHA-256
