@@ -216,6 +216,135 @@ class _SalesPageState extends State<SalesPage> {
     );
   }
 
+  // Build expanded sale details section
+  Widget _buildExpandedDetails(Sale s) {
+    final gemstone = s.gemstoneId.isNotEmpty ? LocalDb.gemstoneById(s.gemstoneId) : null;
+    
+    return Column(
+      children: [
+        // Original Purchase Section
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryAccent.withOpacity(0.05),
+            border: Border(
+              top: BorderSide(color: AppTheme.primaryAccent.withOpacity(0.2)),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'မူလအဝယ်စာရင်း',
+                style: TextStyle(
+                  color: AppTheme.primaryAccent,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _expandedDetailRow('အမျိုးအမည်', s.gemstoneName),
+              _expandedDetailRow('အရေအတွက်', '${s.quantity}'),
+              if (s.weightCarat > 0)
+                _expandedDetailRow('အလေးချိန်', '${s.weightCarat} ${_saleUnit(s)}'),
+              _expandedDetailRow('ရောင်းရငွေ', '${_money.format(s.amount)} ကျပ်'),
+            ],
+          ),
+        ),
+        // Fragment Details Section (only if fragment sale)
+        if (s.isFragmentSource && gemstone != null && gemstone.breakdownItems.isNotEmpty)
+          ..._buildFragmentSections(s, gemstone),
+      ],
+    );
+  }
+
+  List<Widget> _buildFragmentSections(Sale s, Gemstone gemstone) {
+    final fragments = <Widget>[];
+    
+    gemstone.breakdownItems.forEach((fragmentName, itemData) {
+      final qty = (itemData['quantity'] is num) ? (itemData['quantity'] as num).toInt() : 0;
+      final weight = (itemData['weight'] is num) ? (itemData['weight'] as num) : 0.0;
+      
+      // Skip zero quantity and weight items
+      if (qty == 0 && weight == 0) return;
+      
+      fragments.add(
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryAccent.withOpacity(0.03),
+            border: Border(
+              top: BorderSide(color: AppTheme.primaryAccent.withOpacity(0.1)),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                fragmentName,
+                style: TextStyle(
+                  color: Colors.grey[300],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              if (qty > 0)
+                _expandedDetailRow('အရေအတွက်', '$qty'),
+              if (weight > 0)
+                _expandedDetailRow('အလေးချိန်', '${weight.toStringAsFixed(2)} ${itemData['weightUnit'] ?? 'kg'}'),
+            ],
+          ),
+        ),
+      );
+    });
+    
+    // Add header if fragments exist
+    if (fragments.isNotEmpty) {
+      fragments.insert(
+        0,
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryAccent.withOpacity(0.05),
+            border: Border(
+              top: BorderSide(color: AppTheme.primaryAccent.withOpacity(0.2)),
+            ),
+          ),
+          child: Text(
+            'ကျောက်အစိတ်စိတ်',
+            style: TextStyle(
+              color: AppTheme.primaryAccent,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return fragments;
+  }
+
+  Widget _expandedDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey[400], fontSize: 11),
+          ),
+          Text(
+            value,
+            style: TextStyle(color: Colors.grey[200], fontSize: 11, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _exportPDF(Sale sale) async {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -410,239 +539,23 @@ class _SalesPageState extends State<SalesPage> {
                           
                           // Skip deleted sales
                           if (s.isDeleted == true) return const SizedBox.shrink();
-                          return Card(
-                            color: AppTheme.surfaceDark,
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: Column(
-                            children: [
-                              // Date box at the top
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.successColor.withOpacity(0.1),
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(8),
-                                    topRight: Radius.circular(8),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.calendar_today,
-                                      size: 16,
-                                      color: AppTheme.successColor,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _date.format(DateTime.fromMillisecondsSinceEpoch(s.saleDate)),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor:
-                                    AppTheme.successColor.withOpacity(0.2),
-                                child: const Icon(Icons.shopping_cart,
-                                    color: AppTheme.successColor),
-                              ),
-                              title: Text(s.gemstoneName,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold)),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Fragment Sale header with badge
-                                  if (s.isFragmentSource)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 6),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.primaryAccent.withOpacity(0.2),
-                                              borderRadius: BorderRadius.circular(4),
-                                              border: Border.all(
-                                                color: AppTheme.primaryAccent,
-                                                width: 0.5,
-                                              ),
-                                            ),
-                                            child: const Text(
-                                              'အစိတ်စိတ်ပိုင်း',
-                                              style: TextStyle(
-                                                color: AppTheme.primaryAccent,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          if (s.photoPaths.isNotEmpty)
-                                            GestureDetector(
-                                              onTap: () => _showPhotoViewer(s),
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.blue.withOpacity(0.2),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                  border: Border.all(
-                                                    color: Colors.blue,
-                                                    width: 0.5,
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  '📷 ${s.photoPaths.length}',
-                                                  style: const TextStyle(
-                                                    color: Colors.blue,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  // Fragment name
-                                  if (s.isFragmentSource && s.fragmentName != null)
-                                    Text(
-                                      'အစိတ်စိတ်အမည်: ${s.fragmentName}',
-                                      style: TextStyle(
-                                        color: Colors.grey[300],
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  // Quantity and weight
-                                  Text(
-                                      'အရေအတွက်: ${s.quantity}'
-                                      '${s.weightCarat > 0 ? ' • ${s.weightCarat} ${_saleUnit(s)}' : ''}',
-                                      style:
-                                          TextStyle(color: Colors.grey[400], fontSize: 11)),
-                                  // Commission (for fragment sales)
-                                  if (s.isFragmentSource && s.commissionFee > 0)
-                                    Text(
-                                      'ရောင်းပွဲခ: ${_money.format(s.commissionFee)} ကျပ်',
-                                      style: TextStyle(
-                                        color: Colors.amber[300],
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  // Customer and payment
-                                  Text(
-                                      'ဝယ်သူ: ${_getCustomerName(s)}',
-                                      style:
-                                          TextStyle(color: Colors.grey[400], fontSize: 11)),
-                                  Text(
-                                      '${_date.format(DateTime.fromMillisecondsSinceEpoch(s.saleDate))} • ${_payLabel(s.paymentMethod)}',
-                                      style: TextStyle(
-                                          color: Colors.grey[500],
-                                          fontSize: 10)),
-                                ],
-                              ),
-                              trailing: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(_money.format(s.amount),
-                                      style: const TextStyle(
-                                          color: AppTheme.successColor,
-                                          fontWeight: FontWeight.bold)),
-                                  if (s.costPrice > 0) _profitBadge(s),
-                                  PopupMenuButton<String>(
-                                    constraints: BoxConstraints(maxHeight: 300),
-                                    icon: Icon(Icons.more_vert,
-                                        color: LocalDb.canEditSale() ? Colors.white : Colors.grey[600]),
-                                    enabled: LocalDb.canEditSale(),
-                                    onSelected: (v) {
-                                      if (v == 'edit') _openForm(existing: s, key: key);
-                                      if (v == 'delete') _delete(key);
-                                      if (v == 'print') _printSale(s);
-                                      if (v == 'image') _exportImage(s);
-                                      if (v == 'pdf') _exportVoucher(s);
-                                      if (v == 'photos') _showPhotoViewer(s);
-                                    },
-                                    itemBuilder: (_) => [
-                                      PopupMenuItem(
-                                          value: 'edit',
-                                          enabled: LocalDb.canEditSale(),
-                                          child: const Row(
-                                            children: [
-                                              Text('✏️'),
-                                              SizedBox(width: 8),
-                                              Text('ပြုပြင်ရန်'),
-                                            ],
-                                          )),
-                                      PopupMenuItem(
-                                          value: 'delete',
-                                          enabled: LocalDb.canDeleteSale(),
-                                          child: const Row(
-                                            children: [
-                                              Text('🗑️'),
-                                              SizedBox(width: 8),
-                                              Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
-                                            ],
-                                          )),
-                                      PopupMenuItem(
-                                          value: 'print',
-                                          child: const Row(
-                                            children: [
-                                              Text('🖨️'),
-                                              SizedBox(width: 8),
-                                              Text('ပရင့်ထုတ်ရန်'),
-                                            ],
-                                          )),
-                                      PopupMenuItem(
-                                          value: 'image',
-                                          child: const Row(
-                                            children: [
-                                              Text('🖼️'),
-                                              SizedBox(width: 8),
-                                              Text('ပုံထုတ်ရန်'),
-                                            ],
-                                          )),
-                                      PopupMenuItem(
-                                          value: 'pdf',
-                                          child: const Row(
-                                            children: [
-                                              Text('📄'),
-                                              SizedBox(width: 8),
-                                              Text('PDF ထုတ်ရန်'),
-                                            ],
-                                          )),
-                                      PopupMenuItem(
-                                          value: 'photos',
-                                          child: const Row(
-                                            children: [
-                                              Text('🖼️'),
-                                              SizedBox(width: 8),
-                                              Text('ဓာတ်ပုံကြည့်ရန်'),
-                                            ],
-                                          )),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              onTap: () => _showDetails(s, hiveKey: key),
-                            ),
-                              // Gemstone breakdown widget
-                              Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: GemstoneBreakdownWidget(
-                                  isForSale: true,
-                                  onBreakdownChanged: (breakdown) {
-                                    // Store breakdown data for sale
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
+                          return _SaleHistoryCard(
+                            sale: s,
+                            hiveKey: key,
+                            onEdit: () => _openForm(existing: s, key: key),
+                            onDelete: () => _delete(key),
+                            onPrint: () => _printSale(s),
+                            onExportImage: () => _exportImage(s),
+                            onExportPdf: () => _exportVoucher(s),
+                            onShowPhotos: () => _showPhotoViewer(s),
+                            onShowDetails: () => _showDetails(s, hiveKey: key),
+                            dateFormat: _date,
+                            moneyFormat: _money,
+                            saleUnitFn: _saleUnit,
+                            getCustomerNameFn: _getCustomerName,
+                            payLabelFn: _payLabel,
+                            profitBadgeFn: _profitBadge,
+                          );
                         },
                       ),
               ),
@@ -3884,6 +3797,400 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+// Expandable Sale History Card Widget
+class _SaleHistoryCard extends StatefulWidget {
+  final Sale sale;
+  final dynamic hiveKey;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onPrint;
+  final VoidCallback onExportImage;
+  final VoidCallback onExportPdf;
+  final VoidCallback onShowPhotos;
+  final VoidCallback onShowDetails;
+  final DateFormat dateFormat;
+  final NumberFormat moneyFormat;
+  final Function(Sale) saleUnitFn;
+  final Function(Sale) getCustomerNameFn;
+  final Function(String) payLabelFn;
+  final Function(Sale) profitBadgeFn;
+
+  const _SaleHistoryCard({
+    required this.sale,
+    required this.hiveKey,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onPrint,
+    required this.onExportImage,
+    required this.onExportPdf,
+    required this.onShowPhotos,
+    required this.onShowDetails,
+    required this.dateFormat,
+    required this.moneyFormat,
+    required this.saleUnitFn,
+    required this.getCustomerNameFn,
+    required this.payLabelFn,
+    required this.profitBadgeFn,
+  });
+
+  @override
+  State<_SaleHistoryCard> createState() => _SaleHistoryCardState();
+}
+
+class _SaleHistoryCardState extends State<_SaleHistoryCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.sale;
+    final gemstone = s.gemstoneId.isNotEmpty ? LocalDb.gemstoneById(s.gemstoneId) : null;
+
+    return Card(
+      color: AppTheme.surfaceDark,
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        children: [
+          // Date header
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.successColor.withOpacity(0.1),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(_isExpanded ? 0 : 8),
+                topRight: Radius.circular(_isExpanded ? 0 : 8),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today, size: 16, color: AppTheme.successColor),
+                const SizedBox(width: 8),
+                Text(
+                  widget.dateFormat.format(DateTime.fromMillisecondsSinceEpoch(s.saleDate)),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Summary view (always visible)
+          GestureDetector(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: AppTheme.successColor.withOpacity(0.2),
+                child: const Icon(Icons.shopping_cart, color: AppTheme.successColor),
+              ),
+              title: Text(
+                s.gemstoneName,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (s.isFragmentSource)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: AppTheme.primaryAccent, width: 0.5),
+                            ),
+                            child: const Text(
+                              'အစိတ်စိတ်ပိုင်း',
+                              style: TextStyle(
+                                color: AppTheme.primaryAccent,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          if (s.photoPaths.isNotEmpty)
+                            GestureDetector(
+                              onTap: widget.onShowPhotos,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: Colors.blue, width: 0.5),
+                                ),
+                                child: Text(
+                                  '📷 ${s.photoPaths.length}',
+                                  style: const TextStyle(
+                                    color: Colors.blue,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  Text(
+                    'အရေအတွက်: ${s.quantity}${s.weightCarat > 0 ? ' • ${s.weightCarat} ${widget.saleUnitFn(s)}' : ''}',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                  ),
+                  if (s.isFragmentSource && s.commissionFee > 0)
+                    Text(
+                      'ရောင်းပွဲခ: ${widget.moneyFormat.format(s.commissionFee)} ကျပ်',
+                      style: TextStyle(color: Colors.amber[300], fontSize: 11),
+                    ),
+                ],
+              ),
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    widget.moneyFormat.format(s.amount),
+                    style: const TextStyle(
+                      color: AppTheme.successColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (s.costPrice > 0) widget.profitBadgeFn(s),
+                  Icon(
+                    _isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: AppTheme.primaryAccent,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Expanded details
+          if (_isExpanded) ...[
+            // Original purchase section
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryAccent.withOpacity(0.05),
+                border: Border(
+                  top: BorderSide(color: AppTheme.primaryAccent.withOpacity(0.2)),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'မူလအဝယ်စာရင်း',
+                    style: TextStyle(
+                      color: AppTheme.primaryAccent,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _expandedDetailRow('အမျိုးအမည်', s.gemstoneName),
+                  _expandedDetailRow('အရေအတွက်', '${s.quantity}'),
+                  if (s.weightCarat > 0)
+                    _expandedDetailRow('အလေးချိန်', '${s.weightCarat} ${widget.saleUnitFn(s)}'),
+                  _expandedDetailRow('ရောင်းရငွေ', '${widget.moneyFormat.format(s.amount)} ကျပ်'),
+                ],
+              ),
+            ),
+            // Fragment sections
+            if (s.isFragmentSource && gemstone != null && gemstone.breakdownItems.isNotEmpty)
+              ..._buildFragmentSections(s, gemstone),
+            // Action buttons
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceLight.withOpacity(0.1),
+                border: Border(
+                  top: BorderSide(color: AppTheme.primaryAccent.withOpacity(0.2)),
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(8),
+                  bottomRight: Radius.circular(8),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, color: Colors.white),
+                    enabled: LocalDb.canEditSale(),
+                    onSelected: (v) {
+                      if (v == 'edit') widget.onEdit();
+                      if (v == 'delete') widget.onDelete();
+                      if (v == 'print') widget.onPrint();
+                      if (v == 'image') widget.onExportImage();
+                      if (v == 'pdf') widget.onExportPdf();
+                      if (v == 'photos') widget.onShowPhotos();
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        enabled: LocalDb.canEditSale(),
+                        child: const Row(
+                          children: [
+                            Text('✏️'),
+                            SizedBox(width: 8),
+                            Text('ပြုပြင်ရန်'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        enabled: LocalDb.canDeleteSale(),
+                        child: const Row(
+                          children: [
+                            Text('🗑️'),
+                            SizedBox(width: 8),
+                            Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'print',
+                        child: const Row(
+                          children: [
+                            Text('🖨️'),
+                            SizedBox(width: 8),
+                            Text('ပရင့်ထုတ်ရန်'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'image',
+                        child: const Row(
+                          children: [
+                            Text('🖼️'),
+                            SizedBox(width: 8),
+                            Text('ပုံထုတ်ရန်'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'pdf',
+                        child: const Row(
+                          children: [
+                            Text('📄'),
+                            SizedBox(width: 8),
+                            Text('PDF ထုတ်ရန်'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'photos',
+                        child: const Row(
+                          children: [
+                            Text('🖼️'),
+                            SizedBox(width: 8),
+                            Text('ဓာတ်ပုံကြည့်ရန်'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildFragmentSections(Sale s, Gemstone gemstone) {
+    final fragments = <Widget>[];
+    
+    gemstone.breakdownItems.forEach((fragmentName, itemData) {
+      final qty = (itemData['quantity'] is num) ? (itemData['quantity'] as num).toInt() : 0;
+      final weight = (itemData['weight'] is num) ? (itemData['weight'] as num) : 0.0;
+      
+      // Skip zero quantity and weight items
+      if (qty == 0 && weight == 0) return;
+      
+      fragments.add(
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryAccent.withOpacity(0.03),
+            border: Border(
+              top: BorderSide(color: AppTheme.primaryAccent.withOpacity(0.1)),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                fragmentName,
+                style: TextStyle(
+                  color: Colors.grey[300],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              if (qty > 0)
+                _expandedDetailRow('အရေအတွက်', '$qty'),
+              if (weight > 0)
+                _expandedDetailRow('အလေးချိန်', '${weight.toStringAsFixed(2)} ${itemData['weightUnit'] ?? 'kg'}'),
+            ],
+          ),
+        ),
+      );
+    });
+    
+    // Add header if fragments exist
+    if (fragments.isNotEmpty) {
+      fragments.insert(
+        0,
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryAccent.withOpacity(0.05),
+            border: Border(
+              top: BorderSide(color: AppTheme.primaryAccent.withOpacity(0.2)),
+            ),
+          ),
+          child: Text(
+            'ကျောက်အစိတ်စိတ်',
+            style: TextStyle(
+              color: AppTheme.primaryAccent,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return fragments;
+  }
+
+  Widget _expandedDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey[400], fontSize: 11),
+          ),
+          Text(
+            value,
+            style: TextStyle(color: Colors.grey[200], fontSize: 11, fontWeight: FontWeight.w500),
+          ),
+        ],
       ),
     );
   }
