@@ -1259,18 +1259,6 @@ class _SaleFormState extends State<_SaleForm> {
   double get _totalQuantity => _items.fold<int>(0, (sum, item) => sum + item.quantity).toDouble();
   double get _totalAmount => _items.fold<double>(0, (sum, item) => sum + item.totalAmount);
   
-  void _addItem() {
-    setState(() {
-      _items.add(_SaleItem(
-        id: const Uuid().v4(),
-        gemstoneName: '',
-        quantity: 1,
-        unitPrice: 0,
-      ));
-      _isMultiItemMode = true;
-    });
-  }
-  
   void _removeItem(int index) {
     if (_items.length > 1) {
       setState(() {
