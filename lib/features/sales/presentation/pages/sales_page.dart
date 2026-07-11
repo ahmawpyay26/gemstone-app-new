@@ -855,12 +855,6 @@ class _SaleFormState extends State<_SaleForm> {
   String _saleSource = 'whole_stone'; // 'whole_stone' or 'breakdown_item'
   String? _selectedFragmentGemstoneId; // Selected fragment purchase (Step 5C-2)
   String? _selectedFragmentName; // Selected fragment name from dropdown (Step 5C-3)
-  late final TextEditingController _fragmentQuantity; // Fragment quantity input (Step 5C-4)
-  String? _fragmentQuantityError; // Fragment quantity validation error (Step 5C-4)
-  late final TextEditingController _fragmentUnitPrice; // Fragment unit price input (Step 5D-2)
-  late final TextEditingController _fragmentCommission; // Fragment commission input (Step 1 UI)
-  late final TextEditingController _fragmentWeight; // Fragment weight input (optional)
-  late String _fragmentWeightUnit; // Fragment weight unit selector
   
   // Multi-item invoice support
   late List<_SaleItem> _items;
@@ -984,6 +978,15 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   void _addItemToTemporaryList() {
+    // Determine which mode we're in
+    if (_saleSource == 'breakdown_item') {
+      _addFragmentItem();
+    } else {
+      _addWholeStoneItem();
+    }
+  }
+
+  void _addWholeStoneItem() {
     // Validate
     if (_selectedGemId == null && _manualName.text.isEmpty) {
       _showError('Please select or enter a gemstone');
@@ -1045,6 +1048,105 @@ class _SaleFormState extends State<_SaleForm> {
     _showSuccess('${item.gemstoneName} added');
   }
 
+  void _addFragmentItem() {
+    // Obtain the gemstone list (matching build method logic)
+    final gems = LocalDb.gemstones().values.where((g) => g.quantity > 0).toList();
+    
+    // Find the selected purchase
+    final selectedPurchase = gems.firstWhereOrNull(
+      (g) => g.id == _selectedFragmentGemstoneId,
+    );
+
+    // Validation
+    if (_selectedFragmentGemstoneId == null) {
+      _toast('ကျောက်အစိတ်စုပေါင်းရွေးချယ်ပါ');
+      return;
+    }
+
+    if (_selectedFragmentName == null || _selectedFragmentName!.isEmpty) {
+      _toast('အစိတ်စိတ်ပိုင်းရွေးချယ်ပါ');
+      return;
+    }
+
+    final qtyInput = _qty.text.trim();
+    if (qtyInput.isEmpty) {
+      _toast('အရေအတွက်ထည့်သွင်းပါ');
+      return;
+    }
+
+    final qty = int.tryParse(qtyInput);
+    if (qty == null || qty <= 0) {
+      _toast('အရေအတွက်သည် ၀ထက်ကြီးရမည်');
+      return;
+    }
+
+    // Check quantity against available
+    // breakdownItems stores fragments as: {'quantity': int, 'weight': double, 'weightUnit': string}
+    final availableQtyObj = selectedPurchase?.breakdownItems?[_selectedFragmentName];
+    final availableQty = (availableQtyObj is Map<String, dynamic>) 
+      ? ((availableQtyObj['quantity'] as int?) ?? 0).toDouble()
+      : (availableQtyObj is num ? (availableQtyObj as num).toDouble() : 0.0);
+    if (qty > availableQty) {
+      _toast('လက်ကျန်အစိတ်အရေအတွက်ထက် မကျော်ရပါ');
+      return;
+    }
+
+    // Validate unit price
+    final priceInput = _amount.text.trim();
+    if (priceInput.isEmpty) {
+      _toast('ရောင်းဈေးထည့်သွင်းပါ');
+      return;
+    }
+
+    final unitPrice = double.tryParse(priceInput);
+    if (unitPrice == null || unitPrice < 0) {
+      _toast('ရောင်းဈေးသည် ၀နှင့်အညီ သို့မဟုတ် ၀ထက်ကြီးရမည်');
+      return;
+    }
+
+    // Validate and parse commission
+    final commissionInput = _commission.text.trim();
+    final commission = double.tryParse(commissionInput) ?? 0;
+    if (commission < 0) {
+      _toast('အရောင်းပွဲခသည် အနုတ်မဖြစ်ရပါ');
+      return;
+    }
+
+    // All validations passed - add item to temporary list
+    setState(() {
+      _items.add(
+        _SaleItem(
+          id: const Uuid().v4(),
+          gemstoneId: _selectedFragmentGemstoneId,
+          gemstoneName: selectedPurchase?.name ?? 'Unknown',
+          quantity: qty,
+          unitPrice: unitPrice,
+          remark: '',
+          fragmentName: _selectedFragmentName,
+          isFragmentSource: true,
+          commission: commission,
+          weight: double.tryParse(_weight.text.trim()),
+          weightUnit: 'kg', // Default unit
+        ),
+      );
+
+      // Update preview state for fragment item
+      final netSale = qty * unitPrice;
+      _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale, fragmentQtyDeducted: qty);
+
+      // Clear only quantity/price/weight fields - KEEP fragment selections
+      // This allows user to continue adding more items from the same fragment
+      _qty.clear();
+      _amount.clear();
+      _commission.text = '0';
+      _weight.clear();
+      // NOTE: Do NOT clear _selectedFragmentGemstoneId or _selectedFragmentName
+      // Keep them set so the fragment form remains visible for next entry
+    });
+
+    _toast('အစိတ်စိတ်ပိုင်းထည့်သွင်းအောင်မြင်ပါသည်');
+  }
+
   void _removeItemFromTemporaryList(int index) {
     setState(() {
       _items.removeAt(index);
@@ -1056,17 +1158,17 @@ class _SaleFormState extends State<_SaleForm> {
   void _editItemFromTemporaryList(int index) {
     final item = _items[index];
     
-    // Load item data back into form fields
+    // Load item data back into form fields (unified for both types)
     setState(() {
       if (item.isFragmentSource) {
-        // Fragment item: restore all fragment fields
+        // Fragment item: restore using unified fields
         _saleSource = 'breakdown_item';
         _selectedFragmentGemstoneId = item.gemstoneId;
         _selectedFragmentName = item.fragmentName;
-        _fragmentQuantity.text = item.quantity.toString();
-        _fragmentUnitPrice.text = item.unitPrice.toString();
-        _fragmentWeight.text = (item.weight ?? 0).toString();
-        _fragmentWeightUnit = item.weightUnit ?? 'kg';
+        _qty.text = item.quantity.toString();
+        _amount.text = item.unitPrice.toString();
+        _weight.text = (item.weight ?? 0).toString();
+        _commission.text = (item.commission ?? 0).toString();
       } else {
         // Whole-stone item: restore whole-stone fields
         _saleSource = 'whole_stone';
@@ -1115,11 +1217,6 @@ class _SaleFormState extends State<_SaleForm> {
         text: e != null && e.costPrice > 0 ? _trim(e.costPrice) : '');
     _commission = TextEditingController(
         text: e != null && e.commissionFee > 0 ? _trim(e.commissionFee) : '');
-    _fragmentQuantity = TextEditingController();
-    _fragmentUnitPrice = TextEditingController();
-    _fragmentCommission = TextEditingController(text: '0');
-    _fragmentWeight = TextEditingController();
-    _fragmentWeightUnit = 'kg';
     _payment = e?.paymentMethod ?? 'cash';
     _saleDate = e != null
         ? DateTime.fromMillisecondsSinceEpoch(e.saleDate)
@@ -1152,9 +1249,10 @@ class _SaleFormState extends State<_SaleForm> {
     // Clear preview state (automatic rollback)
     _previewState.clear();
     
-    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission, _fragmentQuantity, _fragmentUnitPrice, _fragmentCommission]) {
+    for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission]) {
       c.dispose();
     }
+    // Note: _fragmentWeight is removed - use _weight for both types
     super.dispose();
   }
   
@@ -1475,8 +1573,8 @@ class _SaleFormState extends State<_SaleForm> {
       }
       
       // Create Sale record
-      final fragmentWeight = item.isFragmentSource ? (double.tryParse(_fragmentWeight.text.trim()) ?? 0) : null;
-      final fragmentWeightUnit = item.isFragmentSource ? _fragmentWeightUnit : null;
+      final fragmentWeight = item.isFragmentSource ? item.weight : null;
+      final fragmentWeightUnit = item.isFragmentSource ? item.weightUnit : null;
       
       final newSale = Sale(
         id: LocalDb.genId(),
@@ -1788,21 +1886,21 @@ class _SaleFormState extends State<_SaleForm> {
                 if (_saleSource == 'breakdown_item' && _selectedFragmentGemstoneId != null)
                   _buildFragmentNameDropdown(gems),
 
-                // Fragment quantity field (Step 5C-4)
+                // Fragment quantity field (Step 5C-4) - now uses unified fields
                 if (_saleSource == 'breakdown_item' && _selectedFragmentName != null) ...
                   [
-                    _buildFragmentQuantityField(gems),
-                    _field(_fragmentUnitPrice, 'ရောင်းဈေး (ကျပ်)', number: true),
-                    _field(_fragmentCommission, 'အရောင်းပွဲခ (ကျပ်)', number: true),
-                    // Fragment weight field
+                    _field(_qty, 'အရေအတွက်', number: true),
+                    _field(_amount, 'ရောင်းဈေး (ကျပ်)', number: true),
+                    _field(_commission, 'အရောင်းပွဲခ (ကျပ်)', number: true),
+                    // Fragment weight field - unified
                     Row(children: [
                       Expanded(
-                        child: _field(_fragmentWeight, 'အလေးချိန်', number: true),
+                        child: _field(_weight, 'အလေးချိန်', number: true),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _fragmentWeightUnit,
+                          value: 'kg',
                           items: ['ပိသာ', 'ကျပ်သား', 'ကာရက်', 'kg', 'g', 'lb', 'oz']
                               .map((unit) => DropdownMenuItem(
                                     value: unit,
@@ -1810,9 +1908,7 @@ class _SaleFormState extends State<_SaleForm> {
                                   ))
                               .toList(),
                           onChanged: (value) {
-                            setState(() {
-                              _fragmentWeightUnit = value ?? 'kg';
-                            });
+                            // Weight unit is now stored in SaleItem during save
                           },
                           decoration: InputDecoration(
                             labelText: 'ယူနစ်',
@@ -1838,16 +1934,16 @@ class _SaleFormState extends State<_SaleForm> {
                         ),
                         if (_photoPaths.isNotEmpty) ...[const SizedBox(height: 12), _buildFragmentGalleryPreview()],
                       ],
-                    // Fragment Sale Summary Panel
+                    // Sale Summary Panel (unified for both whole-stone and fragment)
                     if (_saleSource == 'breakdown_item' && _selectedFragmentName != null)
-                      _buildFragmentSalarySummary(gems),
+                      _profitPreview(),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: SizedBox(
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: _saleSource == 'breakdown_item' ? _addFragmentItemMinimal : _addItemToTemporaryList,
+                          onPressed: _addItemToTemporaryList,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryAccent,
                             foregroundColor: Colors.black,
@@ -2626,379 +2722,12 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   /// Build Fragment Sale Summary Panel with live updates
-  Widget _buildFragmentSalarySummary(List<Gemstone> gems) {
-    if (_selectedFragmentName == null) {
-      return const SizedBox.shrink();
-    }
+  // REMOVED: _buildFragmentSalarySummary - now uses unified _profitPreview()
 
-    // Get selected purchase and fragment data
-    final selectedPurchase = gems.firstWhereOrNull(
-      (g) => g.id == _selectedFragmentGemstoneId,
-    );
-    if (selectedPurchase == null || selectedPurchase.breakdownItems == null) {
-      return const SizedBox.shrink();
-    }
+  // REMOVED: _buildFragmentQuantityField - now uses unified _field(_qty, ...)
+  // REMOVED: _validateFragmentQuantity - validation now in _addFragmentItem()
 
-    // Extract fragment data
-    final fragmentData = selectedPurchase.breakdownItems![_selectedFragmentName];
-    final remainingQtyBefore = (fragmentData is Map<String, dynamic>)
-        ? (fragmentData['quantity'] as num?)?.toInt() ?? 0
-        : (fragmentData is num ? (fragmentData as num).toInt() : 0);
-    final remainingWeightBefore = (fragmentData is Map<String, dynamic>)
-        ? (fragmentData['weight'] as num?)?.toDouble() ?? 0
-        : 0.0;
-    final weightUnit = (fragmentData is Map<String, dynamic>)
-        ? (fragmentData['weightUnit'] as String? ?? 'kg')
-        : 'kg';
-
-    // Get sale inputs
-    final saleQty = int.tryParse(_fragmentQuantity.text) ?? 0;
-    final saleWeight = double.tryParse(_fragmentWeight.text) ?? 0.0;
-    final saleAmount = double.tryParse(_fragmentUnitPrice.text) ?? 0.0;
-    final commission = double.tryParse(_fragmentCommission.text) ?? 0.0;
-
-    // Calculate remaining values
-    final remainingQtyAfter = remainingQtyBefore - saleQty;
-    final remainingWeightAfter = remainingWeightBefore - saleWeight;
-    final netSale = (saleAmount * saleQty) - commission;
-
-    // Check for invalid values
-    final isQtyInvalid = remainingQtyAfter < 0;
-    final isWeightInvalid = remainingWeightAfter < 0;
-    final hasError = isQtyInvalid || isWeightInvalid;
-
-    final m = NumberFormat('#,##0.00');
-    final mInt = NumberFormat('#,##0');
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: hasError ? AppTheme.errorColor.withOpacity(0.1) : AppTheme.primaryAccent.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: hasError ? AppTheme.errorColor : AppTheme.primaryAccent,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'အစိတ်စိတ်ရောင်းချမှုအကျဉ်းချုပ်',
-            style: TextStyle(
-              color: hasError ? AppTheme.errorColor : AppTheme.primaryAccent,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 10),
-          // Fragment name
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'အစိတ်စိတ်အမည်:',
-                style: TextStyle(color: Colors.grey[400], fontSize: 11),
-              ),
-              Text(
-                _selectedFragmentName ?? '-',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Quantity section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'ကျန်ရှိသောအရေအတွက်:',
-                style: TextStyle(color: Colors.grey[400], fontSize: 10),
-              ),
-              Text(
-                '$remainingQtyBefore → $saleQty → $remainingQtyAfter',
-                style: TextStyle(
-                  color: isQtyInvalid ? AppTheme.errorColor : Colors.lightGreen,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          // Weight section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'ကျန်ရှိသောအလေးချိန်:',
-                style: TextStyle(color: Colors.grey[400], fontSize: 10),
-              ),
-              Text(
-                '$remainingWeightBefore → $saleWeight → $remainingWeightAfter $weightUnit',
-                style: TextStyle(
-                  color: isWeightInvalid ? AppTheme.errorColor : Colors.lightGreen,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Divider(color: Colors.grey[600], height: 1),
-          const SizedBox(height: 8),
-          // Sale amount
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'ရောင်းရငွေ:',
-                style: TextStyle(color: Colors.grey[400], fontSize: 11),
-              ),
-              Text(
-                '${m.format(saleAmount * saleQty)} ကျပ်',
-                style: const TextStyle(
-                  color: AppTheme.successColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          // Commission
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'ရောင်းပွဲခ:',
-                style: TextStyle(color: Colors.grey[400], fontSize: 11),
-              ),
-              Text(
-                '${m.format(commission)} ကျပ်',
-                style: const TextStyle(
-                  color: Colors.amber,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          // Net Sale
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'အသားတင်ရောင်းချမှု:',
-                style: TextStyle(color: Colors.grey[400], fontSize: 11, fontWeight: FontWeight.w600),
-              ),
-              Text(
-                '${m.format(netSale)} ကျပ်',
-                style: const TextStyle(
-                  color: Colors.lightGreen,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          if (hasError) ...[const SizedBox(height: 8), Text(
-            isQtyInvalid ? '⚠️ ကျန်ရှိသောအရေအတွက်မလုံလောက်ပါ' : '⚠️ ကျန်ရှိသောအလေးချိန်မလုံလောက်ပါ',
-            style: const TextStyle(
-              color: AppTheme.errorColor,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          )],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFragmentQuantityField(List<Gemstone> gems) {
-    // Find the selected purchase
-    final selectedPurchase = gems.firstWhereOrNull(
-      (g) => g.id == _selectedFragmentGemstoneId,
-    );
-
-    if (selectedPurchase == null || selectedPurchase.breakdownItems == null) {
-      return const SizedBox.shrink();
-    }
-
-    // Get the selected fragment's quantity from breakdownItems
-    // breakdownItems stores fragments as: {'quantity': int, 'weight': double, 'weightUnit': string}
-    final qtyObj = selectedPurchase.breakdownItems![_selectedFragmentName];
-    final selectedFragmentQty = (qtyObj is Map<String, dynamic>) 
-      ? (qtyObj['quantity'] as int?) ?? 0 
-      : (qtyObj is num ? (qtyObj as num).toInt() : 0);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Available quantity label
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              'လက်ကျန်အစိတ်အရေအတွက်: $selectedFragmentQty',
-              style: TextStyle(
-                color: Colors.grey[300],
-                fontSize: 12,
-              ),
-            ),
-          ),
-          // Quantity input field
-          TextFormField(
-            controller: _fragmentQuantity,
-            keyboardType: const TextInputType.numberWithOptions(decimal: false),
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              labelText: 'အရေအတွက်',
-              errorText: _fragmentQuantityError,
-              errorStyle: const TextStyle(color: Colors.red),
-            ),
-            onChanged: (value) {
-              setState(() {
-                _validateFragmentQuantity(selectedFragmentQty);
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _validateFragmentQuantity(int availableQty) {
-    final input = _fragmentQuantity.text.trim();
-    
-    if (input.isEmpty) {
-      _fragmentQuantityError = null;
-      return;
-    }
-
-    final qty = int.tryParse(input);
-    
-    if (qty == null || qty <= 0) {
-      _fragmentQuantityError = 'အရေအတွက်သည် ၀ထက်ကြီးရမည်';
-      return;
-    }
-
-    if (qty > availableQty) {
-      _fragmentQuantityError = 'လက်ကျန်အစိတ်အရေအတွက်ထက် မကျော်ရပါ';
-      return;
-    }
-
-    _fragmentQuantityError = null;
-  }
-
-  void _addFragmentItemMinimal() {
-    // Obtain the gemstone list (matching build method logic)
-    final gems = LocalDb.gemstones().values.where((g) => g.quantity > 0).toList();
-    
-    // Find the selected purchase
-    final selectedPurchase = gems.firstWhereOrNull(
-      (g) => g.id == _selectedFragmentGemstoneId,
-    );
-
-    // Validation
-    if (_selectedFragmentGemstoneId == null) {
-      _toast('ကျောက်အစိတ်စုပေါင်းရွေးချယ်ပါ');
-      return;
-    }
-
-    if (_selectedFragmentName == null || _selectedFragmentName!.isEmpty) {
-      _toast('အစိတ်စိတ်ပိုင်းရွေးချယ်ပါ');
-      return;
-    }
-
-    final qtyInput = _fragmentQuantity.text.trim();
-    if (qtyInput.isEmpty) {
-      _toast('အရေအတွက်ထည့်သွင်းပါ');
-      return;
-    }
-
-    final qty = int.tryParse(qtyInput);
-    if (qty == null || qty <= 0) {
-      _toast('အရေအတွက်သည် ၀ထက်ကြီးရမည်');
-      return;
-    }
-
-    // Check quantity against available
-    // breakdownItems stores fragments as: {'quantity': int, 'weight': double, 'weightUnit': string}
-    final availableQtyObj = selectedPurchase?.breakdownItems?[_selectedFragmentName];
-    final availableQty = (availableQtyObj is Map<String, dynamic>) 
-      ? ((availableQtyObj['quantity'] as int?) ?? 0).toDouble()
-      : (availableQtyObj is num ? (availableQtyObj as num).toDouble() : 0.0);
-    if (qty > availableQty) {
-      _toast('လက်ကျန်အစိတ်အရေအတွက်ထက် မကျော်ရပါ');
-      return;
-    }
-
-    // Validate unit price
-    final priceInput = _fragmentUnitPrice.text.trim();
-    if (priceInput.isEmpty) {
-      _toast('ရောင်းဈေးထည့်သွင်းပါ');
-      return;
-    }
-
-    final unitPrice = double.tryParse(priceInput);
-    if (unitPrice == null || unitPrice < 0) {
-      _toast('ရောင်းဈေးသည် ၀နှင့်အညီ သို့မဟုတ် ၀ထက်ကြီးရမည်');
-      return;
-    }
-
-    // Validate and parse commission
-    final commissionInput = _fragmentCommission.text.trim();
-    final commission = double.tryParse(commissionInput) ?? 0;
-    if (commission < 0) {
-      _toast('အရောင်းပွဲခသည် အနုတ်မဖြစ်ရပါ');
-      return;
-    }
-
-    // All validations passed - add item to temporary list
-    setState(() {
-      _items.add(
-        _SaleItem(
-          id: const Uuid().v4(),
-          gemstoneId: _selectedFragmentGemstoneId,
-          gemstoneName: selectedPurchase?.name ?? 'Unknown',
-          quantity: qty,
-          unitPrice: unitPrice,
-          remark: '',
-          fragmentName: _selectedFragmentName,
-          isFragmentSource: true,
-          commission: commission,
-          weight: double.tryParse(_fragmentWeight.text.trim()),
-          weightUnit: _fragmentWeightUnit,
-        ),
-      );
-
-      // Update preview state for fragment item (Step 5E-1)
-      final netSale = qty * unitPrice;
-      _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale, fragmentQtyDeducted: qty);
-
-      // Clear only quantity/price/weight fields - KEEP fragment selections
-      // This allows user to continue adding more items from the same fragment
-      _fragmentQuantity.clear();
-      _fragmentUnitPrice.clear();
-      _fragmentCommission.text = '0';
-      _fragmentWeight.clear();
-      _fragmentWeightUnit = 'kg';
-      _fragmentQuantityError = null;
-      // NOTE: Do NOT clear _selectedFragmentGemstoneId or _selectedFragmentName
-      // Keep them set so the fragment form remains visible for next entry
-    });
-
-    _toast('အစိတ်စိတ်ပိုင်းထည့်သွင်းအောင်မြင်ပါသည်');
-  }
+  // REMOVED: _addFragmentItemMinimal - now uses unified _addFragmentItem() called by _addItemToTemporaryList()
 
   Widget _field(TextEditingController c, String label,
       {bool number = false, bool required = false}) {
