@@ -44,14 +44,8 @@ class _SalesPageState extends State<SalesPage> {
       builder: (_) => _SaleForm(existing: existing, hiveKey: key),
     );
 
-    // If a draft item was returned from fragment form, add it to the temporary list
-    if (result is _SaleItem) {
-      setState(() {
-        _items.add(result);
-      });
-    }
-    // Parent is now responsible for managing the invoice list
-    // Child form closes immediately after returning draft item
+    // If a draft item was returned from fragment form, it's already added to the list
+    // The form will have called setState() on the parent via Navigator.pop()
   }
 
   void _showSaleTypeSelector() {
@@ -1121,25 +1115,40 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
 
-    // All validations passed - create draft item and return to parent
-    final draftItem = _SaleItem(
-      id: const Uuid().v4(),
-      gemstoneId: _selectedFragmentGemstoneId,
-      gemstoneName: selectedPurchase?.name ?? 'Unknown',
-      quantity: qty,
-      unitPrice: unitPrice,
-      remark: '',
-      fragmentName: _selectedFragmentName,
-      isFragmentSource: true,
-      commission: commission,
-      weight: double.tryParse(_weight.text.trim()),
-      weightUnit: 'kg', // Default unit
-    );
+    // All validations passed - add item to temporary list
+    setState(() {
+      _items.add(
+        _SaleItem(
+          id: const Uuid().v4(),
+          gemstoneId: _selectedFragmentGemstoneId,
+          gemstoneName: selectedPurchase?.name ?? 'Unknown',
+          quantity: qty,
+          unitPrice: unitPrice,
+          remark: '',
+          fragmentName: _selectedFragmentName,
+          isFragmentSource: true,
+          commission: commission,
+          weight: double.tryParse(_weight.text.trim()),
+          weightUnit: 'kg', // Default unit
+        ),
+      );
 
-    // Close the form and return the draft item to parent
-    // Parent Sales Page will handle: _items.add(draftItem), setState(), UI refresh
-    Navigator.pop(context, draftItem);
-    // Form closes immediately - parent is responsible for managing the invoice list
+      // Update preview state for fragment item
+      final netSale = qty * unitPrice;
+      _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale, fragmentQtyDeducted: qty);
+
+      // Clear only quantity/price/weight fields - KEEP fragment selections
+      // This allows user to continue adding more items from the same fragment
+      _qty.text = '1'; // Default to 1 for next item (not empty!)
+      _amount.clear();
+      _commission.text = '0';
+      _weight.clear();
+      // NOTE: Do NOT clear _selectedFragmentGemstoneId or _selectedFragmentName
+      // Keep them set so the fragment form remains visible for next entry
+    });
+
+    _toast('အစိတ်စိတ်ပိုင်းထည့်သွင်းအောင်မြင်ပါသည်');
+    // Form stays open so user can add more items
   }
 
   void _removeItemFromTemporaryList(int index) {
