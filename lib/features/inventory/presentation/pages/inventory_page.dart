@@ -422,7 +422,18 @@ class _InventoryPageState extends State<InventoryPage> {
                   if (filteredGems.isEmpty) {
                     return _empty();
                   }
-                  final keys = filteredGems
+                  
+                  // Deduplicate by gemstone ID - keep only the first occurrence of each unique ID
+                  final seenIds = <String>{};
+                  final deduplicatedGems = <Gemstone>[];
+                  for (final g in filteredGems) {
+                    if (!seenIds.contains(g.id)) {
+                      seenIds.add(g.id);
+                      deduplicatedGems.add(g);
+                    }
+                  }
+                  
+                  final keys = deduplicatedGems
                       .map((g) => box.keys.firstWhere(
                             (k) => box.get(k)?.id == g.id,
                             orElse: () => null,
