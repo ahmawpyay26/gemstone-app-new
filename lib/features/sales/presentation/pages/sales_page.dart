@@ -1891,21 +1891,27 @@ class _SaleFormState extends State<_SaleForm> {
                       _buildFragmentSalarySummary(gems),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child:                                   SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _saleSource == 'breakdown_item' ? _addFragmentItemMinimal : _addItemToTemporaryList,
-                    child: const Flexible(
-                      child: Text(
-                        'ထည့်မည်',
-                        maxLines: 1,
-                        overflow: TextOverflow.visible,
-                        textAlign: TextAlign.center,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _saleSource == 'breakdown_item' ? _addFragmentItemMinimal : _addItemToTemporaryList,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryAccent,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          ),
+                          child: const Text(
+                            'ထည့်မည်',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
                     ),
                   ],
 
