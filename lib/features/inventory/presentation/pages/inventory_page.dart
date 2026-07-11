@@ -1040,22 +1040,26 @@ class _GemstoneFormState extends State<_GemstoneForm> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
-    return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppTheme.primaryDark,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppTheme.primaryDark,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        bottom: true,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1140,33 +1144,44 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                   },
                   recordType: 'purchase',
                 ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 60,
-                  child: ElevatedButton(
-                    onPressed: _save,
-                    child: Center(
-                      child: Text(
-                        isEdit ? 'သိမ်းဆည်းမည်' : 'ထည့်သွင်းမည်',
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          height: 1.3,
-                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Save button fixed at bottom
+            Container(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 12,
+                bottom: 20 + MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton(
+                  onPressed: _save,
+                  child: Center(
+                    child: Text(
+                      isEdit ? 'သိမ်းဆည်းမည်' : 'ထည့်သွင်းမည်',
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.visible,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        height: 1.3,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
