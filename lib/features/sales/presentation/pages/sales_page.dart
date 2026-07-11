@@ -2832,9 +2832,12 @@ class _SaleFormState extends State<_SaleForm> {
       return const SizedBox.shrink();
     }
 
-    // Get the selected fragment's quantity
+    // Get the selected fragment's quantity from breakdownItems
+    // breakdownItems stores fragments as: {'quantity': int, 'weight': double, 'weightUnit': string}
     final qtyObj = selectedPurchase.breakdownItems![_selectedFragmentName];
-    final selectedFragmentQty = (qtyObj is num) ? (qtyObj as num).toInt() : 0;
+    final selectedFragmentQty = (qtyObj is Map<String, dynamic>) 
+      ? (qtyObj['quantity'] as int?) ?? 0 
+      : (qtyObj is num ? (qtyObj as num).toInt() : 0);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
