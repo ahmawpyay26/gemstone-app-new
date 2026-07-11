@@ -1710,103 +1710,103 @@ class _SaleFormState extends State<_SaleForm> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                        color: Colors.grey[700],
-                        borderRadius: BorderRadius.circular(2)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text('အရောင်း မှတ်တမ်း',
-                    style: TextStyle(
-                        color: AppTheme.primaryAccent,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-
-                // --- Sale Source Selector (Step 5B) ---
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'ရောင်းချမည့်အမျိုးအစား',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                                color: Colors.grey[700],
+                                borderRadius: BorderRadius.circular(2)),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: RadioListTile<String>(
-                              contentPadding: EdgeInsets.zero,
-                              title: const Text(
-                                'အဝယ်စာရင်းမှ ကျောက်',
-                                style: TextStyle(color: Colors.white, fontSize: 13),
+                        const SizedBox(height: 16),
+                        const Text('အရောင်း မှတ်တမ်း',
+                            style: TextStyle(
+                                color: AppTheme.primaryAccent,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 16),
+
+                        // --- Sale Source Selector (Step 5B) ---
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'ရောင်းချမည့်အမျိုးအစား',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                              value: 'whole_stone',
-                              groupValue: _saleSource,
-                              onChanged: (value) => setState(() => _saleSource = value ?? 'whole_stone'),
-                              activeColor: AppTheme.primaryAccent,
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: RadioListTile<String>(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: const Text(
+                                        'အဝယ်စာရင်းမှ ကျောက်',
+                                        style: TextStyle(color: Colors.white, fontSize: 13),
+                                      ),
+                                      value: 'whole_stone',
+                                      groupValue: _saleSource,
+                                      onChanged: (value) => setState(() => _saleSource = value ?? 'whole_stone'),
+                                      activeColor: AppTheme.primaryAccent,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: RadioListTile<String>(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: const Text(
+                                        'ကျောက်အစိတ်စိတ်ပိုင်းများ',
+                                        style: TextStyle(color: Colors.white, fontSize: 13),
+                                      ),
+                                      value: 'breakdown_item',
+                                      groupValue: _saleSource,
+                                      onChanged: (value) => setState(() => _saleSource = value ?? 'whole_stone'),
+                                      activeColor: AppTheme.primaryAccent,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // --- Gemstone picker from inventory (Whole Stone) ---
+                        if (_saleSource == 'whole_stone')
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: DropdownButtonFormField<String?>(
+                              value: _selectedGemId,
+                              isExpanded: true,
+                              dropdownColor: AppTheme.surfaceLight,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: const InputDecoration(
+                                  labelText: 'ပစ်တ်စာရင်းမှ ကျောက်မျာရလေတေသပတ်'),
+                              items: [
+                                const DropdownMenuItem<String?>(
+                                  value: null,
+                                  child: Text('— လေကတမျိုးရောင်းမျိုး —'),
+                                ),
+                                ...gems.map((g) => DropdownMenuItem<String?>(
+                                      value: g.id,
+                                      child: Text(
+                                        '${g.name} (ကေမ် ${LocalDb.gemstoneRemainingQuantity(g)}'
+                                        '${g.weightCarat > 0 ? ' • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}' : ''})',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    )).toList(),
+                              ],
+                              onChanged: _onSelectGem,
                             ),
                           ),
-                          Expanded(
-                            child: RadioListTile<String>(
-                              contentPadding: EdgeInsets.zero,
-                              title: const Text(
-                                'ကျောက်အစိတ်စိတ်ပိုင်းများ',
-                                style: TextStyle(color: Colors.white, fontSize: 13),
-                              ),
-                              value: 'breakdown_item',
-                              groupValue: _saleSource,
-                              onChanged: (value) => setState(() => _saleSource = value ?? 'whole_stone'),
-                              activeColor: AppTheme.primaryAccent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
 
-                // --- Gemstone picker from inventory (Whole Stone) ---
-                if (_saleSource == 'whole_stone')
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: DropdownButtonFormField<String?>(
-                    value: _selectedGemId,
-                    isExpanded: true,
-                    dropdownColor: AppTheme.surfaceLight,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                        labelText: 'ပစ္စည်းစာရင်းမှ ကျောက်မျက်ရွေးပါ'),
-                    items: [
-                      const DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text('— လက်ဖြင့်ရိုက်ထည့်မည် —'),
-                      ),
-                      ...gems.map((g) => DropdownMenuItem<String?>(
-                            value: g.id,
-                            child: Text(
-                              '${g.name} (ကျန် ${LocalDb.gemstoneRemainingQuantity(g)}'
-                              '${g.weightCarat > 0 ? ' • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}' : ''})',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          )).toList(),
-                    ],
-                    onChanged: _onSelectGem,
-                  ),
-                ),
-
-                // Available stock hint (Whole Stone only)
-                if (_saleSource == 'whole_stone' && selectedGem != null)
-                  Padding(
+                        // Available stock hint (Whole Stone only)
+                        if (_saleSource == 'whole_stone' && selectedGem != null)
+                          Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Container(
                       padding: const EdgeInsets.all(10),
