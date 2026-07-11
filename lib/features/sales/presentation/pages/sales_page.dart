@@ -1240,24 +1240,26 @@ class _SaleFormState extends State<_SaleForm> {
     }
     
     // Initialize multi-item list
-    // For new sales: start with empty list so user can add items
-    // For existing sales: load the sale's items
+    // Architecture: ONE Sale record per item (not one Sale with multiple items)
+    // For new sales: start with empty list so user can add items via 'ထည့်မည်'
+    // For existing sales (edit mode): load the single sale as a draft item
     if (e != null) {
-      // Editing existing sale: load its items
-      _items = List.from(e.items ?? []);
-      // If no items exist, create one from the sale data for backward compatibility
-      if (_items.isEmpty) {
-        _items = [
-          _SaleItem(
-            id: const Uuid().v4(),
-            gemstoneId: e.gemstoneId,
-            gemstoneName: e.gemstoneName,
-            quantity: e.quantity,
-            unitPrice: e.amount,
-            remark: e.note,
-          ),
-        ];
-      }
+      // Editing existing sale: create one draft item from the sale data
+      _items = [
+        _SaleItem(
+          id: const Uuid().v4(),
+          gemstoneId: e.gemstoneId,
+          gemstoneName: e.gemstoneName,
+          quantity: e.quantity,
+          unitPrice: e.amount,
+          remark: e.note,
+          commission: e.commissionFee,
+          weight: e.weightCarat > 0 ? e.weightCarat : null,
+          weightUnit: e.weightUnit ?? 'carat',
+          isFragmentSource: e.isFragmentSource,
+          fragmentName: e.fragmentName,
+        ),
+      ];
     } else {
       // New sale: start with empty list so user can add items via 'ထည့်မည်'
       _items = [];
@@ -1559,27 +1561,27 @@ class _SaleFormState extends State<_SaleForm> {
     
     try {
       for (int i = 0; i < _items.length; i++) {
-      final item = _items[i];
-      final qty = item.quantity;
-      final unitPrice = item.unitPrice;
-      final amount = qty * unitPrice;
-      // Use item-specific commission for fragments, otherwise use form commission
-      final itemCommission = item.isFragmentSource ? item.commission : sellCommission;
-      final netSale = amount - itemCommission;
-      
-      // Calculate cost
-      double cost;
-      if (item.gemstoneId!.isNotEmpty) {
+        final item = _items[i];
+        final qty = item.quantity;
+        final unitPrice = item.unitPrice;
+        final amount = qty * unitPrice;
+        // Use item-specific commission for fragments, otherwise use form commission
+        final itemCommission = item.isFragmentSource ? item.commission : sellCommission;
+        final netSale = amount - itemCommission;
+        
+        // Calculate cost
+        double cost;
+        if (item.gemstoneId!.isNotEmpty) {
         cost = perUnitCost * qty;
-      } else {
+        } else {
         cost = perUnitCost;
-      }
-      
-      // Create Sale record
-      final fragmentWeight = item.isFragmentSource ? item.weight : null;
-      final fragmentWeightUnit = item.isFragmentSource ? item.weightUnit : null;
-      
-      final newSale = Sale(
+        }
+        
+        // Create Sale record
+        final fragmentWeight = item.isFragmentSource ? item.weight : null;
+        final fragmentWeightUnit = item.isFragmentSource ? item.weightUnit : null;
+        
+        final newSale = Sale(
         id: LocalDb.genId(),
         gemstoneId: item.gemstoneId ?? '',
         gemstoneName: item.gemstoneName,
@@ -1606,16 +1608,16 @@ class _SaleFormState extends State<_SaleForm> {
         invoiceNumber: invoiceNum,
         fragmentWeight: fragmentWeight,
         fragmentWeightUnit: fragmentWeightUnit,
-      );
-      
-      // Save to Hive
-      await box.add(newSale);
-      
-      // Update customer ledger
-      await LocalDb.applySaleCustomerLedger(newSale);
-      
-      // Update gemstone cost recovery using Preview State values
-      if (item.gemstoneId!.isNotEmpty) {
+        );
+        
+        // Save to Hive
+        await box.add(newSale);
+        
+        // Update customer ledger
+        await LocalDb.applySaleCustomerLedger(newSale);
+        
+        // Update gemstone cost recovery using Preview State values
+        if (item.gemstoneId!.isNotEmpty) {
         final gemstone = LocalDb.gemstoneById(item.gemstoneId!);
         if (gemstone != null) {
           // Use preview state values instead of recalculating
