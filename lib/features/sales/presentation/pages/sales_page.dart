@@ -25,7 +25,7 @@ class _SalesPageState extends State<SalesPage> {
   final _money = NumberFormat('#,##0', 'en_US');
   final _date = DateFormat('yyyy-MM-dd');
 
-  void _openForm({Sale? existing, dynamic key}) {
+  Future<void> _openForm({Sale? existing, dynamic key}) async {
     // Check edit permission
     if (existing != null && !LocalDb.canEditSale()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -37,12 +37,15 @@ class _SalesPageState extends State<SalesPage> {
       return;
     }
 
-    showModalBottomSheet(
+    final result = await showModalBottomSheet<dynamic>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _SaleForm(existing: existing, hiveKey: key),
     );
+
+    // If a draft item was returned from fragment form, it's already added to the list
+    // The form will have called setState() on the parent via Navigator.pop()
   }
 
   void _showSaleTypeSelector() {
@@ -1145,6 +1148,14 @@ class _SaleFormState extends State<_SaleForm> {
     });
 
     _toast('အစိတ်စိတ်ပိုင်းထည့်သွင်းအောင်မြင်ပါသည်');
+
+    // Navigate back to parent after successful addition
+    // The item has been added to the parent's _items list via setState()
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    });
   }
 
   void _removeItemFromTemporaryList(int index) {
