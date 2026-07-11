@@ -1040,7 +1040,7 @@ class _SaleFormState extends State<_SaleForm> {
     setState(() {
       _selectedGemId = null;
       _manualName.clear();
-      _qty.clear();
+      _qty.text = '1'; // Default to 1 for next item
       _amount.clear();
       _note.clear();
       _weight.clear();
@@ -1823,6 +1823,7 @@ class _SaleFormState extends State<_SaleForm> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: DropdownButtonFormField<String?>(
+                    key: ValueKey('gem_dropdown_${_items.length}'),
                     value: _selectedGemId,
                     isExpanded: true,
                     dropdownColor: AppTheme.surfaceLight,
