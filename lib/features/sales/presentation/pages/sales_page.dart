@@ -3894,4 +3894,22 @@ class _SaleHistoryCardState extends State<_SaleHistoryCard> {
     return fragments;
   }
 
+  Widget _expandedDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey[400], fontSize: 11),
+          ),
+          Text(
+            value,
+            style: TextStyle(color: Colors.grey[200], fontSize: 11, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
 }
