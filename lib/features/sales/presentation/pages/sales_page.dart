@@ -2024,18 +2024,24 @@ class _SaleFormState extends State<_SaleForm> {
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 56,
                   child: ElevatedButton(
                     onPressed: _addItemToTemporaryList,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryAccent,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                     ),
                     child: const Text(
                       'ထည့်မည်',
                       style: TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        height: 1.2,
                       ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
                     ),
                   ),
                 ),
