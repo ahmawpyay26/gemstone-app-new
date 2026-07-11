@@ -1714,11 +1714,24 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('အရောင်း မှတ်တမ်း',
-                    style: TextStyle(
-                        color: AppTheme.primaryAccent,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('အရောင်း မှတ်တမ်း',
+                          style: TextStyle(
+                              color: AppTheme.primaryAccent,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
 
                 // --- Sale Source Selector (Step 5B) ---
