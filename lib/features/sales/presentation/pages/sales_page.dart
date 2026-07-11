@@ -1259,14 +1259,6 @@ class _SaleFormState extends State<_SaleForm> {
   double get _totalQuantity => _items.fold<int>(0, (sum, item) => sum + item.quantity).toDouble();
   double get _totalAmount => _items.fold<double>(0, (sum, item) => sum + item.totalAmount);
   
-  void _removeItem(int index) {
-    if (_items.length > 1) {
-      setState(() {
-        _items.removeAt(index);
-      });
-    }
-  }
-
   void _onSelectGem(String? id) {
     setState(() {
       _selectedGemId = id;
