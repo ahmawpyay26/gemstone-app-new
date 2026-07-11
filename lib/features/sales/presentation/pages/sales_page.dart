@@ -1696,9 +1696,14 @@ class _SaleFormState extends State<_SaleForm> {
           color: AppTheme.primaryDark,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Form(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
             key: _formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -2238,59 +2243,59 @@ class _SaleFormState extends State<_SaleForm> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Finalize Sale Button (Two-Stage Confirmation)
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _items.isEmpty || _isSaving ? null : _finalizeAndSave,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _items.isEmpty || _isSaving
-                              ? AppTheme.primaryAccent.withOpacity(0.5)
-                              : AppTheme.primaryAccent,
-                          disabledBackgroundColor: AppTheme.primaryAccent.withOpacity(0.5),
-                        ),
-                        child: _isSaving
-                            ? const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text(
-                                    'သိမ်းဆည်းနေသည်...',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Text(
-                                'ရောင်းချမည်',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
                 ], // End of if (_saleSource == 'whole_stone')
               ],
             ),
-          ),
+              ),
+            ),
+            // Finalize Sale Button (Two-Stage Confirmation) - Outside scroll
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _items.isEmpty || _isSaving ? null : _finalizeAndSave,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _items.isEmpty || _isSaving
+                        ? AppTheme.primaryAccent.withOpacity(0.5)
+                        : AppTheme.primaryAccent,
+                    disabledBackgroundColor: AppTheme.primaryAccent.withOpacity(0.5),
+                  ),
+                  child: _isSaving
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              'သိမ်းဆည်းနေသည်...',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          'ရောင်းချမည်',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
