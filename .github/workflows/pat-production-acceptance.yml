@@ -1,10 +1,9 @@
 name: PAT - Production Acceptance Testing
 
 on:
-  workflow_dispatch:
   push:
     branches: [main]
-    tags: ['v*-pat']
+  workflow_dispatch:
 
 jobs:
   # ---------------------------------------------------------------------------
