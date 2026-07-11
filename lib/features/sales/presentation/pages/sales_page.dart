@@ -2383,7 +2383,6 @@ class _SaleFormState extends State<_SaleForm> {
       ),
     );
   }
-}
 
   /// Build read-only list of purchases with breakdown items (Step 5C-1)
   Widget _buildFragmentPurchaseList(List<Gemstone> gems) {
