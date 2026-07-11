@@ -2547,6 +2547,7 @@ class _SaleFormState extends State<_SaleForm> {
               onChanged: (value) {
                 setState(() {
                   _selectedFragmentName = value;
+                  _saleSource = 'breakdown_item'; // Ensure source is set when fragment is selected
                 });
               },
               style: const TextStyle(color: Colors.white),
