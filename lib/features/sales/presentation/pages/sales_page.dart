@@ -2252,7 +2252,7 @@ class _SaleFormState extends State<_SaleForm> {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 52,
                       child: ElevatedButton(
                         onPressed: _items.isEmpty || _isSaving ? null : _finalizeAndSave,
                         style: ElevatedButton.styleFrom(
@@ -2260,6 +2260,8 @@ class _SaleFormState extends State<_SaleForm> {
                               ? AppTheme.primaryAccent.withOpacity(0.5)
                               : AppTheme.primaryAccent,
                           disabledBackgroundColor: AppTheme.primaryAccent.withOpacity(0.5),
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                         ),
                         child: _isSaving
                             ? const Row(
@@ -2274,30 +2276,22 @@ class _SaleFormState extends State<_SaleForm> {
                                     ),
                                   ),
                                   SizedBox(width: 12),
-                                  Flexible(
-                                    child: Text(
-                                      'သိမ်းဆည်းနေသည်...',
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.visible,
+                                  Text(
+                                    'သိမ်းဆည်းနေသည်...',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
                                     ),
                                   ),
                                 ],
                               )
-                            : Flexible(
-                                child: Text(
-                                  'ရောင်းချမည်',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.visible,
-                                  textAlign: TextAlign.center,
+                            : const Text(
+                                'ရောင်းချမည်',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
                               ),
                       ),
