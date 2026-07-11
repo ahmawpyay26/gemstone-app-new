@@ -1704,12 +1704,12 @@ class _SaleFormState extends State<_SaleForm> {
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
                   child: Container(
                     width: 40,
                     height: 4,
@@ -2242,10 +2242,11 @@ class _SaleFormState extends State<_SaleForm> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                ], // End of if (_saleSource == 'whole_stone')
-              ],
-            ),
+                    const SizedBox(height: 16),
+                    ], // End of if (_saleSource == 'whole_stone')
+                  ],
+                ),
+                ),
               ),
             ),
             // Finalize Sale Button (Two-Stage Confirmation) - Outside scroll
