@@ -2985,15 +2985,16 @@ class _SaleFormState extends State<_SaleForm> {
       final netSale = qty * unitPrice;
       _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale, fragmentQtyDeducted: qty);
 
-      // Clear fragment-related fields only
-      _selectedFragmentGemstoneId = null;
-      _selectedFragmentName = null;
+      // Clear only quantity/price/weight fields - KEEP fragment selections
+      // This allows user to continue adding more items from the same fragment
       _fragmentQuantity.clear();
       _fragmentUnitPrice.clear();
       _fragmentCommission.text = '0';
       _fragmentWeight.clear();
       _fragmentWeightUnit = 'kg';
       _fragmentQuantityError = null;
+      // NOTE: Do NOT clear _selectedFragmentGemstoneId or _selectedFragmentName
+      // Keep them set so the fragment form remains visible for next entry
     });
 
     _toast('အစိတ်စိတ်ပိုင်းထည့်သွင်းအောင်မြင်ပါသည်');
