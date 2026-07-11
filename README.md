@@ -13,6 +13,7 @@ Professional Gemstone Trading and Processing Management Mobile Application built
 - **QR Code Tracking**: Track gemstones with QR codes
 - **Notifications**: Real-time alerts and updates
 - **Sync Engine**: Hybrid offline-online synchronization (when backend is available)
+- **Multi-Item Invoices**: Support for creating invoices with multiple gemstone items in a single transaction
 
 ## Requirements
 
