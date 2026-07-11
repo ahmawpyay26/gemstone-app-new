@@ -1240,16 +1240,28 @@ class _SaleFormState extends State<_SaleForm> {
     }
     
     // Initialize multi-item list
-    _items = [
-      _SaleItem(
-        id: const Uuid().v4(),
-        gemstoneId: e?.gemstoneId,
-        gemstoneName: e?.gemstoneName ?? '',
-        quantity: e?.quantity ?? 1,
-        unitPrice: e?.amount ?? 0,
-        remark: e?.note ?? '',
-      ),
-    ];
+    // For new sales: start with empty list so user can add items
+    // For existing sales: load the sale's items
+    if (e != null) {
+      // Editing existing sale: load its items
+      _items = List.from(e.items ?? []);
+      // If no items exist, create one from the sale data for backward compatibility
+      if (_items.isEmpty) {
+        _items = [
+          _SaleItem(
+            id: const Uuid().v4(),
+            gemstoneId: e.gemstoneId,
+            gemstoneName: e.gemstoneName,
+            quantity: e.quantity,
+            unitPrice: e.amount,
+            remark: e.note,
+          ),
+        ];
+      }
+    } else {
+      // New sale: start with empty list so user can add items via 'ထည့်မည်'
+      _items = [];
+    }
   }
 
   static String _trim(double v) =>
