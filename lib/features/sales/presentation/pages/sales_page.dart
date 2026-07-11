@@ -1479,7 +1479,11 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   Future<void> _performFinalSave() async {
-    if (!_formKey.currentState!.validate()) return;
+    // Check if temporary list has items
+    if (_items.isEmpty) {
+      _toast('ရောင်းချရန် ပစ္စည်းအနည်းဆုံးတစ်ခု ထည့်ပါ');
+      return;
+    }
 
     // PHASE 1: VALIDATE ALL ITEMS BEFORE SAVING ANY
     for (int i = 0; i < _items.length; i++) {
@@ -1661,9 +1665,20 @@ class _SaleFormState extends State<_SaleForm> {
       _commission.clear();
       _photoPaths.clear();
       
-      // Show success and close form
+      // Show success and navigate to Sales History
       _toast('Invoice $invoiceNum သိမ်းဆည်းပြီးပါပြီ');
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        // Pop the form modal
+        Navigator.pop(context);
+        // Trigger refresh of sales history
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            setState(() {
+              // Trigger rebuild to refresh sales list
+            });
+          }
+        });
+      }
     } catch (e) {
       // FAILURE: Keep preview state and temporary list for retry
       _toast('အမှားအယွင်း: $e');
