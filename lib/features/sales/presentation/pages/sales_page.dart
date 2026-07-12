@@ -1607,12 +1607,13 @@ class _SaleFormState extends State<_SaleForm> {
         final itemCommission = item.commission; // Use pre-calculated commission
         final netSale = item.netSale; // Use pre-calculated net sale
         
-        // Calculate cost
+        // Calculate cost using unit price from draft item
+        final perUnitCost = item.unitPrice;
         double cost;
         if (item.gemstoneId!.isNotEmpty) {
-        cost = perUnitCost * qty;
+          cost = perUnitCost * qty;
         } else {
-        cost = perUnitCost;
+          cost = perUnitCost;
         }
         
         // Create Sale record
