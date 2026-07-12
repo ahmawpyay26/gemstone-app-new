@@ -63,6 +63,7 @@ class LocalDb {
 
     await _seedDefaults();
     await _migrateGemstonesCostTracking();
+    await _migrateFixRemainingCostBalance();
   }
 
   /// Supported weight units. value => Burmese display label.
@@ -246,7 +247,9 @@ class LocalDb {
       final g = gems.getAt(i);
       if (g != null && g.originalPurchaseCost == 0) {
         g.originalPurchaseCost = g.costPrice;
-        g.remainingCostBalance = g.costPrice;
+        // FIX: Use TOTAL PURCHASE COST (costPrice + all fees) as the starting balance
+        // This is the value displayed as "စုစုပေါင်းအရင်း"
+        g.remainingCostBalance = gemstoneTotalCost(g);
         g.recoveredCost = 0;
         await gems.putAt(i, g);
         hasChanges = true;
@@ -255,6 +258,55 @@ class LocalDb {
     
     if (hasChanges) {
       print('[Migration] Gemstone cost tracking fields initialized for existing records');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Migration: Fix remainingCostBalance to use totalPurchaseCost
+  // -------------------------------------------------------------------------
+  /// Recalculates remainingCostBalance for ALL gemstones using the correct
+  /// totalPurchaseCost (costPrice + all fees) instead of just costPrice.
+  /// This fixes the bug where cost recovery used only the base cost.
+  static Future<void> _migrateFixRemainingCostBalance() async {
+    final gems = Hive.box<Gemstone>(gemstonesBox);
+    bool hasChanges = false;
+    
+    for (int i = 0; i < gems.length; i++) {
+      final g = gems.getAt(i);
+      if (g == null) continue;
+      
+      final totalCost = gemstoneTotalCost(g);
+      
+      // Recalculate from scratch: totalCost minus all net sales = remaining balance
+      final salesForGem = sales()
+          .values
+          .where((s) => !s.isDeleted && s.gemstoneId == g.id)
+          .toList();
+      
+      double totalNetSales = 0;
+      for (final sale in salesForGem) {
+        totalNetSales += (sale.amount - sale.commissionFee);
+      }
+      
+      final correctRemainingBalance = (totalCost - totalNetSales).clamp(0, double.infinity);
+      final correctRecoveredCost = totalNetSales.clamp(0, totalCost);
+      final correctProfit = totalNetSales > totalCost ? totalNetSales - totalCost : 0.0;
+      
+      // Only update if values are different
+      if ((g.remainingCostBalance - correctRemainingBalance).abs() > 0.01 ||
+          (g.recoveredCost - correctRecoveredCost).abs() > 0.01) {
+        g.remainingCostBalance = correctRemainingBalance;
+        g.recoveredCost = correctRecoveredCost;
+        g.totalProfit = correctProfit;
+        g.remainingCost = correctRemainingBalance;
+        g.totalCost = totalCost;
+        await gems.putAt(i, g);
+        hasChanges = true;
+      }
+    }
+    
+    if (hasChanges) {
+      print('[Migration] Fixed remainingCostBalance to use totalPurchaseCost for all gemstones');
     }
   }
 
@@ -1099,18 +1151,20 @@ class LocalDb {
   /// Calculate remaining cost and total profit from sales records
   /// Returns {remainingCost, totalProfit}
   /// 
-  /// FIXED: Uses original purchase cost (never changes) instead of total cost.
+  /// Uses TOTAL PURCHASE COST (costPrice + all fees) as the single source of truth.
+  /// This is the value displayed as "စုစုပေါင်းအရင်း".
   /// Correctly calculates:
-  /// - Recovered Principal = min(Original Cost, Total Net Sales)
-  /// - Remaining Principal = max(Original Cost - Total Net Sales, 0)
-  /// - Profit = Total Net Sales - Original Cost (only if cost fully recovered)
+  /// - Recovered Principal = min(totalPurchaseCost, totalNetSales)
+  /// - Remaining Principal = max(totalPurchaseCost - totalNetSales, 0)
+  /// - Profit = max(totalNetSales - totalPurchaseCost, 0)
   static Map<String, double> calculateRemainingCostAndProfit(String gemstoneId) {
     final g = gemstoneById(gemstoneId);
     if (g == null) return {'remainingCost': 0, 'totalProfit': 0};
 
-    // FIX: Use original purchase cost (never changes), not total cost
-    final originalCost = g.originalPurchaseCost > 0 ? g.originalPurchaseCost : g.costPrice;
-    double remainingCost = originalCost;
+    // Use TOTAL PURCHASE COST (purchase price + all purchase expenses)
+    // This is gemstoneTotalCost = costPrice + commissionFee + processingFee + repairFee + breakageFee + bloodFee + laborFee + miscFee
+    final totalPurchaseCost = gemstoneTotalCost(g);
+    double remainingCost = totalPurchaseCost;
     double totalProfit = 0;
 
     // Get all sales for this gemstone, sorted by date (oldest first)
