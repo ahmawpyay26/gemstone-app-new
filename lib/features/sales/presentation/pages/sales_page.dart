@@ -805,9 +805,16 @@ class _SaleItem {
   String remark;
   String? fragmentName; // Fragment name if from breakdown_item source
   bool isFragmentSource; // True if this item is from fragment source
-  double commission; // Commission fee for this item
+  double commission; // Commission fee for this item (read at ထည့်မည် time)
   double? weight; // Fragment weight (optional)
   String? weightUnit; // Fragment weight unit
+
+  // Pre-calculated financial values (calculated at ထည့်မည် time)
+  late double saleAmount; // Gross sale amount (quantity * unitPrice)
+  late double netSale; // Net sale (saleAmount - commission)
+  late double recoveredPrincipal; // Cumulative recovered principal after this item
+  late double remainingPrincipal; // Cumulative remaining principal after this item
+  late double cumulativeProfit; // Cumulative profit after this item
 
   _SaleItem({
     required this.id,
