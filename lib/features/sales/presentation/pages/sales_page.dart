@@ -1182,7 +1182,7 @@ class _SaleFormState extends State<_SaleForm> {
 
     double totalNetSales = 0;
     final gemstone = _selectedGemId != null ? LocalDb.gemstoneById(_selectedGemId!) : null;
-    final totalPurchaseCost = gemstone != null ? LocalDb.gemstoneTotalCost(gemstone) : 0;
+    final double totalPurchaseCost = gemstone != null ? LocalDb.gemstoneTotalCost(gemstone).toDouble() : 0.0;
 
     for (var item in _items) {
       totalNetSales += item.netSale;
