@@ -920,13 +920,14 @@ class _SaleFormState extends State<_SaleForm> {
     preview['previewRemainingQuantity'] = (preview['originalRemainingQuantity'] as int) - (preview['totalFragmentQtyDeducted'] as int? ?? 0);
   }
   
-  /// Recalculate preview state from all items in temporary list
+    /// Recalculate preview state from all items in temporary list
   void _recalculatePreview() {
     _previewState.clear();
-    
     for (final item in _items) {
       if (item.gemstoneId != null && item.gemstoneId!.isNotEmpty) {
-        final netSale = (item.quantity * item.unitPrice) - (double.tryParse(_commission.text.trim()) ?? 0);
+        // Use item-specific commission for fragments, form commission for whole-stone
+        final itemCommission = item.isFragmentSource ? item.commission : (double.tryParse(_commission.text.trim()) ?? 0);
+        final netSale = (item.quantity * item.unitPrice) - itemCommission;
         _updatePreviewForGemstone(item.gemstoneId, netSale);
       }
     }
@@ -1144,7 +1145,8 @@ class _SaleFormState extends State<_SaleForm> {
       );
 
       // Update preview state for fragment item
-      final netSale = qty * unitPrice;
+      // CRITICAL: netSale must deduct commission before calculating recovery/profit
+      final netSale = (qty * unitPrice) - commission;
       _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale, fragmentQtyDeducted: qty);
 
       // Clear only quantity/price/weight fields - KEEP fragment selections

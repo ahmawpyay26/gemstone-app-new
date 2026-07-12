@@ -985,7 +985,7 @@ class LocalDb {
     if (gemstoneId.isEmpty) return 0;
     double t = 0;
     for (final s in sales().values) {
-      if (s.gemstoneId == gemstoneId) {
+      if (!s.isDeleted && s.gemstoneId == gemstoneId) {
         t += (s.amount - s.commissionFee);
       }
     }
