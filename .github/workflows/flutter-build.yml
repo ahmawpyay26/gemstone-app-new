@@ -31,7 +31,15 @@ jobs:
         run: flutter pub get
 
       - name: Run Flutter Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings > flutter_analyze.txt 2>&1 || true
+      
+      - name: Upload Flutter Analyze Output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-analyze-output
+          path: flutter_analyze.txt
+          retention-days: 7
 
       - name: Build APK (Release)
         run: flutter build apk --release --no-shrink
