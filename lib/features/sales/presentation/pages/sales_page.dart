@@ -1595,20 +1595,17 @@ class _SaleFormState extends State<_SaleForm> {
     final invoiceNum = 'INV-$dateStr-${(existingInvoices + 1).toString().padLeft(3, '0')}';
 
     // PHASE 3: SAVE LOOP - Save each item as separate Sale record
-    // Use Preview State values (Step 4D: Commit Preview to Database)
+    // Use PRE-CALCULATED values from draft items (calculated at ထည့်မည် time)
     final Set<String> gemstonesUpdated = {};
-    final sellCommission = double.tryParse(_commission.text.trim()) ?? 0;
-    final perUnitCost = double.tryParse(_cost.text.trim()) ?? 0;
     
     try {
       for (int i = 0; i < _items.length; i++) {
         final item = _items[i];
         final qty = item.quantity;
         final unitPrice = item.unitPrice;
-        final amount = qty * unitPrice;
-        // Use item-specific commission for fragments, otherwise use form commission
-        final itemCommission = item.isFragmentSource ? item.commission : sellCommission;
-        final netSale = amount - itemCommission;
+        final amount = item.saleAmount; // Use pre-calculated gross amount
+        final itemCommission = item.commission; // Use pre-calculated commission
+        final netSale = item.netSale; // Use pre-calculated net sale
         
         // Calculate cost
         double cost;
