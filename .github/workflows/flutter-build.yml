@@ -27,13 +27,30 @@ jobs:
       - name: Get Flutter version
         run: flutter --version
 
+      - name: Clean
+        run: flutter clean
+
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run Flutter Analyze
+      - name: Run dart analyze
+        run: dart analyze > dart_analyze.txt 2>&1 || true
+
+      - name: Run flutter analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings > flutter_analyze.txt 2>&1 || true
-      
-      - name: Upload Flutter Analyze Output
+
+      - name: Build APK (Verbose)
+        run: flutter build apk --release --no-shrink --verbose > build_log.txt 2>&1 || true
+
+      - name: Upload dart analyze output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dart-analyze-output
+          path: dart_analyze.txt
+          retention-days: 7
+
+      - name: Upload flutter analyze output
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -41,8 +58,31 @@ jobs:
           path: flutter_analyze.txt
           retention-days: 7
 
-      - name: Build APK (Release)
-        run: flutter build apk --release --no-shrink
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build_log.txt
+          retention-days: 7
+
+      - name: Check build result
+        run: |
+          if [ -f build_log.txt ]; then
+            if grep -q "BUILD SUCCESSFUL\|✓ Built" build_log.txt; then
+              echo "Build succeeded!"
+            else
+              echo "Build failed. Check build-log artifact for details."
+              echo "=== LAST 50 LINES OF BUILD LOG ==="
+              tail -50 build_log.txt
+              echo "=== DART ANALYZE OUTPUT ==="
+              cat dart_analyze.txt
+              exit 1
+            fi
+          else
+            echo "No build log found"
+            exit 1
+          fi
 
       - name: Locate APK
         id: apk_path
