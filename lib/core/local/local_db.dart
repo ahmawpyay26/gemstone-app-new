@@ -1098,12 +1098,19 @@ class LocalDb {
 
   /// Calculate remaining cost and total profit from sales records
   /// Returns {remainingCost, totalProfit}
+  /// 
+  /// FIXED: Uses original purchase cost (never changes) instead of total cost.
+  /// Correctly calculates:
+  /// - Recovered Principal = min(Original Cost, Total Net Sales)
+  /// - Remaining Principal = max(Original Cost - Total Net Sales, 0)
+  /// - Profit = Total Net Sales - Original Cost (only if cost fully recovered)
   static Map<String, double> calculateRemainingCostAndProfit(String gemstoneId) {
     final g = gemstoneById(gemstoneId);
     if (g == null) return {'remainingCost': 0, 'totalProfit': 0};
 
-    final initialCost = gemstoneTotalCost(g);
-    double remainingCost = initialCost;
+    // FIX: Use original purchase cost (never changes), not total cost
+    final originalCost = g.originalPurchaseCost > 0 ? g.originalPurchaseCost : g.costPrice;
+    double remainingCost = originalCost;
     double totalProfit = 0;
 
     // Get all sales for this gemstone, sorted by date (oldest first)
