@@ -288,9 +288,9 @@ class LocalDb {
         totalNetSales += (sale.amount - sale.commissionFee);
       }
       
-      final correctRemainingBalance = (totalCost - totalNetSales).clamp(0, double.infinity);
-      final correctRecoveredCost = totalNetSales.clamp(0, totalCost);
-      final correctProfit = totalNetSales > totalCost ? totalNetSales - totalCost : 0.0;
+      final double correctRemainingBalance = (totalCost - totalNetSales) < 0 ? 0.0 : (totalCost - totalNetSales);
+      final double correctRecoveredCost = totalNetSales > totalCost ? totalCost : totalNetSales;
+      final double correctProfit = totalNetSales > totalCost ? totalNetSales - totalCost : 0.0;
       
       // Only update if values are different
       if ((g.remainingCostBalance - correctRemainingBalance).abs() > 0.01 ||
@@ -1190,8 +1190,8 @@ class LocalDb {
     }
 
     return {
-      'remainingCost': remainingCost.clamp(0, double.infinity),
-      'totalProfit': totalProfit.clamp(0, double.infinity),
+      'remainingCost': remainingCost < 0 ? 0.0 : remainingCost,
+      'totalProfit': totalProfit < 0 ? 0.0 : totalProfit,
     };
   }
 
