@@ -810,11 +810,11 @@ class _SaleItem {
   String? weightUnit; // Fragment weight unit
 
   // Pre-calculated financial values (calculated at ထည့်မည် time)
-  late double saleAmount; // Gross sale amount (quantity * unitPrice)
-  late double netSale; // Net sale (saleAmount - commission)
-  late double recoveredPrincipal; // Cumulative recovered principal after this item
-  late double remainingPrincipal; // Cumulative remaining principal after this item
-  late double cumulativeProfit; // Cumulative profit after this item
+  double saleAmount = 0; // Gross sale amount (quantity * unitPrice)
+  double netSale = 0; // Net sale (saleAmount - commission)
+  double recoveredPrincipal = 0; // Cumulative recovered principal after this item
+  double remainingPrincipal = 0; // Cumulative remaining principal after this item
+  double cumulativeProfit = 0; // Cumulative profit after this item
 
   _SaleItem({
     required this.id,
