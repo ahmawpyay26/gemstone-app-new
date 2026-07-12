@@ -1014,6 +1014,9 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
 
+    // READ COMMISSION IMMEDIATELY at ထည့်မည် time
+    final commissionValue = double.tryParse(_commission.text.trim()) ?? 0;
+
     // Get gemstone name
     String gemstoneName = _manualName.text;
     String? gemstoneId;
@@ -1023,7 +1026,7 @@ class _SaleFormState extends State<_SaleForm> {
       gemstoneId = gem?.id;
     }
 
-    // Create item
+    // Create item with stored commission
     final item = _SaleItem(
       id: const Uuid().v4(),
       gemstoneId: gemstoneId,
@@ -1031,18 +1034,20 @@ class _SaleFormState extends State<_SaleForm> {
       quantity: qty.toInt(),
       unitPrice: price,
       remark: _note.text,
+      commission: commissionValue,
     );
+
+    // CALCULATE financial values immediately at ထည့်မည် time
+    item.saleAmount = item.quantity * item.unitPrice;
+    item.netSale = item.saleAmount - commissionValue;
 
     // Add to list
     setState(() {
       _items.add(item);
     });
 
-    // Update preview state for this item
-    if (gemstoneId != null && gemstoneId.isNotEmpty) {
-      final netSale = (item.quantity * item.unitPrice) - (double.tryParse(_commission.text.trim()) ?? 0);
-      _updatePreviewForGemstone(gemstoneId, netSale);
-    }
+    // Recalculate cumulative financial values from all draft items
+    _recalculateCumulativeFinancials();
 
     // Clear form fields
     setState(() {
@@ -1132,32 +1137,37 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
 
-    // All validations passed - add item to temporary list
+    // All validations passed - create item with pre-calculated financial values
     print('DEBUG: All validations passed! Adding item to _items');
+    
+    final item = _SaleItem(
+      id: const Uuid().v4(),
+      gemstoneId: _selectedFragmentGemstoneId,
+      gemstoneName: selectedPurchase?.name ?? 'Unknown',
+      quantity: qty,
+      unitPrice: unitPrice,
+      remark: '',
+      fragmentName: _selectedFragmentName,
+      isFragmentSource: true,
+      commission: commission,
+      weight: double.tryParse(_weight.text.trim()),
+      weightUnit: 'kg', // Default unit
+    );
+
+    // CALCULATE financial values immediately at ထည့်မည် time
+    item.saleAmount = qty * unitPrice;
+    item.netSale = item.saleAmount - commission;
+
     setState(() {
-      _items.add(
-        _SaleItem(
-          id: const Uuid().v4(),
-          gemstoneId: _selectedFragmentGemstoneId,
-          gemstoneName: selectedPurchase?.name ?? 'Unknown',
-          quantity: qty,
-          unitPrice: unitPrice,
-          remark: '',
-          fragmentName: _selectedFragmentName,
-          isFragmentSource: true,
-          commission: commission,
-          weight: double.tryParse(_weight.text.trim()),
-          weightUnit: 'kg', // Default unit
-        ),
-      );
+      _items.add(item);
+    });
 
-      // Update preview state for fragment item
-      // CRITICAL: netSale must deduct commission before calculating recovery/profit
-      final netSale = (qty * unitPrice) - commission;
-      _updatePreviewForGemstone(_selectedFragmentGemstoneId, netSale, fragmentQtyDeducted: qty);
+    // Recalculate cumulative financial values from all draft items
+    _recalculateCumulativeFinancials();
 
-      // Clear only quantity/price/weight fields - KEEP fragment selections
-      // This allows user to continue adding more items from the same fragment
+    // Clear only quantity/price/weight fields - KEEP fragment selections
+    // This allows user to continue adding more items from the same fragment
+    setState(() {
       _qty.text = '1'; // Default to 1 for next item (not empty!)
       _amount.clear();
       _commission.text = '0';
@@ -1170,11 +1180,30 @@ class _SaleFormState extends State<_SaleForm> {
     // Form stays open so user can add more items
   }
 
+  void _recalculateCumulativeFinancials() {
+    if (_items.isEmpty) return;
+
+    double totalNetSales = 0;
+    final gemstone = _selectedGemId != null ? LocalDb.gemstoneById(_selectedGemId!) : null;
+    final totalPurchaseCost = gemstone != null ? LocalDb.gemstoneTotalCost(gemstone) : 0;
+
+    for (var item in _items) {
+      totalNetSales += item.netSale;
+      
+      // Calculate cumulative values
+      item.recoveredPrincipal = totalNetSales > totalPurchaseCost ? totalPurchaseCost : totalNetSales;
+      item.remainingPrincipal = totalNetSales >= totalPurchaseCost ? 0 : (totalPurchaseCost - totalNetSales);
+      item.cumulativeProfit = totalNetSales > totalPurchaseCost ? (totalNetSales - totalPurchaseCost) : 0;
+    }
+
+    setState(() {});
+  }
+
   void _removeItemFromTemporaryList(int index) {
     setState(() {
       _items.removeAt(index);
     });
-    _recalculatePreview();
+    _recalculateCumulativeFinancials();
     _showSuccess('Item removed');
   }
 
