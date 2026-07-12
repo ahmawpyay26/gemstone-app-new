@@ -33,14 +33,33 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run dart analyze
-        run: dart analyze > dart_analyze.txt 2>&1 || true
+      - name: Run dart analyze and capture errors
+        run: |
+          dart analyze 2>&1 | tee dart_analyze.txt
+          echo "---DART ANALYZE OUTPUT---"
+          cat dart_analyze.txt
+          echo "---END DART ANALYZE---"
 
-      - name: Run flutter analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings > flutter_analyze.txt 2>&1 || true
+      - name: Print first errors from dart analyze
+        if: always()
+        run: |
+          echo "## Dart Analyze Errors" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -i "error\|Error" dart_analyze.txt | head -20 >> $GITHUB_STEP_SUMMARY || echo "No errors found in dart analyze" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Full Dart Analyze Output (first 50 lines)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          head -50 dart_analyze.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Build APK (Verbose)
-        run: flutter build apk --release --no-shrink --verbose > build_log.txt 2>&1 || true
+      - name: Build APK (Release)
+        run: |
+          flutter build apk --release --no-shrink 2>&1 | tee build_log.txt || true
+          echo "## Build Log (last 30 lines)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -30 build_log.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload dart analyze output
         if: always()
@@ -48,14 +67,6 @@ jobs:
         with:
           name: dart-analyze-output
           path: dart_analyze.txt
-          retention-days: 7
-
-      - name: Upload flutter analyze output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-analyze-output
-          path: flutter_analyze.txt
           retention-days: 7
 
       - name: Upload build log
@@ -66,21 +77,14 @@ jobs:
           path: build_log.txt
           retention-days: 7
 
-      - name: Check build result
+      - name: Check if build succeeded
         run: |
-          if [ -f build_log.txt ]; then
-            if grep -q "BUILD SUCCESSFUL\|✓ Built" build_log.txt; then
-              echo "Build succeeded!"
-            else
-              echo "Build failed. Check build-log artifact for details."
-              echo "=== LAST 50 LINES OF BUILD LOG ==="
-              tail -50 build_log.txt
-              echo "=== DART ANALYZE OUTPUT ==="
-              cat dart_analyze.txt
-              exit 1
-            fi
+          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+            echo "Build succeeded!"
           else
-            echo "No build log found"
+            echo "BUILD FAILED - check dart_analyze.txt and build_log.txt artifacts"
+            echo "First 5 error lines:"
+            grep -i "error" dart_analyze.txt | head -5
             exit 1
           fi
 
@@ -96,34 +100,9 @@ jobs:
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
           echo "Found APK at: $APK_PATH"
 
-      - name: Calculate APK SHA-256
-        run: |
-          APK_PATH="${{ steps.apk_path.outputs.apk_path }}"
-          sha256sum "$APK_PATH" > apk-sha256.txt
-          cat apk-sha256.txt
-
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: ${{ steps.apk_path.outputs.apk_path }}
           retention-days: 30
-
-      - name: Upload SHA-256
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-sha256
-          path: apk-sha256.txt
-          retention-days: 30
-
-      - name: Comment PR with build status
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '✅ Flutter build succeeded!\n\nAPK artifact available in Actions.'
-            })
