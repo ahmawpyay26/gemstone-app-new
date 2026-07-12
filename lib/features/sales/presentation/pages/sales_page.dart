@@ -809,13 +809,6 @@ class _SaleItem {
   double? weight; // Fragment weight (optional)
   String? weightUnit; // Fragment weight unit
 
-  // Pre-calculated financial values (calculated at ထည့်မည် time)
-  double saleAmount = 0; // Gross sale amount (quantity * unitPrice)
-  double netSale = 0; // Net sale (saleAmount - commission)
-  double recoveredPrincipal = 0; // Cumulative recovered principal after this item
-  double remainingPrincipal = 0; // Cumulative remaining principal after this item
-  double cumulativeProfit = 0; // Cumulative profit after this item
-
   _SaleItem({
     required this.id,
     this.gemstoneId,
@@ -830,7 +823,15 @@ class _SaleItem {
     this.weightUnit,
   });
 
+  // Calculated properties
   double get totalAmount => quantity * unitPrice;
+  double get saleAmount => quantity * unitPrice;
+  double get netSale => saleAmount - commission;
+  
+  // Cumulative financial values (will be set during save flow)
+  double recoveredPrincipal = 0;
+  double remainingPrincipal = 0;
+  double cumulativeProfit = 0;
 }
 
 class _SaleForm extends StatefulWidget {
@@ -1037,9 +1038,7 @@ class _SaleFormState extends State<_SaleForm> {
       commission: commissionValue,
     );
 
-    // CALCULATE financial values immediately at ထည့်မည် time
-    item.saleAmount = item.quantity * item.unitPrice;
-    item.netSale = item.saleAmount - commissionValue;
+    // Financial values are now calculated via getters (saleAmount, netSale)
 
     // Add to list
     setState(() {
@@ -1154,9 +1153,7 @@ class _SaleFormState extends State<_SaleForm> {
       weightUnit: 'kg', // Default unit
     );
 
-    // CALCULATE financial values immediately at ထည့်မည် time
-    item.saleAmount = qty * unitPrice;
-    item.netSale = item.saleAmount - commission;
+    // Financial values are now calculated via getters (saleAmount, netSale)
 
     setState(() {
       _items.add(item);
@@ -1300,13 +1297,8 @@ class _SaleFormState extends State<_SaleForm> {
         fragmentName: e.fragmentName,
       );
       
-      // Initialize late financial fields for existing sale
-      item.saleAmount = item.quantity * item.unitPrice;
-      item.netSale = item.saleAmount - item.commission;
-      item.recoveredPrincipal = 0;
-      item.remainingPrincipal = 0;
-      item.cumulativeProfit = 0;
-      
+      // Financial values are now calculated via getters (saleAmount, netSale)
+      // Cumulative values will be calculated during save
       _items = [item];
     } else {
       // New sale: start with empty list so user can add items via 'ထည့်မည်'
