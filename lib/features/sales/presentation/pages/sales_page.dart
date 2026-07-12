@@ -1286,21 +1286,28 @@ class _SaleFormState extends State<_SaleForm> {
     // For existing sales (edit mode): load the single sale as a draft item
     if (e != null) {
       // Editing existing sale: create one draft item from the sale data
-      _items = [
-        _SaleItem(
-          id: const Uuid().v4(),
-          gemstoneId: e.gemstoneId,
-          gemstoneName: e.gemstoneName,
-          quantity: e.quantity,
-          unitPrice: e.amount,
-          remark: e.note,
-          commission: e.commissionFee,
-          weight: e.weightCarat > 0 ? e.weightCarat : null,
-          weightUnit: e.weightUnit ?? 'carat',
-          isFragmentSource: e.isFragmentSource,
-          fragmentName: e.fragmentName,
-        ),
-      ];
+      final item = _SaleItem(
+        id: const Uuid().v4(),
+        gemstoneId: e.gemstoneId,
+        gemstoneName: e.gemstoneName,
+        quantity: e.quantity,
+        unitPrice: e.amount,
+        remark: e.note,
+        commission: e.commissionFee,
+        weight: e.weightCarat > 0 ? e.weightCarat : null,
+        weightUnit: e.weightUnit ?? 'carat',
+        isFragmentSource: e.isFragmentSource,
+        fragmentName: e.fragmentName,
+      );
+      
+      // Initialize late financial fields for existing sale
+      item.saleAmount = item.quantity * item.unitPrice;
+      item.netSale = item.saleAmount - item.commission;
+      item.recoveredPrincipal = 0;
+      item.remainingPrincipal = 0;
+      item.cumulativeProfit = 0;
+      
+      _items = [item];
     } else {
       // New sale: start with empty list so user can add items via 'ထည့်မည်'
       _items = [];
