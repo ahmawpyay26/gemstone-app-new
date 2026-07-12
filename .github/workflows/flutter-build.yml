@@ -33,33 +33,28 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run dart analyze and capture errors
+      - name: Run dart analyze
         run: |
           dart analyze 2>&1 | tee dart_analyze.txt
-          echo "---DART ANALYZE OUTPUT---"
-          cat dart_analyze.txt
-          echo "---END DART ANALYZE---"
-
-      - name: Print first errors from dart analyze
-        if: always()
-        run: |
-          echo "## Dart Analyze Errors" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          grep -i "error\|Error" dart_analyze.txt | head -20 >> $GITHUB_STEP_SUMMARY || echo "No errors found in dart analyze" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Full Dart Analyze Output (first 50 lines)" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          head -50 dart_analyze.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          # Emit errors as GitHub annotations
+          grep -n "error •" dart_analyze.txt | while IFS= read -r line; do
+            echo "::error::$line"
+          done
 
       - name: Build APK (Release)
         run: |
-          flutter build apk --release --no-shrink 2>&1 | tee build_log.txt || true
-          echo "## Build Log (last 30 lines)" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          tail -30 build_log.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          flutter build apk --release --no-shrink 2>&1 | tee build_log.txt
+          BUILD_EXIT=$?
+          if [ $BUILD_EXIT -ne 0 ]; then
+            echo "::error::Flutter build failed. Errors from build log:"
+            grep -i "error\|Error" build_log.txt | head -10 | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+            # Also print last 20 lines for context
+            echo "--- Last 20 lines of build_log.txt ---"
+            tail -20 build_log.txt
+            exit $BUILD_EXIT
+          fi
 
       - name: Upload dart analyze output
         if: always()
@@ -76,17 +71,6 @@ jobs:
           name: build-log
           path: build_log.txt
           retention-days: 7
-
-      - name: Check if build succeeded
-        run: |
-          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
-            echo "Build succeeded!"
-          else
-            echo "BUILD FAILED - check dart_analyze.txt and build_log.txt artifacts"
-            echo "First 5 error lines:"
-            grep -i "error" dart_analyze.txt | head -5
-            exit 1
-          fi
 
       - name: Locate APK
         id: apk_path
