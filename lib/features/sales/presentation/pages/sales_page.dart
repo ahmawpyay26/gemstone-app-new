@@ -1548,6 +1548,14 @@ class _SaleFormState extends State<_SaleForm> {
   }
 
   Future<void> _finalizeAndSave() async {
+    print('DEBUG ရောင်းချမည်: _finalizeAndSave CALLED');
+    print('DEBUG ရောင်းချမည်: _items.length = ${_items.length}');
+    print('DEBUG ရောင်းချမည်: _isSaving = $_isSaving');
+    for (int i = 0; i < _items.length; i++) {
+      final item = _items[i];
+      print('DEBUG ရောင်းချမည်: item[$i] gemstoneId=${item.gemstoneId}, qty=${item.quantity}, unitPrice=${item.unitPrice}, isFragment=${item.isFragmentSource}, commission=${item.commission}');
+    }
+    
     // Prevent duplicate saves
     if (_isSaving) {
       _toast('ရောင်းချမှု သိမ်းဆည်းနေသည်...');
@@ -1606,8 +1614,10 @@ class _SaleFormState extends State<_SaleForm> {
       }
       
       // Check inventory if auto-deduct enabled
-      if (_autoDeduct) {
+      // Skip this check for fragment items — fragment quantity is tracked separately in breakdownItems
+      if (_autoDeduct && !item.isFragmentSource) {
         final remaining = LocalDb.gemstoneRemainingQuantity(gemstone);
+        print('DEBUG ရောင်းချမည်: item[$i] autoDeduct check: remaining=$remaining, qty=${item.quantity}');
         if (remaining <= 0) {
           _toast('အရည်အသွေး $i: အရောင်းအဆုံးဖြစ်နေ');
           return;
