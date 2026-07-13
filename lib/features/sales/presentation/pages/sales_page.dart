@@ -2121,12 +2121,15 @@ class _SaleFormState extends State<_SaleForm> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           value: _weightUnitFragment,
-                          items: ['ပိသာ', 'ကျပ်သား', 'ကာရက်', 'kg', 'g', 'lb', 'oz']
-                              .map((unit) => DropdownMenuItem(
-                                    value: unit,
-                                    child: Text(unit),
-                                  ))
-                              .toList(),
+                          items: [
+                            const DropdownMenuItem(value: 'ပိဿာ', child: Text('ပိဿာ')),
+                            const DropdownMenuItem(value: 'ကျပ်သား', child: Text('ကျပ်သား')),
+                            const DropdownMenuItem(value: 'ကာရက်', child: Text('ကာရက်')),
+                            const DropdownMenuItem(value: 'kg', child: Text('ကီလို (kg)')),
+                            const DropdownMenuItem(value: 'g', child: Text('ဂရမ် (g)')),
+                            const DropdownMenuItem(value: 'lb', child: Text('ပေါင် (lb)')),
+                            const DropdownMenuItem(value: 'oz', child: Text('အောင်စ (oz)')),
+                          ],
                           onChanged: (value) {
                             setState(() => _weightUnitFragment = value ?? 'kg');
                           },
@@ -2209,12 +2212,15 @@ class _SaleFormState extends State<_SaleForm> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _weightUnitWhole,
-                      items: ['ပိဿာ', 'ကျပ်သား', 'ကာရက်', 'kg', 'g', 'lb', 'oz']
-                          .map((unit) => DropdownMenuItem(
-                                value: unit,
-                                child: Text(unit),
-                              ))
-                          .toList(),
+                      items: [
+                        const DropdownMenuItem(value: 'ပိဿာ', child: Text('ပိဿာ')),
+                        const DropdownMenuItem(value: 'ကျပ်သား', child: Text('ကျပ်သား')),
+                        const DropdownMenuItem(value: 'ကာရက်', child: Text('ကာရက်')),
+                        const DropdownMenuItem(value: 'kg', child: Text('ကီလို (kg)')),
+                        const DropdownMenuItem(value: 'g', child: Text('ဂရမ် (g)')),
+                        const DropdownMenuItem(value: 'lb', child: Text('ပေါင် (lb)')),
+                        const DropdownMenuItem(value: 'oz', child: Text('အောင်စ (oz)')),
+                      ],
                       onChanged: (value) {
                         setState(() => _weightUnitWhole = value ?? 'kg');
                       },
