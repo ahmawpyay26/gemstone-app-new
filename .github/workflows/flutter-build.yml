@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,24 +35,24 @@ jobs:
 
       - name: Run dart analyze
         run: |
-          dart analyze 2>&1 | tee dart_analyze.txt
-          # Emit errors as GitHub annotations
-          grep -n "error •" dart_analyze.txt | while IFS= read -r line; do
-            echo "::error::$line"
-          done
+          dart analyze > dart_analyze.txt 2>&1 || true
+          cat dart_analyze.txt
 
       - name: Build APK (Release)
         run: |
-          flutter build apk --release --no-shrink 2>&1 | tee build_log.txt
+          echo "=== pwd before flutter build ==="
+          pwd
+          flutter build apk --release --no-shrink > build_log.txt 2>&1
           BUILD_EXIT=$?
+          cat build_log.txt
+          echo "=== pwd after flutter build ==="
+          pwd
+          echo "=== ls -R build || true ==="
+          ls -R build || true
+          echo "=== find . -name '*.apk' ==="
+          find . -name "*.apk"
           if [ $BUILD_EXIT -ne 0 ]; then
-            echo "::error::Flutter build failed. Errors from build log:"
-            grep -i "error\|Error" build_log.txt | head -10 | while IFS= read -r line; do
-              echo "::error::$line"
-            done
-            # Also print last 20 lines for context
-            echo "--- Last 20 lines of build_log.txt ---"
-            tail -20 build_log.txt
+            echo "::error::Flutter build failed with exit code $BUILD_EXIT"
             exit $BUILD_EXIT
           fi
 
@@ -73,31 +73,21 @@ jobs:
           retention-days: 7
 
       - name: Verify APK was built
-        id: apk_path
         run: |
-          echo "=== Verifying APK build ==="
-          echo "Current working directory:"
+          echo "=== pwd before APK verification ==="
           pwd
-          
-          echo ""
-          echo "=== Listing build/app/outputs directory ==="
+          echo "=== ls -R build/app/outputs || true ==="
           ls -R build/app/outputs || true
-          
-          echo ""
-          echo "=== Searching for APK files ==="
+          echo "=== find . -name '*.apk' ==="
+          find . -name "*.apk"
           APK=$(find build/app/outputs -type f -name "*.apk" | tail -n 1)
-          
-          echo ""
           if [ -z "$APK" ]; then
-            echo "::error::CRITICAL: APK file not found after build!"
-            echo "Flutter build command did not produce an APK."
-            echo ""
-            echo "Complete build/app/outputs tree:"
-            find build/app/outputs -type f 2>/dev/null || echo "build/app/outputs not found"
+            echo "::error::APK not found in build/app/outputs"
+            echo "Complete build directory tree:"
+            find build -type f 2>/dev/null || echo "No build directory"
             exit 1
           fi
-          
-          echo "✓ APK found: $APK"
+          echo "APK found: $APK"
           ls -lh "$APK"
           echo "APK_PATH=$APK" >> $GITHUB_ENV
 
