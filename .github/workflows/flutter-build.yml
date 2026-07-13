@@ -85,30 +85,26 @@ jobs:
           
           echo ""
           echo "=== Searching for APK files ==="
-          APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
+          APK=$(find build -type f -name "*.apk" -print -quit)
           
           echo ""
-          echo "=== All files in build directory ==="
-          find build -type f 2>/dev/null || echo "No files in build directory"
-          
-          echo ""
-          if [ -z "$APK_PATH" ]; then
+          if [ -z "$APK" ]; then
             echo "::error::CRITICAL: APK file not found after build!"
             echo "Flutter build command did not produce an APK."
             echo ""
             echo "Directory tree:"
-            find . -type f | grep -E "(build|apk|flutter)" | head -100
+            find . -type f 2>/dev/null
             exit 1
           fi
           
-          echo "✓ APK found: $APK_PATH"
-          ls -lh "$APK_PATH"
-          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "✓ APK found: $APK"
+          ls -lh "$APK"
+          echo "APK_PATH=$APK" >> $GITHUB_ENV
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: ${{ steps.apk_path.outputs.apk_path }}
+          path: ${{ env.APK_PATH }}
           retention-days: 30
           if-no-files-found: error
