@@ -80,20 +80,20 @@ jobs:
           pwd
           
           echo ""
-          echo "=== Listing build directory recursively ==="
-          ls -R build 2>/dev/null || echo "No build directory found"
+          echo "=== Listing build/app/outputs directory ==="
+          ls -R build/app/outputs || true
           
           echo ""
           echo "=== Searching for APK files ==="
-          APK=$(find build -type f -name "*.apk" -print -quit)
+          APK=$(find build/app/outputs -type f -name "*.apk" | tail -n 1)
           
           echo ""
           if [ -z "$APK" ]; then
             echo "::error::CRITICAL: APK file not found after build!"
             echo "Flutter build command did not produce an APK."
             echo ""
-            echo "Directory tree:"
-            find . -type f 2>/dev/null
+            echo "Complete build/app/outputs tree:"
+            find build/app/outputs -type f 2>/dev/null || echo "build/app/outputs not found"
             exit 1
           fi
           
