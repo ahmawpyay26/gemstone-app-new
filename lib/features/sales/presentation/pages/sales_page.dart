@@ -478,6 +478,57 @@ class _SalesPageState extends State<SalesPage> {
     }
   }
 
+  /// Delete all Sale records belonging to the same invoice
+  Future<void> _deleteInvoice(List<dynamic> keys) async {
+    if (!LocalDb.canDeleteSale()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(LocalDb.adminOnlyErrorMessage()),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+      return;
+    }
+    final ok = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: const Text('Invoice ဖျက်မည်'),
+            content: Text('ဤ Invoice ရှိ ပစ္စည်း ${keys.length} ခုလုံးကို ဖျက်မှာ သေချာပါသလား?'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(c, false),
+                  child: const Text('မဖျက်တော့ပါ')),
+              TextButton(
+                  onPressed: () => Navigator.pop(c, true),
+                  child: const Text('ဖျက်မည်',
+                      style: TextStyle(color: AppTheme.errorColor))),
+            ],
+          ),
+        ) ??
+        false;
+    if (ok) {
+      try {
+        for (final key in keys) {
+          await LocalDb.softDeleteSale(key, 'Invoice deleted');
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invoice ဖျက်ပြီးပါပြီ')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('အမှားအယွင်း: $e')),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -530,35 +581,67 @@ class _SalesPageState extends State<SalesPage> {
               Expanded(
                 child: box.isEmpty
                     ? _empty()
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 90),
-                        itemCount: box.keys.length,
-                        itemBuilder: (context, i) {
-                          final keys = box.keys.toList().reversed.toList(); // Show newest first
-                          final key = keys[i];
-                          final s = box.get(key)!;
-                          
-                          // Skip deleted sales
-                          if (s.isDeleted == true) return const SizedBox.shrink();
-                          return _SaleHistoryCard(
-                            sale: s,
-                            hiveKey: key,
-                            onEdit: () => _openForm(existing: s, key: key),
-                            onDelete: () => _delete(key),
-                            onPrint: () => _printSale(s),
-                            onExportImage: () => _exportImage(s),
-                            onExportPdf: () => _exportVoucher(s),
-                            onShowPhotos: () => _showPhotoViewer(s),
-                            onShowDetails: () => _showDetails(s, hiveKey: key),
-                            dateFormat: _date,
-                            moneyFormat: _money,
-                            saleUnitFn: _saleUnit,
-                            getCustomerNameFn: _getCustomerName,
-                            payLabelFn: _payLabel,
-                            profitBadgeFn: _profitBadge,
-                          );
-                        },
-                      ),
+                    : Builder(builder: (context) {
+                        // Group sales by invoiceNumber, preserving newest-first order
+                        final allKeys = box.keys.toList().reversed.toList();
+                        final Map<String, List<MapEntry<dynamic, Sale>>> invoiceGroups = {};
+                        final List<String> invoiceOrder = [];
+                        for (final key in allKeys) {
+                          final s = box.get(key);
+                          if (s == null || s.isDeleted == true) continue;
+                          final inv = s.invoiceNumber.isNotEmpty ? s.invoiceNumber : key.toString();
+                          if (!invoiceGroups.containsKey(inv)) {
+                            invoiceGroups[inv] = [];
+                            invoiceOrder.add(inv);
+                          }
+                          invoiceGroups[inv]!.add(MapEntry(key, s));
+                        }
+                        if (invoiceOrder.isEmpty) return _empty();
+                        return ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 90),
+                          itemCount: invoiceOrder.length,
+                          itemBuilder: (context, i) {
+                            final inv = invoiceOrder[i];
+                            final entries = invoiceGroups[inv]!;
+                            final primaryEntry = entries.first;
+                            final primarySale = primaryEntry.value;
+                            final primaryKey = primaryEntry.key;
+                            if (entries.length == 1) {
+                              // Single-item invoice: use existing card unchanged
+                              return _SaleHistoryCard(
+                                sale: primarySale,
+                                hiveKey: primaryKey,
+                                onEdit: () => _openForm(existing: primarySale, key: primaryKey),
+                                onDelete: () => _delete(primaryKey),
+                                onPrint: () => _printSale(primarySale),
+                                onExportImage: () => _exportImage(primarySale),
+                                onExportPdf: () => _exportVoucher(primarySale),
+                                onShowPhotos: () => _showPhotoViewer(primarySale),
+                                onShowDetails: () => _showDetails(primarySale, hiveKey: primaryKey),
+                                dateFormat: _date,
+                                moneyFormat: _money,
+                                saleUnitFn: _saleUnit,
+                                getCustomerNameFn: _getCustomerName,
+                                payLabelFn: _payLabel,
+                                profitBadgeFn: _profitBadge,
+                              );
+                            } else {
+                              // Multi-item invoice: show grouped card
+                              return _InvoiceGroupCard(
+                                invoiceNumber: inv,
+                                entries: entries,
+                                onDeleteAll: () => _deleteInvoice(entries.map((e) => e.key).toList()),
+                                onPrint: () => _printSale(primarySale),
+                                onExportPdf: () => _exportVoucher(primarySale),
+                                dateFormat: _date,
+                                moneyFormat: _money,
+                                getCustomerNameFn: _getCustomerName,
+                                payLabelFn: _payLabel,
+                              );
+                            }
+                          },
+                        );
+                      }),
               ),
             ],
           );
@@ -4061,6 +4144,292 @@ class _SaleHistoryCardState extends State<_SaleHistoryCard> {
             value,
             style: TextStyle(color: Colors.grey[200], fontSize: 11, fontWeight: FontWeight.w500),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A card that groups multiple Sale records sharing the same invoiceNumber
+/// into one expandable invoice card.
+class _InvoiceGroupCard extends StatefulWidget {
+  final String invoiceNumber;
+  final List<MapEntry<dynamic, Sale>> entries;
+  final VoidCallback onDeleteAll;
+  final VoidCallback onPrint;
+  final VoidCallback onExportPdf;
+  final DateFormat dateFormat;
+  final NumberFormat moneyFormat;
+  final String Function(String?) getCustomerNameFn;
+  final String Function(Sale) payLabelFn;
+
+  const _InvoiceGroupCard({
+    required this.invoiceNumber,
+    required this.entries,
+    required this.onDeleteAll,
+    required this.onPrint,
+    required this.onExportPdf,
+    required this.dateFormat,
+    required this.moneyFormat,
+    required this.getCustomerNameFn,
+    required this.payLabelFn,
+  });
+
+  @override
+  State<_InvoiceGroupCard> createState() => _InvoiceGroupCardState();
+}
+
+class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final primarySale = widget.entries.first.value;
+    // Aggregate totals across all items
+    double totalAmount = 0;
+    double totalNet = 0;
+    double totalCommission = 0;
+    int totalQty = 0;
+    for (final e in widget.entries) {
+      final s = e.value;
+      totalAmount += s.amount;
+      totalNet += s.netSale;
+      totalCommission += s.commissionFee;
+      totalQty += s.quantity;
+    }
+    final saleDate = DateTime.fromMillisecondsSinceEpoch(primarySale.saleDate);
+    final customerName = widget.getCustomerNameFn(primarySale.customerId);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      color: AppTheme.surfaceDark,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          // Header row
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryAccent.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.receipt_long, color: AppTheme.primaryAccent, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${widget.entries.length} ပစ္စည်း — ${widget.entries.map((e) => e.value.gemstoneName).toSet().join(', ')}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Text(
+                                  widget.moneyFormat.format(totalAmount),
+                                  style: TextStyle(
+                                    color: AppTheme.successColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text(
+                                  widget.dateFormat.format(saleDate),
+                                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                ),
+                                const SizedBox(width: 8),
+                                if (customerName.isNotEmpty)
+                                  Text(
+                                    customerName,
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'ကျန်အရင်း: ${widget.moneyFormat.format(primarySale.remainingCostAfterSale)} ကျပ်',
+                              style: TextStyle(color: AppTheme.primaryAccent, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        _expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        color: Colors.grey[400],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Invoice number tag
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryAccent.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Invoice: ${widget.invoiceNumber}',
+                      style: TextStyle(color: AppTheme.primaryAccent, fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Expanded items list
+          if (_expanded) ...[
+            Divider(color: AppTheme.primaryAccent.withOpacity(0.2), height: 1),
+            ...widget.entries.map((e) {
+              final s = e.value;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: AppTheme.primaryAccent.withOpacity(0.1)),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                s.gemstoneName,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                              ),
+                              if (s.isFragmentSource) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    s.fragmentName ?? 'အစိတ်',
+                                    style: const TextStyle(color: Colors.orange, fontSize: 10),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'အရေအတွက်: ${s.quantity}  •  ရောင်းပွဲခ: ${widget.moneyFormat.format(s.commissionFee)} ကျပ်',
+                            style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${widget.moneyFormat.format(s.amount)} ကျပ်',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        Text(
+                          'ကျန်: ${widget.moneyFormat.format(s.netSale)} ကျပ်',
+                          style: TextStyle(color: AppTheme.successColor, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+            // Totals row
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryAccent.withOpacity(0.05),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('စုစုပေါင်း ရောင်းငွေ', style: TextStyle(color: Colors.grey[300], fontSize: 12)),
+                      Text('${widget.moneyFormat.format(totalAmount)} ကျပ်',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('ပွဲခ စုစုပေါင်း', style: TextStyle(color: Colors.grey[300], fontSize: 12)),
+                      Text('${widget.moneyFormat.format(totalCommission)} ကျပ်',
+                          style: TextStyle(color: Colors.orange[300], fontSize: 12)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Net Sale စုစုပေါင်း', style: TextStyle(color: Colors.grey[300], fontSize: 12)),
+                      Text('${widget.moneyFormat.format(totalNet)} ကျပ်',
+                          style: TextStyle(color: AppTheme.successColor, fontSize: 13, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Action buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.print_outlined, size: 20),
+                        color: Colors.grey[400],
+                        tooltip: 'ပရင့်',
+                        onPressed: widget.onPrint,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.picture_as_pdf_outlined, size: 20),
+                        color: Colors.grey[400],
+                        tooltip: 'PDF',
+                        onPressed: widget.onExportPdf,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        color: AppTheme.errorColor,
+                        tooltip: 'Invoice ဖျက်မည်',
+                        onPressed: widget.onDeleteAll,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
