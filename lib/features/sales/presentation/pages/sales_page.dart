@@ -906,9 +906,10 @@ class _SaleItem {
 
   // Calculated properties
   // For fragment items: unitPrice stores the TOTAL sale amount (not per-unit)
-  // For whole-stone items: unitPrice is per-unit, so multiply by quantity
-  double get totalAmount => isFragmentSource ? unitPrice : quantity * unitPrice;
-  double get saleAmount => isFragmentSource ? unitPrice : quantity * unitPrice;
+  // For whole-stone items: unitPrice IS the total sale amount (not per-unit)
+  // Quantity is used ONLY for inventory deduction, never for financial calculation
+  double get totalAmount => unitPrice; // salePrice entered = total sale amount for ALL types
+  double get saleAmount => unitPrice;  // same — no multiplication by quantity
   double get netSale => saleAmount - commission;
   
   // Cumulative financial values (will be set during save flow)
@@ -1591,9 +1592,10 @@ class _SaleFormState extends State<_SaleForm> {
     final qty = int.tryParse(_qty.text.trim()) ?? 1;
     final sellCommission = double.tryParse(_commission.text.trim()) ?? 0;
     double cost = double.tryParse(_cost.text.trim()) ?? 0;
-    // Mirror the same costing logic used in _save for the preview.
+    // amount IS the total sale price — no multiplication by qty needed.
+    // cost is the per-unit cost from the gemstone record; scale it by qty for cost recovery preview.
     if (_selectedGemId != null && cost > 0) {
-      cost = cost * qty;
+      cost = cost * qty; // cost (purchase price per unit) * qty = total cost for this batch
     }
     if (amount <= 0 && cost <= 0) return const SizedBox.shrink();
     // Sell commission is deducted from revenue.
@@ -1753,15 +1755,20 @@ class _SaleFormState extends State<_SaleForm> {
         final itemCommission = item.commission; // Use pre-calculated commission
         final netSale = item.netSale; // Use pre-calculated net sale
         
-        // Calculate cost: for fragment items, unitPrice IS the total amount
-        // For whole-stone items, cost = unitPrice * qty
+        // costPrice = purchase cost (COGS), NOT the sale price.
+        // For fragment items: unitPrice IS the total sale amount, not cost.
+        // For whole-stone items: look up the gemstone's remaining cost balance as COGS.
         double cost;
         if (item.isFragmentSource) {
-          cost = item.unitPrice; // unitPrice stores total sale amount for fragments
+          // Fragment: use gemstone's per-unit cost × qty as COGS approximation
+          final fragGem = item.gemstoneId!.isNotEmpty ? LocalDb.gemstoneById(item.gemstoneId!) : null;
+          cost = fragGem != null ? LocalDb.getSalesFormAutoCost(fragGem) : 0;
         } else if (item.gemstoneId!.isNotEmpty) {
-          cost = item.unitPrice * qty;
+          // Whole-stone: use gemstone's auto cost (remaining cost balance) as COGS
+          final wsGem = LocalDb.gemstoneById(item.gemstoneId!);
+          cost = wsGem != null ? LocalDb.getSalesFormAutoCost(wsGem) : 0;
         } else {
-          cost = item.unitPrice;
+          cost = 0; // Manual entry with no gemstone reference
         }
         
         // Create Sale record
