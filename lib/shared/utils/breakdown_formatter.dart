@@ -6,7 +6,8 @@ class BreakdownFormatter {
   /// Supports:
   /// - Old format: int value → "50 ခု"
   /// - New format: Map with quantity/weight → "50 ခု" or "50 ခု — 9 kg"
-  static String formatItem(dynamic value) {
+  /// - With remaining quantity: Shows "remaining / original" format
+  static String formatItem(dynamic value, {int? remainingQuantity}) {
     if (value == null) {
       return '';
     }
@@ -21,13 +22,16 @@ class BreakdownFormatter {
       final qty = (value['quantity'] as int?) ?? 0;
       final weight = (value['weight'] as num?)?.toDouble();
       final unit = value['weightUnit'] as String?;
+      
+      // If remainingQuantity is provided, show remaining/original format
+      final qtyDisplay = remainingQuantity != null ? '$remainingQuantity / $qty' : '$qty';
 
       if (weight != null && weight > 0) {
         final weightStr = weight.toStringAsFixed(1);
         final unitStr = unit ?? 'kg';
-        return '$qty ခု — $weightStr $unitStr';
+        return '$qtyDisplay ခု — $weightStr $unitStr';
       } else {
-        return '$qty ခု';
+        return '$qtyDisplay ခု';
       }
     }
 

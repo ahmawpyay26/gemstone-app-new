@@ -1043,6 +1043,33 @@ class LocalDb {
     return remaining < 0 ? 0 : remaining;
   }
 
+  /// Get remaining quantity for a specific fragment
+  static int getFragmentRemainingQuantity(String gemstoneId, String fragmentName) {
+    final gemstone = gemstones().get(gemstoneId);
+    if (gemstone == null || gemstone.breakdownItems == null) return 0;
+    
+    final itemData = gemstone.breakdownItems![fragmentName];
+    if (itemData == null) return 0;
+    
+    // Get original quantity from breakdownItems
+    final originalQty = (itemData is Map<String, dynamic>)
+        ? ((itemData['quantity'] as num?)?.toInt() ?? 0)
+        : (itemData is int ? itemData : 0);
+    
+    // Calculate sold quantity from sales records
+    int soldQty = 0;
+    for (final sale in sales().values) {
+      if (!sale.isDeleted && 
+          sale.gemstoneId == gemstoneId && 
+          sale.isFragmentSource &&
+          sale.fragmentName == fragmentName) {
+        soldQty += sale.quantity;
+      }
+    }
+    
+    return (originalQty - soldQty).clamp(0, originalQty);
+  }
+
   /// Check if gemstone is fully sold out (both whole stones AND all fragments)
   static bool isGemstoneFullySoldOut(Gemstone g) {
     // Condition A: No whole stones left

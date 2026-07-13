@@ -781,7 +781,9 @@ class _InventoryPageState extends State<InventoryPage> {
                 children: [
                   ...activeItems.map((entry) {
                     // Do not display raw breakdownItems Map directly.
-                    final displayText = BreakdownFormatter.formatItem(entry.value);
+                    // Get remaining quantity for this fragment
+                    final remainingQty = LocalDb.getFragmentRemainingQuantity(gemstone.id, entry.key);
+                    final displayText = BreakdownFormatter.formatItem(entry.value, remainingQuantity: remainingQty);
                     
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
