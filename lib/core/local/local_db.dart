@@ -1043,6 +1043,26 @@ class LocalDb {
     return remaining < 0 ? 0 : remaining;
   }
 
+  /// Check if gemstone is fully sold out (both whole stones AND all fragments)
+  static bool isGemstoneFullySoldOut(Gemstone g) {
+    // Condition A: No whole stones left
+    if (g.quantity > 0) return false;
+    
+    // Condition B: Check if all fragments are sold out
+    if (g.breakdownItems != null && g.breakdownItems!.isNotEmpty) {
+      for (final fragmentData in g.breakdownItems!.values) {
+        if (fragmentData is Map<String, dynamic>) {
+          final qtyObj = fragmentData['quantity'];
+          final qty = (qtyObj is num) ? (qtyObj as num).toInt() : 0;
+          if (qty > 0) return false; // At least one fragment still has stock
+        }
+      }
+    }
+    
+    // Both conditions met: fully sold out
+    return true;
+  }
+
   /// ပစ္စည်းတစ်ခုချင်းစီ၏ အရောင်းအကြိမ်အရေအတွက် (ဘယ်နှစ်ကြိမ် ရောင်းခဲ့သည်)
   static int gemstoneSaleCount(String gemstoneId) {
     int count = 0;

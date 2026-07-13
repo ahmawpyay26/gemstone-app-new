@@ -1614,17 +1614,38 @@ class _SaleFormState extends State<_SaleForm> {
       }
       
       // Check inventory if auto-deduct enabled
-      // Skip this check for fragment items — fragment quantity is tracked separately in breakdownItems
-      if (_autoDeduct && !item.isFragmentSource) {
-        final remaining = LocalDb.gemstoneRemainingQuantity(gemstone);
-        print('DEBUG ရောင်းချမည်: item[$i] autoDeduct check: remaining=$remaining, qty=${item.quantity}');
-        if (remaining <= 0) {
-          _toast('အရည်အသွေး $i: အရောင်းအဆုံးဖြစ်နေ');
-          return;
-        }
-        if (item.quantity > remaining) {
-          _toast('အရည်အသွေး $i: Stock မလောက်ပါ — ကျန် $remaining ခုသာ ရှိသည်');
-          return;
+      if (_autoDeduct) {
+        if (item.isFragmentSource && item.fragmentName != null && item.fragmentName!.isNotEmpty) {
+          // For fragment items: check individual BreakdownItem remaining quantity
+          if (gemstone != null && gemstone.breakdownItems != null) {
+            final fragmentName = item.fragmentName!;
+            final itemData = gemstone.breakdownItems![fragmentName];
+            if (itemData is Map<String, dynamic>) {
+              final currentQtyObj = itemData['quantity'];
+              final currentQty = (currentQtyObj is num) ? (currentQtyObj as num).toInt() : 0;
+              print('DEBUG ရောင်းချမည်: item[$i] fragment autoDeduct check: fragmentName=$fragmentName, currentQty=$currentQty, qty=${item.quantity}');
+              if (currentQty <= 0) {
+                _toast('အရည်အသွေး $i ($fragmentName): အရောင်းအဆုံးဖြစ်နေ');
+                return;
+              }
+              if (item.quantity > currentQty) {
+                _toast('အရည်အသွေး $i ($fragmentName): Stock မလောက်ပါ — ကျန် $currentQty ခုသာ ရှိသည်');
+                return;
+              }
+            }
+          }
+        } else {
+          // For whole stone items: check whole stone remaining quantity
+          final remaining = LocalDb.gemstoneRemainingQuantity(gemstone);
+          print('DEBUG ရောင်းချမည်: item[$i] wholeStone autoDeduct check: remaining=$remaining, qty=${item.quantity}');
+          if (remaining <= 0) {
+            _toast('အရည်အသွေး $i: အရောင်းအဆုံးဖြစ်နေ');
+            return;
+          }
+          if (item.quantity > remaining) {
+            _toast('အရည်အသွေး $i: Stock မလောက်ပါ — ကျန် $remaining ခုသာ ရှိသည်');
+            return;
+          }
         }
       }
     }

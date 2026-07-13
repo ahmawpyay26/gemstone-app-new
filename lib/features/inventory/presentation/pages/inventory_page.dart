@@ -512,7 +512,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                               fontSize: 12));
                                     }),
                                   ),
-                                  if (LocalDb.gemstoneRemainingQuantity(g) <= 0)
+                                  if (LocalDb.gemstoneRemainingQuantity(g) <= 0 && LocalDb.isGemstoneFullySoldOut(g))
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 2),
