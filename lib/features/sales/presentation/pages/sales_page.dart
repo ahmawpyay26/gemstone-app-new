@@ -824,8 +824,10 @@ class _SaleItem {
   });
 
   // Calculated properties
-  double get totalAmount => quantity * unitPrice;
-  double get saleAmount => quantity * unitPrice;
+  // For fragment items: unitPrice stores the TOTAL sale amount (not per-unit)
+  // For whole-stone items: unitPrice is per-unit, so multiply by quantity
+  double get totalAmount => isFragmentSource ? unitPrice : quantity * unitPrice;
+  double get saleAmount => isFragmentSource ? unitPrice : quantity * unitPrice;
   double get netSale => saleAmount - commission;
   
   // Cumulative financial values (will be set during save flow)
@@ -933,10 +935,10 @@ class _SaleFormState extends State<_SaleForm> {
     _previewState.clear();
     for (final item in _items) {
       if (item.gemstoneId != null && item.gemstoneId!.isNotEmpty) {
-        // Use item-specific commission for fragments, form commission for whole-stone
-        final itemCommission = item.isFragmentSource ? item.commission : (double.tryParse(_commission.text.trim()) ?? 0);
-        final netSale = (item.quantity * item.unitPrice) - itemCommission;
-        _updatePreviewForGemstone(item.gemstoneId, netSale);
+        // Use the pre-calculated netSale from the item getter
+        // For fragments: netSale = unitPrice (total amount) - commission
+        // For whole-stone: netSale = (quantity * unitPrice) - commission
+        _updatePreviewForGemstone(item.gemstoneId, item.netSale);
       }
     }
   }
@@ -1128,6 +1130,12 @@ class _SaleFormState extends State<_SaleForm> {
       return;
     }
 
+    // Validate total sale amount > 0
+    if (unitPrice <= 0) {
+      _toast('ရောင်းဈေးသည် ၀ထက်ကြီးရမည်');
+      return;
+    }
+
     // Validate and parse commission
     final commissionInput = _commission.text.trim();
     final commission = double.tryParse(commissionInput) ?? 0;
@@ -1135,9 +1143,22 @@ class _SaleFormState extends State<_SaleForm> {
       _toast('အရောင်းပွဲခသည် အနုတ်မဖြစ်ရပါ');
       return;
     }
+    if (commission > unitPrice) {
+      _toast('ပွဲခသည် ရောင်းဈေးထက်မကျော်ရပါ');
+      return;
+    }
 
-    // All validations passed - create item with pre-calculated financial values
-    print('DEBUG: All validations passed! Adding item to _items');
+    // DEBUG: Log all values at ထည့်မည် time
+    final grossSale = unitPrice; // For fragments, unitPrice IS the total sale amount
+    final netSale = grossSale - commission;
+    print('DEBUG FRAGMENT ထည့်မည်: button callback entered');
+    print('DEBUG FRAGMENT ထည့်မည်: selectedFragmentId=$_selectedFragmentGemstoneId');
+    print('DEBUG FRAGMENT ထည့်မည်: quantity=$qty');
+    print('DEBUG FRAGMENT ထည့်မည်: grossSale=$grossSale');
+    print('DEBUG FRAGMENT ထည့်မည်: commission=$commission');
+    print('DEBUG FRAGMENT ထည့်မည်: netSale=$netSale');
+    print('DEBUG FRAGMENT ထည့်မည်: validation=PASSED');
+    print('DEBUG FRAGMENT ထည့်မည်: _items.length BEFORE=${_items.length}');
     
     final item = _SaleItem(
       id: const Uuid().v4(),
@@ -1153,14 +1174,22 @@ class _SaleFormState extends State<_SaleForm> {
       weightUnit: 'kg', // Default unit
     );
 
-    // Financial values are now calculated via getters (saleAmount, netSale)
+    // Financial values are now calculated via getters:
+    // item.saleAmount = unitPrice (for fragments, this IS the total sale amount)
+    // item.netSale = saleAmount - commission
+    print('DEBUG FRAGMENT ထည့်မည်: item.saleAmount=${item.saleAmount}');
+    print('DEBUG FRAGMENT ထည့်မည်: item.netSale=${item.netSale}');
 
     setState(() {
       _items.add(item);
     });
 
+    print('DEBUG FRAGMENT ထည့်မည်: _items.length AFTER=${_items.length}');
+
     // Recalculate cumulative financial values from all draft items
     _recalculateCumulativeFinancials();
+
+    print('DEBUG FRAGMENT ထည့်မည်: navigation result = staying on form (user can add more)');
 
     // Clear only quantity/price/weight fields - KEEP fragment selections
     // This allows user to continue adding more items from the same fragment
@@ -1606,13 +1635,15 @@ class _SaleFormState extends State<_SaleForm> {
         final itemCommission = item.commission; // Use pre-calculated commission
         final netSale = item.netSale; // Use pre-calculated net sale
         
-        // Calculate cost using unit price from draft item
-        final perUnitCost = item.unitPrice;
+        // Calculate cost: for fragment items, unitPrice IS the total amount
+        // For whole-stone items, cost = unitPrice * qty
         double cost;
-        if (item.gemstoneId!.isNotEmpty) {
-          cost = perUnitCost * qty;
+        if (item.isFragmentSource) {
+          cost = item.unitPrice; // unitPrice stores total sale amount for fragments
+        } else if (item.gemstoneId!.isNotEmpty) {
+          cost = item.unitPrice * qty;
         } else {
-          cost = perUnitCost;
+          cost = item.unitPrice;
         }
         
         // Create Sale record
@@ -2261,11 +2292,30 @@ class _SaleFormState extends State<_SaleForm> {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  // Total amount
+                                  // Gross Sale
                                   Text(
-                                    'ခန့်မှန်းရောင်းငွေ: ${NumberFormat('#,##0', 'en_US').format(item.totalAmount.toInt())} ကျပ်',
+                                    'ရောင်းငွေ: ${NumberFormat('#,##0', 'en_US').format(item.saleAmount.toInt())} ကျပ်',
                                     style: const TextStyle(
                                       color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  // Commission
+                                  Text(
+                                    'ပွဲခ: ${NumberFormat('#,##0', 'en_US').format(item.commission.toInt())} ကျပ်',
+                                    style: const TextStyle(
+                                      color: Colors.orange,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  // Net Sale
+                                  Text(
+                                    'အသင့်ရောင်းငွေ: ${NumberFormat('#,##0', 'en_US').format(item.netSale.toInt())} ကျပ်',
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryAccent,
+                                      fontWeight: FontWeight.bold,
                                       fontSize: 12,
                                     ),
                                   ),
