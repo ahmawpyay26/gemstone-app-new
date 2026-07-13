@@ -1765,7 +1765,10 @@ class _SaleFormState extends State<_SaleForm> {
             }
           }
           
-          await LocalDb.gemstones().put(item.gemstoneId!, gemstone);
+          final hiveKey = LocalDb.gemstoneKeyById(item.gemstoneId!);
+          if (hiveKey != null) {
+            await LocalDb.gemstones().put(hiveKey, gemstone);
+          }
           gemstonesUpdated.add(item.gemstoneId!);
         }
         }

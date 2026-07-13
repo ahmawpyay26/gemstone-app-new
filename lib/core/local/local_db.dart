@@ -1526,7 +1526,10 @@ class LocalDb {
               itemData['weight'] = currentWeight + sale.fragmentWeight!;
             }
           }
-          await gemstones().put(sale.gemstoneId, gemstone);
+          final hiveKey = gemstoneKeyById(sale.gemstoneId);
+          if (hiveKey != null) {
+            await gemstones().put(hiveKey, gemstone);
+          }
         }
       }
 
@@ -1600,7 +1603,10 @@ class LocalDb {
               }
             }
           }
-          await gemstones().put(sale.gemstoneId, gemstone);
+          final hiveKey2 = gemstoneKeyById(sale.gemstoneId);
+          if (hiveKey2 != null) {
+            await gemstones().put(hiveKey2, gemstone);
+          }
         }
       }
 
