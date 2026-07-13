@@ -1052,9 +1052,8 @@ class LocalDb {
     if (itemData == null) return 0;
     
     // Get original quantity from breakdownItems
-    final originalQty = (itemData is Map<String, dynamic>)
-        ? ((itemData['quantity'] as num?)?.toInt() ?? 0)
-        : (itemData is int ? itemData : 0);
+    // breakdownItems is Map<String, Map<String, dynamic>>, so itemData is always Map<String, dynamic>
+    final int originalQty = (itemData['quantity'] as num?)?.toInt() ?? 0;
     
     // Calculate sold quantity from sales records
     int soldQty = 0;
