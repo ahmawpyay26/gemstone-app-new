@@ -4160,8 +4160,8 @@ class _InvoiceGroupCard extends StatefulWidget {
   final VoidCallback onExportPdf;
   final DateFormat dateFormat;
   final NumberFormat moneyFormat;
-  final String Function(String?) getCustomerNameFn;
-  final String Function(Sale) payLabelFn;
+  final String Function(Sale) getCustomerNameFn;
+  final String Function(String) payLabelFn;
 
   const _InvoiceGroupCard({
     required this.invoiceNumber,
@@ -4198,7 +4198,7 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
       totalQty += s.quantity;
     }
     final saleDate = DateTime.fromMillisecondsSinceEpoch(primarySale.saleDate);
-    final customerName = widget.getCustomerNameFn(primarySale.customerId);
+    final customerName = widget.getCustomerNameFn(primarySale);
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
