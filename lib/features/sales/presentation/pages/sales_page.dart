@@ -1203,7 +1203,13 @@ class _SaleFormState extends State<_SaleForm> {
     });
 
     _toast('အစိတ်စိတ်ပိုင်းထည့်သွင်းအောင်မြင်ပါသည်');
-    // Form stays open so user can add more items
+
+    // Auto-switch back to 'whole_stone' view so the user sees the
+    // ထည့်ထားသောပစ္စည်းများ box with the newly added item
+    setState(() {
+      _saleSource = 'whole_stone';
+    });
+    print('DEBUG FRAGMENT ထည့်မည်: auto-switched _saleSource to whole_stone');
   }
 
   void _recalculateCumulativeFinancials() {
