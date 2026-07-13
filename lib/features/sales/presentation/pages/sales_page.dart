@@ -894,6 +894,7 @@ class _SaleItem {
   double commission; // Commission fee for this item (read at ထည့်မည် time)
   double? weight; // Fragment weight (optional)
   String? weightUnit; // Fragment weight unit
+  List<String> photoPaths; // Photo paths for draft items
 
   _SaleItem({
     required this.id,
@@ -907,6 +908,7 @@ class _SaleItem {
     this.commission = 0,
     this.weight,
     this.weightUnit,
+    this.photoPaths = const [],
   });
 
   // Calculated properties
@@ -1134,6 +1136,7 @@ class _SaleFormState extends State<_SaleForm> {
       commission: commissionValue,
       weight: weightValue,
       weightUnit: _weightUnitWhole,
+      photoPaths: List.from(_photoPaths),
     );
 
     // Financial values are now calculated via getters (saleAmount, netSale)
@@ -1269,6 +1272,7 @@ class _SaleFormState extends State<_SaleForm> {
       commission: commission,
       weight: double.tryParse(_weight.text.trim()),
       weightUnit: _weightUnitFragment,
+      photoPaths: List.from(_photoPaths),
     );
 
     // Financial values are now calculated via getters:
@@ -3355,14 +3359,23 @@ class _SaleFormState extends State<_SaleForm> {
     );
   }
 
-  /// View photos for a temporary item
+  /// View photos for a temporary item or saved sale
   void _viewItemPhotos(dynamic item) {
-    // Check if item has photos
-    final photoPaths = item.photoPaths;
-    if (photoPaths == null || photoPaths.isEmpty) {
+    // Get photo paths from either draft item or saved sale
+    List<dynamic> photoPaths = [];
+    
+    if (item is _SaleItem) {
+      // Draft item
+      photoPaths = item.photoPaths;
+    } else if (item is Sale) {
+      // Saved sale record
+      photoPaths = item.photoPaths;
+    }
+    
+    if (photoPaths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ဤပစ္စည်းတွင် ပုံမရှိသေးပါ'),
+          content: Text('ဤပစ္စည်းတွင် ပုံမရှိပါ'),
           duration: Duration(seconds: 2),
         ),
       );
