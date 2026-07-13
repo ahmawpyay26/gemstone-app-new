@@ -378,20 +378,35 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   void _showPhotoViewer(Sale sale) {
-    if (sale.photoPaths.isEmpty) {
+    // Collect all photos from sales with the same invoiceNumber (for grouped invoices)
+    final allPhotoPaths = <dynamic>[];
+    final invoiceNum = sale.invoiceNumber;
+    
+    // Get all sales from the database
+    final salesBox = LocalDb.sales();
+    for (var s in salesBox.values) {
+      // Match by invoiceNumber
+      if (s.invoiceNumber == invoiceNum) {
+        if (s.photoPaths.isNotEmpty) {
+          allPhotoPaths.addAll(s.photoPaths);
+        }
+      }
+    }
+    
+    if (allPhotoPaths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ဤမှတ်တမ်းတွင် ဓာတ်ပုံမရှိသေးပါ။'),
+          content: Text('ဓာတ်ပုံမရှိပါ'),
           backgroundColor: AppTheme.errorColor,
         ),
       );
       return;
     }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PhotoViewer(photoUrls: sale.photoPaths),
-      ),
+    
+    // Show photo viewer dialog
+    showDialog(
+      context: context,
+      builder: (context) => _PhotoViewerDialog(photoPaths: allPhotoPaths),
     );
   }
 
