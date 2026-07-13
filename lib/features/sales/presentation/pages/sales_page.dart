@@ -254,9 +254,7 @@ class _SalesPageState extends State<SalesPage> {
             ],
           ),
         ),
-        // Fragment Details Section (only if fragment sale)
-        if (s.isFragmentSource && gemstone != null && gemstone.breakdownItems.isNotEmpty)
-          ..._buildFragmentSections(s, gemstone),
+        // Fragment inventory details are shown in the Purchase History page only, not here.
       ],
     );
   }
@@ -3879,9 +3877,7 @@ class _SaleHistoryCardState extends State<_SaleHistoryCard> {
                 ],
               ),
             ),
-            // Fragment sections
-            if (s.isFragmentSource && gemstone != null && gemstone.breakdownItems.isNotEmpty)
-              ..._buildFragmentSections(s, gemstone),
+            // Fragment inventory details are shown in the Purchase History page only, not here.
             // Action buttons
             Container(
               padding: const EdgeInsets.all(12),
