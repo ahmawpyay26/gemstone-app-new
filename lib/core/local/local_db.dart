@@ -1043,30 +1043,17 @@ class LocalDb {
     return remaining < 0 ? 0 : remaining;
   }
 
-  /// Get remaining quantity for a specific fragment
+    /// Get remaining quantity for a specific fragment
+  /// breakdownItems['quantity'] is the current remaining quantity
+  /// (decremented on sale save, incremented on sale delete/restore)
   static int getFragmentRemainingQuantity(String gemstoneId, String fragmentName) {
     final gemstone = gemstones().get(gemstoneId);
     if (gemstone == null || gemstone.breakdownItems == null) return 0;
-    
     final itemData = gemstone.breakdownItems![fragmentName];
     if (itemData == null) return 0;
-    
-    // Get original quantity from breakdownItems
-    // breakdownItems is Map<String, Map<String, dynamic>>, so itemData is always Map<String, dynamic>
-    final int originalQty = (itemData['quantity'] as num?)?.toInt() ?? 0;
-    
-    // Calculate sold quantity from sales records
-    int soldQty = 0;
-    for (final sale in sales().values) {
-      if (!sale.isDeleted && 
-          sale.gemstoneId == gemstoneId && 
-          sale.isFragmentSource &&
-          sale.fragmentName == fragmentName) {
-        soldQty += sale.quantity;
-      }
-    }
-    
-    return (originalQty - soldQty).clamp(0, originalQty);
+    // breakdownItems['quantity'] is the current remaining quantity
+    final int remainingQty = (itemData['quantity'] as num?)?.toInt() ?? 0;
+    return remainingQty < 0 ? 0 : remainingQty;
   }
 
   /// Check if gemstone is fully sold out (both whole stones AND all fragments)
@@ -1524,23 +1511,19 @@ class LocalDb {
       await reverseSaleCustomerLedger(sale);
 
       // Restore fragment quantity and weight if this is a fragment sale
-      if (sale.gemstoneId.isNotEmpty && sale.isFragmentSource) {
+      if (sale.gemstoneId.isNotEmpty && sale.isFragmentSource && sale.fragmentName != null && sale.fragmentName!.isNotEmpty) {
         final gemstone = gemstones().get(sale.gemstoneId);
         if (gemstone != null && gemstone.breakdownItems != null) {
-          // Find the fragment by checking all breakdown items
-          // We need to restore the quantity and weight that were deducted
-          for (final fragmentName in gemstone.breakdownItems!.keys) {
-            final itemData = gemstone.breakdownItems![fragmentName];
-            if (itemData is Map<String, dynamic>) {
-              // Restore quantity
-              final currentQty = (itemData['quantity'] as num?)?.toInt() ?? 0;
-              itemData['quantity'] = currentQty + sale.quantity;
-              
-              // Restore weight if it was deducted
-              if (sale.fragmentWeight != null && sale.fragmentWeight! > 0) {
-                final currentWeight = (itemData['weight'] as num?)?.toDouble() ?? 0;
-                itemData['weight'] = currentWeight + sale.fragmentWeight!;
-              }
+          // Only restore the specific fragment that was sold
+          final itemData = gemstone.breakdownItems![sale.fragmentName!];
+          if (itemData is Map<String, dynamic>) {
+            // Restore quantity
+            final currentQty = (itemData['quantity'] as num?)?.toInt() ?? 0;
+            itemData['quantity'] = currentQty + sale.quantity;
+            // Restore weight if it was deducted
+            if (sale.fragmentWeight != null && sale.fragmentWeight! > 0) {
+              final currentWeight = (itemData['weight'] as num?)?.toDouble() ?? 0;
+              itemData['weight'] = currentWeight + sale.fragmentWeight!;
             }
           }
           await gemstones().put(sale.gemstoneId, gemstone);
@@ -1598,26 +1581,22 @@ class LocalDb {
       await applySaleCustomerLedger(sale);
 
       // Re-deduct fragment quantity and weight if this is a fragment sale
-      if (sale.gemstoneId.isNotEmpty && sale.isFragmentSource) {
+      if (sale.gemstoneId.isNotEmpty && sale.isFragmentSource && sale.fragmentName != null && sale.fragmentName!.isNotEmpty) {
         final gemstone = gemstones().get(sale.gemstoneId);
         if (gemstone != null && gemstone.breakdownItems != null) {
-          // Find the fragment by checking all breakdown items
-          // We need to deduct the quantity and weight again
-          for (final fragmentName in gemstone.breakdownItems!.keys) {
-            final itemData = gemstone.breakdownItems![fragmentName];
-            if (itemData is Map<String, dynamic>) {
-              // Deduct quantity
-              final currentQty = (itemData['quantity'] as num?)?.toInt() ?? 0;
-              if (currentQty >= sale.quantity) {
-                itemData['quantity'] = currentQty - sale.quantity;
-              }
-              
-              // Deduct weight if it was originally deducted
-              if (sale.fragmentWeight != null && sale.fragmentWeight! > 0) {
-                final currentWeight = (itemData['weight'] as num?)?.toDouble() ?? 0;
-                if (currentWeight >= sale.fragmentWeight!) {
-                  itemData['weight'] = currentWeight - sale.fragmentWeight!;
-                }
+          // Only re-deduct the specific fragment that was sold
+          final itemData = gemstone.breakdownItems![sale.fragmentName!];
+          if (itemData is Map<String, dynamic>) {
+            // Deduct quantity
+            final currentQty = (itemData['quantity'] as num?)?.toInt() ?? 0;
+            if (currentQty >= sale.quantity) {
+              itemData['quantity'] = currentQty - sale.quantity;
+            }
+            // Deduct weight if it was originally deducted
+            if (sale.fragmentWeight != null && sale.fragmentWeight! > 0) {
+              final currentWeight = (itemData['weight'] as num?)?.toDouble() ?? 0;
+              if (currentWeight >= sale.fragmentWeight!) {
+                itemData['weight'] = currentWeight - sale.fragmentWeight!;
               }
             }
           }

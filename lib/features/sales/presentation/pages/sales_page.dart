@@ -1714,6 +1714,8 @@ class _SaleFormState extends State<_SaleForm> {
           invoiceNumber: invoiceNum,
           fragmentWeight: fragmentWeight,
           fragmentWeightUnit: fragmentWeightUnit,
+          isFragmentSource: item.isFragmentSource,
+          fragmentName: item.fragmentName,
         );
         
         // Save to Hive
