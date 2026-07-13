@@ -75,14 +75,30 @@ jobs:
       - name: Locate APK
         id: apk_path
         run: |
-          APK_PATH=$(find build -name "app-release.apk" -o -name "*.apk" | head -1)
+          echo "Searching for APK files..."
+          echo "Contents of build directory:"
+          ls -R build/app/outputs/ 2>/dev/null || echo "build/app/outputs not found"
+          
+          # Try standard Flutter APK output paths
+          APK_PATH=""
+          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+            APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+          elif [ -f "build/app/outputs/apk/release/app-release.apk" ]; then
+            APK_PATH="build/app/outputs/apk/release/app-release.apk"
+          else
+            # Fallback: search for any APK file
+            APK_PATH=$(find build -name "*.apk" -type f 2>/dev/null | head -1)
+          fi
+          
           if [ -z "$APK_PATH" ]; then
             echo "ERROR: APK not found!"
-            find build -type f -name "*.apk"
+            echo "Listing all files in build directory:"
+            find build -type f 2>/dev/null | head -50
             exit 1
           fi
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
           echo "Found APK at: $APK_PATH"
+          ls -lh "$APK_PATH"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
