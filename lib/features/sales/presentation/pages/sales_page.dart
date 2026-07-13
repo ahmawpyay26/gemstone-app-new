@@ -726,6 +726,11 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   String _saleUnit(Sale s) {
+    // Use weightUnit from Sale record if available (for whole-stone and fragment sales)
+    if (s.weightUnit != null && s.weightUnit!.isNotEmpty) {
+      return s.weightUnit!;
+    }
+    // Fallback to gemstone unit if no weightUnit in sale
     if (s.gemstoneId.isNotEmpty) {
       final g = LocalDb.gemstoneById(s.gemstoneId);
       if (g != null) return LocalDb.unitLabel(g.weightUnit);
@@ -951,6 +956,10 @@ class _SaleFormState extends State<_SaleForm> {
   String? _selectedFragmentGemstoneId; // Selected fragment purchase (Step 5C-2)
   String? _selectedFragmentName; // Selected fragment name from dropdown (Step 5C-3)
   
+  // Weight unit selection for whole-stone and fragment sales
+  String _weightUnitWhole = 'kg'; // Default unit for whole-stone sales
+  String _weightUnitFragment = 'kg'; // Default unit for fragment sales
+  
   // Multi-item invoice support
   late List<_SaleItem> _items;
   bool _isMultiItemMode = false;
@@ -1111,7 +1120,10 @@ class _SaleFormState extends State<_SaleForm> {
       gemstoneId = gem?.id;
     }
 
-    // Create item with stored commission
+    // Get weight and weight unit (optional)
+    final weightValue = double.tryParse(_weight.text.trim());
+    
+    // Create item with stored commission and weight unit
     final item = _SaleItem(
       id: const Uuid().v4(),
       gemstoneId: gemstoneId,
@@ -1120,6 +1132,8 @@ class _SaleFormState extends State<_SaleForm> {
       unitPrice: price,
       remark: _note.text,
       commission: commissionValue,
+      weight: weightValue,
+      weightUnit: _weightUnitWhole,
     );
 
     // Financial values are now calculated via getters (saleAmount, netSale)
@@ -1142,6 +1156,7 @@ class _SaleFormState extends State<_SaleForm> {
       _weight.clear();
       _cost.clear();
       _commission.clear();
+      _weightUnitWhole = 'kg'; // Reset to default unit
     });
 
     _showSuccess('${item.gemstoneName} added');
@@ -1253,7 +1268,7 @@ class _SaleFormState extends State<_SaleForm> {
       isFragmentSource: true,
       commission: commission,
       weight: double.tryParse(_weight.text.trim()),
-      weightUnit: 'kg', // Default unit
+      weightUnit: _weightUnitFragment,
     );
 
     // Financial values are now calculated via getters:
@@ -2105,7 +2120,7 @@ class _SaleFormState extends State<_SaleForm> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: 'kg',
+                          value: _weightUnitFragment,
                           items: ['ပိသာ', 'ကျပ်သား', 'ကာရက်', 'kg', 'g', 'lb', 'oz']
                               .map((unit) => DropdownMenuItem(
                                     value: unit,
@@ -2113,7 +2128,7 @@ class _SaleFormState extends State<_SaleForm> {
                                   ))
                               .toList(),
                           onChanged: (value) {
-                            // Weight unit is now stored in SaleItem during save
+                            setState(() => _weightUnitFragment = value ?? 'kg');
                           },
                           decoration: InputDecoration(
                             labelText: 'ယူနစ်',
@@ -2185,12 +2200,33 @@ class _SaleFormState extends State<_SaleForm> {
                       child: _field(_qty, 'အရေအတွက်',
                           number: true, required: true)),
                 ]),
-                _field(
-                    _weight,
-                    selectedGem != null
-                        ? 'အလေးချိန် (${LocalDb.unitLabel(selectedGem.weightUnit)}) — မဖြည့်လည်းရ'
-                        : 'အလေးချိန် — မဖြည့်လည်းရ',
-                    number: true),
+                // Weight field with unit dropdown for whole-stone sales
+                Row(children: [
+                  Expanded(
+                    child: _field(_weight, 'အလေးချိန် — မဖြည့်လည်းရ', number: true),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _weightUnitWhole,
+                      items: ['ပိဿာ', 'ကျပ်သား', 'ကာရက်', 'kg', 'g', 'lb', 'oz']
+                          .map((unit) => DropdownMenuItem(
+                                value: unit,
+                                child: Text(unit),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() => _weightUnitWhole = value ?? 'kg');
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'ယူနစ်',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ]),
 
                 // Auto-deduct toggle (only meaningful when linked to inventory)
                 if (_selectedGemId != null)

@@ -337,6 +337,11 @@ class Sale {
   // Whole-Stone Weight Unit (NEW - Step 6T)
   String? weightUnit; // Weight unit for whole-stone sales (ပိသာ|ကျပ်သား|ကာရက်|kg|g|lb|oz)
 
+  // Multi-Item Invoice Items (field 29) - stores all line items for grouped invoices
+  // Each map: {gemstoneId, gemstoneName, fragmentName, isFragmentSource, quantity, saleAmount, commission, netSale, costUsed, profitGenerated, remark, weightCarat, weightUnit, fragmentWeight, fragmentWeightUnit}
+  // Empty list = old single-item record (backward compatible)
+  List<Map<String, dynamic>> invoiceItems;
+
   Sale({
     required this.id,
     this.gemstoneId = '',
@@ -367,6 +372,7 @@ class Sale {
     this.fragmentWeight,
     this.fragmentWeightUnit,
     this.weightUnit,
+    this.invoiceItems = const [],
   });
 }
 
@@ -411,13 +417,18 @@ class SaleAdapter extends TypeAdapter<Sale> {
       fragmentWeight: fields[26] == null ? null : (fields[26] as num).toDouble(),
       fragmentWeightUnit: fields[27] as String?,
       weightUnit: fields[28] as String?,
+      invoiceItems: fields[29] == null
+          ? []
+          : (fields[29] as List<dynamic>)
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Sale obj) {
     writer
-      ..writeByte(29)
+      ..writeByte(30)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -475,7 +486,9 @@ class SaleAdapter extends TypeAdapter<Sale> {
       ..writeByte(27)
       ..write(obj.fragmentWeightUnit)
       ..writeByte(28)
-      ..write(obj.weightUnit);
+      ..write(obj.weightUnit)
+      ..writeByte(29)
+      ..write(obj.invoiceItems);
   }
 }
 
