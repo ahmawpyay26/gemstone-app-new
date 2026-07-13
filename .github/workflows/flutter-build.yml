@@ -75,32 +75,40 @@ jobs:
       - name: Locate APK
         id: apk_path
         run: |
-          echo "Searching for APK files..."
-          echo "Contents of build directory:"
-          ls -R build/app/outputs/ 2>/dev/null || echo "build/app/outputs not found"
+          echo "=== DEBUG: Current working directory ==="
+          pwd
           
-          # Try standard Flutter APK output paths
-          APK_PATH=""
-          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
-            APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
-          elif [ -f "build/app/outputs/apk/release/app-release.apk" ]; then
-            APK_PATH="build/app/outputs/apk/release/app-release.apk"
-          else
-            # Fallback: search for any APK file
-            APK_PATH=$(find build -name "*.apk" -type f 2>/dev/null | head -1)
-          fi
+          echo ""
+          echo "=== DEBUG: Listing build directory recursively ==="
+          ls -R build 2>/dev/null || echo "No build directory found"
+          
+          echo ""
+          echo "=== DEBUG: Find all APK files from current directory ==="
+          find . -name "*.apk" 2>/dev/null || echo "No APK files found"
+          
+          echo ""
+          echo "=== DEBUG: Find all files in build directory ==="
+          find build -type f 2>/dev/null || echo "No files in build directory"
+          
+          echo ""
+          echo "=== Attempting to locate APK ==="
+          APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
           
           if [ -z "$APK_PATH" ]; then
             echo "ERROR: APK not found!"
-            echo "Listing all files in build directory:"
-            find build -type f 2>/dev/null | head -50
-            exit 1
+            echo "Printing complete directory tree for analysis:"
+            find . -type f | grep -E "(build|apk|flutter)" | head -100
+            echo ""
+            echo "Flutter build command may not have completed successfully."
+            echo "Please check the 'Build APK (Release)' step output above."
+          else
+            echo "Found APK at: $APK_PATH"
+            ls -lh "$APK_PATH"
+            echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
           fi
-          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
-          echo "Found APK at: $APK_PATH"
-          ls -lh "$APK_PATH"
 
       - name: Upload APK artifact
+        if: steps.apk_path.outputs.apk_path != ''
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
