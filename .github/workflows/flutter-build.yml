@@ -72,45 +72,43 @@ jobs:
           path: build_log.txt
           retention-days: 7
 
-      - name: Locate APK
+      - name: Verify APK was built
         id: apk_path
         run: |
-          echo "=== DEBUG: Current working directory ==="
+          echo "=== Verifying APK build ==="
+          echo "Current working directory:"
           pwd
           
           echo ""
-          echo "=== DEBUG: Listing build directory recursively ==="
+          echo "=== Listing build directory recursively ==="
           ls -R build 2>/dev/null || echo "No build directory found"
           
           echo ""
-          echo "=== DEBUG: Find all APK files from current directory ==="
-          find . -name "*.apk" 2>/dev/null || echo "No APK files found"
+          echo "=== Searching for APK files ==="
+          APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
           
           echo ""
-          echo "=== DEBUG: Find all files in build directory ==="
+          echo "=== All files in build directory ==="
           find build -type f 2>/dev/null || echo "No files in build directory"
           
           echo ""
-          echo "=== Attempting to locate APK ==="
-          APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
-          
           if [ -z "$APK_PATH" ]; then
-            echo "ERROR: APK not found!"
-            echo "Printing complete directory tree for analysis:"
-            find . -type f | grep -E "(build|apk|flutter)" | head -100
+            echo "::error::CRITICAL: APK file not found after build!"
+            echo "Flutter build command did not produce an APK."
             echo ""
-            echo "Flutter build command may not have completed successfully."
-            echo "Please check the 'Build APK (Release)' step output above."
-          else
-            echo "Found APK at: $APK_PATH"
-            ls -lh "$APK_PATH"
-            echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+            echo "Directory tree:"
+            find . -type f | grep -E "(build|apk|flutter)" | head -100
+            exit 1
           fi
+          
+          echo "✓ APK found: $APK_PATH"
+          ls -lh "$APK_PATH"
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
 
       - name: Upload APK artifact
-        if: steps.apk_path.outputs.apk_path != ''
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: ${{ steps.apk_path.outputs.apk_path }}
           retention-days: 30
+          if-no-files-found: error
