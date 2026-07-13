@@ -1828,7 +1828,7 @@ class _SaleFormState extends State<_SaleForm> {
           profitGenerated: 0,
           remainingCostAfterSale: 0,
           accumulatedProfit: 0,
-          photoPaths: i == 0 ? _photoPaths : [],
+          photoPaths: item.photoPaths,
           isDeleted: false,
           deletedAt: null,
           deletedBy: '',
