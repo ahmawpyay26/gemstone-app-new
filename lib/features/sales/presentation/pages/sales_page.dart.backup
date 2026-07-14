@@ -675,8 +675,6 @@ class _SalesPageState extends State<SalesPage> {
                                 onDeleteAll: () => _deleteInvoice(entries.map((e) => e.key).toList()),
                                 onPrint: () => _printSale(primarySale),
                                 onExportPdf: () => _exportVoucher(primarySale),
-                                onEditItem: (saleKey) => _editSale(saleKey),
-                                onDeleteItem: (saleKey) => _deleteSale(saleKey),
                                 dateFormat: _date,
                                 moneyFormat: _money,
                                 getCustomerNameFn: _getCustomerName,
@@ -922,29 +920,6 @@ class _SalesPageState extends State<SalesPage> {
         ],
       ),
     );
-  }
-
-  /// Edit a single sale item
-  Future<void> _editSale(dynamic saleKey) async {
-    // Get the sale from LocalDb
-    final sale = LocalDb.sales().get(saleKey);
-    if (sale == null) return;
-    
-    // For now, just show a snackbar - full edit functionality can be added later
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Item edit functionality coming soon'),
-          backgroundColor: AppTheme.primaryAccent,
-        ),
-      );
-    }
-  }
-
-  /// Delete a single sale item
-  Future<void> _deleteSale(dynamic saleKey) async {
-    // Call the existing _delete method which handles a single key
-    await _delete(saleKey);
   }
 }
 
@@ -4289,8 +4264,6 @@ class _InvoiceGroupCard extends StatefulWidget {
   final VoidCallback onDeleteAll;
   final VoidCallback onPrint;
   final VoidCallback onExportPdf;
-  final Function(dynamic) onEditItem;
-  final Function(dynamic) onDeleteItem;
   final DateFormat dateFormat;
   final NumberFormat moneyFormat;
   final String Function(Sale) getCustomerNameFn;
@@ -4303,8 +4276,6 @@ class _InvoiceGroupCard extends StatefulWidget {
     required this.onDeleteAll,
     required this.onPrint,
     required this.onExportPdf,
-    required this.onEditItem,
-    required this.onDeleteItem,
     required this.dateFormat,
     required this.moneyFormat,
     required this.getCustomerNameFn,
@@ -4318,102 +4289,6 @@ class _InvoiceGroupCard extends StatefulWidget {
 
 class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
   bool _expanded = false;
-  late GlobalKey _invoiceRepaintKey;
-
-  @override
-  void initState() {
-    super.initState();
-    _invoiceRepaintKey = GlobalKey();
-  }
-
-  /// Show all photos from all items in this invoice
-  void _showAllInvoicePhotos() {
-    final allPhotoPaths = <dynamic>[];
-    for (final entry in widget.entries) {
-      final sale = entry.value;
-      if (sale.photoPaths.isNotEmpty) {
-        allPhotoPaths.addAll(sale.photoPaths);
-      }
-    }
-
-    if (allPhotoPaths.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ဓာတ်ပုံမရှိပါ'),
-          backgroundColor: AppTheme.errorColor,
-        ),
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => _PhotoViewerDialog(photoPaths: allPhotoPaths),
-    );
-  }
-
-  /// Capture invoice as PNG and save to temp directory
-  Future<void> _captureAndExportInvoiceImage() async {
-    try {
-      final wasExpanded = _expanded;
-      if (!_expanded) {
-        setState(() => _expanded = true);
-        await Future.delayed(const Duration(milliseconds: 500));
-      }
-
-      final filePath = await _captureInvoiceAsImage(_invoiceRepaintKey);
-      if (filePath != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Invoice PNG သိမ်းဆည်းပြီးပါပြီ'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invoice ပုံထုတ်မှု ကျ败'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
-      }
-
-      if (!wasExpanded && mounted) {
-        setState(() => _expanded = false);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('အမှားအယွင်း: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
-      }
-    }
-  }
-
-  /// Capture invoice widget using RepaintBoundary
-  Future<String?> _captureInvoiceAsImage(GlobalKey repaintKey) async {
-    try {
-      final boundary = repaintKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (boundary == null) return null;
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return null;
-      final bytes = byteData.buffer.asUint8List();
-      final tempDir = await getTemporaryDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final file = File('${tempDir.path}/invoice_$timestamp.png');
-      await file.writeAsBytes(bytes);
-      return file.path;
-    } catch (e) {
-      debugPrint('Error capturing invoice: $e');
-      return null;
-    }
-  }
-
 
   @override
   Widget build(BuildContext context) {
