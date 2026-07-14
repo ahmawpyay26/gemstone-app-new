@@ -1826,18 +1826,39 @@ class LocalDb {
   }
 
   /// Generate next voucher number for today (BC-YYYYMMDD-NNNN)
+  /// Counts DISTINCT vouchers, not item records (one voucher can contain multiple items)
   static String generateNextVoucherNumber() {
     final now = DateTime.now();
     final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
     final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
     
-    // Count existing vouchers created today with same date prefix
-    final existingVouchers = brokers.values
+    // Collect all distinct voucher numbers for today
+    final distinctVouchers = brokers.values
         .where((b) => b.voucherNumber != null && b.voucherNumber!.startsWith('BC-$dateStr-'))
-        .length;
+        .map((b) => b.voucherNumber!)
+        .toSet(); // Remove duplicates
+    
+    // Find the highest sequence number
+    int maxSequence = 0;
+    for (final voucherNum in distinctVouchers) {
+      try {
+        // Extract the last 4 digits (suffix after the last dash)
+        final parts = voucherNum.split('-');
+        if (parts.length == 3) {
+          final suffix = parts[2];
+          final sequenceNum = int.tryParse(suffix) ?? 0;
+          if (sequenceNum > maxSequence) {
+            maxSequence = sequenceNum;
+          }
+        }
+      } catch (e) {
+        // Safely ignore malformed voucher numbers
+        continue;
+      }
+    }
     
     // Generate next sequence number (4 digits, zero-padded)
-    final nextSequence = (existingVouchers + 1).toString().padLeft(4, '0');
+    final nextSequence = (maxSequence + 1).toString().padLeft(4, '0');
     return 'BC-$dateStr-$nextSequence';
   }
 
