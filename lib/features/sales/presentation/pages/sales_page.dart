@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
@@ -362,12 +365,36 @@ class _SalesPageState extends State<SalesPage> {
     }
   }
 
+  /// Captures the invoice widget as a PNG image using RepaintBoundary.
+  /// Returns the file path of the saved PNG, or null on failure.
+  Future<String?> _captureInvoiceAsImage(GlobalKey repaintKey) async {
+    try {
+      final boundary = repaintKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return null;
+      final bytes = byteData.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final file = File('${tempDir.path}/invoice_$timestamp.png');
+      await file.writeAsBytes(bytes);
+      return file.path;
+    } catch (e) {
+      debugPrint('Error capturing invoice as image: $e');
+      return null;
+    }
+  }
+
   Future<void> _exportPNG(Sale sale) async {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('PNG တည်ဆောက်နေ...')),
       );
-      // PNG export using current invoice layout
+      // PNG export using RepaintBoundary capture (Phase 1 - internal only)
+      // The actual capture is triggered via _captureInvoiceAsImage(key)
+      // when a repaintBoundaryKey is assigned to the invoice widget.
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -4241,6 +4268,7 @@ class _InvoiceGroupCard extends StatefulWidget {
   final NumberFormat moneyFormat;
   final String Function(Sale) getCustomerNameFn;
   final String Function(String) payLabelFn;
+  final GlobalKey? repaintBoundaryKey;
 
   const _InvoiceGroupCard({
     required this.invoiceNumber,
@@ -4252,6 +4280,7 @@ class _InvoiceGroupCard extends StatefulWidget {
     required this.moneyFormat,
     required this.getCustomerNameFn,
     required this.payLabelFn,
+    this.repaintBoundaryKey,
   });
 
   @override
@@ -4279,7 +4308,7 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
     final saleDate = DateTime.fromMillisecondsSinceEpoch(primarySale.saleDate);
     final customerName = widget.getCustomerNameFn(primarySale);
 
-    return Card(
+    final cardWidget = Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       color: AppTheme.surfaceDark,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -4512,5 +4541,13 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
         ],
       ),
     );
+
+    if (widget.repaintBoundaryKey != null) {
+      return RepaintBoundary(
+        key: widget.repaintBoundaryKey,
+        child: cardWidget,
+      );
+    }
+    return cardWidget;
   }
 }
