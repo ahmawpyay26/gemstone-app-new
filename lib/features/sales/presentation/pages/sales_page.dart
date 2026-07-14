@@ -1175,6 +1175,7 @@ class _SaleFormState extends State<_SaleForm> {
       _cost.clear();
       _commission.clear();
       _weightUnitWhole = 'kg'; // Reset to default unit
+      _photoPaths.clear(); // Clear selected images
     });
 
     _showSuccess('${item.gemstoneName} added');
@@ -1314,6 +1315,7 @@ class _SaleFormState extends State<_SaleForm> {
       _amount.clear();
       _commission.text = '0';
       _weight.clear();
+      _photoPaths.clear(); // Clear selected images for next item
       // NOTE: Do NOT clear _selectedFragmentGemstoneId or _selectedFragmentName
       // Keep them set so the fragment form remains visible for next entry
     });
