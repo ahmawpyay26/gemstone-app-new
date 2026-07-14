@@ -290,7 +290,7 @@ class _PhotoMediaBoxState extends State<PhotoMediaBox> {
               child: ElevatedButton.icon(
                 onPressed: _isLoading ? null : _pickPhotoFromGallery,
                 icon: const Icon(Icons.photo_library),
-                label: const Text('ဂ္ယာလারီ'),
+                label: const Text('ပြခန်း'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryAccent,
                   foregroundColor: Colors.black,
