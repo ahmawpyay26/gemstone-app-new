@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
+import '../widgets/voucher_group_widgets.dart';
 
 class BrokerConsignmentPage extends StatefulWidget {
   const BrokerConsignmentPage({Key? key}) : super(key: key);
@@ -247,14 +248,19 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
             );
           }
 
-          // Get all active broker consignments, sorted by newest first
+          // Phase C.3: Get all active broker consignments
           final allBrokers = box.values
               .where((b) => b.isActive)
-              .toList()
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+              .toList();
 
-          // Filter brokers based on selected filter
-          final brokers = allBrokers.where((b) => _matchesFilter(b)).toList();
+          // Phase C.3: Filter items first, then group by voucherId
+          final filteredBrokers = allBrokers.where((b) => _matchesFilter(b)).toList();
+          final groupedVouchers = LocalDb.getGroupedBrokerConsignments();
+          
+          // Phase C.3: Filter groups: keep only groups that have at least one matching item
+          final filteredGroups = groupedVouchers.entries
+              .where((entry) => entry.value.any((item) => filteredBrokers.contains(item)))
+              .toList();
 
           // Calculate totals from ALL brokers (not filtered)
           final totalRecords = allBrokers.length;
@@ -266,7 +272,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
 
           return ListView.builder(
             padding: const EdgeInsets.all(12),
-            itemCount: brokers.length + 2,
+            itemCount: filteredGroups.length + 2,
             itemBuilder: (context, index) {
               // Summary dashboard at the top
               if (index == 0) {
@@ -344,330 +350,130 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                 );
               }
 
-              final bc = brokers[index - 2];
-              
-              // Initialize controller if not exists
-              if (!_returnedQtyControllers.containsKey(bc.id)) {
-                _returnedQtyControllers[bc.id] = TextEditingController();
-                _returnedQtyErrors[bc.id] = null;
+              // Phase C.3: Render grouped voucher card
+              final groupEntry = filteredGroups[index - 2];
+              final groupKey = groupEntry.key;
+              final items = groupEntry.value;
+              final summary = LocalDb.getVoucherSummary(groupKey);
+              final isLegacy = LocalDb.isLegacyGroup(groupKey);
+
+              // Initialize controllers for all items in this group
+              for (final item in items) {
+                if (!_returnedQtyControllers.containsKey(item.id)) {
+                  _returnedQtyControllers[item.id] = TextEditingController();
+                  _returnedQtyErrors[item.id] = null;
+                }
               }
 
-              final statusBadge = _getStatusBadge(bc);
-              final statusColor = _getStatusColor(bc);
-
-              return GestureDetector(
-                onTap: () async {
-                  // Task 3: Tap to open details page
-                  final result = await context.push('/broker-consignment/${bc.id}');
+              return VoucherGroupCard(
+                groupKey: groupKey,
+                items: items,
+                summary: summary,
+                isLegacy: isLegacy,
+                // Item-level callbacks
+                onViewPhotos: (item) {
+                  if (item.photoPaths.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('ဓာတ်ပုံ မရှိသေးပါ။')),
+                    );
+                  } else {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PhotoViewer(
+                          photoUrls: item.photoPaths,
+                        ),
+                      ),
+                    );
+                  }
+                },
+                onEdit: (item) async {
+                  final result = await context.push('/broker-consignment/form', extra: item);
                   if (result == true && mounted) {
                     setState(() {});
                   }
                 },
-                child: Card(
-                  color: AppTheme.surfaceDark,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: CircleAvatar(
-                                  backgroundColor: AppTheme.primaryAccent.withOpacity(0.2),
-                                  child: const Icon(Icons.handshake, color: AppTheme.primaryAccent),
-                                ),
-                                title: Text(
-                                  bc.historicalData.sourceType == 'breakdown_item'
-                                    ? '${bc.historicalData.purchaseName} / ${bc.historicalData.breakdownItemName}'
-                                    : bc.historicalData.purchaseName,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Text(
-                                  'ရက်စွဲ: ${_dateFormat.format(DateTime.fromMillisecondsSinceEpoch(bc.createdAt))}',
-                                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                                ),
-                              ),
+                onDelete: (item) => _showDeleteConfirmation(item),
+                onReturn: (item) {
+                  // Show return dialog with quantity input
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('ပြန်လည်လက်ခံရန်'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('လက်ကျန်အရေအတွက်: ${item.remainingQuantity.toStringAsFixed(0)}'),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _returnedQtyControllers[item.id],
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: 'အရေအတွက်ထည့်သွင်းရန်',
+                              errorText: _returnedQtyErrors[item.id],
                             ),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.2),
-                                    border: Border.all(color: statusColor),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    statusBadge,
-                                    style: TextStyle(
-                                      color: statusColor,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert, color: Colors.white),
-                                  onSelected: (value) async {
-                                    if (value == 'edit') {
-                                      final result = await context.push('/broker-consignment/form', extra: bc);
-                                      if (result == true && mounted) {
-                                        setState(() {});
-                                      }
-                                    } else if (value == 'delete') {
-                                      _showDeleteConfirmation(bc);
-                                    } else if (value == 'print') {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('ပရင့်ထုတ်ရန် လုပ်ဆောင်ချက် မပြီးသေးပါ။')),
-                                      );
-                                    } else if (value == 'export_image') {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('ပုံထုတ်ရန် လုပ်ဆောင်ချက် မပြီးသေးပါ။')),
-                                      );
-                                    } else if (value == 'export_pdf') {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('PDF ထုတ်ရန် လုပ်ဆောင်ချက် မပြီးသေးပါ။')),
-                                      );
-                                    } else if (value == 'photos') {
-                                      if (bc.photoPaths.isEmpty) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('ဓာတ်ပုံ မရှိသေးပါ။')),
-                                        );
-                                      } else {
-                                        // Open PhotoViewer with bc.photoPaths
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) => PhotoViewer(
-                                              photoUrls: bc.photoPaths,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                                  itemBuilder: (BuildContext context) => [
-                                    const PopupMenuItem(
-                                      value: 'edit',
-                                      child: Row(
-                                        children: [
-                                          Text('✏️'),
-                                          SizedBox(width: 8),
-                                          Text('ပြင်ဆင်ရန်'),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'delete',
-                                      child: Row(
-                                        children: [
-                                          Text('🗑️'),
-                                          SizedBox(width: 8),
-                                          Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'print',
-                                      child: Row(
-                                        children: [
-                                          Text('🖨️'),
-                                          SizedBox(width: 8),
-                                          Text('ပရင့်ထုတ်ရန်'),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'export_image',
-                                      child: Row(
-                                        children: [
-                                          Text('🖼️'),
-                                          SizedBox(width: 8),
-                                          Text('ပုံထုတ်ရန်'),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'export_pdf',
-                                      child: Row(
-                                        children: [
-                                          Text('📄'),
-                                          SizedBox(width: 8),
-                                          Text('PDF ထုတ်ရန်'),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'photos',
-                                      child: Row(
-                                        children: [
-                                          Text('📷'),
-                                          SizedBox(width: 8),
-                                          Text('ဓာတ်ပုံကြည့်ရန်'),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
+                            onChanged: (value) {
+                              setState(() {
+                                _validateReturnedQuantity(item, value);
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('ပယ်ဖျက်ရန်'),
                         ),
-                        const SizedBox(height: 12),
-                        // Task 5: Enhanced card details with all metrics
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Column(
-                                children: [
-                                  Text(
-                                    'ကျောက်',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 10),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    allBrokers.map((b) => b.purchaseId).toSet().length.toString(),
-                                    style: const TextStyle(
-                                      color: AppTheme.primaryAccent,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    'အပ်ထား',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 10),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    bc.consignedQuantity.toInt().toString(),
-                                    style: const TextStyle(
-                                      color: AppTheme.primaryAccent,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    'ရောင်းချ',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 10),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    bc.soldQuantity.toInt().toString(),
-                                    style: const TextStyle(
-                                      color: AppTheme.primaryAccent,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    'ပြန်လည်',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 10),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    bc.returnedQuantity.toInt().toString(),
-                                    style: const TextStyle(
-                                      color: AppTheme.primaryAccent,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    'ကျန်',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 10),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    bc.remainingQuantity.toInt().toString(),
-                                    style: const TextStyle(
-                                      color: AppTheme.primaryAccent,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                        TextButton(
+                          onPressed: _returnedQtyErrors[item.id] == null && (_returnedQtyControllers[item.id]?.text.isNotEmpty ?? false)
+                              ? () {
+                                  Navigator.pop(context);
+                                  _processReturn(item);
+                                }
+                              : null,
+                          child: const Text('လက်ခံရန်'),
                         ),
-                        // Step 9: Returned quantity input
-                        if (bc.remainingQuantity > 0)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'ပြန်လည်လက်ခံသောအရေအတွက်',
-                                  style: TextStyle(color: Colors.grey[300], fontSize: 12),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _returnedQtyControllers[bc.id],
-                                        keyboardType: TextInputType.number,
-                                        style: const TextStyle(color: Colors.white),
-                                        decoration: InputDecoration(
-                                          hintText: '0',
-                                          hintStyle: TextStyle(color: Colors.grey[600]),
-                                          border: OutlineInputBorder(
-                                            borderSide: BorderSide(color: Colors.grey[700]!),
-                                          ),
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                          errorText: _returnedQtyErrors[bc.id],
-                                        ),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _validateReturnedQuantity(bc, value);
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
-                                      onPressed: _returnedQtyErrors[bc.id] == null && (_returnedQtyControllers[bc.id]?.text.isNotEmpty ?? false)
-                                          ? () => _processReturn(bc)
-                                          : null,
-                                      child: const Text('လက်ခံ'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
                       ],
                     ),
-                  ),
-                ),
+                  );
+                },
+                onSale: (item) async {
+                  final result = await context.push('/broker-consignment/${item.id}');
+                  if (result == true && mounted) {
+                    setState(() {});
+                  }
+                },
+                // Voucher-level callbacks
+                onViewAllPhotos: () {
+                  final allPhotos = <String>[];
+                  for (final item in items) {
+                    allPhotos.addAll(item.photoPaths);
+                  }
+                  if (allPhotos.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('ဓာတ်ပုံ မရှိသေးပါ။')),
+                    );
+                  } else {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PhotoViewer(
+                          photoUrls: allPhotos,
+                        ),
+                      ),
+                    );
+                  }
+                },
+                onPrint: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('ပရင့်ထုတ်ရန် လုပ်ဆောင်ချက် မပြီးသေးပါ။')),
+                  );
+                },
+                onExport: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('PDF ထုတ်ရန် လုပ်ဆောင်ချက် မပြီးသေးပါ။')),
+                  );
+                },
               );
             },
           );
