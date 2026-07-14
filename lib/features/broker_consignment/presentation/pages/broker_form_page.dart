@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -275,9 +276,14 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     if (!_isFormValid()) return;
 
     try {
+      // PHASE B: Generate shared voucher IDs for this batch submission
+      // Generate ONCE before the loop to ensure all items in this submission share the same voucher
+      final voucherId = const Uuid().v4(); // Collision-safe UUID
+      final voucherNumber = LocalDb.generateNextVoucherNumber(); // BC-YYYYMMDD-NNNN
+      
       // For now, save each item as a separate BrokerConsignment record
       // (backward compatible with existing model)
-      // TODO: Refactor to use new multi-item model in future steps
+      // All items in this submission will share the same voucherId and voucherNumber
       
       for (final item in _confirmedItems) {
         // Determine purchaseId based on sourceType
@@ -300,6 +306,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           brokerAddress: _brokerAddressCtrl.text,
           brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
           photoPaths: _formPhotoPaths,
+          voucherId: voucherId, // Assign shared voucher ID
+          voucherNumber: voucherNumber, // Assign shared voucher number
         );
       }
 

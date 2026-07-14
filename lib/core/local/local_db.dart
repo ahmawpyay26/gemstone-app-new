@@ -1723,6 +1723,8 @@ class LocalDb {
     String? brokerSocialAccount,
     String notes = '',
     List<String> photoPaths = const [],
+    String? voucherId, // Shared UUID for grouped submission
+    String? voucherNumber, // Shared human-readable number (BC-YYYYMMDD-NNNN)
   }) async {
     final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
     final gemstones = Hive.box<Gemstone>(gemstonesBox);
@@ -1780,6 +1782,8 @@ class LocalDb {
       notes: notes,
       photoPaths: photoPaths,
       createdAt: now,
+      voucherId: voucherId, // Assign shared voucher ID
+      voucherNumber: voucherNumber, // Assign shared voucher number
     );
 
     // Deduct quantity based on source type
@@ -1819,6 +1823,22 @@ class LocalDb {
     await createAuditLog(auditLog);
 
     return brokerConsignment;
+  }
+
+  /// Generate next voucher number for today (BC-YYYYMMDD-NNNN)
+  static String generateNextVoucherNumber() {
+    final now = DateTime.now();
+    final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    
+    // Count existing vouchers created today with same date prefix
+    final existingVouchers = brokers.values
+        .where((b) => b.voucherNumber != null && b.voucherNumber!.startsWith('BC-$dateStr-'))
+        .length;
+    
+    // Generate next sequence number (4 digits, zero-padded)
+    final nextSequence = (existingVouchers + 1).toString().padLeft(4, '0');
+    return 'BC-$dateStr-$nextSequence';
   }
 
   /// Get all active broker consignments for a purchase
