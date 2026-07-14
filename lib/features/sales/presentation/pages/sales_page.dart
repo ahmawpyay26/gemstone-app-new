@@ -43,6 +43,7 @@ class _SalesPageState extends State<SalesPage> {
     final result = await showModalBottomSheet<dynamic>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: false,
       backgroundColor: Colors.transparent,
       builder: (_) => _SaleForm(existing: existing, hiveKey: key),
     );
