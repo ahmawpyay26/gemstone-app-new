@@ -2010,21 +2010,23 @@ class _SaleFormState extends State<_SaleForm> {
     final selectedGem =
         _selectedGemId != null ? LocalDb.gemstoneById(_selectedGemId!) : null;
 
-    return Padding(
-      padding: EdgeInsets.zero,
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppTheme.primaryDark,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Padding(
+        padding: EdgeInsets.zero,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppTheme.primaryDark,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 Center(
                   child: Container(
                     width: 40,
@@ -2699,6 +2701,7 @@ class _SaleFormState extends State<_SaleForm> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
