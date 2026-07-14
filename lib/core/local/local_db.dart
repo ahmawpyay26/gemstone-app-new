@@ -1113,9 +1113,11 @@ class LocalDb {
     // Update ledger fields
     g.totalCost = gemstoneTotalCost(g);
     
-    // Calculate remaining cost and profit from sales records
+    // Calculate all cost-tracking values from ACTIVE sales only
     final profitData = calculateRemainingCostAndProfit(gemstoneId);
+    g.recoveredCost = profitData['recoveredCost'] ?? 0;
     g.remainingCost = profitData['remainingCost'] ?? 0;
+    g.remainingCostBalance = g.remainingCost;  // Keep in sync with remainingCost
     // totalProfit is NOT stored - it's calculated on-the-fly
     
     g.remainingQuantity = gemstoneRemainingQuantity(g);
@@ -1181,8 +1183,8 @@ class LocalDb {
     }
   }
 
-  /// Calculate remaining cost and total profit from sales records
-  /// Returns {remainingCost, totalProfit}
+  /// Calculate remaining cost, recovered cost, and total profit from sales records
+  /// Returns {recoveredCost, remainingCost, totalProfit}
   /// 
   /// Uses TOTAL PURCHASE COST (costPrice + all fees) as the single source of truth.
   /// This is the value displayed as "စုစုပေါင်းအရင်း".
@@ -1192,7 +1194,7 @@ class LocalDb {
   /// - Profit = max(totalNetSales - totalPurchaseCost, 0)
   static Map<String, double> calculateRemainingCostAndProfit(String gemstoneId) {
     final g = gemstoneById(gemstoneId);
-    if (g == null) return {'remainingCost': 0, 'totalProfit': 0};
+    if (g == null) return {'recoveredCost': 0, 'remainingCost': 0, 'totalProfit': 0};
 
     // Use TOTAL PURCHASE COST (purchase price + all purchase expenses)
     // This is gemstoneTotalCost = costPrice + commissionFee + processingFee + repairFee + breakageFee + bloodFee + laborFee + miscFee
@@ -1222,7 +1224,12 @@ class LocalDb {
       }
     }
 
+    // Calculate recovered cost = min(totalPurchaseCost, totalNetSales)
+    double totalNetSales = totalPurchaseCost - remainingCost;
+    double recoveredCost = totalNetSales > totalPurchaseCost ? totalPurchaseCost : totalNetSales;
+
     return {
+      'recoveredCost': recoveredCost < 0 ? 0.0 : recoveredCost,
       'remainingCost': remainingCost < 0 ? 0.0 : remainingCost,
       'totalProfit': totalProfit < 0 ? 0.0 : totalProfit,
     };
