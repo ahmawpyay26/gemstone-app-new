@@ -1010,6 +1010,10 @@ class BrokerConsignment {
   String id;
   String purchaseId; // Permanent reference to source Purchase Record
   
+  // Voucher Grouping (NEW)
+  String? voucherId; // Groups multiple items submitted together
+  String? voucherNumber; // Human-readable: BC-20260714-0001
+  
   // Current Status
   double consignedQuantity;
   double soldQuantity;
@@ -1049,6 +1053,8 @@ class BrokerConsignment {
     required this.createdAt,
     int? updatedAt,
     this.deletedAt,
+    this.voucherId,
+    this.voucherNumber,
   }) : updatedAt = updatedAt ?? createdAt;
 
   /// Calculate remaining quantity with broker
@@ -1087,13 +1093,15 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
       createdAt: fields[12] as int,
       updatedAt: (fields[13] as int?) ?? fields[12] as int,
       deletedAt: fields[14] as int?,
+      voucherId: fields[15] as String?,
+      voucherNumber: fields[16] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, BrokerConsignment obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(17)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -1123,7 +1131,11 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
       ..writeByte(13)
       ..write(obj.updatedAt)
       ..writeByte(14)
-      ..write(obj.deletedAt);
+      ..write(obj.deletedAt)
+      ..writeByte(15)
+      ..write(obj.voucherId)
+      ..writeByte(16)
+      ..write(obj.voucherNumber);
   }
 }
 
