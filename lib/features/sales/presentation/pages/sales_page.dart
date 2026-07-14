@@ -4177,7 +4177,7 @@ class _SaleHistoryCardState extends State<_SaleHistoryCard> {
                           children: [
                             Text('🖼️'),
                             SizedBox(width: 8),
-                            Text('ဓာတ်ပုံကြည့်ရန်'),
+                            Text('ပြခန်း'),
                           ],
                         ),
                       ),
@@ -4728,7 +4728,7 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
                             children: [
                               Text('🖼️'),
                               SizedBox(width: 8),
-                              Text('ဓာတ်ပုံကြည့်ရန်'),
+                              Text('ပြခန်း'),
                             ],
                           ),
                         ),
