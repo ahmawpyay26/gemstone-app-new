@@ -930,15 +930,8 @@ class _SalesPageState extends State<SalesPage> {
     final sale = LocalDb.sales().get(saleKey);
     if (sale == null) return;
     
-    // For now, just show a snackbar - full edit functionality can be added later
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Item edit functionality coming soon'),
-          backgroundColor: AppTheme.primaryAccent,
-        ),
-      );
-    }
+    // Open the form with the existing sale data
+    await _openForm(existing: sale, key: saleKey);
   }
 
   /// Delete a single sale item
