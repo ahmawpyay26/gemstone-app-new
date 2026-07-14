@@ -2011,8 +2011,7 @@ class _SaleFormState extends State<_SaleForm> {
         _selectedGemId != null ? LocalDb.gemstoneById(_selectedGemId!) : null;
 
     return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.zero,
       child: Container(
         decoration: const BoxDecoration(
           color: AppTheme.primaryDark,
@@ -2641,14 +2640,16 @@ class _SaleFormState extends State<_SaleForm> {
                 ),
                 const SizedBox(height: 16),
                 // Finalize Sale Button (Two-Stage Confirmation)
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _items.isEmpty || _isSaving ? null : _finalizeAndSave,
+                        onPressed: _items.isEmpty || _isSaving ? null : () {
+                          FocusScope.of(context).unfocus();
+                          _finalizeAndSave();
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _items.isEmpty || _isSaving
                               ? AppTheme.primaryAccent.withOpacity(0.5)
@@ -2691,7 +2692,8 @@ class _SaleFormState extends State<_SaleForm> {
                       ),
                     ),
                   ),
-                ),
+                // Add bottom padding so Save button can scroll above keyboard
+                SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 40),
                 ], // End of if (_saleSource == 'whole_stone')
               ],
             ),
