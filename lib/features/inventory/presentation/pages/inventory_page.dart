@@ -1059,7 +1059,7 @@ class _GemstoneFormState extends State<_GemstoneForm> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
-        bottom: true,
+        bottom: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1157,38 +1157,33 @@ class _GemstoneFormState extends State<_GemstoneForm> {
                   },
                   recordType: 'purchase',
                 ),
-                      ],
+                const SizedBox(height: 16),
+                // Save button moved inside scrollable Column
+                SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: ElevatedButton(
+                    onPressed: _save,
+                    child: Center(
+                      child: Text(
+                        isEdit ? 'သိမ်းဆည်းမည်' : 'ထည့်သွင်းမည်',
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          height: 1.3,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            // Save button fixed at bottom
-            Container(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 12,
-                bottom: 20 + MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: _save,
-                  child: Center(
-                    child: Text(
-                      isEdit ? 'သိမ်းဆည်းမည်' : 'ထည့်သွင်းမည်',
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.visible,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        height: 1.3,
-                      ),
+                // Bottom padding to allow scrolling above keyboard
+                SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 40),
+                      ],
                     ),
                   ),
                 ),
