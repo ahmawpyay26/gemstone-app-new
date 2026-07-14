@@ -1882,6 +1882,93 @@ class LocalDb {
     return brokers.values.where((b) => b.isActive).toList();
   }
 
+  /// Phase C.1: Group active broker consignments by voucherId
+  /// Returns Map<String, List<BrokerConsignment>>
+  /// - Key: voucherId (or unique record ID for legacy records with null voucherId)
+  /// - Value: List of BrokerConsignment records in that group
+  /// - Sorted by newest first (latest createdAt in each group)
+  static Map<String, List<BrokerConsignment>> getGroupedBrokerConsignments() {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    final active = brokers.values.where((b) => b.isActive).toList();
+    
+    final grouped = <String, List<BrokerConsignment>>{};
+    
+    for (final bc in active) {
+      // Use voucherId as grouping key if present, otherwise use record's own ID (legacy)
+      final groupKey = bc.voucherId ?? bc.id;
+      grouped.putIfAbsent(groupKey, () => []).add(bc);
+    }
+    
+    // Sort groups by newest first (use latest createdAt in each group)
+    final sorted = grouped.entries.toList()
+      ..sort((a, b) {
+        final latestA = a.value.fold<int>(0, (max, bc) => bc.createdAt > max ? bc.createdAt : max);
+        final latestB = b.value.fold<int>(0, (max, bc) => bc.createdAt > max ? bc.createdAt : max);
+        return latestB.compareTo(latestA);
+      });
+    
+    return Map.fromEntries(sorted);
+  }
+
+  /// Phase C.1: Get all records in a specific voucher group
+  /// groupKey: voucherId or record ID (for legacy records)
+  static List<BrokerConsignment> getBrokerConsignmentsByGroup(String groupKey) {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    final active = brokers.values.where((b) => b.isActive).toList();
+    
+    return active.where((bc) {
+      final key = bc.voucherId ?? bc.id;
+      return key == groupKey;
+    }).toList();
+  }
+
+  /// Phase C.1: Calculate aggregate voucher summary
+  /// Returns: (totalConsigned, totalSold, totalReturned, totalRemaining, itemCount, status)
+  static Map<String, dynamic> getVoucherSummary(String groupKey) {
+    final items = getBrokerConsignmentsByGroup(groupKey);
+    if (items.isEmpty) return {};
+    
+    final totalConsigned = items.fold<double>(0, (sum, bc) => sum + bc.consignedQuantity);
+    final totalSold = items.fold<double>(0, (sum, bc) => sum + bc.soldQuantity);
+    final totalReturned = items.fold<double>(0, (sum, bc) => sum + bc.returnedQuantity);
+    final totalRemaining = items.fold<double>(0, (sum, bc) => sum + bc.remainingQuantity);
+    final itemCount = items.length;
+    
+    // Derive status from items
+    final allCompleted = items.every((bc) => bc.remainingQuantity == 0);
+    final somePartial = items.any((bc) => bc.soldQuantity > 0 || bc.returnedQuantity > 0);
+    final someRemaining = items.any((bc) => bc.remainingQuantity > 0);
+    
+    String status;
+    if (allCompleted) {
+      status = 'Completed';
+    } else if (somePartial && someRemaining) {
+      status = 'Partial Return';
+    } else {
+      status = 'Active';
+    }
+    
+    return {
+      'totalConsigned': totalConsigned,
+      'totalSold': totalSold,
+      'totalReturned': totalReturned,
+      'totalRemaining': totalRemaining,
+      'itemCount': itemCount,
+      'status': status,
+      'brokerName': items.first.brokerName,
+      'createdAt': items.first.createdAt,
+      'voucherId': items.first.voucherId,
+      'voucherNumber': items.first.voucherNumber,
+      'isLegacy': items.first.voucherId == null,
+    };
+  }
+
+  /// Phase C.1: Check if a group is a legacy record (null voucherId)
+  static bool isLegacyGroup(String groupKey) {
+    final items = getBrokerConsignmentsByGroup(groupKey);
+    return items.isNotEmpty && items.first.voucherId == null;
+  }
+
   /// Update broker sold quantity
   static Future<void> updateBrokerSoldQuantity(String brokerId, double soldQuantity) async {
     final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
