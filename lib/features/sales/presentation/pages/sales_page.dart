@@ -4631,9 +4631,11 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                s.gemstoneName,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                              Expanded(
+                                child: Text(
+                                  s.gemstoneName,
+                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                ),
                               ),
                               if (s.isFragmentSource) ...[
                                 const SizedBox(width: 6),
@@ -4669,6 +4671,67 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
                         Text(
                           'ကျန်: ${widget.moneyFormat.format(s.netSale)} ကျပ်',
                           style: TextStyle(color: AppTheme.successColor, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                    // Item-level menu
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
+                      onSelected: (value) async {
+                        switch (value) {
+                          case 'edit':
+                            widget.onEditItem(e.key);
+                            break;
+                          case 'delete':
+                            widget.onDeleteItem(e.key);
+                            break;
+                          case 'photos':
+                            if (s.photoPaths.isNotEmpty) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => _PhotoViewerDialog(photoPaths: s.photoPaths),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('ဓာတ်ပုံမရှိပါ'),
+                                  backgroundColor: AppTheme.errorColor,
+                                ),
+                              );
+                            }
+                            break;
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Text('✏️'),
+                              SizedBox(width: 8),
+                              Text('ပြုပြင်ရန်'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Text('🗑️'),
+                              SizedBox(width: 8),
+                              Text('ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'photos',
+                          child: Row(
+                            children: [
+                              Text('🖼️'),
+                              SizedBox(width: 8),
+                              Text('ဓာတ်ပုံကြည့်ရန်'),
+                            ],
+                          ),
                         ),
                       ],
                     ),
