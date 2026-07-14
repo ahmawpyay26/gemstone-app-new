@@ -4439,27 +4439,26 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
-          // Header row
-          InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryAccent.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(Icons.receipt_long, color: AppTheme.primaryAccent, size: 20),
+          // Header row with expand/collapse and invoice menu
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryAccent.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
+                      child: Icon(Icons.receipt_long, color: AppTheme.primaryAccent, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _expanded = !_expanded),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -4508,27 +4507,108 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
                           ],
                         ),
                       ),
-                      Icon(
+                    ),
+                    // Expand/collapse icon
+                    IconButton(
+                      icon: Icon(
                         _expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                         color: Colors.grey[400],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Invoice number tag
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryAccent.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
+                      onPressed: () => setState(() => _expanded = !_expanded),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
-                    child: Text(
-                      'Invoice: ${widget.invoiceNumber}',
-                      style: TextStyle(color: AppTheme.primaryAccent, fontSize: 11),
+                    // Invoice-level menu
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: Colors.grey),
+                      onSelected: (value) async {
+                        switch (value) {
+                          case 'print':
+                            widget.onPrint();
+                            break;
+                          case 'pdf':
+                            widget.onExportPdf();
+                            break;
+                          case 'photos':
+                            _showAllInvoicePhotos();
+                            break;
+                          case 'image':
+                            await _captureAndExportInvoiceImage();
+                            break;
+                          case 'delete':
+                            widget.onDeleteAll();
+                            break;
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(
+                          value: 'print',
+                          child: Row(
+                            children: [
+                              Text('🖨️'),
+                              SizedBox(width: 8),
+                              Text('ပရင့်ထုတ်ရန်'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'pdf',
+                          child: Row(
+                            children: [
+                              Text('📄'),
+                              SizedBox(width: 8),
+                              Text('PDF ထုတ်ရန်'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'photos',
+                          child: Row(
+                            children: [
+                              Text('🖼️'),
+                              SizedBox(width: 8),
+                              Text('ဓာတ်ပုံများကြည့်ရန်'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'image',
+                          child: Row(
+                            children: [
+                              Text('📸'),
+                              SizedBox(width: 8),
+                              Text('Invoice ပုံထုတ်ရန်'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Text('🗑️'),
+                              SizedBox(width: 8),
+                              Text('Invoice ဖျက်ရန်', style: TextStyle(color: AppTheme.errorColor)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Invoice number tag
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryAccent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                ],
-              ),
+                  child: Text(
+                    'Invoice: ${widget.invoiceNumber}',
+                    style: TextStyle(color: AppTheme.primaryAccent, fontSize: 11),
+                  ),
+                ),
+              ],
             ),
           ),
           // Expanded items list
@@ -4634,31 +4714,7 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
                           style: TextStyle(color: AppTheme.successColor, fontSize: 13, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  // Action buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.print_outlined, size: 20),
-                        color: Colors.grey[400],
-                        tooltip: 'ပရင့်',
-                        onPressed: widget.onPrint,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.picture_as_pdf_outlined, size: 20),
-                        color: Colors.grey[400],
-                        tooltip: 'PDF',
-                        onPressed: widget.onExportPdf,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 20),
-                        color: AppTheme.errorColor,
-                        tooltip: 'Invoice ဖျက်မည်',
-                        onPressed: widget.onDeleteAll,
-                      ),
-                    ],
-                  ),
+
                 ],
               ),
             ),
