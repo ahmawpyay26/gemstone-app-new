@@ -35,6 +35,7 @@ class BrokerSaleForm extends StatefulWidget {
 }
 
 class _BrokerSaleFormState extends State<BrokerSaleForm> {
+  late String _currentSourceType;
   final _dateFormat = DateFormat('dd/MM/yyyy');
   final _currencyFormat = NumberFormat('#,##0.00', 'en_US');
 
@@ -62,6 +63,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     _unitPriceController = TextEditingController();
     _commissionController = TextEditingController();
     _remarkController = TextEditingController();
+    _currentSourceType = widget.sourceType;
 
     if (widget.sourceType == 'breakdown_item' && widget.breakdownItemName != null) {
       _selectedBreakdownItem = widget.breakdownItemName;
@@ -209,17 +211,54 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.primaryAccent, width: 1),
+        border: Border.all(color: AppTheme.primaryAccent, width: 2),
         borderRadius: BorderRadius.circular(8),
-        color: Colors.black.withOpacity(0.2),
+        color: Colors.grey[900],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top Box Title
+          Text(
+            'ပွဲစားထံမှ ကျောက်ထည့်သွင်းခြင်း',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Source Type Selector
+          Text(
+            'အရင်းအမြစ်အမျိုးအစား',
+            style: TextStyle(color: Colors.grey[400], fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<String>(
+            segments: const <ButtonSegment<String>>[
+              ButtonSegment<String>(
+                value: 'whole_stone',
+                label: Text('အပြည့်အစုံ'),
+              ),
+              ButtonSegment<String>(
+                value: 'breakdown_item',
+                label: Text('အခွဲ'),
+              ),
+            ],
+            selected: <String>{_currentSourceType},
+            onSelectionChanged: (Set<String> newSelection) {
+              setState(() {
+                _currentSourceType = newSelection.first;
+                _selectedBreakdownItem = null; // Reset breakdown item when switching
+              });
+            },
+          ),
+          const SizedBox(height: 12),
           // Sale Date
           Text(
             'ရောင်းချရက်စွဲ',
-            style: TextStyle(color: Colors.grey[300], fontSize: 12),
+            style: TextStyle(color: Colors.grey[400], fontSize: 12),
           ),
           const SizedBox(height: 8),
           GestureDetector(
@@ -247,7 +286,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
           // Buyer Name (Optional)
           Text(
             'ဝယ်ယူသူအမည် (ရွေးချယ်ခွင့်)',
-            style: TextStyle(color: Colors.grey[300], fontSize: 12),
+            style: TextStyle(color: Colors.grey[400], fontSize: 12),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -265,7 +304,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
           const SizedBox(height: 12),
 
           // Breakdown Item Selection (if applicable)
-          if (widget.sourceType == 'breakdown_item' && widget.breakdownItems != null && widget.breakdownItems!.isNotEmpty) ...[
+          if (_currentSourceType == 'breakdown_item' && widget.breakdownItems != null && widget.breakdownItems!.isNotEmpty) ...[
             Text(
               'အခွဲအမည်',
               style: TextStyle(color: Colors.grey[300], fontSize: 12),
@@ -293,7 +332,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
           // Quantity
           Text(
             'ရောင်းချအရေအတွက်',
-            style: TextStyle(color: Colors.grey[300], fontSize: 12),
+            style: TextStyle(color: Colors.grey[400], fontSize: 12),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -317,7 +356,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
           // Unit Price
           Text(
             'ယူနစ်ဈေး',
-            style: TextStyle(color: Colors.grey[300], fontSize: 12),
+            style: TextStyle(color: Colors.grey[400], fontSize: 12),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -340,7 +379,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
           // Total Amount (Auto-calculated)
           Text(
             'စုစုပေါင်းရောင်းချငွေ',
-            style: TextStyle(color: Colors.grey[300], fontSize: 12),
+            style: TextStyle(color: Colors.grey[400], fontSize: 12),
           ),
           const SizedBox(height: 8),
           Container(
@@ -360,7 +399,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
           // Broker Commission
           Text(
             'ပွဲခ',
-            style: TextStyle(color: Colors.grey[300], fontSize: 12),
+            style: TextStyle(color: Colors.grey[400], fontSize: 12),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -383,7 +422,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
           // Net Amount (Auto-calculated)
           Text(
             'သန့်သန့်ငွေ (စုစုပေါင်း - ပွဲခ)',
-            style: TextStyle(color: Colors.grey[300], fontSize: 12),
+            style: TextStyle(color: Colors.grey[400], fontSize: 12),
           ),
           const SizedBox(height: 8),
           Container(
@@ -403,7 +442,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
           // Remark
           Text(
             'မှတ်ချက်',
-            style: TextStyle(color: Colors.grey[300], fontSize: 12),
+            style: TextStyle(color: Colors.grey[400], fontSize: 12),
           ),
           const SizedBox(height: 8),
           TextField(
