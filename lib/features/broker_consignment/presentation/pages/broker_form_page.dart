@@ -1131,7 +1131,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     // This will be replaced with the real one after save
     final now = DateTime.now().millisecondsSinceEpoch;
     final tempHistoricalData = BrokerHistoricalData(
-      purchaseName: 'Temporary',
+      purchaseName: 'ယာယီ',
       purchaseDate: now,
       originalSeller: '',
       gemstoneType: '',
