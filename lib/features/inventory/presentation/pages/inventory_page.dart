@@ -7,6 +7,7 @@ import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../shared/widgets/photo_attachment_widget.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
+import '../../../../shared/widgets/photo_count_badge.dart';
 import '../../../../shared/utils/breakdown_formatter.dart';
 
 
@@ -490,10 +491,18 @@ class _InventoryPageState extends State<InventoryPage> {
                             child: const Icon(Icons.diamond,
                                 color: AppTheme.primaryAccent),
                           ),
-                          title: Text(g.name,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(g.name,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                              if (g.photoPaths.isNotEmpty)
+                                PhotoCountBadge(count: g.photoPaths.length),
+                            ],
+                          ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

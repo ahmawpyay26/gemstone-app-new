@@ -12,6 +12,7 @@ import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../shared/widgets/photo_attachment_widget.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
+import '../../../../shared/widgets/photo_count_badge.dart';
 import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
 import '../../../../core/services/voucher_export_service.dart';
 import 'package:share_plus/share_plus.dart';
@@ -3102,12 +3103,20 @@ class _SaleFormState extends State<_SaleForm> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'ကုန်ပစ္စည်း ${index + 1}',
-                style: const TextStyle(
-                  color: AppTheme.primaryAccent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+              Expanded(
+                child: Row(
+                  children: [
+                    Text(
+                      'ကုန်ပစ္စည်း ${index + 1}',
+                      style: const TextStyle(
+                        color: AppTheme.primaryAccent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    PhotoCountBadge(count: item.photoPaths.length),
+                  ],
                 ),
               ),
               if (index > 0)

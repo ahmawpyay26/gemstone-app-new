@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/models.dart';
+import '../../../../shared/widgets/photo_count_badge.dart';
 
 /// Phase C.2: Expandable Voucher Group Card
 /// Displays grouped broker consignments with collapsible items
@@ -349,6 +350,14 @@ class _VoucherGroupCardState extends State<VoucherGroupCard> {
                               fontSize: 12,
                             ),
                           ),
+                          const SizedBox(width: 12),
+                          PhotoCountBadge(
+                            count: widget.items.fold<int>(
+                              0,
+                              (sum, item) => sum + (item.photoPaths?.length ?? 0),
+                            ),
+                            fontSize: 11,
+                          ),
                         ],
                       ),
                       IconButton(
@@ -498,15 +507,26 @@ class VoucherItemRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      (gemName ?? 'Unknown') + (weightStr ?? ''),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            (gemName ?? 'Unknown') + (weightStr ?? ''),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (item.photoPaths != null && item.photoPaths!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: PhotoCountBadge(count: item.photoPaths!.length, fontSize: 10),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Container(
