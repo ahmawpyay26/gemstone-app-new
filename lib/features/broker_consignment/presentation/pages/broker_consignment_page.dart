@@ -262,9 +262,15 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
               .where((entry) => entry.value.any((item) => filteredBrokers.contains(item)))
               .toList();
 
-          // Calculate totals from ALL brokers (not filtered)
-          final totalRecords = allBrokers.length;
-          final totalDifferentGemstones = allBrokers.toSet().length;
+          // Calculate totals from FILTERED brokers
+          // totalRecords = distinct vouchers (voucherId or legacy record)
+          final voucherIds = filteredBrokers
+              .map((b) => b.voucherId ?? b.id) // Use voucherId or id for legacy
+              .toSet();
+          final totalRecords = voucherIds.length;
+          
+          // totalDifferentGemstones = count of distinct gemstone items
+          final totalDifferentGemstones = filteredBrokers.length;
           final totalConsigned = allBrokers.fold<double>(0, (sum, bc) => sum + bc.consignedQuantity);
           final totalSold = allBrokers.fold<double>(0, (sum, bc) => sum + bc.soldQuantity);
           final totalRemaining = allBrokers.fold<double>(0, (sum, bc) => sum + bc.remainingQuantity);
