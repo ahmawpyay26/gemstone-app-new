@@ -1941,11 +1941,11 @@ class LocalDb {
     
     String status;
     if (allCompleted) {
-      status = 'Completed';
+      status = 'ပြီးစီး';
     } else if (somePartial && someRemaining) {
-      status = 'Partial Return';
+      status = 'တစ်စိတ်တစ်ပိုင်း ပြန်လည်အပ်';
     } else {
-      status = 'Active';
+      status = 'လုပ်ဆောင်ဆဲ';
     }
     
     return {

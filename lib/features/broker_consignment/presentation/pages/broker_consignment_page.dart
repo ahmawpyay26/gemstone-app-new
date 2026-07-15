@@ -20,7 +20,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
   final _currencyFormat = NumberFormat('#,##0.00', 'en_US');
   
   // Task 5: Filtering
-  String _selectedFilter = 'All';
+  String _selectedFilter = 'အားလုံး';
   
   // Step 9: Returned quantity tracking
   final Map<String, TextEditingController> _returnedQtyControllers = {};
@@ -106,16 +106,16 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
 
   String _getStatusKey(BrokerConsignment bc) {
     if (bc.remainingQuantity == 0) {
-      return 'Completed';
+      return 'ပြီးစီး';
     } else if (bc.returnedQuantity > 0) {
-      return 'Partial Return';
+      return 'တစ်စိတ်တစ်ပိုင်း ပြန်လည်အပ်';
     } else {
-      return 'Active';
+      return 'လုပ်ဆောင်ဆဲ';
     }
   }
 
   bool _matchesFilter(BrokerConsignment bc) {
-    if (_selectedFilter == 'All') return true;
+    if (_selectedFilter == 'အားလုံး') return true;
     return _getStatusKey(bc) == _selectedFilter;
   }
 
@@ -337,13 +337,13 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildFilterChip('All', 'All'),
+                        _buildFilterChip('အားလုံး', 'အားလုံး'),
                         const SizedBox(width: 8),
-                        _buildFilterChip('Active', 'Active'),
+                        _buildFilterChip('လုပ်ဆောင်ဆဲ', 'လုပ်ဆောင်ဆဲ'),
                         const SizedBox(width: 8),
-                        _buildFilterChip('Completed', 'Completed'),
+                        _buildFilterChip('ပြီးစီး', 'ပြီးစီး'),
                         const SizedBox(width: 8),
-                        _buildFilterChip('Partial Return', 'Partial Return'),
+                        _buildFilterChip('တစ်စိတ်တစ်ပိုင်း ပြန်လည်အပ်', 'တစ်စိတ်တစ်ပိုင်း ပြန်လည်အပ်'),
                       ],
                     ),
                   ),

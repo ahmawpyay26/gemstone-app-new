@@ -56,11 +56,11 @@ class _VoucherGroupCardState extends State<VoucherGroupCard> {
 
   String _getStatusColor(String status) {
     switch (status) {
-      case 'Completed':
+      case 'ပြီးစီး':
         return '🟢';
-      case 'Partial Return':
+      case 'တစ်စိတ်တစ်ပိုင်း ပြန်လည်အပ်':
         return '🟠';
-      case 'Active':
+      case 'လုပ်ဆောင်ဆဲ':
         return '🔵';
       default:
         return '⚪';
@@ -69,11 +69,11 @@ class _VoucherGroupCardState extends State<VoucherGroupCard> {
 
   Color _getStatusBgColor(String status) {
     switch (status) {
-      case 'Completed':
+      case 'ပြီးစီး':
         return Colors.green.withOpacity(0.2);
-      case 'Partial Return':
+      case 'တစ်စိတ်တစ်ပိုင်း ပြန်လည်အပ်':
         return Colors.orange.withOpacity(0.2);
-      case 'Active':
+      case 'လုပ်ဆောင်ဆဲ':
         return AppTheme.primaryAccent.withOpacity(0.2);
       default:
         return Colors.grey.withOpacity(0.2);
@@ -82,11 +82,11 @@ class _VoucherGroupCardState extends State<VoucherGroupCard> {
 
   Color _getStatusTextColor(String status) {
     switch (status) {
-      case 'Completed':
+      case 'ပြီးစီး':
         return Colors.green;
-      case 'Partial Return':
+      case 'တစ်စိတ်တစ်ပိုင်း ပြန်လည်အပ်':
         return Colors.orange;
-      case 'Active':
+      case 'လုပ်ဆောင်ဆဲ':
         return AppTheme.primaryAccent;
       default:
         return Colors.grey;
@@ -189,7 +189,7 @@ class _VoucherGroupCardState extends State<VoucherGroupCard> {
 
   @override
   Widget build(BuildContext context) {
-    final status = widget.summary['status'] as String? ?? 'Active';
+    final status = widget.summary['status'] as String? ?? 'လုပ်ဆောင်ဆဲ';
     final totalConsigned = widget.summary['totalConsigned'] as double? ?? 0;
     final totalSold = widget.summary['totalSold'] as double? ?? 0;
     final totalReturned = widget.summary['totalReturned'] as double? ?? 0;
