@@ -3592,6 +3592,7 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
   late TextEditingController _remarkController;
   DateTime? _selectedSaleDate;
   BrokerConsignment? _selectedConsignment;
+  String _selectedSourceType = 'whole_stone'; // Track source type selection
 
   String? _quantityError;
   String? _priceError;
@@ -3787,25 +3788,98 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
               ],
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<BrokerConsignment>(
-              value: _selectedConsignment,
-              decoration: InputDecoration(
-                labelText: 'ကြေးမုံအချက်အလက်',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            // Top Box with Source Type Toggle
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppTheme.primaryAccent, width: 2),
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.grey[900],
               ),
-              items: brokerConsignments.map((consignment) {
-                final gemstonesBox = Hive.box<Gemstone>('gemstones');
-                final gemstone = gemstonesBox.get(consignment.purchaseId);
-                return DropdownMenuItem(
-                  value: consignment,
-                  child: Text('${gemstone?.name ?? "Unknown"} - ${consignment.brokerName}'),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() => _selectedConsignment = value);
-              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Box Title
+                  const Text(
+                    'ပွဲစားထံမှ ကျောက်ထည့်သွင်းခြင်း',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Source Type Selector
+                  Text(
+                    'အရင်းအမြစ်အမျိုးအစား',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<String>(
+                    segments: const <ButtonSegment<String>>[
+                      ButtonSegment<String>(
+                        value: 'whole_stone',
+                        label: Text('အပြည့်အစုံ'),
+                      ),
+                      ButtonSegment<String>(
+                        value: 'breakdown_item',
+                        label: Text('အခွဲ'),
+                      ),
+                    ],
+                    selected: <String>{_selectedSourceType},
+                    onSelectionChanged: (Set<String> newSelection) {
+                      setState(() {
+                        _selectedSourceType = newSelection.first;
+                        _selectedConsignment = null; // Reset selection when source type changes
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  // Gemstone Selection Dropdown
+                  DropdownButtonFormField<BrokerConsignment>(
+                    value: _selectedConsignment,
+                    isExpanded: true,
+                    dropdownColor: AppTheme.surfaceDark,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'ကျောက်ရွေးချယ်ပါ',
+                      labelStyle: TextStyle(color: Colors.grey[400]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey[700]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey[700]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[900],
+                    ),
+                    items: brokerConsignments
+                        .where((c) => c.historicalData.sourceType == _selectedSourceType)
+                        .map((consignment) {
+                          final gemstonesBox = Hive.box<Gemstone>('gemstones');
+                          final gemstone = gemstonesBox.get(consignment.purchaseId);
+                          return DropdownMenuItem(
+                            value: consignment,
+                            child: Text(
+                              '${gemstone?.name ?? "Unknown"} - ${consignment.brokerName}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                    onChanged: (value) {
+                      setState(() => _selectedConsignment = value);
+                    },
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextField(
               controller: _quantitySoldController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
