@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:io';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/photo_viewer.dart';
 import '../widgets/photo_media_box.dart';
 
 /// Temporary model for consignment items during form editing
@@ -48,6 +50,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   late TextEditingController _notesCtrl;
   
   DateTime _consignmentDate = DateTime.now();
+  
+  // Edit mode tracking
+  String? _editingItemId; // null = new item, set = editing existing item
   late String _brokerConsignmentNumber;
   late String _tempBrokerId; // Temporary ID for form photos
   List<String> _formPhotoPaths = []; // Photos collected during form
@@ -210,8 +215,16 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       // Copy current form photos to the item (independent copy)
       _currentEditingItem.photoPaths = List<String>.from(_formPhotoPaths);
       
-      // Add current item to confirmed list
-      _confirmedItems.add(_currentEditingItem);
+      if (_editingItemId != null) {
+        // UPDATE existing item (Feature 2: Edit mode)
+        final index = _confirmedItems.indexWhere((item) => item.id == _editingItemId);
+        if (index != -1) {
+          _confirmedItems[index] = _currentEditingItem;
+        }
+      } else {
+        // ADD new item
+        _confirmedItems.add(_currentEditingItem);
+      }
       
       // Reset the form completely
       _resetCurrentItemForm();
@@ -231,12 +244,99 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       _tempBrokerId = DateTime.now().millisecondsSinceEpoch.toString();
       // Force PhotoMediaBox rebuild by changing ValueKey
       _photoPickerResetKey++;
+      // Clear edit mode
+      _editingItemId = null;
     });
+  }
+  
+  void _editConfirmedItem(ConsignmentItemTemp item) {
+    setState(() {
+      // Mark as editing mode
+      _editingItemId = item.id;
+      
+      // Restore ALL fields from the temporary item
+      _currentEditingItem = ConsignmentItemTemp(
+        id: item.id,
+        gemstone: item.gemstone,
+        consignedQuantity: item.consignedQuantity,
+        sourceType: item.sourceType,
+        selectedPurchase: item.selectedPurchase,
+        selectedBreakdownItem: item.selectedBreakdownItem,
+        availableBreakdownItems: item.availableBreakdownItems,
+        photoPaths: List<String>.from(item.photoPaths), // Independent copy
+      );
+      
+      // Restore form photo paths
+      _formPhotoPaths = List<String>.from(item.photoPaths);
+      
+      // Generate new temp broker ID for editing
+      _tempBrokerId = DateTime.now().millisecondsSinceEpoch.toString();
+      _photoPickerResetKey++;
+      
+      // Scroll to top to show form
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          Scrollable.ensureVisible(
+            context,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    });
+  }
+  
+  void _deleteConfirmedItem(String itemId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ဖျက်ရန် အတည်ပြုပါ'),
+        content: const Text('ဤအရာကို ဖျက်ပြီးသည်နှင့် ပြန်လည်ရယူ၍ မရနိုင်ပါ။'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ပယ်ဖျက်ပါ'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _confirmedItems.removeWhere((item) => item.id == itemId);
+                // If we were editing this item, clear the form
+                if (_editingItemId == itemId) {
+                  _resetCurrentItemForm();
+                }
+              });
+            },
+            child: const Text('ဖျက်မည်', style: TextStyle(color: AppTheme.errorColor)),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _viewItemPhotos(List<String> photoPaths) {
+    if (photoPaths.isEmpty) return;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PhotoViewer(
+          photoUrls: photoPaths,
+          initialIndex: 0,
+        ),
+      ),
+    );
   }
 
   void _removeConfirmedItem(String itemId) {
+    // This method is kept for backward compatibility but is no longer used
+    // Use _deleteConfirmedItem instead which shows confirmation dialog
     setState(() {
       _confirmedItems.removeWhere((item) => item.id == itemId);
+      if (_editingItemId == itemId) {
+        _resetCurrentItemForm();
+      }
     });
   }
 
@@ -1133,14 +1233,18 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     }
     
     final photoCount = item.photoPaths.length;
+    final isEditing = _editingItemId == item.id;
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[700]!),
+        border: Border.all(
+          color: isEditing ? AppTheme.primaryAccent : Colors.grey[700]!,
+          width: isEditing ? 2 : 1,
+        ),
         borderRadius: BorderRadius.circular(6),
-        color: Colors.grey[900],
+        color: isEditing ? Colors.grey[850] : Colors.grey[900],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1177,21 +1281,25 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                 ),
               ),
               const SizedBox(width: 8),
+              // Feature 1: Photo badge opens PhotoViewer
               if (photoCount > 0)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryAccent.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '📷 $photoCount',
-                      style: const TextStyle(
-                        color: AppTheme.primaryAccent,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                  child: GestureDetector(
+                    onTap: () => _viewItemPhotos(item.photoPaths),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryAccent.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '📷 $photoCount',
+                        style: const TextStyle(
+                          color: AppTheme.primaryAccent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
@@ -1211,20 +1319,22 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               ),
               Row(
                 children: [
+                  // Feature 2: Edit button restores entire item
                   IconButton(
-                    icon: const Icon(Icons.edit, color: AppTheme.primaryAccent, size: 18),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('အပ်ဒိတ်ဖိုင်ချ မကြာမီ အသုံးပြုနိုင်မည်')),
-                      );
-                    },
+                    icon: Icon(
+                      isEditing ? Icons.check_circle : Icons.edit,
+                      color: isEditing ? Colors.green : AppTheme.primaryAccent,
+                      size: 18,
+                    ),
+                    onPressed: () => _editConfirmedItem(item),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
                   const SizedBox(width: 8),
+                  // Feature 3: Delete with confirmation
                   IconButton(
                     icon: const Icon(Icons.delete, color: AppTheme.errorColor, size: 18),
-                    onPressed: () => _removeConfirmedItem(item.id),
+                    onPressed: () => _deleteConfirmedItem(item.id),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
