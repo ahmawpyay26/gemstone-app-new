@@ -750,7 +750,7 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                           _buildDetailRow('မူရင်းနေရာ', _gemstone?.origin ?? '-'),
                           Divider(color: Colors.grey[700], height: 1),
                           _buildDetailRow('အရောင်', _gemstone?.color ?? '-'),
-                          if (_brokerConsignment!.historicalData.sourceType == 'breakdown_item') ..[
+                          if (_brokerConsignment!.historicalData.sourceType == 'breakdown_item') ...[
                             Divider(color: Colors.grey[700], height: 1),
                             _buildDetailRow('အခွဲအမည်', _brokerConsignment!.historicalData.breakdownItemName ?? '-'),
                           ],
