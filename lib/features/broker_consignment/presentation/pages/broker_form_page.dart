@@ -16,6 +16,7 @@ class ConsignmentItemTemp {
   Gemstone? selectedPurchase; // For breakdown_item source type
   String? selectedBreakdownItem; // Selected breakdown item name
   Map<String, int> availableBreakdownItems; // Filtered breakdown items from purchase
+  List<String> photoPaths; // Independent photo list for this item
 
   ConsignmentItemTemp({
     required this.id,
@@ -25,6 +26,7 @@ class ConsignmentItemTemp {
     this.selectedPurchase,
     this.selectedBreakdownItem,
     this.availableBreakdownItems = const {},
+    this.photoPaths = const [],
   });
 }
 
@@ -204,8 +206,15 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     }
     
     setState(() {
+      // Copy current form photos to the item (independent copy)
+      _currentEditingItem.photoPaths = List<String>.from(_formPhotoPaths);
+      
       // Add current item to confirmed list
       _confirmedItems.add(_currentEditingItem);
+      
+      // Clear form photos completely
+      _formPhotoPaths.clear();
+      
       // Create new editing item
       _currentEditingItem = ConsignmentItemTemp(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -305,7 +314,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           brokerPhone: _brokerPhoneCtrl.text,
           brokerAddress: _brokerAddressCtrl.text,
           brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
-          photoPaths: _formPhotoPaths,
+          photoPaths: item.photoPaths,
           voucherId: voucherId, // Assign shared voucher ID
           voucherNumber: voucherNumber, // Assign shared voucher number
         );
