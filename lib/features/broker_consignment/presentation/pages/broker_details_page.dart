@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_theme.dart';
+
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/enhanced_photo_viewer.dart';
 
 class BrokerDetailsPage extends StatefulWidget {
   final String brokerId;
@@ -534,6 +538,53 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
       ),
     );
   }
+  
+  // Feature 1 & 2: Open PhotoViewer for item or voucher photos
+  void _viewItemPhotos(List<String> photoPaths, {String? itemName}) {
+    if (photoPaths.isEmpty) return;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EnhancedPhotoViewer(
+          photoUrls: photoPaths,
+          itemName: itemName,
+          voucherNumber: _brokerConsignment?.voucherNumber,
+          initialIndex: 0,
+        ),
+      ),
+    );
+  }
+  
+  // Get all photos from voucher
+  List<String> _getAllVoucherPhotos() {
+    if (_brokerConsignment == null) return [];
+    
+    try {
+      final box = Hive.box<BrokerConsignment>('brokerConsignments');
+      final voucherId = _brokerConsignment!.voucherId;
+      
+      if (voucherId == null) {
+        // Single item, return its photos
+        return _brokerConsignment!.photoPaths;
+      }
+      
+      // Get all items in this voucher
+      final allPhotos = <String>[];
+      final voucherItems = box.values
+          .where((item) => item.voucherId == voucherId && item.isActive)
+          .toList();
+      
+      for (var item in voucherItems) {
+        allPhotos.addAll(item.photoPaths);
+      }
+      
+      return allPhotos;
+    } catch (e) {
+      debugPrint('Error getting voucher photos: $e');
+      return _brokerConsignment?.photoPaths ?? [];
+    }
+  }
 
   Widget _buildFormField(String label, TextEditingController controller, {
     TextInputType keyboardType = TextInputType.text,
@@ -701,13 +752,96 @@ class _BrokerDetailsPageState extends State<BrokerDetailsPage> {
                           _buildDetailRow('မူရင်းနေရာ', _gemstone?.origin ?? '-'),
                           Divider(color: Colors.grey[700], height: 1),
                           _buildDetailRow('အရောင်', _gemstone?.color ?? '-'),
-                          if (_brokerConsignment!.historicalData.sourceType == 'breakdown_item') ...[
+                          if (_brokerConsignment!.historicalData.sourceType == 'breakdown_item') ..[
                             Divider(color: Colors.grey[700], height: 1),
                             _buildDetailRow('အခွဲအမည်', _brokerConsignment!.historicalData.breakdownItemName ?? '-'),
                           ],
                         ],
                       ),
                     ),
+                    
+                    // Feature 1 & 2: Photo Section
+                    if (_brokerConsignment!.photoPaths.isNotEmpty || _getAllVoucherPhotos().isNotEmpty) ...[                      
+                      _buildSectionHeader('ဓာတ်ပုံများ'),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Item photo badge
+                            if (_brokerConsignment!.photoPaths.isNotEmpty) ...[                              
+                              GestureDetector(
+                                onTap: () => _viewItemPhotos(
+                                  _brokerConsignment!.photoPaths,
+                                  itemName: _brokerConsignment!.historicalData.purchaseName,
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryAccent.withOpacity(0.15),
+                                    border: Border.all(color: AppTheme.primaryAccent),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.photo_library, color: AppTheme.primaryAccent, size: 18),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'ကျောက်ဓာတ်ပုံ (${_brokerConsignment!.photoPaths.length})',
+                                        style: const TextStyle(
+                                          color: AppTheme.primaryAccent,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                            
+                            // Voucher photo badge (if multiple items)
+                            if (_brokerConsignment!.voucherId != null && _getAllVoucherPhotos().length > _brokerConsignment!.photoPaths.length) ...[                              
+                              const SizedBox(height: 8),
+                              GestureDetector(
+                                onTap: () => _viewItemPhotos(
+                                  _getAllVoucherPhotos(),
+                                  itemName: 'အားလုံး',
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.15),
+                                    border: Border.all(color: Colors.orange),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.collections, color: Colors.orange, size: 18),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'အားလုံးဓာတ်ပုံ (${_getAllVoucherPhotos().length})',
+                                        style: const TextStyle(
+                                          color: Colors.orange,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
 
                     // Quantity Status Section
                     _buildSectionHeader('အရေအတွက်အခြေအနေ'),
