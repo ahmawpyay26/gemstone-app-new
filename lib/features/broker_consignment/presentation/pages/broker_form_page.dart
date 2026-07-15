@@ -212,13 +212,18 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       // Add current item to confirmed list
       _confirmedItems.add(_currentEditingItem);
       
-      // Clear form photos completely
-      _formPhotoPaths.clear();
-      
-      // Create new editing item
+      // Reset the form completely
+      _resetCurrentItemForm();
+    });
+  }
+
+  void _resetCurrentItemForm() {
+    setState(() {
+      // Reset all form fields
       _currentEditingItem = ConsignmentItemTemp(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
       );
+      _formPhotoPaths.clear();
     });
   }
 
@@ -690,6 +695,20 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             
             const SizedBox(height: 24),
             
+            // Photo section title
+            if (_currentEditingItem.gemstone != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'လက\u1031\u1038ယ\u1010\u103d\u1000\u103aအ\u1015\u103c\u102f\u1014\u102d\u102f\u1004\u103a: ${_currentEditingItem.gemstone!.name}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            
             // Photo Media Box
             _buildPhotoMediaBox(),
             
@@ -1095,28 +1114,116 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   }
 
   Widget _buildConfirmedItemRow(ConsignmentItemTemp item) {
-    // Compact summary display - read-only
-    final summaryText = _buildConfirmedItemSummary(item);
+    String gemName = 'Unknown';
+    double? weight;
+    
+    if (item.sourceType == 'whole_stone' && item.gemstone != null) {
+      gemName = item.gemstone!.name;
+      weight = item.gemstone!.weightCarat;
+    } else if (item.sourceType == 'breakdown_item' && item.selectedBreakdownItem != null) {
+      gemName = '${item.selectedPurchase?.name ?? "Unknown"} / ${item.selectedBreakdownItem}';
+      weight = item.selectedPurchase?.weightCarat;
+    }
+    
+    final photoCount = item.photoPaths.length;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey[800]!)),
+        border: Border.all(color: Colors.grey[700]!),
+        borderRadius: BorderRadius.circular(6),
+        color: Colors.grey[900],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              summaryText,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      gemName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (weight != null && weight > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'အလေးချိန်: $weight viss',
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (photoCount > 0)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryAccent.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '📷 $photoCount',
+                      style: const TextStyle(
+                        color: AppTheme.primaryAccent,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: AppTheme.errorColor, size: 20),
-            onPressed: () => _removeConfirmedItem(item.id),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'အရေအတွက်: ${item.consignedQuantity}',
+                style: TextStyle(
+                  color: Colors.grey[300],
+                  fontSize: 12,
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: AppTheme.primaryAccent, size: 18),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('အပ်ဒိတ်ဖိုင်ချ မကြာမီ အသုံးပြုနိုင်မည်')),
+                      );
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: AppTheme.errorColor, size: 18),
+                    onPressed: () => _removeConfirmedItem(item.id),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -1136,6 +1243,11 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
 
   /// Build photo media box widget
   Widget _buildPhotoMediaBox() {
+    // Show title indicating these are current item photos
+    final itemDescription = _currentEditingItem.gemstone != null
+        ? _currentEditingItem.gemstone!.name
+        : 'လက်ရှိကျောက်';
+
     // Create a temporary broker consignment for the form
     // This will be replaced with the real one after save
     final now = DateTime.now().millisecondsSinceEpoch;
