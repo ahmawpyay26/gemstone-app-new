@@ -3667,7 +3667,7 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
   Future<void> _saveBrokerSale() async {
     if (_selectedConsignment == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ကြေးမုံအချက်အလက်ကို ရွေးချယ်ပါ။')),
+        const SnackBar(content: Text('ပွဲစားထံမှ ကျောက်ကို ရွေးချယ်ပါ။')),
       );
       return;
     }
@@ -3737,7 +3737,7 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ကြေးမုံရောင်းချမှု သိမ်းဆည်းပြီးပါပြီ။')),
+          const SnackBar(content: Text('ပွဲစားထံမှ ရောင်းချမှု သိမ်းဆည်းပြီးပါပြီ။')),
         );
         Navigator.pop(context);
       }
@@ -3778,7 +3778,7 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'ကြေးမုံရောင်းချမှု',
+                  'ပွဲစားထံမှ ရောင်းချမှု',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
