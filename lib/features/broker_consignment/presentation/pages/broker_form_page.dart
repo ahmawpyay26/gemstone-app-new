@@ -632,6 +632,25 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             _buildEditingItemForm(),
             const SizedBox(height: 12),
             
+            // Photo section title
+            if (_currentEditingItem.gemstone != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'လက\u1031\u1038ယ\u1010\u103d\u1000\u103aအ\u1015\u103c\u102f\u1014\u102d\u102f\u1004\u103a: ${_currentEditingItem.gemstone!.name}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            
+            // Photo Media Box
+            _buildPhotoMediaBox(),
+            
+            const SizedBox(height: 12),
+            
             // Add Item button
             SizedBox(
               width: double.infinity,
@@ -696,25 +715,6 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   return _buildConfirmedItemRow(item);
                 },
               ),
-            
-            const SizedBox(height: 24),
-            
-            // Photo section title
-            if (_currentEditingItem.gemstone != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  'လက\u1031\u1038ယ\u1010\u103d\u1000\u103aအ\u1015\u103c\u102f\u1014\u102d\u102f\u1004\u103a: ${_currentEditingItem.gemstone!.name}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            
-            // Photo Media Box
-            _buildPhotoMediaBox(),
             
             const SizedBox(height: 24),
             
