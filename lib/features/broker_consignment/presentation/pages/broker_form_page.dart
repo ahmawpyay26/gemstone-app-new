@@ -51,6 +51,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   late String _brokerConsignmentNumber;
   late String _tempBrokerId; // Temporary ID for form photos
   List<String> _formPhotoPaths = []; // Photos collected during form
+  int _photoPickerResetKey = 0; // Key to force PhotoMediaBox rebuild
   
   // Items list - confirmed items ready to save
   List<ConsignmentItemTemp> _confirmedItems = [];
@@ -223,7 +224,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       _currentEditingItem = ConsignmentItemTemp(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
       );
-      _formPhotoPaths.clear();
+      // Create NEW empty list instance (not cleared reference)
+      _formPhotoPaths = <String>[];
+      // Force PhotoMediaBox rebuild by changing ValueKey
+      _photoPickerResetKey++;
     });
   }
 
@@ -1276,6 +1280,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     );
 
     return PhotoMediaBox(
+      key: ValueKey(_photoPickerResetKey),
       brokerId: _tempBrokerId,
       brokerConsignment: tempBrokerConsignment,
       onPhotosUpdated: () {
