@@ -226,6 +226,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       );
       // Create NEW empty list instance (not cleared reference)
       _formPhotoPaths = <String>[];
+      // Generate NEW temp broker ID to ensure PhotoMediaBox reads from empty directory
+      // This prevents stale photos from being reloaded from persistent storage
+      _tempBrokerId = DateTime.now().millisecondsSinceEpoch.toString();
       // Force PhotoMediaBox rebuild by changing ValueKey
       _photoPickerResetKey++;
     });
