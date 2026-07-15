@@ -1030,11 +1030,16 @@ class LocalDb {
   /// ပစ္စည်းတစ်ခုချင်းစီ၏ ကျန်ရှိအရေအတွက်
   /// Accounts for sales deductions AND broker consignment deductions
   static int gemstoneRemainingQuantity(Gemstone g) {
-    // Calculate actual remaining: original quantity - sold - active broker consigned
+    // Calculate actual remaining: original quantity - sold - active broker consigned (WHOLE STONE ONLY)
     final sold = gemstoneSoldQuantity(g.id);
     int brokerHeld = 0;
     final activeBrokers = getActiveBrokerConsignmentsForPurchase(g.id);
     for (final bc in activeBrokers) {
+      // CRITICAL: Only count WHOLE STONE consignments, NEVER count FRAGMENT consignments
+      // Fragment consignments are independent and should not affect Whole Stone remaining quantity
+      if (bc.historicalData.sourceType == 'breakdown_item') {
+        continue; // Skip fragment consignments - they have their own inventory tracking
+      }
       // Net held by broker = consigned - returned - sold by broker
       final held = (bc.consignedQuantity - bc.returnedQuantity - bc.soldQuantity).toInt();
       if (held > 0) brokerHeld += held;
