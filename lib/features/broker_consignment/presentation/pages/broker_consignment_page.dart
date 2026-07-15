@@ -271,10 +271,11 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
           
           // totalDifferentGemstones = count of distinct gemstone items
           final totalDifferentGemstones = filteredBrokers.length;
-          final totalConsigned = allBrokers.fold<double>(0, (sum, bc) => sum + bc.consignedQuantity);
-          final totalSold = allBrokers.fold<double>(0, (sum, bc) => sum + bc.soldQuantity);
-          final totalRemaining = allBrokers.fold<double>(0, (sum, bc) => sum + bc.remainingQuantity);
-          final totalReturned = allBrokers.fold<double>(0, (sum, bc) => sum + bc.returnedQuantity);
+          // CRITICAL: Use filteredBrokers to respect the current filter (All/Active/Completed/Partial Return)
+          final totalConsigned = filteredBrokers.fold<double>(0, (sum, bc) => sum + bc.consignedQuantity);
+          final totalSold = filteredBrokers.fold<double>(0, (sum, bc) => sum + bc.soldQuantity);
+          final totalRemaining = filteredBrokers.fold<double>(0, (sum, bc) => sum + bc.remainingQuantity);
+          final totalReturned = filteredBrokers.fold<double>(0, (sum, bc) => sum + bc.returnedQuantity);
 
           return ListView.builder(
             padding: const EdgeInsets.all(12),

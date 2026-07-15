@@ -1786,22 +1786,29 @@ class LocalDb {
       voucherNumber: voucherNumber, // Assign shared voucher number
     );
 
-    // Deduct quantity based on source type
+    // PHASE 1: Deduct quantity based on source type
+    // CRITICAL: Only modify the selected source record, never cross-reference
     if (sourceType == 'breakdown_item' && breakdownItemName != null) {
-      // Deduct from breakdown item
+      // FRAGMENT PATH: Only touch breakdown item, never touch whole stone
       final currentQty = (purchase.breakdownItems[breakdownItemName]?['quantity'] as int?) ?? 0;
       final newQty = currentQty - consignedQuantity.toInt();
       if (newQty < 0) {
         throw Exception('Breakdown item quantity cannot go below zero');
       }
       purchase.breakdownItems[breakdownItemName] = {'quantity': newQty, 'weight': null, 'weightUnit': null};
+      // IMPORTANT: Do NOT modify purchase.remainingQuantity for fragments
+      // Fragment deduction is INDEPENDENT of whole stone
     } else {
-      // Deduct from whole stone remaining quantity
+      // WHOLE STONE PATH: Only touch whole stone remaining quantity
       purchase.remainingQuantity -= consignedQuantity.toInt();
+      // IMPORTANT: Do NOT modify breakdown items for whole stone
     }
-    // Update the original Gemstone record using the helper method
+    
+    // PHASE 2: Save only the modified source record
+    // This ensures no cross-contamination between whole stone and fragments
     await _updateGemstoneByPurchaseId(purchaseId, purchase);
-    // Recalculate ledger after inventory change
+    
+    // PHASE 3: Recalculate ledger ONLY for the selected source
     await updateGemstoneProductLedger(purchaseId);
 
     // Save broker consignment
@@ -2060,7 +2067,8 @@ class LocalDb {
       throw Exception('ရောင်းထားသည့် အရေအတွက်ကြောင့် ဖျက်၍မရပါ။');
     }
 
-    // Restore all quantities to purchase
+    // PHASE 1: Restore quantities based on source type
+    // CRITICAL: Only restore to the selected source record, never cross-reference
     final remainingToRestore = broker.consignedQuantity - broker.returnedQuantity;
     final purchase = gemstones.values.firstWhereOrNull(
       (g) => g.id == broker.purchaseId,
@@ -2068,6 +2076,7 @@ class LocalDb {
     if (purchase != null) {
       // Check if this is a breakdown item consignment
       if (broker.historicalData.sourceType == 'breakdown_item') {
+        // FRAGMENT PATH: Only restore to breakdown item, never touch whole stone
         final itemName = broker.historicalData.breakdownItemName ?? '';
         if (itemName.isNotEmpty && purchase.breakdownItems.containsKey(itemName)) {
           final oldQty = (purchase.breakdownItems[itemName]?['quantity'] as int?) ?? 0;
@@ -2076,13 +2085,18 @@ class LocalDb {
             'weight': purchase.breakdownItems[itemName]?['weight'],
             'weightUnit': purchase.breakdownItems[itemName]?['weightUnit']
           };
+          // IMPORTANT: Do NOT modify purchase.remainingQuantity for fragments
         }
       } else {
-        // Restore to whole stone remaining quantity
+        // WHOLE STONE PATH: Only restore to whole stone remaining quantity
         purchase.remainingQuantity += remainingToRestore.toInt();
+        // IMPORTANT: Do NOT modify breakdown items for whole stone
       }
+      
+      // PHASE 2: Save only the modified source record
       await _updateGemstoneByPurchaseId(broker.purchaseId, purchase);
-      // Recalculate ledger after inventory change
+      
+      // PHASE 3: Recalculate ledger ONLY for the selected source
       await updateGemstoneProductLedger(broker.purchaseId);
     }
 
