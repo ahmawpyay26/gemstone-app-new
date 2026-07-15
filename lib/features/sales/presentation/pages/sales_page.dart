@@ -3862,12 +3862,22 @@ class _BrokerSaleFormState extends State<_BrokerSaleForm> {
                     items: brokerConsignments
                         .where((c) => c.historicalData.sourceType == _selectedSourceType)
                         .map((consignment) {
-                          final gemstonesBox = Hive.box<Gemstone>('gemstones');
-                          final gemstone = gemstonesBox.get(consignment.purchaseId);
+                          // FIX: Use LocalDb.gemstoneById() to correctly lookup gemstone by ID
+                          final gemstone = LocalDb.gemstoneById(consignment.purchaseId);
+                          final gemstoneName = gemstone?.name ?? 'Unknown';
+                          
+                          // Display source type for clarity
+                          final sourceTypeLabel = consignment.historicalData.sourceType == 'whole_stone'
+                              ? 'အပြည့်အစုံ'
+                              : 'အခွဲ';
+                          
+                          // Build comprehensive dropdown label with gemstone name, source type, and broker name
+                          final displayLabel = '$gemstoneName • $sourceTypeLabel';
+                          
                           return DropdownMenuItem(
                             value: consignment,
                             child: Text(
-                              '${gemstone?.name ?? "Unknown"} - ${consignment.brokerName}',
+                              displayLabel,
                               overflow: TextOverflow.ellipsis,
                             ),
                           );
