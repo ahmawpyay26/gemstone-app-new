@@ -8,6 +8,7 @@ import '../../../../core/local/models.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
 import '../widgets/photo_media_box.dart';
+import '../../domain/broker_consignment_validation.dart';
 
 /// Temporary model for consignment items during form editing
 class ConsignmentItemTemp {
@@ -130,35 +131,35 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   }
 
   bool _isCurrentItemValid() {
-    // Validate quantity first
-    if (_currentEditingItem.consignedQuantity <= 0) {
-      return false;
-    }
-    
-    // Branch validation by sourceType
-    if (_currentEditingItem.sourceType == 'breakdown_item') {
-      // For breakdown items: require purchase, breakdown item, and quantity
-      if (_currentEditingItem.selectedPurchase == null || _currentEditingItem.selectedBreakdownItem == null) {
-        return false;
-      }
-      // Check quantity against breakdown item available quantity
-      if (_currentEditingItem.availableBreakdownItems.containsKey(_currentEditingItem.selectedBreakdownItem)) {
-        final availableQty = _currentEditingItem.availableBreakdownItems[_currentEditingItem.selectedBreakdownItem]!;
-        if (_currentEditingItem.consignedQuantity > availableQty) {
-          return false;
-        }
-      }
-    } else {
-      // For whole stone: require gemstone and quantity
-      if (_currentEditingItem.gemstone == null) {
-        return false;
-      }
-      // Check quantity against gemstone remaining quantity
-      if (_currentEditingItem.consignedQuantity > LocalDb.gemstoneRemainingQuantity(_currentEditingItem.gemstone!)) {
-        return false;
-      }
-    }
-    return true;
+    // Convert current editing item to validation model
+    final draftItem = DraftConsignmentItem(
+      id: _currentEditingItem.id,
+      gemstone: _currentEditingItem.gemstone,
+      consignedQuantity: _currentEditingItem.consignedQuantity,
+      sourceType: _currentEditingItem.sourceType,
+      selectedPurchase: _currentEditingItem.selectedPurchase,
+      selectedBreakdownItem: _currentEditingItem.selectedBreakdownItem,
+      availableBreakdownItems: _currentEditingItem.availableBreakdownItems,
+    );
+
+    // Use Draft-Aware validation
+    final result = BrokerConsignmentValidation.validateItemQuantity(
+      item: draftItem,
+      existingDraftItems: _confirmedItems
+          .map((item) => DraftConsignmentItem(
+                id: item.id,
+                gemstone: item.gemstone,
+                consignedQuantity: item.consignedQuantity,
+                sourceType: item.sourceType,
+                selectedPurchase: item.selectedPurchase,
+                selectedBreakdownItem: item.selectedBreakdownItem,
+                availableBreakdownItems: item.availableBreakdownItems,
+              ))
+          .toList(),
+      editingItemId: _editingItemId,
+    );
+
+    return result.isValid;
   }
 
   bool _isFormValid() {
@@ -1186,28 +1187,41 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   onChanged: (value) {
                     final qty = double.tryParse(value) ?? 0;
                     
-                    // Validate quantity
-                    if (_currentEditingItem.sourceType == 'breakdown_item' && _currentEditingItem.selectedBreakdownItem != null) {
-                      final maxQty = _currentEditingItem.availableBreakdownItems[_currentEditingItem.selectedBreakdownItem] ?? 0;
-                      if (qty > maxQty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('ထည့်သွင်းသောအရေအတွက်သည် ရွေးချယ်ထားသော ပစ္စည်း၏ လက်ကျန်အရေအတွက်ထက် မများရပါ။'),
-                            backgroundColor: AppTheme.errorColor,
-                          ),
-                        );
-                        return;
-                      }
-                    } else {
-                      if (qty > LocalDb.gemstoneRemainingQuantity(_currentEditingItem.gemstone!)) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက်ထက် မများရပါ။'),
-                            backgroundColor: AppTheme.errorColor,
-                          ),
-                        );
-                        return;
-                      }
+                    // Use Draft-Aware validation
+                    final draftItem = DraftConsignmentItem(
+                      id: _currentEditingItem.id,
+                      gemstone: _currentEditingItem.gemstone,
+                      consignedQuantity: qty,
+                      sourceType: _currentEditingItem.sourceType,
+                      selectedPurchase: _currentEditingItem.selectedPurchase,
+                      selectedBreakdownItem: _currentEditingItem.selectedBreakdownItem,
+                      availableBreakdownItems: _currentEditingItem.availableBreakdownItems,
+                    );
+                    
+                    final result = BrokerConsignmentValidation.validateItemQuantity(
+                      item: draftItem,
+                      existingDraftItems: _confirmedItems
+                          .map((item) => DraftConsignmentItem(
+                                id: item.id,
+                                gemstone: item.gemstone,
+                                consignedQuantity: item.consignedQuantity,
+                                sourceType: item.sourceType,
+                                selectedPurchase: item.selectedPurchase,
+                                selectedBreakdownItem: item.selectedBreakdownItem,
+                                availableBreakdownItems: item.availableBreakdownItems,
+                              ))
+                          .toList(),
+                      editingItemId: _editingItemId,
+                    );
+                    
+                    if (!result.isValid) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(result.errorMessage ?? 'အရေအတွက်မှားနေသည်။'),
+                          backgroundColor: AppTheme.errorColor,
+                        ),
+                      );
+                      return;
                     }
                     
                     _updateCurrentItemQuantity(qty);
