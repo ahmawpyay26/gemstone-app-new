@@ -1,7 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:gemstone_management/core/local/local_db.dart';
 import 'package:gemstone_management/core/local/models.dart';
-import 'package:gemstone_management/shared/extensions/string_extension.dart';
 
 /// Represents a draft item before final save
 class DraftBrokerSaleItem {
@@ -285,10 +284,12 @@ class BrokerSalesBusinessLogic {
           fragmentName: draftItem.brokerConsignment.historicalData.breakdownItemName,
         );
 
-        // Validate sale record
-        final validationError = saleRecord.validate();
-        if (validationError != null) {
-          throw Exception('အမှားအယွင်း: $validationError');
+        // Validate sale record has required fields
+        if (saleRecord.gemstoneName.isEmpty) {
+          throw Exception('ကျောက်မျက်မှတ်တမ်း မရှိပါ။');
+        }
+        if (saleRecord.amount <= 0) {
+          throw Exception('စုစုပေါင်းအရောင်း ၀ထက်များရမည်။');
         }
 
         // Save to Sale box (this makes it visible in Sales History)
