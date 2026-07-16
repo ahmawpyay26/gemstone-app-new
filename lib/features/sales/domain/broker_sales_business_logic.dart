@@ -1,6 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:gemstone_management/core/local/local_db.dart';
 import 'package:gemstone_management/core/local/models.dart';
+import 'package:gemstone_management/shared/extensions/string_extension.dart';
 
 /// Represents a draft item before final save
 class DraftBrokerSaleItem {
@@ -236,30 +237,52 @@ class BrokerSalesBusinessLogic {
     }
 
     try {
-      // Note: Invoice number generation removed as BrokerSaleRecord doesn't have this field
-      // If needed, add invoiceNumber field to BrokerSaleRecord model
-
-      // Save all broker sale records
-      final saleRecordsBox = Hive.box<BrokerSaleRecord>('brokerSaleRecords');
+      // Generate unique invoice number for this transaction
+      final invoiceNumber = _generateInvoiceNumber();
+      
+      // Get the Sale box for persistence
+      final saleBox = Hive.box<Sale>('sales');
       final brokerConsignmentBox = Hive.box<BrokerConsignment>('brokerConsignments');
+      final gemstonesBox = Hive.box<Gemstone>('gemstones');
 
+      // Validate all items before committing any
       for (final draftItem in draftItems) {
-        // Create broker sale record
-        final saleRecord = BrokerSaleRecord(
+        if (draftItem.soldQuantity <= 0) {
+          throw Exception('ရောင်းချမည့်ပမာဏ ၀ထက်များရမည်။');
+        }
+        if (draftItem.unitPrice < 0) {
+          throw Exception('စျေးနှုန်း အနုတ်မဖြစ်ရပါ။');
+        }
+        if (draftItem.totalSaleAmount <= 0) {
+          throw Exception('စုစုပေါင်းအရောင်း ၀ထက်များရမည်။');
+        }
+      }
+
+      // Commit all items atomically
+      for (final draftItem in draftItems) {
+        // Get gemstone info
+        final gemstone = LocalDb.gemstoneById(draftItem.brokerConsignment.purchaseId);
+        if (gemstone == null) {
+          throw Exception('ကျောက်မျက်မှတ်တမ်း မတွေ့ရှိပါ။');
+        }
+
+        // Create Sale record for history persistence
+        final saleRecord = Sale(
           id: LocalDb.genId(),
-          brokerConsignmentId: draftItem.brokerConsignment.id,
-          purchaseId: draftItem.brokerConsignment.purchaseId,
-          sourceType: draftItem.brokerConsignment.historicalData.sourceType,
-          breakdownItemName: draftItem.brokerConsignment.historicalData.breakdownItemName,
-          soldQuantity: draftItem.soldQuantity,
-          unitPrice: draftItem.unitPrice,
-          totalSaleAmount: draftItem.totalSaleAmount,
-          brokerCommission: draftItem.commission,
-          netAmount: draftItem.netAmount,
-          buyerName: draftItem.buyerName,
-          remark: draftItem.remark,
-          saleDate: draftItem.saleDate.millisecondsSinceEpoch,
-          createdAt: DateTime.now().millisecondsSinceEpoch,
+          gemstoneName: gemstone.name,
+          gemstoneId: gemstone.id,
+          customerName: customerName ?? draftItem.buyerName ?? 'အမည်မသိ',
+          amount: draftItem.totalSaleAmount, // Gross sale amount
+          commissionFee: draftItem.commission,
+          quantity: draftItem.soldQuantity.toInt(),
+          paymentMethod: 'broker', // Mark as broker sale
+          note: draftItem.remark,
+          saleDate: invoiceDate.millisecondsSinceEpoch,
+          netSale: draftItem.netAmount, // Net after commission
+          invoiceNumber: invoiceNumber, // Group multi-item sales
+          weightCarat: draftItem.soldQuantity,
+          isFragmentSource: draftItem.brokerConsignment.historicalData.sourceType == 'breakdown_item',
+          fragmentName: draftItem.brokerConsignment.historicalData.breakdownItemName,
         );
 
         // Validate sale record
@@ -268,8 +291,8 @@ class BrokerSalesBusinessLogic {
           throw Exception('အမှားအယွင်း: $validationError');
         }
 
-        // Save sale record
-        await saleRecordsBox.add(saleRecord);
+        // Save to Sale box (this makes it visible in Sales History)
+        await saleBox.add(saleRecord);
 
         // Update broker consignment remaining quantity
         draftItem.brokerConsignment.soldQuantity += draftItem.soldQuantity;
@@ -283,5 +306,13 @@ class BrokerSalesBusinessLogic {
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// Generate unique invoice number
+  static String _generateInvoiceNumber() {
+    final now = DateTime.now();
+    final timestamp = now.millisecondsSinceEpoch;
+    final random = (timestamp % 10000).toString().padLeft(4, '0');
+    return 'BSI-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-$random';
   }
 }

@@ -34,6 +34,9 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
   String? _quantityError;
   String? _priceError;
   String? _commissionError;
+  
+  // Duplicate-save protection
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -179,11 +182,19 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
 
   /// Commit all draft items to database
   Future<void> _commitDraftItems() async {
+    // Prevent duplicate saves
+    if (_isSaving) {
+      _showError('ရောင်းချမှု သိမ်းဆည်းမှု ပြီးစီးခြင်းအတွင်းရှိသည်။');
+      return;
+    }
+    
     if (_draftItems.isEmpty) {
       _showError('ရောင်းချမည့်ပစ္စည်း မရှိပါ။');
       return;
     }
 
+    setState(() => _isSaving = true);
+    
     try {
       await BrokerSalesBusinessLogic.commitDraftItems(
         draftItems: _draftItems,
@@ -194,12 +205,21 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
       );
 
       _showSuccess('ရောင်းချမှု သိမ်းဆည်းပြီးပါပြီ။');
+      
+      // Clear draft state
+      setState(() {
+        _draftItems = [];
+        _isSaving = false;
+      });
+      
+      // Refresh parent Sales page by popping with result
       if (mounted) {
-        Future.delayed(const Duration(seconds: 1), () {
-          Navigator.pop(context);
+        Future.delayed(const Duration(milliseconds: 500), () {
+          Navigator.pop(context, true); // Return true to signal refresh
         });
       }
     } catch (e) {
+      setState(() => _isSaving = false);
       _showError('အမှားအယွင်း: $e');
     }
   }
