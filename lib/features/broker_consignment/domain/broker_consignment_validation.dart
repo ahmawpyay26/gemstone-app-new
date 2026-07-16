@@ -1,5 +1,6 @@
 import 'package:gemstone_management/core/local/local_db.dart';
 import 'package:gemstone_management/core/local/models.dart';
+import 'dart:developer' as developer;
 
 /// Represents a draft item in the Broker Consignment form
 class DraftConsignmentItem {
@@ -64,46 +65,109 @@ class BrokerConsignmentValidation {
     required List<DraftConsignmentItem> existingDraftItems,
     required String? editingItemId, // null for new item, set for editing
   }) {
-    // Get database remaining quantity
-    double databaseRemaining;
+    try {
+      // Get database remaining quantity
+      double databaseRemaining;
+      String sourceType = newItem.sourceType;
+      String sourceIdentity = newItem.sourceIdentity;
 
-    if (newItem.sourceType == 'breakdown_item') {
-      // For fragment: get fragment remaining
-      if (newItem.selectedPurchase == null || newItem.selectedBreakdownItem == null) {
-        return 0;
-      }
-      final breakdownItem = newItem.selectedPurchase!.breakdownItems[newItem.selectedBreakdownItem];
-      if (breakdownItem == null) return 0;
+      developer.log(
+        '[VALIDATION] calculateDraftAwareAvailableQuantity START',
+        name: 'BrokerConsignmentValidation',
+      );
+      developer.log(
+        'Source Type: $sourceType | Source Identity: $sourceIdentity',
+        name: 'BrokerConsignmentValidation',
+      );
 
-      final itemData = breakdownItem as Map<String, dynamic>?;
-      databaseRemaining = (itemData?['quantity'] as num?)?.toDouble() ?? 0;
-    } else {
-      // For whole stone: get whole remaining
-      if (newItem.gemstone == null) {
-        return 0;
+      if (newItem.sourceType == 'breakdown_item') {
+        // For fragment: get fragment remaining
+        if (newItem.selectedPurchase == null || newItem.selectedBreakdownItem == null) {
+          developer.log(
+            'ERROR: Fragment source but selectedPurchase or selectedBreakdownItem is null',
+            name: 'BrokerConsignmentValidation',
+            level: 1000,
+          );
+          return 0;
+        }
+        final breakdownItem = newItem.selectedPurchase!.breakdownItems[newItem.selectedBreakdownItem];
+        if (breakdownItem == null) {
+          developer.log(
+            'ERROR: Breakdown item not found: ${newItem.selectedBreakdownItem}',
+            name: 'BrokerConsignmentValidation',
+            level: 1000,
+          );
+          return 0;
+        }
+
+        final itemData = breakdownItem as Map<String, dynamic>?;
+        databaseRemaining = (itemData?['quantity'] as num?)?.toDouble() ?? 0;
+        developer.log(
+          'Fragment Source | PurchaseId: ${newItem.selectedPurchase!.id} | BreakdownItem: ${newItem.selectedBreakdownItem} | DatabaseRemaining: $databaseRemaining',
+          name: 'BrokerConsignmentValidation',
+        );
+      } else {
+        // For whole stone: get whole remaining
+        if (newItem.gemstone == null) {
+          developer.log(
+            'ERROR: Whole stone source but gemstone is null',
+            name: 'BrokerConsignmentValidation',
+            level: 1000,
+          );
+          return 0;
+        }
+        databaseRemaining = LocalDb.gemstoneRemainingQuantity(newItem.gemstone!).toDouble();
+        developer.log(
+          'Whole Stone Source | GemstoneId: ${newItem.gemstone!.id} | GemName: ${newItem.gemstone!.name} | DatabaseRemaining: $databaseRemaining',
+          name: 'BrokerConsignmentValidation',
+        );
       }
-      databaseRemaining = LocalDb.gemstoneRemainingQuantity(newItem.gemstone!).toDouble();
+
+      // Calculate total draft quantity for this source (excluding the item being edited)
+      double draftQuantity = 0;
+      int matchingDraftItems = 0;
+      for (final item in existingDraftItems) {
+        // Skip the item being edited (if any)
+        if (editingItemId != null && item.id == editingItemId) {
+          developer.log(
+            'Skipping editing item: ${item.id}',
+            name: 'BrokerConsignmentValidation',
+          );
+          continue;
+        }
+        // Only count items with the same source identity
+        if (item.sourceIdentity == sourceIdentity) {
+          draftQuantity += item.consignedQuantity;
+          matchingDraftItems++;
+          developer.log(
+            'Counting draft item: ${item.id} | Quantity: ${item.consignedQuantity} | SourceIdentity: ${item.sourceIdentity}',
+            name: 'BrokerConsignmentValidation',
+          );
+        }
+      }
+
+      developer.log(
+        'Draft Summary | MatchingItems: $matchingDraftItems | TotalDraftQuantity: $draftQuantity',
+        name: 'BrokerConsignmentValidation',
+      );
+
+      // Calculate available: Database Remaining - Draft Quantity
+      final available = databaseRemaining - draftQuantity;
+      developer.log(
+        'Available Calculation | DatabaseRemaining: $databaseRemaining - DraftQuantity: $draftQuantity = Available: $available',
+        name: 'BrokerConsignmentValidation',
+      );
+
+      return available > 0 ? available : 0;
+    } catch (e, stackTrace) {
+      developer.log(
+        'EXCEPTION in calculateDraftAwareAvailableQuantity: $e',
+        name: 'BrokerConsignmentValidation',
+        level: 1000,
+        stackTrace: stackTrace,
+      );
+      rethrow;
     }
-
-    // Get source identity for this item
-    final sourceIdentity = newItem.sourceIdentity;
-
-    // Calculate total draft quantity for this source (excluding the item being edited)
-    double draftQuantity = 0;
-    for (final item in existingDraftItems) {
-      // Skip the item being edited (if any)
-      if (editingItemId != null && item.id == editingItemId) {
-        continue;
-      }
-      // Only count items with the same source identity
-      if (item.sourceIdentity == sourceIdentity) {
-        draftQuantity += item.consignedQuantity;
-      }
-    }
-
-    // Calculate available: Database Remaining - Draft Quantity
-    final available = databaseRemaining - draftQuantity;
-    return available > 0 ? available : 0;
   }
 
   /// Validate a new/edited item against draft-aware available quantity
@@ -112,51 +176,105 @@ class BrokerConsignmentValidation {
     required List<DraftConsignmentItem> existingDraftItems,
     required String? editingItemId, // null for new item, set for editing
   }) {
-    // Validate quantity is positive
-    if (item.consignedQuantity <= 0) {
-      return ValidationResult.error('အရေအတွက်သည် 0 ထက် ကြီးရမည်။');
-    }
-
-    // Branch validation by source type
-    if (item.sourceType == 'breakdown_item') {
-      // For fragment: validate against fragment remaining
-      if (item.selectedPurchase == null || item.selectedBreakdownItem == null) {
-        return ValidationResult.error('ကျောက်အစိတ်စိတ်ပိုင်းကို ရွေးချယ်ပါ။');
-      }
-
-      // Calculate available quantity for this fragment
-      final available = calculateDraftAwareAvailableQuantity(
-        newItem: item,
-        existingDraftItems: existingDraftItems,
-        editingItemId: editingItemId,
+    try {
+      developer.log(
+        '[VALIDATION] validateItemQuantity START | ItemId: ${item.id} | Quantity: ${item.consignedQuantity} | SourceType: ${item.sourceType}',
+        name: 'BrokerConsignmentValidation',
       );
 
-      if (item.consignedQuantity > available) {
-        return ValidationResult.error(
-          'ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက် $available ထက် မများရပါ။',
+      // Validate quantity is positive
+      if (item.consignedQuantity <= 0) {
+        developer.log(
+          'VALIDATION FAILED: Quantity <= 0',
+          name: 'BrokerConsignmentValidation',
+          level: 1000,
         );
-      }
-    } else {
-      // For whole stone: validate against whole remaining
-      if (item.gemstone == null) {
-        return ValidationResult.error('ကျောက်မျက်ကို ရွေးချယ်ပါ။');
+        return ValidationResult.error('အရေအတွက်သည် 0 ထက် ကြီးရမည်။');
       }
 
-      // Calculate available quantity for this whole stone
-      final available = calculateDraftAwareAvailableQuantity(
-        newItem: item,
-        existingDraftItems: existingDraftItems,
-        editingItemId: editingItemId,
+      // Branch validation by source type
+      if (item.sourceType == 'breakdown_item') {
+        // For fragment: validate against fragment remaining
+        if (item.selectedPurchase == null || item.selectedBreakdownItem == null) {
+          developer.log(
+            'VALIDATION FAILED: Fragment source but selectedPurchase or selectedBreakdownItem is null',
+            name: 'BrokerConsignmentValidation',
+            level: 1000,
+          );
+          return ValidationResult.error('ကျောက်အစိတ်စိတ်ပိုင်းကို ရွေးချယ်ပါ။');
+        }
+
+        // Calculate available quantity for this fragment
+        final available = calculateDraftAwareAvailableQuantity(
+          newItem: item,
+          existingDraftItems: existingDraftItems,
+          editingItemId: editingItemId,
+        );
+
+        developer.log(
+          'Fragment Validation | RequestedQuantity: ${item.consignedQuantity} | AvailableQuantity: $available',
+          name: 'BrokerConsignmentValidation',
+        );
+
+        if (item.consignedQuantity > available) {
+          developer.log(
+            'VALIDATION FAILED: Requested > Available',
+            name: 'BrokerConsignmentValidation',
+            level: 1000,
+          );
+          return ValidationResult.error(
+            'ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက် $available ထက် မများရပါ။',
+          );
+        }
+      } else {
+        // For whole stone: validate against whole remaining
+        if (item.gemstone == null) {
+          developer.log(
+            'VALIDATION FAILED: Whole stone source but gemstone is null',
+            name: 'BrokerConsignmentValidation',
+            level: 1000,
+          );
+          return ValidationResult.error('ကျောက်မျက်ကို ရွေးချယ်ပါ။');
+        }
+
+        // Calculate available quantity for this whole stone
+        final available = calculateDraftAwareAvailableQuantity(
+          newItem: item,
+          existingDraftItems: existingDraftItems,
+          editingItemId: editingItemId,
+        );
+
+        developer.log(
+          'Whole Stone Validation | RequestedQuantity: ${item.consignedQuantity} | AvailableQuantity: $available',
+          name: 'BrokerConsignmentValidation',
+        );
+
+        if (item.consignedQuantity > available) {
+          developer.log(
+            'VALIDATION FAILED: Requested > Available',
+            name: 'BrokerConsignmentValidation',
+            level: 1000,
+          );
+          return ValidationResult.error(
+            'ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက် $available ထက် မများရပါ။',
+          );
+        }
+      }
+
+      developer.log(
+        'VALIDATION PASSED',
+        name: 'BrokerConsignmentValidation',
       );
-
-      if (item.consignedQuantity > available) {
-        return ValidationResult.error(
-          'ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက် $available ထက် မများရပါ။',
-        );
-      }
+      return ValidationResult.success();
+    } catch (e, stackTrace) {
+      developer.log(
+        'EXCEPTION in validateItemQuantity: $e',
+        name: 'BrokerConsignmentValidation',
+        level: 1000,
+        stackTrace: stackTrace,
+      );
+      rethrow;
     }
-
-    return ValidationResult.success();
   }
 
   /// Validate entire form before final save
