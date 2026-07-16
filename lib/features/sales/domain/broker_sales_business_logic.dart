@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:gemstone_management/core/local/local_db.dart';
 import 'package:gemstone_management/core/local/models.dart';
@@ -236,6 +237,12 @@ class BrokerSalesBusinessLogic {
     }
 
     try {
+      developer.log(
+        '[RCA-FINAL-SAVE-START] draftItems.length=${draftItems.length} | customerName=$customerName | invoiceDate=$invoiceDate',
+        level: 1000,
+        name: 'RCA_FINAL_SAVE',
+      );
+
       // Generate unique invoice number for this transaction
       final invoiceNumber = _generateInvoiceNumber();
       
@@ -258,7 +265,14 @@ class BrokerSalesBusinessLogic {
       }
 
       // Commit all items atomically
+      int draftIndex = 0;
       for (final draftItem in draftItems) {
+        developer.log(
+          '[RCA-DRAFT-ITEM-START] index=$draftIndex | gemstoneName=${draftItem.gemstoneName} | sourceType=${draftItem.brokerConsignment.historicalData.sourceType} | soldQuantity=${draftItem.soldQuantity} | purchaseId=${draftItem.brokerConsignment.purchaseId}',
+          level: 1000,
+          name: 'RCA_FINAL_SAVE',
+        );
+
         // Get gemstone info
         final gemstone = LocalDb.gemstoneById(draftItem.brokerConsignment.purchaseId);
         if (gemstone == null) {
@@ -301,10 +315,27 @@ class BrokerSalesBusinessLogic {
           draftItem.brokerConsignment.id,
           draftItem.brokerConsignment,
         );
+
+        developer.log(
+          '[RCA-DRAFT-ITEM-COMPLETE] index=$draftIndex | gemstoneName=${draftItem.gemstoneName} | SUCCESS',
+          level: 1000,
+          name: 'RCA_FINAL_SAVE',
+        );
+        draftIndex++;
       }
 
+      developer.log(
+        '[RCA-FINAL-SAVE-COMPLETE] All items committed successfully',
+        level: 1000,
+        name: 'RCA_FINAL_SAVE',
+      );
       return true;
     } catch (e) {
+      developer.log(
+        '[RCA-FINAL-SAVE-ERROR] Exception: $e',
+        level: 1000,
+        name: 'RCA_FINAL_SAVE',
+      );
       rethrow;
     }
   }

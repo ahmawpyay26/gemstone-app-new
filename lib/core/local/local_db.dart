@@ -1741,9 +1741,9 @@ class LocalDb {
       orElse: () => throw Exception('Purchase Record not found'),
     );
     
-    // LOG: Entry point
+    // LOG: Entry point with full state
     developer.log(
-      '[RCA-ENTRY] createBrokerConsignment START | purchaseId=$purchaseId | sourceType=$sourceType | breakdownItemName=$breakdownItemName | consignedQuantity=$consignedQuantity',
+      '[RCA-ENTRY] purchaseId=$purchaseId | gemstoneName=${purchase.name} | sourceType=$sourceType | breakdownItemName=$breakdownItemName | requestedQty=$consignedQuantity | purchase.quantity=${purchase.quantity} | purchase.remainingQuantity=${purchase.remainingQuantity} | breakdownItems=${purchase.breakdownItems}',
       level: 1000,
       name: 'RCA_BROKER_CONSIGNMENT',
     );
@@ -1758,17 +1758,18 @@ class LocalDb {
         throw Exception('Breakdown item not found');
       }
       final availableQty = (purchase.breakdownItems[breakdownItemName]?['quantity'] as int?) ?? 0;
+      final dynamicRemainingWhole = gemstoneRemainingQuantity(purchase);
       
-      // LOG: Fragment validation
+      // LOG: Fragment validation with full context
       developer.log(
-        '[RCA-FRAGMENT-VALIDATION] gemstone=${purchase.name} | breakdownItemName=$breakdownItemName | consignedQuantity=$consignedQuantity | availableQty=$availableQty | condition: $consignedQuantity > $availableQty = ${consignedQuantity > availableQty}',
+        '[RCA-FRAG-VALIDATE] breakdownItemName=$breakdownItemName | requestedQty=$consignedQuantity | availableQty=$availableQty | dynamicRemainingWhole=$dynamicRemainingWhole | comparison: $consignedQuantity > $availableQty = ${consignedQuantity > availableQty} | purchase.remainingQuantity=${purchase.remainingQuantity}',
         level: 1000,
         name: 'RCA_BROKER_CONSIGNMENT',
       );
       
       if (consignedQuantity > availableQty) {
         developer.log(
-          '[RCA-FRAGMENT-THROW] LINE 1754 | gemstone=${purchase.name} | breakdownItemName=$breakdownItemName | consignedQuantity=$consignedQuantity | availableQty=$availableQty',
+          '[RCA-FRAG-THROW] LINE 1770 | gemstone=${purchase.name} | breakdownItemName=$breakdownItemName | consignedQuantity=$consignedQuantity | availableQty=$availableQty',
           level: 1000,
           name: 'RCA_BROKER_CONSIGNMENT',
         );
@@ -1787,7 +1788,7 @@ class LocalDb {
       
       if (consignedQuantity > purchase.remainingQuantity) {
         developer.log(
-          '[RCA-WHOLE-THROW] LINE 1759 | gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining',
+          '[RCA-WHOLE-THROW] LINE 1788 | gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining',
           level: 1000,
           name: 'RCA_BROKER_CONSIGNMENT',
         );
@@ -1835,12 +1836,23 @@ class LocalDb {
       if (newQty < 0) {
         throw Exception('Breakdown item quantity cannot go below zero');
       }
+      developer.log(
+        '[RCA-FRAG-DEDUCT] breakdownItemName=$breakdownItemName | before=$currentQty | deduct=${consignedQuantity.toInt()} | after=$newQty',
+        level: 1000,
+        name: 'RCA_BROKER_CONSIGNMENT',
+      );
       purchase.breakdownItems[breakdownItemName] = {'quantity': newQty, 'weight': null, 'weightUnit': null};
       // IMPORTANT: Do NOT modify purchase.remainingQuantity for fragments
       // Fragment deduction is INDEPENDENT of whole stone
     } else {
       // WHOLE STONE PATH: Only touch whole stone remaining quantity
+      final beforeRemaining = purchase.remainingQuantity;
       purchase.remainingQuantity -= consignedQuantity.toInt();
+      developer.log(
+        '[RCA-WHOLE-DEDUCT] before=$beforeRemaining | deduct=${consignedQuantity.toInt()} | after=${purchase.remainingQuantity}',
+        level: 1000,
+        name: 'RCA_BROKER_CONSIGNMENT',
+      );
       // IMPORTANT: Do NOT modify breakdown items for whole stone
     }
     
