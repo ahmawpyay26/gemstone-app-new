@@ -1739,6 +1739,13 @@ class LocalDb {
       (g) => g.id == purchaseId,
       orElse: () => throw Exception('Purchase Record not found'),
     );
+    
+    // LOG: Entry point
+    developer.log(
+      '[RCA-ENTRY] createBrokerConsignment START | purchaseId=$purchaseId | sourceType=$sourceType | breakdownItemName=$breakdownItemName | consignedQuantity=$consignedQuantity',
+      level: 1000,
+      name: 'RCA_BROKER_CONSIGNMENT',
+    );
 
     // Validate quantity based on source type
     if (sourceType == 'breakdown_item') {
@@ -1750,12 +1757,39 @@ class LocalDb {
         throw Exception('Breakdown item not found');
       }
       final availableQty = (purchase.breakdownItems[breakdownItemName]?['quantity'] as int?) ?? 0;
+      
+      // LOG: Fragment validation
+      developer.log(
+        '[RCA-FRAGMENT-VALIDATION] gemstone=${purchase.name} | breakdownItemName=$breakdownItemName | consignedQuantity=$consignedQuantity | availableQty=$availableQty | condition: $consignedQuantity > $availableQty = ${consignedQuantity > availableQty}',
+        level: 1000,
+        name: 'RCA_BROKER_CONSIGNMENT',
+      );
+      
       if (consignedQuantity > availableQty) {
+        developer.log(
+          '[RCA-FRAGMENT-THROW] LINE 1754 | gemstone=${purchase.name} | breakdownItemName=$breakdownItemName | consignedQuantity=$consignedQuantity | availableQty=$availableQty',
+          level: 1000,
+          name: 'RCA_BROKER_CONSIGNMENT',
+        );
         throw Exception('လက်ကျန်အရေအတွက် မလုံလောက်ပါ။');
       }
     } else {
       // For whole stone, validate against remaining quantity
+      final dynamicRemaining = gemstoneRemainingQuantity(purchase);
+      
+      // LOG: Whole stone validation
+      developer.log(
+        '[RCA-WHOLE-VALIDATION] gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining | condition: $consignedQuantity > ${purchase.remainingQuantity} = ${consignedQuantity > purchase.remainingQuantity}',
+        level: 1000,
+        name: 'RCA_BROKER_CONSIGNMENT',
+      );
+      
       if (consignedQuantity > purchase.remainingQuantity) {
+        developer.log(
+          '[RCA-WHOLE-THROW] LINE 1759 | gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining',
+          level: 1000,
+          name: 'RCA_BROKER_CONSIGNMENT',
+        );
         throw Exception('ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက်ထက် မကျော်လွန်ရပါ။');
       }
     }
