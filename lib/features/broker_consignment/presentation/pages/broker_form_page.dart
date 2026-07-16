@@ -154,7 +154,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         return false;
       }
       // Check quantity against gemstone remaining quantity
-      if (_currentEditingItem.consignedQuantity > _currentEditingItem.gemstone!.remainingQuantity) {
+      if (_currentEditingItem.consignedQuantity > LocalDb.gemstoneRemainingQuantity(_currentEditingItem.gemstone!)) {
         return false;
       }
     }
@@ -191,7 +191,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           return false;
         }
         // Check quantity against gemstone remaining quantity
-        if (item.consignedQuantity > item.gemstone!.remainingQuantity) {
+        if (item.consignedQuantity > LocalDb.gemstoneRemainingQuantity(item.gemstone!)) {
           return false;
         }
       }
@@ -929,7 +929,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               ..._availableGemstones.map((g) => DropdownMenuItem<String?>(
                 value: g.id,
                 child: Text(
-                  '${g.name} (${g.type} • ကျန်: ${g.remainingQuantity} • ID: ${g.id.substring(0, 8)}...)',
+                  '${g.name} (${g.type} • ကျန်: ${LocalDb.gemstoneRemainingQuantity(g)} • ID: ${g.id.substring(0, 8)}...)',
                   overflow: TextOverflow.ellipsis,
                 ),
               )).toList(),
@@ -981,7 +981,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'ကျန်ရှိအရေအတွက်: ${_currentEditingItem.gemstone!.remainingQuantity}',
+                          'ကျန်ရှိအရေအတွက်: ${LocalDb.gemstoneRemainingQuantity(_currentEditingItem.gemstone!)}',
                           style: const TextStyle(
                               color: AppTheme.primaryAccent, fontSize: 12),
                         ),
@@ -1166,7 +1166,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   decoration: InputDecoration(
                     hintText: _currentEditingItem.sourceType == 'breakdown_item' && _currentEditingItem.selectedBreakdownItem != null
                         ? 'အရေအတွက် (ကျန်ရှိ: ${_currentEditingItem.availableBreakdownItems[_currentEditingItem.selectedBreakdownItem] ?? 0})'
-                        : 'အရေအတွက် (ကျန်ရှိ: ${_currentEditingItem.gemstone!.remainingQuantity})',
+                        : 'အရေအတွက် (ကျန်ရှိ: ${LocalDb.gemstoneRemainingQuantity(_currentEditingItem.gemstone!)})',
                     hintStyle: TextStyle(color: Colors.grey[600]),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -1199,7 +1199,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                         return;
                       }
                     } else {
-                      if (qty > _currentEditingItem.gemstone!.remainingQuantity) {
+                      if (qty > LocalDb.gemstoneRemainingQuantity(_currentEditingItem.gemstone!)) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: const Text('ထည့်သွင်းသောအရေအတွက်သည် ကျန်ရှိအရေအတွက်ထက် မများရပါ။'),
