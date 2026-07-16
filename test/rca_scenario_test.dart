@@ -1,4 +1,4 @@
-import 'dart:developer' as developer;
+import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:gemstone_management/core/local/local_db.dart';
@@ -11,7 +11,8 @@ import 'package:gemstone_management/core/local/models.dart';
 /// - Draft Item 2: မဲစိမ်းကြား Fragment = 40
 /// - Draft Item 3: ပတ္တမြား Whole = 2
 
-void main() async {
+void main() {
+  test('RCA: Broker Consignment Multi-Item Draft Scenario', () async {
   // Initialize Hive
   await Hive.initFlutter();
   
@@ -135,4 +136,5 @@ void main() async {
   print('========== RCA TEST SCENARIO END ==========\n');
   
   await Hive.close();
+  });
 }
