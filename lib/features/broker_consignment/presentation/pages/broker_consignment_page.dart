@@ -492,19 +492,6 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                     },
                   );
                 },
-                          ),
-                        ],
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('ပယ်ဖျက်ရန်'),
-                        ),
-
-                      ],
-                    ),
-                  );
-                },
                 onSale: (item) async {
                   final result = await context.push('/broker-consignment/${item.id}');
                   if (result == true && mounted) {
