@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../models/broker_voucher_document.dart';
 
 /// Generates clean PNG images of broker vouchers without app UI chrome
@@ -66,8 +67,12 @@ class BrokerVoucherImageExporter {
   static Future<Uint8List> _renderWidgetToImage(Widget widget) async {
     final repaintBoundary = RenderRepaintBoundary();
 
+    // Get device pixel ratio and logical size for off-screen rendering
+    final dpr = ui.window.devicePixelRatio;
+    final logicalSize = ui.window.physicalSize / dpr;
+
     final renderView = RenderView(
-      window: WidgetsBinding.instance.window,
+      view: ui.window,
       child: RenderPositionedBox(
         alignment: Alignment.topLeft,
         child: repaintBoundary,
@@ -86,7 +91,13 @@ class BrokerVoucherImageExporter {
       child: Directionality(
         textDirection: TextDirection.ltr,
         child: MediaQuery(
-          data: MediaQueryData.fromView(WidgetsBinding.instance.window),
+          data: MediaQueryData(
+            size: logicalSize,
+            devicePixelRatio: dpr,
+            padding: EdgeInsets.zero,
+            viewPadding: EdgeInsets.zero,
+            viewInsets: EdgeInsets.zero,
+          ),
           child: Material(
             child: widget,
           ),
@@ -100,9 +111,11 @@ class BrokerVoucherImageExporter {
     pipelineOwner.flushCompositingBits();
     pipelineOwner.flushPaint();
 
-    final image = await repaintBoundary.toImage(pixelRatio: 2.0);
+    // Render to image with device pixel ratio
+    final image = await repaintBoundary.toImage(pixelRatio: dpr);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
+    image.dispose();
     return byteData!.buffer.asUint8List();
   }
 

@@ -74,13 +74,15 @@ class _PhotoGalleryViewerState extends State<PhotoGalleryViewer> {
       ),
       body: Stack(
         children: [
-          // Photo carousel
+          // Photo carousel using PageView.builder with itemBuilder
           PageView.builder(
             controller: _pageController,
             onPageChanged: (index) {
               setState(() => _currentIndex = index);
             },
-            children: _validPhotos.map((path) {
+            itemCount: _validPhotos.length,
+            itemBuilder: (context, index) {
+              final path = _validPhotos[index];
               return GestureDetector(
                 onTap: () {
                   // Toggle UI visibility or zoom
@@ -109,7 +111,7 @@ class _PhotoGalleryViewerState extends State<PhotoGalleryViewer> {
                   ),
                 ),
               );
-            }).toList(),
+            },
           ),
 
           // Navigation buttons
