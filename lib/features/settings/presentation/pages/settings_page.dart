@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
+import '../../../settings/pages/rca_debug_logs_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -30,7 +31,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
     _currentPassword = TextEditingController();
     _newPassword = TextEditingController();
     _confirmPassword = TextEditingController();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -144,6 +145,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
           Tab(text: 'အကောင့် အချက်အလက်'),
           Tab(text: 'အကျင့်စာရင်း'),
           Tab(text: 'ဖျက်ထားသော အရောင်း'),
+          Tab(text: 'RCA Debug Logs'),
         ],
         ),
       ),
@@ -599,6 +601,9 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
               );
             },
           ),
+          
+          // Tab 4: RCA Debug Logs
+          const RCADebugLogsPage(),
         ],
       ),
     );

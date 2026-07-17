@@ -6,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../services/password_service.dart';
 import 'models.dart';
+import '../rca/rca_log_collector.dart';
 
 /// Central offline-first data store backed by Hive.
 /// No network is required for any operation.
@@ -1715,6 +1716,7 @@ class LocalDb {
       level: 1000,
       name: 'HIVE_LOOKUP_DEBUG',
     );
+    RCALogCollector().addLog('HIVE_LOOKUP_DEBUG', '[HIVE-LOOKUP-START] Searching for purchaseId=$purchaseId in Hive box', 1000);
     
     // LOG: All Hive keys and gemstone IDs
     final allKeys = gemstones.keys.toList();
@@ -1723,14 +1725,17 @@ class LocalDb {
       level: 1000,
       name: 'HIVE_LOOKUP_DEBUG',
     );
+    RCALogCollector().addLog('HIVE_LOOKUP_DEBUG', '[HIVE-LOOKUP-KEYS] Total Hive keys: ${allKeys.length}', 1000);
     
     for (final k in allKeys) {
       final g = gemstones.get(k);
+      final message = '[HIVE-LOOKUP-ENTRY] hiveKey=$k | gemstoneId=${g?.id} | gemstoneName=${g?.name} | matches=${g?.id == purchaseId}';
       developer.log(
-        '[HIVE-LOOKUP-ENTRY] hiveKey=$k | gemstoneId=${g?.id} | gemstoneName=${g?.name} | matches=${g?.id == purchaseId}',
+        message,
         level: 1000,
         name: 'HIVE_LOOKUP_DEBUG',
       );
+      RCALogCollector().addLog('HIVE_LOOKUP_DEBUG', message, 1000);
     }
     
     final key = gemstones.keys.firstWhere(
@@ -1740,23 +1745,17 @@ class LocalDb {
     
     // LOG: Result of lookup
     if (key != null) {
-      developer.log(
-        '[HIVE-LOOKUP-FOUND] purchaseId=$purchaseId | foundHiveKey=$key | WILL EXECUTE gemstones.put()',
-        level: 1000,
-        name: 'HIVE_LOOKUP_DEBUG',
-      );
+      final foundMsg = '[HIVE-LOOKUP-FOUND] purchaseId=$purchaseId | foundHiveKey=$key | WILL EXECUTE gemstones.put()';
+      developer.log(foundMsg, level: 1000, name: 'HIVE_LOOKUP_DEBUG');
+      RCALogCollector().addLog('HIVE_LOOKUP_DEBUG', foundMsg, 1000);
       await gemstones.put(key, updated);
-      developer.log(
-        '[HIVE-LOOKUP-SAVED] purchaseId=$purchaseId | hiveKey=$key | SAVE COMPLETED',
-        level: 1000,
-        name: 'HIVE_LOOKUP_DEBUG',
-      );
+      final savedMsg = '[HIVE-LOOKUP-SAVED] purchaseId=$purchaseId | hiveKey=$key | SAVE COMPLETED';
+      developer.log(savedMsg, level: 1000, name: 'HIVE_LOOKUP_DEBUG');
+      RCALogCollector().addLog('HIVE_LOOKUP_DEBUG', savedMsg, 1000);
     } else {
-      developer.log(
-        '[HIVE-LOOKUP-NOT-FOUND] purchaseId=$purchaseId | NO MATCHING HIVE KEY FOUND | gemstones.put() SKIPPED',
-        level: 1000,
-        name: 'HIVE_LOOKUP_DEBUG',
-      );
+      final notFoundMsg = '[HIVE-LOOKUP-NOT-FOUND] purchaseId=$purchaseId | NO MATCHING HIVE KEY FOUND | gemstones.put() SKIPPED';
+      developer.log(notFoundMsg, level: 1000, name: 'HIVE_LOOKUP_DEBUG');
+      RCALogCollector().addLog('HIVE_LOOKUP_DEBUG', notFoundMsg, 1000);
     }
   }
 
