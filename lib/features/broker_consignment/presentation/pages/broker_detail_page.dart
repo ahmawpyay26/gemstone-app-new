@@ -7,6 +7,7 @@ import '../../../../core/local/models.dart';
 import '../../../broker_consignment/domain/builders/broker_voucher_document_builder.dart';
 import '../../../broker_consignment/domain/services/broker_voucher_export_service.dart';
 import '../../../broker_consignment/domain/services/broker_voucher_image_exporter.dart';
+import '../widgets/photo_gallery_viewer.dart';
 
 class BrokerDetailPage extends StatefulWidget {
   final String brokerName;
@@ -393,12 +394,38 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
       return;
     }
 
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return _PhotoGalleryDialog(photos: allPhotos);
-      },
+    // Open full-screen gallery
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PhotoGalleryViewer(
+          photoPaths: allPhotos,
+          title: 'ဘောင်ချာ ဓာတ်ပုံများ - ${widget.voucherNumber}',
+        ),
+      ),
     );
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   }
 
   void _showVoucherDeleteConfirmation(BuildContext context) {
