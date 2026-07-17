@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
-import '../../../settings/pages/rca_debug_logs_page.dart';
+import '../../pages/rca_debug_logs_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
