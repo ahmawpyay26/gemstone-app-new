@@ -7,6 +7,7 @@ import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
 import '../widgets/voucher_group_widgets.dart';
+import 'dart:developer' as developer;
 
 class BrokerConsignmentPage extends StatefulWidget {
   const BrokerConsignmentPage({Key? key}) : super(key: key);
@@ -25,6 +26,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
   // Step 9: Returned quantity tracking
   final Map<String, TextEditingController> _returnedQtyControllers = {};
   final Map<String, String?> _returnedQtyErrors = {};
+  final Map<String, int> _restoreDialogRebuildCount = {}; // Track dialog rebuilds
 
   @override
   void dispose() {
@@ -401,29 +403,93 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                 },
                 onDelete: (item) => _showDeleteConfirmation(item),
                 onReturn: (item) {
+                  developer.log('[RESTORE-DIALOG-OPEN] item.id=${item.id} | remainingQty=${item.remainingQuantity}');
+                  
                   // Show return dialog with quantity input
                   showDialog(
                     context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('ပြန်လည်လက်ခံရန်'),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('လက်ကျန်အရေအတွက်: ${item.remainingQuantity.toStringAsFixed(0)}'),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _returnedQtyControllers[item.id],
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              hintText: 'အရေအတွက်ထည့်သွင်းရန်',
-                              errorText: _returnedQtyErrors[item.id],
+                    builder: (context) {
+                      developer.log('[RESTORE-DIALOG-BUILD] item.id=${item.id}');
+                      
+                      return AlertDialog(
+                        title: const Text('ပြန်လည်လက်ခံရန်'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('လက်ကျန်အရေအတွက်: ${item.remainingQuantity.toStringAsFixed(0)}'),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _returnedQtyControllers[item.id],
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                hintText: 'အရေအတွက်ထည့်သွင်းရန်',
+                                errorText: _returnedQtyErrors[item.id],
+                              ),
+                              onChanged: (value) {
+                                final controller = _returnedQtyControllers[item.id];
+                                final error = _returnedQtyErrors[item.id];
+                                final canRestore = controller != null &&
+                                    controller.text.trim().isNotEmpty &&
+                                    error == null;
+                                
+                                developer.log(
+                                  '[RESTORE-ONCHANGED-BEFORE] item.id=${item.id} | enteredValue=$value | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | remainingQty=${item.remainingQuantity} | canRestore=$canRestore',
+                                  level: 1000,
+                                );
+                                
+                                setState(() {
+                                  _validateReturnedQuantity(item, value);
+                                  
+                                  final errorAfter = _returnedQtyErrors[item.id];
+                                  final canRestoreAfter = controller != null &&
+                                      controller.text.trim().isNotEmpty &&
+                                      errorAfter == null;
+                                  
+                                  developer.log(
+                                    '[RESTORE-ONCHANGED-AFTER] item.id=${item.id} | enteredValue=$value | errorAfter=$errorAfter | canRestoreAfter=$canRestoreAfter',
+                                    level: 1000,
+                                  );
+                                });
+                              },
                             ),
-                            onChanged: (value) {
-                              setState(() {
-                                _validateReturnedQuantity(item, value);
-                              });
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('ပယ်ဖျက်ရန်'),
+                          ),
+                          Builder(
+                            builder: (buttonContext) {
+                              final controller = _returnedQtyControllers[item.id];
+                              final error = _returnedQtyErrors[item.id];
+                              final canRestore = controller != null &&
+                                  controller.text.trim().isNotEmpty &&
+                                  error == null;
+                              
+                              developer.log(
+                                '[RESTORE-BUTTON-BUILD] item.id=${item.id} | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | canRestore=$canRestore',
+                                level: 1000,
+                              );
+                              
+                              return TextButton(
+                                onPressed: canRestore
+                                    ? () {
+                                        developer.log('[RESTORE-BUTTON-PRESSED] item.id=${item.id}');
+                                        Navigator.pop(context);
+                                        _processReturn(item);
+                                      }
+                                    : null,
+                                child: const Text('လက်ခံရန်'),
+                              );
                             },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
                           ),
                         ],
                       ),
