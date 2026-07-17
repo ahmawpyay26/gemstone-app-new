@@ -405,29 +405,6 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
     );
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  }
-
   void _showVoucherDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
@@ -1250,7 +1227,6 @@ class _ItemCardState extends State<_ItemCard> {
       ),
     );
   }
-}
 
   Future<void> _handleItemPdfExportAction(BuildContext context) async {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1287,6 +1263,7 @@ class _ItemCardState extends State<_ItemCard> {
       ),
     );
   }
+}
 
 class _CompletedVoucherCard extends StatefulWidget {
   final String voucherNumber;
