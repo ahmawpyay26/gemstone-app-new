@@ -377,8 +377,8 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
     // Get all photos from items in this voucher
     final allPhotos = <String>[];
     for (final item in widget.items) {
-      if (item.photos != null && item.photos!.isNotEmpty) {
-        allPhotos.addAll(item.photos!);
+      if (item.photoPaths != null && item.photoPaths!.isNotEmpty) {
+        allPhotos.addAll(item.photoPaths!);
       }
     }
 
