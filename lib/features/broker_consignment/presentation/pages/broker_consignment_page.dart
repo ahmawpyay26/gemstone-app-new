@@ -414,72 +414,78 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                       final brokerItem = item;
                       RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-DIALOG-BUILD] brokerItem.id=${brokerItem.id}', 1);
                       
-                      return AlertDialog(
-                        title: const Text('ပြန်လည်လက်ခံရန်'),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('လက်ကျန်အရေအတွက်: ${brokerItem.remainingQuantity.toStringAsFixed(0)}'),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: _returnedQtyControllers[brokerItem.id],
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                hintText: 'အရေအတွက်ထည့်သွင်းရန်',
-                                errorText: _returnedQtyErrors[brokerItem.id],
-                              ),
-                              onChanged: (value) {
-                                final controller = _returnedQtyControllers[brokerItem.id];
-                                final error = _returnedQtyErrors[brokerItem.id];
-                                final canRestore = controller != null &&
-                                    controller.text.trim().isNotEmpty &&
-                                    error == null;
-                                
-                                RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-ONCHANGED-BEFORE] brokerItem.id=${brokerItem.id} | enteredValue=$value | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | remainingQty=${brokerItem.remainingQuantity} | canRestore=$canRestore', 1);
-                                
-                                setState(() {
-                                  _validateReturnedQuantity(brokerItem, value);
-                                  
-                                  final errorAfter = _returnedQtyErrors[brokerItem.id];
-                                  final canRestoreAfter = controller != null &&
-                                      controller.text.trim().isNotEmpty &&
-                                      errorAfter == null;
-                                  
-                                  RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-ONCHANGED-AFTER] brokerItem.id=${brokerItem.id} | enteredValue=$value | errorAfter=$errorAfter | canRestoreAfter=$canRestoreAfter', 1);
-                                });
-                              },
+                      // Use StatefulBuilder to give the dialog its own local state
+                      return StatefulBuilder(
+                        builder: (dialogContext, dialogSetState) {
+                          return AlertDialog(
+                            title: const Text('ပြန်လည်လက်ခံရန်'),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('လက်ကျန်အရေအတွက်: ${brokerItem.remainingQuantity.toStringAsFixed(0)}'),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _returnedQtyControllers[brokerItem.id],
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    hintText: 'အရေအတွက်ထည့်သွင်းရန်',
+                                    errorText: _returnedQtyErrors[brokerItem.id],
+                                  ),
+                                  onChanged: (value) {
+                                    final controller = _returnedQtyControllers[brokerItem.id];
+                                    final error = _returnedQtyErrors[brokerItem.id];
+                                    final canRestore = controller != null &&
+                                        controller.text.trim().isNotEmpty &&
+                                        error == null;
+                                    
+                                    RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-ONCHANGED-BEFORE] brokerItem.id=${brokerItem.id} | enteredValue=$value | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | remainingQty=${brokerItem.remainingQuantity} | canRestore=$canRestore', 1);
+                                    
+                                    // Update validation and trigger local dialog rebuild
+                                    dialogSetState(() {
+                                      _validateReturnedQuantity(brokerItem, value);
+                                      
+                                      final errorAfter = _returnedQtyErrors[brokerItem.id];
+                                      final canRestoreAfter = controller != null &&
+                                          controller.text.trim().isNotEmpty &&
+                                          errorAfter == null;
+                                      
+                                      RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-ONCHANGED-AFTER] brokerItem.id=${brokerItem.id} | enteredValue=$value | errorAfter=$errorAfter | canRestoreAfter=$canRestoreAfter', 1);
+                                    });
+                                  },
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('ပယ်ဖျက်ရန်'),
-                          ),
-                          Builder(
-                            builder: (buttonContext) {
-                              final controller = _returnedQtyControllers[brokerItem.id];
-                              final error = _returnedQtyErrors[brokerItem.id];
-                              final canRestore = controller != null &&
-                                  controller.text.trim().isNotEmpty &&
-                                  error == null;
-                              
-                              RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-BUTTON-BUILD] brokerItem.id=${brokerItem.id} | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | canRestore=$canRestore', 1);
-                              
-                              return TextButton(
-                                onPressed: canRestore
-                                    ? () {
-                                        RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-BUTTON-PRESSED] brokerItem.id=${brokerItem.id}', 1);
-                                        Navigator.pop(context);
-                                        _processReturn(brokerItem);
-                                      }
-                                    : null,
-                                child: const Text('လက်ခံရန်'),
-                              );
-                            },
-                          ),
-                        ],
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('ပယ်ဖျက်ရန်'),
+                              ),
+                              Builder(
+                                builder: (buttonContext) {
+                                  final controller = _returnedQtyControllers[brokerItem.id];
+                                  final error = _returnedQtyErrors[brokerItem.id];
+                                  final canRestore = controller != null &&
+                                      controller.text.trim().isNotEmpty &&
+                                      error == null;
+                                  
+                                  RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-BUTTON-BUILD] brokerItem.id=${brokerItem.id} | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | canRestore=$canRestore', 1);
+                                  
+                                  return TextButton(
+                                    onPressed: canRestore
+                                        ? () {
+                                            RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-BUTTON-PRESSED] brokerItem.id=${brokerItem.id}', 1);
+                                            Navigator.pop(context);
+                                            _processReturn(brokerItem);
+                                          }
+                                        : null,
+                                    child: const Text('လက်ခံရန်'),
+                                  );
+                                },
+                              ),
+                            ],
+                          );
+                        },
                       );
                     },
                   );
