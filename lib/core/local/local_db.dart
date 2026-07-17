@@ -2541,5 +2541,40 @@ class LocalDb {
 
     return entries;
   }
+
+  /// Group broker consignments by voucherNumber (for detail page active tab)
+  static Map<String, List<BrokerConsignment>> groupBrokerConsignmentsByVoucher(
+    List<BrokerConsignment> vouchers,
+  ) {
+    final grouped = <String, List<BrokerConsignment>>{};
+    for (final bc in vouchers) {
+      if (bc.isCompleted || bc.deletedAt != null) continue;
+      final voucherNum = bc.voucherNumber ?? 'Unknown';
+      grouped.putIfAbsent(voucherNum, () => []).add(bc);
+    }
+    return grouped;
+  }
+
+  /// Group broker sale records by voucherNumber (for detail page completed tab)
+  static Map<String, List<BrokerSaleRecord>> groupBrokerSaleRecordsByVoucher(
+    List<BrokerConsignment> completedVouchers,
+  ) {
+    final grouped = <String, List<BrokerSaleRecord>>{};
+    final salesBox = Hive.box<BrokerSaleRecord>(brokerSalesBox);
+
+    for (final bc in completedVouchers) {
+      if (!bc.isCompleted || bc.deletedAt != null) continue;
+      final voucherNum = bc.voucherNumber ?? 'Unknown';
+
+      final sales = salesBox.values
+          .where((sale) => sale.brokerConsignmentId == bc.id)
+          .toList();
+
+      if (sales.isNotEmpty) {
+        grouped.putIfAbsent(voucherNum, () => []).addAll(sales);
+      }
+    }
+    return grouped;
+  }
 }
 
