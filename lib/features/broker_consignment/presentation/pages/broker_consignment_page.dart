@@ -500,15 +500,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                           onPressed: () => Navigator.pop(context),
                           child: const Text('ပယ်ဖျက်ရန်'),
                         ),
-                        TextButton(
-                          onPressed: _returnedQtyErrors[item.id] == null && (_returnedQtyControllers[item.id]?.text.isNotEmpty ?? false)
-                              ? () {
-                                  Navigator.pop(context);
-                                  _processReturn(item);
-                                }
-                              : null,
-                          child: const Text('လက်ခံရန်'),
-                        ),
+
                       ],
                     ),
                   );
