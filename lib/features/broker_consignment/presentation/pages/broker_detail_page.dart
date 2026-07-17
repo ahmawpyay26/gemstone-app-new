@@ -553,6 +553,202 @@ class _ItemCard extends StatefulWidget {
 }
 
 class _ItemCardState extends State<_ItemCard> {
+  void _showItemEditDialog(BuildContext context) {
+    final consignedController = TextEditingController(
+      text: widget.item.consignedQuantity.toString(),
+    );
+    String? errorMessage;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text('Item ပြုပြင်ရန်'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('ယခင်အပ်ထားသည့်ခုနှုန်း: ${widget.item.consignedQuantity}'),
+                    Text('ရောင်းချ: ${widget.item.soldQuantity}'),
+                    Text('ပြန်လည်ရယူ: ${widget.item.returnedQuantity}'),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: consignedController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'အပ်ထားသည့်ခုနှုန်း (အသစ်)',
+                        hintText: '0.00',
+                        errorText: errorMessage,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'သတိ: အပ်ထားသည့်ခုနှုန်းသည် ရောင်းချ + ပြန်လည်ရယူ ထက် ကြီးရမည်။',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('မပြုပြင်တော့ပါ'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final newConsignedStr = consignedController.text.trim();
+                    if (newConsignedStr.isEmpty) {
+                      setState(() {
+                        errorMessage = 'ခုနှုန်းထည့်သွင်းပါ';
+                      });
+                      return;
+                    }
+
+                    final newConsigned = double.tryParse(newConsignedStr);
+                    if (newConsigned == null || newConsigned <= 0) {
+                      setState(() {
+                        errorMessage = 'ခုနှုန်းသည် သုည ထက် ကြီးရမည်';
+                      });
+                      return;
+                    }
+
+                    final totalUsed = widget.item.soldQuantity + widget.item.returnedQuantity;
+                    if (newConsigned < totalUsed) {
+                      setState(() {
+                        errorMessage = 'အပ်ထားသည့်ခုနှုန်းသည် ရောင်းချ + ပြန်လည်ရယူ (${totalUsed.toStringAsFixed(2)}) ထက် ကြီးရမည်';
+                      });
+                      return;
+                    }
+
+                    try {
+                      widget.item.consignedQuantity = newConsigned;
+                      final brokers = Hive.box<BrokerConsignment>('broker_consignments');
+                      await brokers.put(widget.item.key, widget.item);
+
+                      if (context.mounted) {
+                        Navigator.pop(dialogContext);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Item အောင်မြင်စွာ ပြုပြင်ပြီးပါပြီ'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        // Trigger parent refresh
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pop();
+                        }
+                      }
+                    } catch (e) {
+                      setState(() {
+                        errorMessage = e.toString();
+                      });
+                    }
+                  },
+                  child: const Text('ပြုပြင်မည်'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showItemDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Item ဖျက်မည်သည်'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('ဤ Item ကို ဖျက်ရန် သေချာပါသလား?'),
+              const SizedBox(height: 16),
+              if (widget.item.soldQuantity > 0)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'သတိ: ဤ Item သည် ရောင်းချပြီးသားဖြစ်သည်။ ဖျက်လို့ မရပါ။',
+                    style: TextStyle(fontSize: 12, color: Colors.red),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'သတိ: ဖျက်ပြီးသည်နောက် ပြန်လည်ရယူ၍ မရပါ။',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('မဖျက်တော့ပါ'),
+            ),
+            if (widget.item.soldQuantity == 0)
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final brokers = Hive.box<BrokerConsignment>('broker_consignments');
+                    await brokers.delete(widget.item.key);
+
+                    if (context.mounted) {
+                      Navigator.pop(dialogContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Item အောင်မြင်စွာ ဖျက်ပြီးပါပြီ'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      // Trigger parent refresh
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pop();
+                      }
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('အမှားအယွင်း: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                ),
+                child: const Text('ဖျက်မည်'),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showItemReturnDialog(BuildContext context) {
     final returnController = TextEditingController();
     String? errorMessage;
@@ -663,14 +859,10 @@ class _ItemCardState extends State<_ItemCard> {
   void _handleItemMenuAction(BuildContext context, String action) {
     switch (action) {
       case 'edit':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item ပြုပြင်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _showItemEditDialog(context);
         break;
       case 'delete':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item ဖျက်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _showItemDeleteConfirmation(context);
         break;
       case 'return':
         _showItemReturnDialog(context);
