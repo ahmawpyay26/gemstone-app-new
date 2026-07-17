@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:printing/printing.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
+import '../../../broker_consignment/domain/builders/broker_voucher_document_builder.dart';
+import '../../../broker_consignment/domain/services/broker_voucher_export_service.dart';
+import '../../../broker_consignment/domain/services/broker_voucher_image_exporter.dart';
 
 class BrokerDetailPage extends StatefulWidget {
   final String brokerName;
@@ -479,19 +483,13 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         _showVoucherDeleteConfirmation(context);
         break;
       case 'print':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပရင့်ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _handlePrintAction(context);
         break;
       case 'image':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပုံထုတ်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _handleImageExportAction(context);
         break;
       case 'pdf':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _handlePdfExportAction(context);
         break;
       case 'photos':
         _showVoucherPhotoViewer(context);
@@ -666,6 +664,146 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         ],
       ),
     );
+  }
+
+  Future<void> _handlePdfExportAction(BuildContext context) async {
+    try {
+      // Show loading dialog
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => Dialog(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'PDF ပြင်ဆင်နေသည်...',
+                  style: TextStyle(fontFamily: 'Padauk'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Build document data
+      final documentData = BrokerVoucherDocumentBuilder.buildFromVoucher(
+        voucherItems: widget.items,
+        voucherNumber: widget.voucherNumber,
+        voucherDate: widget.items.first.createdAt,
+      );
+
+      // Export PDF
+      final success = await BrokerVoucherExportService.exportPdfAndShare(documentData);
+
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF သိမ်းဆည်းပြီးပါပြီ')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF သိမ်းဆည်းရန် ပരिवर्तन ဖြစ်ခဲ့သည်')),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('အမှားအယွင်း: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _handlePrintAction(BuildContext context) async {
+    try {
+      // Build document data
+      final documentData = BrokerVoucherDocumentBuilder.buildFromVoucher(
+        voucherItems: widget.items,
+        voucherNumber: widget.voucherNumber,
+        voucherDate: widget.items.first.createdAt,
+      );
+
+      // Get PDF bytes
+      final pdfBytes = await BrokerVoucherExportService.getPdfBytes(documentData);
+
+      // Open print preview
+      await Printing.layoutPdf(
+        onLayout: (_) => pdfBytes,
+        name: 'ပွဲစားအပ်နှံဘောင်ချာ-${widget.voucherNumber}',
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ပရင့်ထုတ်ရန် အမှားအယွင်း: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _handleImageExportAction(BuildContext context) async {
+    try {
+      // Show loading dialog
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => Dialog(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'ပုံ ပြင်ဆင်နေသည်...',
+                  style: TextStyle(fontFamily: 'Padauk'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Build document data
+      final documentData = BrokerVoucherDocumentBuilder.buildFromVoucher(
+        voucherItems: widget.items,
+        voucherNumber: widget.voucherNumber,
+        voucherDate: widget.items.first.createdAt,
+      );
+
+      // Export image
+      final success = await BrokerVoucherImageExporter.exportImageAndShare(
+        documentData,
+        context,
+      );
+
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပုံ သိမ်းဆည်းပြီးပါပြီ')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပုံ သိမ်းဆည်းရန် ပരिवर्तन ဖြစ်ခဲ့သည်')),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('အမှားအယွင်း: ${e.toString()}')),
+      );
+    }
   }
 }
 
