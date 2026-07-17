@@ -40,18 +40,30 @@ jobs:
 
       - name: Build APK (Release)
         run: |
-          echo "=== pwd before flutter build ==="
-          pwd
-          flutter build apk --release --no-shrink > build_log.txt 2>&1
-          BUILD_EXIT=$?
-          cat build_log.txt
-          echo "=== pwd after flutter build ==="
-          pwd
-          echo "=== ls -R build || true ==="
-          ls -R build || true
-          echo "=== find . -name '*.apk' ==="
-          find . -name "*.apk"
+          set +e
+          echo "=== BUILD START $(date -u) ===" | tee build_log.txt
+          echo "=== pwd ===" | tee -a build_log.txt
+          pwd | tee -a build_log.txt
+          echo "" | tee -a build_log.txt
+          echo "=== flutter build apk --release --no-shrink ===" | tee -a build_log.txt
+          flutter build apk --release --no-shrink 2>&1 | tee -a build_log.txt
+          BUILD_EXIT=${PIPESTATUS[0]}
+          echo "" | tee -a build_log.txt
+          echo "=== BUILD EXIT CODE: $BUILD_EXIT ===" | tee -a build_log.txt
+          echo "=== BUILD END $(date -u) ===" | tee -a build_log.txt
+          echo "" | tee -a build_log.txt
+          echo "=== build_log.txt size: $(wc -c < build_log.txt) bytes ===" | tee -a build_log.txt
+          echo "=== build_log.txt lines: $(wc -l < build_log.txt) ===" | tee -a build_log.txt
+          echo "" | tee -a build_log.txt
           if [ $BUILD_EXIT -ne 0 ]; then
+            echo "=== FAILURE DETECTED - Capturing additional diagnostics ===" | tee -a build_log.txt
+            echo "" | tee -a build_log.txt
+            echo "=== find . -name '*.apk' ===" | tee -a build_log.txt
+            find . -name "*.apk" 2>&1 | tee -a build_log.txt
+            echo "" | tee -a build_log.txt
+            echo "=== ls -R build/app 2>&1 || true ===" | tee -a build_log.txt
+            ls -R build/app 2>&1 | tee -a build_log.txt || true
+            echo "" | tee -a build_log.txt
             echo "::error::Flutter build failed with exit code $BUILD_EXIT"
             exit $BUILD_EXIT
           fi
@@ -63,6 +75,25 @@ jobs:
           name: dart-analyze-output
           path: dart_analyze.txt
           retention-days: 7
+
+      - name: Verify build log is not empty
+        if: always()
+        run: |
+          echo "=== build_log.txt verification ==="
+          if [ ! -f build_log.txt ]; then
+            echo "ERROR: build_log.txt does not exist"
+            echo "build_log.txt was not created" > build_log.txt
+          fi
+          FILE_SIZE=$(wc -c < build_log.txt)
+          FILE_LINES=$(wc -l < build_log.txt)
+          echo "File size: $FILE_SIZE bytes"
+          echo "File lines: $FILE_LINES"
+          if [ "$FILE_SIZE" -lt 100 ]; then
+            echo "WARNING: build_log.txt is suspiciously small ($FILE_SIZE bytes)"
+            echo "--- Contents ---"
+            cat build_log.txt
+            echo "--- End ---"
+          fi
 
       - name: Upload build log
         if: always()
