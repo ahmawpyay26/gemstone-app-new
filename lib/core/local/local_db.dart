@@ -1784,6 +1784,11 @@ class LocalDb {
     );
     
     // LOG: Entry point with full state
+    RCALogCollector().addLog(
+      'RCA_BROKER_CONSIGNMENT',
+      '[RCA-ENTRY] purchaseId=$purchaseId | gemstoneName=${purchase.name} | sourceType=$sourceType | breakdownItemName=$breakdownItemName | requestedQty=$consignedQuantity | purchase.quantity=${purchase.quantity} | purchase.remainingQuantity=${purchase.remainingQuantity} | breakdownItems=${purchase.breakdownItems}',
+      1000,
+    );
     developer.log(
       '[RCA-ENTRY] purchaseId=$purchaseId | gemstoneName=${purchase.name} | sourceType=$sourceType | breakdownItemName=$breakdownItemName | requestedQty=$consignedQuantity | purchase.quantity=${purchase.quantity} | purchase.remainingQuantity=${purchase.remainingQuantity} | breakdownItems=${purchase.breakdownItems}',
       level: 1000,
@@ -1803,6 +1808,11 @@ class LocalDb {
       final dynamicRemainingWhole = gemstoneRemainingQuantity(purchase);
       
       // LOG: Fragment validation with full context
+      RCALogCollector().addLog(
+        'RCA_BROKER_CONSIGNMENT',
+        '[RCA-FRAG-VALIDATE] breakdownItemName=$breakdownItemName | requestedQty=$consignedQuantity | availableQty=$availableQty | dynamicRemainingWhole=$dynamicRemainingWhole | comparison: $consignedQuantity > $availableQty = ${consignedQuantity > availableQty} | purchase.remainingQuantity=${purchase.remainingQuantity}',
+        1000,
+      );
       developer.log(
         '[RCA-FRAG-VALIDATE] breakdownItemName=$breakdownItemName | requestedQty=$consignedQuantity | availableQty=$availableQty | dynamicRemainingWhole=$dynamicRemainingWhole | comparison: $consignedQuantity > $availableQty = ${consignedQuantity > availableQty} | purchase.remainingQuantity=${purchase.remainingQuantity}',
         level: 1000,
@@ -1810,6 +1820,11 @@ class LocalDb {
       );
       
       if (consignedQuantity > availableQty) {
+        RCALogCollector().addLog(
+          'RCA_BROKER_CONSIGNMENT',
+          '[RCA-FRAG-THROW] LINE 1770 | gemstone=${purchase.name} | breakdownItemName=$breakdownItemName | consignedQuantity=$consignedQuantity | availableQty=$availableQty',
+          2,
+        );
         developer.log(
           '[RCA-FRAG-THROW] LINE 1770 | gemstone=${purchase.name} | breakdownItemName=$breakdownItemName | consignedQuantity=$consignedQuantity | availableQty=$availableQty',
           level: 1000,
@@ -1822,6 +1837,11 @@ class LocalDb {
       final dynamicRemaining = gemstoneRemainingQuantity(purchase);
       
       // LOG: Whole stone validation
+      RCALogCollector().addLog(
+        'RCA_BROKER_CONSIGNMENT',
+        '[RCA-WHOLE-VALIDATION] gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining | condition: $consignedQuantity > ${purchase.remainingQuantity} = ${consignedQuantity > purchase.remainingQuantity}',
+        1000,
+      );
       developer.log(
         '[RCA-WHOLE-VALIDATION] gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining | condition: $consignedQuantity > ${purchase.remainingQuantity} = ${consignedQuantity > purchase.remainingQuantity}',
         level: 1000,
@@ -1829,6 +1849,11 @@ class LocalDb {
       );
       
       if (consignedQuantity > purchase.remainingQuantity) {
+        RCALogCollector().addLog(
+          'RCA_BROKER_CONSIGNMENT',
+          '[RCA-WHOLE-THROW] LINE 1788 | gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining',
+          2,
+        );
         developer.log(
           '[RCA-WHOLE-THROW] LINE 1788 | gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining',
           level: 1000,
@@ -1878,6 +1903,11 @@ class LocalDb {
       if (newQty < 0) {
         throw Exception('Breakdown item quantity cannot go below zero');
       }
+      RCALogCollector().addLog(
+        'RCA_BROKER_CONSIGNMENT',
+        '[RCA-FRAG-DEDUCT] breakdownItemName=$breakdownItemName | before=$currentQty | deduct=${consignedQuantity.toInt()} | after=$newQty',
+        1000,
+      );
       developer.log(
         '[RCA-FRAG-DEDUCT] breakdownItemName=$breakdownItemName | before=$currentQty | deduct=${consignedQuantity.toInt()} | after=$newQty',
         level: 1000,
@@ -1890,6 +1920,11 @@ class LocalDb {
       // WHOLE STONE PATH: Only touch whole stone remaining quantity
       final beforeRemaining = purchase.remainingQuantity;
       purchase.remainingQuantity -= consignedQuantity.toInt();
+      RCALogCollector().addLog(
+        'RCA_BROKER_CONSIGNMENT',
+        '[RCA-WHOLE-DEDUCT] before=$beforeRemaining | deduct=${consignedQuantity.toInt()} | after=${purchase.remainingQuantity}',
+        1000,
+      );
       developer.log(
         '[RCA-WHOLE-DEDUCT] before=$beforeRemaining | deduct=${consignedQuantity.toInt()} | after=${purchase.remainingQuantity}',
         level: 1000,

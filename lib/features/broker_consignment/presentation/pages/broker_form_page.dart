@@ -9,6 +9,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
 import '../widgets/photo_media_box.dart';
 import '../../domain/broker_consignment_validation.dart';
+import '../../../../core/rca/rca_log_collector.dart';
+import 'dart:developer' as developer;
 
 /// Temporary model for consignment items during form editing
 class ConsignmentItemTemp {
@@ -397,26 +399,49 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   Future<void> _saveBrokerConsignment() async {
     if (!_isFormValid()) return;
 
+    // RCA: Log entry point
+    RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'ENTRY: _saveBrokerConsignment() called', 0);
+    developer.log('ENTRY: _saveBrokerConsignment() called');
+
     try {
       // PHASE B: Generate shared voucher IDs for this batch submission
       // Generate ONCE before the loop to ensure all items in this submission share the same voucher
       final voucherId = const Uuid().v4(); // Collision-safe UUID
       final voucherNumber = LocalDb.generateNextVoucherNumber(); // BC-YYYYMMDD-NNNN
       
+      RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'Generated voucherId=$voucherId, voucherNumber=$voucherNumber', 0);
+      developer.log('Generated voucherId=$voucherId, voucherNumber=$voucherNumber');
+      
       // For now, save each item as a separate BrokerConsignment record
       // (backward compatible with existing model)
       // All items in this submission will share the same voucherId and voucherNumber
       
+      int itemCount = 0;
       for (final item in _confirmedItems) {
+        itemCount++;
+        RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'Processing item $itemCount: sourceType=${item.sourceType}, qty=${item.consignedQuantity}', 0);
+        developer.log('Processing item $itemCount: sourceType=${item.sourceType}, qty=${item.consignedQuantity}');
+        
         // Determine purchaseId based on sourceType
         String purchaseId;
         if (item.sourceType == 'whole_stone') {
-          if (item.gemstone == null) continue; // Skip invalid whole stone items
+          if (item.gemstone == null) {
+            RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'SKIP: whole_stone item has null gemstone', 0);
+            continue; // Skip invalid whole stone items
+          }
           purchaseId = item.gemstone!.id;
+          RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'whole_stone: purchaseId=${item.gemstone!.id}, name=${item.gemstone!.name}', 0);
         } else {
-          if (item.selectedPurchase == null) continue; // Skip invalid breakdown items
+          if (item.selectedPurchase == null) {
+            RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'SKIP: breakdown_item has null selectedPurchase', 0);
+            continue; // Skip invalid breakdown items
+          }
           purchaseId = item.selectedPurchase!.id;
+          RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'breakdown_item: purchaseId=${item.selectedPurchase!.id}, breakdownItem=${item.selectedBreakdownItem}', 0);
         }
+        
+        RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'Calling LocalDb.createBrokerConsignment with purchaseId=$purchaseId, qty=${item.consignedQuantity}', 0);
+        developer.log('Calling LocalDb.createBrokerConsignment with purchaseId=$purchaseId, qty=${item.consignedQuantity}');
         
         await LocalDb.createBrokerConsignment(
           purchaseId: purchaseId,
@@ -431,12 +456,22 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           voucherId: voucherId, // Assign shared voucher ID
           voucherNumber: voucherNumber, // Assign shared voucher number
         );
+        
+        RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'Item $itemCount saved successfully', 0);
+        developer.log('Item $itemCount saved successfully');
       }
 
+      RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'SUCCESS: All $itemCount items saved', 0);
+      developer.log('SUCCESS: All $itemCount items saved');
+      
       if (mounted) {
         context.pop(true);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'EXCEPTION: $e', 2);
+      RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'StackTrace: $stackTrace', 2);
+      developer.log('EXCEPTION: $e\nStackTrace: $stackTrace');
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('အမှားအယွင်း: $e')),
