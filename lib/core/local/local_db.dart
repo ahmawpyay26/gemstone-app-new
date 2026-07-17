@@ -2411,9 +2411,6 @@ class LocalDb {
     await createAuditLog(auditLog);
   }
 
-}
-
-
   // ============================================================================
   // BROKER GROUPING HELPERS (Phase 1 - Presentation Layer)
   // ============================================================================
@@ -2545,3 +2542,4 @@ class LocalDb {
     return entries;
   }
 }
+
