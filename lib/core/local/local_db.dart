@@ -2412,3 +2412,136 @@ class LocalDb {
   }
 
 }
+
+
+  // ============================================================================
+  // BROKER GROUPING HELPERS (Phase 1 - Presentation Layer)
+  // ============================================================================
+
+  /// Normalize broker name for comparison (trim, collapse spaces, lowercase)
+  static String _normalizeBrokerName(String name) {
+    return name.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+  }
+
+  /// Normalize phone number for comparison (remove spaces, hyphens, parentheses)
+  static String _normalizePhoneNumber(String phone) {
+    return phone.replaceAll(RegExp(r'[\s\-\(\)]+'), '');
+  }
+
+  /// Create unique broker key from name and phone
+  static String _createBrokerKey(String name, String phone) {
+    final normalizedName = _normalizeBrokerName(name);
+    final normalizedPhone = _normalizePhoneNumber(phone);
+    return '$normalizedName|$normalizedPhone';
+  }
+
+  /// Group broker consignments by broker identity (name + phone)
+  static Map<String, List<BrokerConsignment>> getGroupedBrokersByIdentity() {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    final grouped = <String, List<BrokerConsignment>>{};
+
+    for (final bc in brokers.values) {
+      if (bc.deletedAt != null) continue; // Skip soft-deleted records
+
+      final key = _createBrokerKey(bc.brokerName, bc.brokerPhone);
+      grouped.putIfAbsent(key, () => []).add(bc);
+    }
+
+    return grouped;
+  }
+
+  /// Get broker summary stats for a broker group
+  static Map<String, dynamic> getBrokerSummary(List<BrokerConsignment> brokerVouchers) {
+    if (brokerVouchers.isEmpty) {
+      return {
+        'brokerName': '',
+        'brokerPhone': '',
+        'brokerAddress': '',
+        'totalRemaining': 0.0,
+        'activeCount': 0,
+        'completedCount': 0,
+        'latestDate': 0,
+      };
+    }
+
+    // Use first voucher for broker details
+    final first = brokerVouchers.first;
+
+    // Calculate totals
+    double totalRemaining = 0;
+    int activeCount = 0;
+    int completedCount = 0;
+    int latestDate = 0;
+
+    for (final bc in brokerVouchers) {
+      totalRemaining += bc.remainingQuantity;
+      if (bc.isCompleted) {
+        completedCount++;
+      } else {
+        activeCount++;
+      }
+      if (bc.updatedAt > latestDate) {
+        latestDate = bc.updatedAt;
+      }
+    }
+
+    return {
+      'brokerName': first.brokerName,
+      'brokerPhone': first.brokerPhone,
+      'brokerAddress': first.brokerAddress,
+      'totalRemaining': totalRemaining,
+      'activeCount': activeCount,
+      'completedCount': completedCount,
+      'latestDate': latestDate,
+    };
+  }
+
+  /// Get active vouchers for a broker (remaining > 0)
+  static List<BrokerConsignment> getActiveBrokerVouchers(
+    List<BrokerConsignment> brokerVouchers,
+  ) {
+    final active = brokerVouchers
+        .where((bc) => !bc.isCompleted && bc.deletedAt == null)
+        .toList();
+    // Sort by latest date descending
+    active.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return active;
+  }
+
+  /// Get completed vouchers for a broker (remaining == 0)
+  static List<BrokerConsignment> getCompletedBrokerVouchers(
+    List<BrokerConsignment> brokerVouchers,
+  ) {
+    final completed = brokerVouchers
+        .where((bc) => bc.isCompleted && bc.deletedAt == null)
+        .toList();
+    // Sort by latest date descending
+    completed.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return completed;
+  }
+
+  /// Get sorted broker groups (active first, then by latest date)
+  static List<MapEntry<String, List<BrokerConsignment>>> getSortedBrokerGroups() {
+    final grouped = getGroupedBrokersByIdentity();
+    final entries = grouped.entries.toList();
+
+    entries.sort((a, b) {
+      final summaryA = getBrokerSummary(a.value);
+      final summaryB = getBrokerSummary(b.value);
+
+      // Active brokers first
+      final activeCountA = summaryA['activeCount'] as int;
+      final activeCountB = summaryB['activeCount'] as int;
+
+      if (activeCountA > 0 && activeCountB == 0) return -1;
+      if (activeCountA == 0 && activeCountB > 0) return 1;
+
+      // Then sort by latest date descending
+      final latestA = summaryA['latestDate'] as int;
+      final latestB = summaryB['latestDate'] as int;
+      return latestB.compareTo(latestA);
+    });
+
+    return entries;
+  }
+}
