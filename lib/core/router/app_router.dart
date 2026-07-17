@@ -14,6 +14,8 @@ import '../../features/account_settings/presentation/pages/account_settings_page
 import '../../features/broker_consignment/presentation/pages/broker_consignment_page.dart';
 import '../../features/broker_consignment/presentation/pages/broker_form_page.dart';
 import '../../features/broker_consignment/presentation/pages/broker_details_page.dart';
+import '../../features/broker_consignment/presentation/pages/broker_list_page.dart';
+import '../../features/broker_consignment/presentation/pages/broker_detail_page.dart';
 import '../../features/customers/presentation/pages/customers_page.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -84,14 +86,25 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/broker-consignment',
       name: 'broker-consignment',
-      builder: (context, state) => const BrokerConsignmentPage(),
+      builder: (context, state) => const BrokerListPage(),
       routes: [
         GoRoute(
           path: 'form',
           name: 'broker-form',
-          builder: (context, state) => BrokerFormPage(
-            brokerId: state.pathParameters['brokerId'],
-          ),
+          builder: (context, state) => const BrokerFormPage(),
+        ),
+        GoRoute(
+          path: 'detail',
+          name: 'broker-detail',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return BrokerDetailPage(
+              brokerName: extra?['brokerName'] ?? '',
+              brokerPhone: extra?['brokerPhone'] ?? '',
+              brokerAddress: extra?['brokerAddress'] ?? '',
+              vouchers: extra?['vouchers'] ?? [],
+            );
+          },
         ),
         GoRoute(
           path: ':id',
