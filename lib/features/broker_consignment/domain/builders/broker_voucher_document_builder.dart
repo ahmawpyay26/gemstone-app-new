@@ -24,10 +24,10 @@ class BrokerVoucherDocumentBuilder {
       documentItems.add(
         BrokerVoucherDocumentItem(
           itemNumber: i + 1,
-          itemName: item.gemstoneType ?? 'Unknown',
-          sourceType: item.sourceType ?? 'အခွဲ',
-          weight: item.weight ?? 0,
-          weightUnit: item.weightUnit ?? 'ကျပ်',
+          itemName: item.historicalData.gemstoneType,
+          sourceType: item.historicalData.sourceType,
+          weight: item.historicalData.originalWeight,
+          weightUnit: 'ကျပ်', // Fixed unit for Myanmar gemstones
           consignedQuantity: item.consignedQuantity,
           soldQuantity: item.soldQuantity,
           returnedQuantity: item.returnedQuantity,
