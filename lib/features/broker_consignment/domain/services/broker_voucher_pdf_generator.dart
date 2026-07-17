@@ -1,10 +1,11 @@
+import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../models/broker_voucher_document.dart';
 
 /// Generates multi-page PDF bytes for broker vouchers with Myanmar text support
 class BrokerVoucherPdfGenerator {
-  static const String _fontFamily = 'Padauk';
   static const double _margin = 20;
   static const double _itemsPerPage = 15;
   
@@ -17,7 +18,15 @@ class BrokerVoucherPdfGenerator {
   static Future<Uint8List> generatePdf(
     BrokerVoucherDocumentData data,
   ) async {
-    final pdf = pw.Document();
+    // Load Padauk font
+    final padaukFont = await _loadPadaukFont();
+    
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: padaukFont,
+        bold: padaukFont,
+      ),
+    );
 
     // Calculate number of pages needed
     final totalPages = ((data.items.length - 1) ~/ _itemsPerPage.toInt()) + 1;
@@ -37,21 +46,21 @@ class BrokerVoucherPdfGenerator {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 // Header
-                _buildHeader(data),
+                _buildHeader(data, padaukFont),
                 pw.SizedBox(height: 12),
 
                 // Broker Information
-                _buildBrokerInfo(data),
+                _buildBrokerInfo(data, padaukFont),
                 pw.SizedBox(height: 12),
 
                 // Items Table
-                _buildItemsTable(pageItems, data.totals),
+                _buildItemsTable(pageItems, data.totals, padaukFont),
 
                 // Page break space
                 pw.Spacer(),
 
                 // Footer with page number
-                _buildFooter(pageNum + 1, totalPages),
+                _buildFooter(pageNum + 1, totalPages, padaukFont),
               ],
             );
           },
@@ -62,8 +71,14 @@ class BrokerVoucherPdfGenerator {
     return pdf.save();
   }
 
+  /// Load Padauk font from assets
+  static Future<pw.Font> _loadPadaukFont() async {
+    final fontData = await rootBundle.load('assets/fonts/Padauk-Regular.ttf');
+    return pw.Font.ttf(fontData);
+  }
+
   /// Build header section with app name and voucher title
-  static pw.Widget _buildHeader(BrokerVoucherDocumentData data) {
+  static pw.Widget _buildHeader(BrokerVoucherDocumentData data, pw.Font padaukFont) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -82,7 +97,7 @@ class BrokerVoucherPdfGenerator {
         pw.Text(
           'ပွဲစားအပ်နှံဘောင်ချာ',
           style: pw.TextStyle(
-            fontFamily: _fontFamily,
+            font: padaukFont,
             fontSize: 16,
             fontWeight: pw.FontWeight.bold,
           ),
@@ -96,14 +111,14 @@ class BrokerVoucherPdfGenerator {
             pw.Text(
               'ဘောင်ချာ နံပါတ်: ${data.voucherNumber}',
               style: pw.TextStyle(
-                fontFamily: _fontFamily,
+                font: padaukFont,
                 fontSize: 11,
               ),
             ),
             pw.Text(
               'ရက်စွဲ: ${data.formattedDate}',
               style: pw.TextStyle(
-                fontFamily: _fontFamily,
+                font: padaukFont,
                 fontSize: 11,
               ),
             ),
@@ -114,7 +129,7 @@ class BrokerVoucherPdfGenerator {
   }
 
   /// Build broker information section
-  static pw.Widget _buildBrokerInfo(BrokerVoucherDocumentData data) {
+  static pw.Widget _buildBrokerInfo(BrokerVoucherDocumentData data, pw.Font padaukFont) {
     return pw.Container(
       padding: pw.EdgeInsets.all(8),
       decoration: pw.BoxDecoration(
@@ -126,7 +141,7 @@ class BrokerVoucherPdfGenerator {
           pw.Text(
             'ပွဲစားအချက်အလက်',
             style: pw.TextStyle(
-              fontFamily: _fontFamily,
+              font: padaukFont,
               fontSize: 11,
               fontWeight: pw.FontWeight.bold,
             ),
@@ -135,14 +150,14 @@ class BrokerVoucherPdfGenerator {
           pw.Text(
             'နာမည်: ${data.brokerName}',
             style: pw.TextStyle(
-              fontFamily: _fontFamily,
+              font: padaukFont,
               fontSize: 10,
             ),
           ),
           pw.Text(
             'ဖုန်း: ${data.brokerPhone}',
             style: pw.TextStyle(
-              fontFamily: _fontFamily,
+              font: padaukFont,
               fontSize: 10,
             ),
           ),
@@ -150,7 +165,7 @@ class BrokerVoucherPdfGenerator {
             pw.Text(
               'လိပ်စာ: ${data.brokerAddress}',
               style: pw.TextStyle(
-                fontFamily: _fontFamily,
+                font: padaukFont,
                 fontSize: 10,
               ),
             ),
@@ -158,7 +173,7 @@ class BrokerVoucherPdfGenerator {
             pw.Text(
               'မှတ်ချက်: ${data.notes}',
               style: pw.TextStyle(
-                fontFamily: _fontFamily,
+                font: padaukFont,
                 fontSize: 10,
               ),
             ),
@@ -171,6 +186,7 @@ class BrokerVoucherPdfGenerator {
   static pw.Widget _buildItemsTable(
     List<BrokerVoucherDocumentItem> items,
     BrokerVoucherDocumentTotals totals,
+    pw.Font padaukFont,
   ) {
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey400),
@@ -189,14 +205,14 @@ class BrokerVoucherPdfGenerator {
         pw.TableRow(
           decoration: pw.BoxDecoration(color: PdfColors.grey300),
           children: [
-            _buildTableCell('စဉ်', isHeader: true),
-            _buildTableCell('ပစ္စည်းအမည်', isHeader: true),
-            _buildTableCell('အမျိုးအစား', isHeader: true),
-            _buildTableCell('အလေးချိန်', isHeader: true),
-            _buildTableCell('အပ်ထားသည့်\nခုနှုန်း', isHeader: true),
-            _buildTableCell('ရောင်းချ', isHeader: true),
-            _buildTableCell('ပြန်လည်\nရယူ', isHeader: true),
-            _buildTableCell('ကျန်ရှိ', isHeader: true),
+            _buildTableCell('စဉ်', padaukFont, isHeader: true),
+            _buildTableCell('ပစ္စည်းအမည်', padaukFont, isHeader: true),
+            _buildTableCell('အမျိုးအစား', padaukFont, isHeader: true),
+            _buildTableCell('အလေးချိန်', padaukFont, isHeader: true),
+            _buildTableCell('အပ်ထားသည့်\nခုနှုန်း', padaukFont, isHeader: true),
+            _buildTableCell('ရောင်းချ', padaukFont, isHeader: true),
+            _buildTableCell('ပြန်လည်\nရယူ', padaukFont, isHeader: true),
+            _buildTableCell('ကျန်ရှိ', padaukFont, isHeader: true),
           ],
         ),
 
@@ -204,14 +220,14 @@ class BrokerVoucherPdfGenerator {
         ...items.map((item) {
           return pw.TableRow(
             children: [
-              _buildTableCell('${item.itemNumber}'),
-              _buildTableCell(item.itemName),
-              _buildTableCell(item.sourceType),
-              _buildTableCell('${item.weight} ${item.weightUnit}'),
-              _buildTableCell('${item.consignedQuantity.toStringAsFixed(2)}'),
-              _buildTableCell('${item.soldQuantity.toStringAsFixed(2)}'),
-              _buildTableCell('${item.returnedQuantity.toStringAsFixed(2)}'),
-              _buildTableCell('${item.remainingQuantity.toStringAsFixed(2)}'),
+              _buildTableCell('${item.itemNumber}', padaukFont),
+              _buildTableCell(item.itemName, padaukFont),
+              _buildTableCell(item.sourceType, padaukFont),
+              _buildTableCell('${item.weight} ${item.weightUnit}', padaukFont),
+              _buildTableCell('${item.consignedQuantity.toStringAsFixed(2)}', padaukFont),
+              _buildTableCell('${item.soldQuantity.toStringAsFixed(2)}', padaukFont),
+              _buildTableCell('${item.returnedQuantity.toStringAsFixed(2)}', padaukFont),
+              _buildTableCell('${item.remainingQuantity.toStringAsFixed(2)}', padaukFont),
             ],
           );
         }),
@@ -220,14 +236,14 @@ class BrokerVoucherPdfGenerator {
         pw.TableRow(
           decoration: pw.BoxDecoration(color: PdfColors.grey200),
           children: [
-            _buildTableCell('စုစုပေါင်း', isHeader: true),
-            _buildTableCell('${totals.distinctItemCount} ပစ္စည်း', isHeader: true),
-            _buildTableCell('', isHeader: true),
-            _buildTableCell('', isHeader: true),
-            _buildTableCell('${totals.totalConsignedQuantity.toStringAsFixed(2)}', isHeader: true),
-            _buildTableCell('${totals.totalSoldQuantity.toStringAsFixed(2)}', isHeader: true),
-            _buildTableCell('${totals.totalReturnedQuantity.toStringAsFixed(2)}', isHeader: true),
-            _buildTableCell('${totals.totalRemainingQuantity.toStringAsFixed(2)}', isHeader: true),
+            _buildTableCell('စုစုပေါင်း', padaukFont, isHeader: true),
+            _buildTableCell('${totals.distinctItemCount} ပစ္စည်း', padaukFont, isHeader: true),
+            _buildTableCell('', padaukFont, isHeader: true),
+            _buildTableCell('', padaukFont, isHeader: true),
+            _buildTableCell('${totals.totalConsignedQuantity.toStringAsFixed(2)}', padaukFont, isHeader: true),
+            _buildTableCell('${totals.totalSoldQuantity.toStringAsFixed(2)}', padaukFont, isHeader: true),
+            _buildTableCell('${totals.totalReturnedQuantity.toStringAsFixed(2)}', padaukFont, isHeader: true),
+            _buildTableCell('${totals.totalRemainingQuantity.toStringAsFixed(2)}', padaukFont, isHeader: true),
           ],
         ),
       ],
@@ -236,7 +252,8 @@ class BrokerVoucherPdfGenerator {
 
   /// Build a single table cell
   static pw.Widget _buildTableCell(
-    String text, {
+    String text,
+    pw.Font padaukFont, {
     bool isHeader = false,
   }) {
     return pw.Padding(
@@ -244,7 +261,7 @@ class BrokerVoucherPdfGenerator {
       child: pw.Text(
         text,
         style: pw.TextStyle(
-          fontFamily: _fontFamily,
+          font: padaukFont,
           fontSize: isHeader ? 9 : 8,
           fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
         ),
@@ -254,7 +271,7 @@ class BrokerVoucherPdfGenerator {
   }
 
   /// Build footer with signatures and page number
-  static pw.Widget _buildFooter(int pageNum, int totalPages) {
+  static pw.Widget _buildFooter(int pageNum, int totalPages, pw.Font padaukFont) {
     return pw.Column(
       children: [
         pw.SizedBox(height: 12),
@@ -268,7 +285,7 @@ class BrokerVoucherPdfGenerator {
                 pw.Text(
                   'ပွဲစား လက်မှတ်',
                   style: pw.TextStyle(
-                    fontFamily: _fontFamily,
+                    font: padaukFont,
                     fontSize: 9,
                   ),
                 ),
@@ -281,7 +298,7 @@ class BrokerVoucherPdfGenerator {
                 pw.Text(
                   'စာမျက်နှာ $pageNum / $totalPages',
                   style: pw.TextStyle(
-                    fontFamily: _fontFamily,
+                    font: padaukFont,
                     fontSize: 9,
                   ),
                 ),
@@ -294,7 +311,7 @@ class BrokerVoucherPdfGenerator {
                 pw.Text(
                   'ကုန်သည် လက်မှတ်',
                   style: pw.TextStyle(
-                    fontFamily: _fontFamily,
+                    font: padaukFont,
                     fontSize: 9,
                   ),
                 ),
