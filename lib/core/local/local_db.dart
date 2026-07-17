@@ -1836,26 +1836,26 @@ class LocalDb {
       // For whole stone, validate against remaining quantity
       final dynamicRemaining = gemstoneRemainingQuantity(purchase);
       
-      // LOG: Whole stone validation
+      // LOG: Whole stone validation - FIX: Use dynamicRemaining instead of stale purchase.remainingQuantity
       RCALogCollector().addLog(
         'RCA_BROKER_CONSIGNMENT',
-        '[RCA-WHOLE-VALIDATION] gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining | condition: $consignedQuantity > ${purchase.remainingQuantity} = ${consignedQuantity > purchase.remainingQuantity}',
+        '[RCA-WHOLE-VALIDATION-FIX] gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining | condition: $consignedQuantity > $dynamicRemaining = ${consignedQuantity > dynamicRemaining}',
         1000,
       );
       developer.log(
-        '[RCA-WHOLE-VALIDATION] gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining | condition: $consignedQuantity > ${purchase.remainingQuantity} = ${consignedQuantity > purchase.remainingQuantity}',
+        '[RCA-WHOLE-VALIDATION-FIX] gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining | condition: $consignedQuantity > $dynamicRemaining = ${consignedQuantity > dynamicRemaining}',
         level: 1000,
         name: 'RCA_BROKER_CONSIGNMENT',
       );
       
-      if (consignedQuantity > purchase.remainingQuantity) {
+      if (consignedQuantity > dynamicRemaining) {
         RCALogCollector().addLog(
           'RCA_BROKER_CONSIGNMENT',
-          '[RCA-WHOLE-THROW] LINE 1788 | gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining',
+          '[RCA-WHOLE-THROW-FIX] LINE 1851 | gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | dynamicRemaining=$dynamicRemaining',
           2,
         );
         developer.log(
-          '[RCA-WHOLE-THROW] LINE 1788 | gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | purchase.remainingQuantity=${purchase.remainingQuantity} | dynamicRemaining=$dynamicRemaining',
+          '[RCA-WHOLE-THROW-FIX] LINE 1851 | gemstone=${purchase.name} | consignedQuantity=$consignedQuantity | dynamicRemaining=$dynamicRemaining',
           level: 1000,
           name: 'RCA_BROKER_CONSIGNMENT',
         );
