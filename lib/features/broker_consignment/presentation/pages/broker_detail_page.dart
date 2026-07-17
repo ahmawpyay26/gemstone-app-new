@@ -334,6 +334,41 @@ class _VoucherGroupCard extends StatefulWidget {
 class _VoucherGroupCardState extends State<_VoucherGroupCard> {
   bool _isExpanded = false;
 
+  void _handleVoucherMenuAction(BuildContext context, String action) {
+    switch (action) {
+      case 'edit':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ဘောင်ချာပြုပြင်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'delete':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ဘောင်ချာဖျက်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'print':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပရင့်ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'image':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပုံထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'pdf':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'photos':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ဓာတ်ပုံကြည့်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     double totalConsigned = 0;
@@ -382,7 +417,75 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    _handleVoucherMenuAction(context, value);
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 20),
+                          SizedBox(width: 8),
+                          Text('ဘောင်ချာပြုပြင်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('ဘောင်ချာဖျက်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem<String>(
+                      value: 'print',
+                      child: Row(
+                        children: [
+                          Icon(Icons.print, size: 20),
+                          SizedBox(width: 8),
+                          Text('ပရင့်ထုတ်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'image',
+                      child: Row(
+                        children: [
+                          Icon(Icons.image, size: 20),
+                          SizedBox(width: 8),
+                          Text('ပုံထုတ်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'pdf',
+                      child: Row(
+                        children: [
+                          Icon(Icons.picture_as_pdf, size: 20),
+                          SizedBox(width: 8),
+                          Text('PDF ထုတ်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'photos',
+                      child: Row(
+                        children: [
+                          Icon(Icons.photo_library, size: 20),
+                          SizedBox(width: 8),
+                          Text('ဓာတ်ပုံကြည့်ရန်'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 IconButton(
                   icon: Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,
@@ -422,34 +525,136 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
                   ...widget.items.asMap().entries.map((entry) {
                     final idx = entry.key + 1;
                     final item = entry.value;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'အရေးအသား $idx',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            Text('အပ်ထားသည့်ခုနှုန်း: ${item.consignedQuantity}'),
-                            Text('ရောင်းချ: ${item.soldQuantity}'),
-                            Text('ပြန်လည်ရယူ: ${item.returnedQuantity}'),
-                            Text('ကျန်ရှိ: ${item.remainingQuantity}'),
-                          ],
-                        ),
-                      ),
+                    return _ItemCard(
+                      itemIndex: idx,
+                      item: item,
                     );
                   }).toList(),
                 ],
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _ItemCard extends StatefulWidget {
+  final int itemIndex;
+  final BrokerConsignment item;
+
+  const _ItemCard({
+    required this.itemIndex,
+    required this.item,
+  });
+
+  @override
+  State<_ItemCard> createState() => _ItemCardState();
+}
+
+class _ItemCardState extends State<_ItemCard> {
+  void _handleItemMenuAction(BuildContext context, String action) {
+    switch (action) {
+      case 'edit':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item ပြုပြင်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'delete':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item ဖျက်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'return':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပစ္စည်းပြန်အပ်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'photos':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ဓာတ်ပုံကြည့်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'အရေးအသား ${widget.itemIndex}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    _handleItemMenuAction(context, value);
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 20),
+                          SizedBox(width: 8),
+                          Text('Item ပြုပြင်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Item ဖျက်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem<String>(
+                      value: 'return',
+                      child: Row(
+                        children: [
+                          Icon(Icons.undo, size: 20),
+                          SizedBox(width: 8),
+                          Text('ပစ္စည်းပြန်အပ်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'photos',
+                      child: Row(
+                        children: [
+                          Icon(Icons.photo_library, size: 20),
+                          SizedBox(width: 8),
+                          Text('ဓာတ်ပုံကြည့်ရန်'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('အပ်ထားသည့်ခုနှုန်း: ${widget.item.consignedQuantity}'),
+            Text('ရောင်းချ: ${widget.item.soldQuantity}'),
+            Text('ပြန်လည်ရယူ: ${widget.item.returnedQuantity}'),
+            Text('ကျန်ရှိ: ${widget.item.remainingQuantity}'),
+          ],
+        ),
       ),
     );
   }
@@ -470,6 +675,41 @@ class _CompletedVoucherCard extends StatefulWidget {
 
 class _CompletedVoucherCardState extends State<_CompletedVoucherCard> {
   bool _isExpanded = false;
+
+  void _handleVoucherMenuAction(BuildContext context, String action) {
+    switch (action) {
+      case 'edit':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ဘောင်ချာပြုပြင်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'delete':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ဘောင်ချာဖျက်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'print':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပရင့်ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'image':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပုံထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'pdf':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+      case 'photos':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ဓာတ်ပုံကြည့်ရန် - လုပ်ဆောင်နေသည်')),
+        );
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -515,7 +755,75 @@ class _CompletedVoucherCardState extends State<_CompletedVoucherCard> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    _handleVoucherMenuAction(context, value);
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 20),
+                          SizedBox(width: 8),
+                          Text('ဘောင်ချာပြုပြင်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('ဘောင်ချာဖျက်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem<String>(
+                      value: 'print',
+                      child: Row(
+                        children: [
+                          Icon(Icons.print, size: 20),
+                          SizedBox(width: 8),
+                          Text('ပရင့်ထုတ်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'image',
+                      child: Row(
+                        children: [
+                          Icon(Icons.image, size: 20),
+                          SizedBox(width: 8),
+                          Text('ပုံထုတ်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'pdf',
+                      child: Row(
+                        children: [
+                          Icon(Icons.picture_as_pdf, size: 20),
+                          SizedBox(width: 8),
+                          Text('PDF ထုတ်ရန်'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'photos',
+                      child: Row(
+                        children: [
+                          Icon(Icons.photo_library, size: 20),
+                          SizedBox(width: 8),
+                          Text('ဓာတ်ပုံကြည့်ရန်'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 IconButton(
                   icon: Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,
