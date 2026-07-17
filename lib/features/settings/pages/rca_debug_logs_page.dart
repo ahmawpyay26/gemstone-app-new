@@ -85,8 +85,13 @@ class _RCADebugLogsPageState extends State<RCADebugLogsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RCA Debug Logs'),
-        subtitle: Text('$logCount log entries'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('RCA Debug Logs'),
+            Text('$logCount log entries', style: const TextStyle(fontSize: 12)),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.content_copy),
