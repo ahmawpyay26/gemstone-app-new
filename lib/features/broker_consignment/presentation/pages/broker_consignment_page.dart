@@ -8,6 +8,7 @@ import '../../../../core/local/models.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
 import '../widgets/voucher_group_widgets.dart';
 import 'dart:developer' as developer;
+import '../../../../core/rca/rca_log_collector.dart';
 
 class BrokerConsignmentPage extends StatefulWidget {
   const BrokerConsignmentPage({Key? key}) : super(key: key);
@@ -403,7 +404,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                 },
                 onDelete: (item) => _showDeleteConfirmation(item),
                 onReturn: (item) {
-                  developer.log('[RESTORE-DIALOG-OPEN] item.id=${item.id} | remainingQty=${item.remainingQuantity}');
+                  RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-DIALOG-OPEN] item.id=${item.id} | remainingQty=${item.remainingQuantity}', 1);
                   
                   // Show return dialog with quantity input
                   showDialog(
@@ -411,7 +412,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                     builder: (context) {
                       // Capture item in local scope for the dialog
                       final brokerItem = item;
-                      developer.log('[RESTORE-DIALOG-BUILD] brokerItem.id=${brokerItem.id}');
+                      RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-DIALOG-BUILD] brokerItem.id=${brokerItem.id}', 1);
                       
                       return AlertDialog(
                         title: const Text('ပြန်လည်လက်ခံရန်'),
@@ -435,10 +436,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                     controller.text.trim().isNotEmpty &&
                                     error == null;
                                 
-                                developer.log(
-                                  '[RESTORE-ONCHANGED-BEFORE] brokerItem.id=${brokerItem.id} | enteredValue=$value | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | remainingQty=${brokerItem.remainingQuantity} | canRestore=$canRestore',
-                                  level: 1000,
-                                );
+                                RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-ONCHANGED-BEFORE] brokerItem.id=${brokerItem.id} | enteredValue=$value | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | remainingQty=${brokerItem.remainingQuantity} | canRestore=$canRestore', 1);
                                 
                                 setState(() {
                                   _validateReturnedQuantity(brokerItem, value);
@@ -448,10 +446,7 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                       controller.text.trim().isNotEmpty &&
                                       errorAfter == null;
                                   
-                                  developer.log(
-                                    '[RESTORE-ONCHANGED-AFTER] brokerItem.id=${brokerItem.id} | enteredValue=$value | errorAfter=$errorAfter | canRestoreAfter=$canRestoreAfter',
-                                    level: 1000,
-                                  );
+                                  RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-ONCHANGED-AFTER] brokerItem.id=${brokerItem.id} | enteredValue=$value | errorAfter=$errorAfter | canRestoreAfter=$canRestoreAfter', 1);
                                 });
                               },
                             ),
@@ -470,15 +465,12 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                                   controller.text.trim().isNotEmpty &&
                                   error == null;
                               
-                              developer.log(
-                                '[RESTORE-BUTTON-BUILD] brokerItem.id=${brokerItem.id} | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | canRestore=$canRestore',
-                                level: 1000,
-                              );
+                              RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-BUTTON-BUILD] brokerItem.id=${brokerItem.id} | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | canRestore=$canRestore', 1);
                               
                               return TextButton(
                                 onPressed: canRestore
                                     ? () {
-                                        developer.log('[RESTORE-BUTTON-PRESSED] brokerItem.id=${brokerItem.id}');
+                                        RCALogCollector().addLog('RCA_RESTORE_DIALOG', '[RESTORE-BUTTON-PRESSED] brokerItem.id=${brokerItem.id}', 1);
                                         Navigator.pop(context);
                                         _processReturn(brokerItem);
                                       }
