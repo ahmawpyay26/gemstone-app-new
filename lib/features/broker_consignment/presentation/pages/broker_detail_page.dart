@@ -334,17 +334,124 @@ class _VoucherGroupCard extends StatefulWidget {
 class _VoucherGroupCardState extends State<_VoucherGroupCard> {
   bool _isExpanded = false;
 
+  void _showVoucherEditDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('ဘောင်ချာပြုပြင်ရန်'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('ဘောင်ချာနို့: ${widget.voucherNumber}'),
+              const SizedBox(height: 8),
+              Text('အပ်ထားသည့်ခုနှုန်း: ${widget.items.length}'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'သတိ: ဘောင်ချာသည်ပြီးသားမရပါ။ ဤ အပ်ထားသည့်ခုနှုန်းသည် ပြီးသားမရပါ။',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('မပြုပြင်တော့ပါ'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showVoucherDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('ဘောင်ချာဖျက်မည်သည်'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('ဤ ဘောင်ချာကို ဖျက်ရန် သေချာပါသလား?'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'သတိ: ဘောင်ချာသည် လက်ကျန်ခုနှုန်း မရပါသား ဖျက်လို့ မရပါ။',
+                  style: TextStyle(fontSize: 12, color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('မဖျက်တော့ပါ'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  // Delete all items in this voucher
+                  final brokers = Hive.box<BrokerConsignment>('broker_consignments');
+                  for (final item in widget.items) {
+                    await brokers.delete(item.key);
+                  }
+
+                  if (context.mounted) {
+                    Navigator.pop(dialogContext);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('ဘောင်ချာ အောင်မြင်စွာ ဖျက်ပြီးပါပြီ'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    // Trigger parent refresh
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pop();
+                    }
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('အမှားအယွင်း: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              child: const Text('ဖျက်မည်'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _handleVoucherMenuAction(BuildContext context, String action) {
     switch (action) {
       case 'edit':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ဘောင်ချာပြုပြင်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _showVoucherEditDialog(context);
         break;
       case 'delete':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ဘောင်ချာဖျက်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _showVoucherDeleteConfirmation(context);
         break;
       case 'print':
         ScaffoldMessenger.of(context).showSnackBar(
