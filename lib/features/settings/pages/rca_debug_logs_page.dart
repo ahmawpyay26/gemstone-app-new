@@ -160,13 +160,15 @@ class _RCADebugLogsPageState extends State<RCADebugLogsPage> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: backgroundColor,
-                    border: Border.left(
-                      color: isError
-                          ? Colors.red
-                          : isSuccess
-                              ? Colors.green
-                              : Colors.blue,
-                      width: 3,
+                    border: Border(
+                      left: BorderSide(
+                        color: isError
+                            ? Colors.red
+                            : isSuccess
+                                ? Colors.green
+                                : Colors.blue,
+                        width: 3,
+                      ),
                     ),
                     borderRadius: BorderRadius.circular(4),
                   ),
