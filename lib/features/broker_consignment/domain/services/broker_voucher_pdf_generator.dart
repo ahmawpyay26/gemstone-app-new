@@ -5,11 +5,13 @@ import '../models/broker_voucher_document.dart';
 /// Generates multi-page PDF bytes for broker vouchers with Myanmar text support
 class BrokerVoucherPdfGenerator {
   static const String _fontFamily = 'Padauk';
-  static const double _pageWidth = PdfPageFormat.a4.width;
-  static const double _pageHeight = PdfPageFormat.a4.height;
   static const double _margin = 20;
-  static const double _contentWidth = _pageWidth - (2 * _margin);
   static const double _itemsPerPage = 15;
+  
+  // Page dimensions (cannot be const due to PdfPageFormat.a4 runtime evaluation)
+  static final double _pageWidth = PdfPageFormat.a4.width;
+  static final double _pageHeight = PdfPageFormat.a4.height;
+  static final double _contentWidth = _pageWidth - (2 * _margin);
 
   /// Generate PDF bytes from voucher document data
   static Future<Uint8List> generatePdf(
