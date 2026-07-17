@@ -1252,6 +1252,42 @@ class _ItemCardState extends State<_ItemCard> {
   }
 }
 
+  Future<void> _handleItemPdfExportAction(BuildContext context) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Item PDF ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+    );
+  }
+
+  Future<void> _handleItemPrintAction(BuildContext context) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Item ပရင့်ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+    );
+  }
+
+  Future<void> _handleItemImageExportAction(BuildContext context) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Item ပုံထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+    );
+  }
+
+  void _showItemPhotoViewer(BuildContext context) {
+    if (widget.item.photoPaths == null || widget.item.photoPaths!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ဓာတ်ပုံ မရှိပါ။')),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PhotoGalleryViewer(
+          photoPaths: widget.item.photoPaths!,
+          title: 'အရည်အသွေး ${widget.itemIndex + 1} ဓာတ်ပုံများ',
+        ),
+      ),
+    );
+  }
+
 class _CompletedVoucherCard extends StatefulWidget {
   final String voucherNumber;
   final List<BrokerSaleRecord> sales;
@@ -1281,24 +1317,16 @@ class _CompletedVoucherCardState extends State<_CompletedVoucherCard> {
         );
         break;
       case 'print':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပရင့်ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _handleItemPrintAction(context);
         break;
       case 'image':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပုံထုတ်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _handleItemImageExportAction(context);
         break;
       case 'pdf':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _handleItemPdfExportAction(context);
         break;
       case 'photos':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ဓာတ်ပုံကြည့်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _showItemPhotoViewer(context);
         break;
     }
   }
