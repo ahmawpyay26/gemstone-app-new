@@ -11,6 +11,7 @@ import '../widgets/photo_media_box.dart';
 import '../../domain/broker_consignment_validation.dart';
 import '../../../../core/rca/rca_log_collector.dart';
 import 'dart:developer' as developer;
+import 'package:flutter/services.dart';
 
 /// Temporary model for consignment items during form editing
 class ConsignmentItemTemp {
@@ -607,6 +608,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             // Phone
             TextField(
               controller: _brokerPhoneCtrl,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
               style: const TextStyle(color: Colors.white),
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
