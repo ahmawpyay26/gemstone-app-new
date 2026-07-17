@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 
@@ -432,7 +433,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
                   // Delete all items in this voucher
                   final brokers = Hive.box<BrokerConsignment>('broker_consignments');
                   for (final item in widget.items) {
-                    await brokers.delete(item.key);
+                    await brokers.delete(item.id);
                   }
 
                   if (context.mounted) {
@@ -762,7 +763,7 @@ class _ItemCardState extends State<_ItemCard> {
                     try {
                       widget.item.consignedQuantity = newConsigned;
                       final brokers = Hive.box<BrokerConsignment>('broker_consignments');
-                      await brokers.put(widget.item.key, widget.item);
+                      await brokers.put(widget.item.id, widget.item);
 
                       if (context.mounted) {
                         Navigator.pop(dialogContext);
@@ -842,7 +843,7 @@ class _ItemCardState extends State<_ItemCard> {
                 onPressed: () async {
                   try {
                     final brokers = Hive.box<BrokerConsignment>('broker_consignments');
-                    await brokers.delete(widget.item.key);
+                    await brokers.delete(widget.item.id);
 
                     if (context.mounted) {
                       Navigator.pop(dialogContext);
