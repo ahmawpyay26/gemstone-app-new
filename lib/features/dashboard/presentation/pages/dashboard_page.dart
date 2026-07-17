@@ -25,9 +25,22 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('အဓိကစာမျက်နှာ'),
+        title: const Text('အဒောကစါတင်'),
         backgroundColor: AppTheme.primaryAccent,
         elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(30),
+          child: Container(
+            width: double.infinity,
+            color: Colors.red,
+            padding: const EdgeInsets.all(4),
+            child: const Text(
+              'BUILD a11d19c',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),

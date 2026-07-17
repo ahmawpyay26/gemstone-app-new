@@ -139,14 +139,32 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
             icon: const Icon(Icons.arrow_back),
             onPressed: () =>
                 context.canPop() ? context.pop() : context.go('/dashboard')),
-        bottom: TabBar(
-          controller: _tabController,
-        tabs: const [
-          Tab(text: 'အကောင့် အချက်အလက်'),
-          Tab(text: 'အကျင့်စာရင်း'),
-          Tab(text: 'ဖျက်ထားသော အရောင်း'),
-          Tab(text: 'RCA Debug Logs'),
-        ],
+        backgroundColor: AppTheme.primaryDark,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(100),
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                color: Colors.red,
+                padding: const EdgeInsets.all(8),
+                child: const Text(
+                  'RCA BUILD a11d19c',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(text: 'အကောင့် အချက်အလက်'),
+                  Tab(text: 'အကျင့်စာရင်း'),
+                  Tab(text: 'ဖျက်ထားသော အရောင်း'),
+                  Tab(text: 'RCA Debug Logs'),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
       body: TabBarView(
@@ -158,6 +176,33 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // RCA Debug Logs Direct Access Button
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const RCADebugLogsPage(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Open RCA Debug Logs',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 // User Info
                 Container(
                   width: double.infinity,
