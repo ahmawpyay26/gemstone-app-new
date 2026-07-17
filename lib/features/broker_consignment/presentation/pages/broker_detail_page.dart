@@ -1294,16 +1294,24 @@ class _CompletedVoucherCardState extends State<_CompletedVoucherCard> {
         );
         break;
       case 'print':
-        _handleItemPrintAction(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပွဲစား ပရင့်ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+        );
         break;
       case 'image':
-        _handleItemImageExportAction(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပွဲစား ပုံထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+        );
         break;
       case 'pdf':
-        _handleItemPdfExportAction(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပွဲစား PDF ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
+        );
         break;
       case 'photos':
-        _showItemPhotoViewer(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ပွဲစား ဓာတ်ပုံများ - လုပ်ဆောင်နေသည်')),
+        );
         break;
     }
   }
