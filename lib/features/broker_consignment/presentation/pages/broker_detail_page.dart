@@ -372,6 +372,30 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
     );
   }
 
+  void _showVoucherPhotoViewer(BuildContext context) {
+    // Get all photos from items in this voucher
+    final allPhotos = <String>[];
+    for (final item in widget.items) {
+      if (item.photos != null && item.photos!.isNotEmpty) {
+        allPhotos.addAll(item.photos!);
+      }
+    }
+
+    if (allPhotos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ဓာတ်ပုံ မရှိပါ။')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return _PhotoGalleryDialog(photos: allPhotos);
+      },
+    );
+  }
+
   void _showVoucherDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
@@ -469,9 +493,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         );
         break;
       case 'photos':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ဓာတ်ပုံကြည့်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _showVoucherPhotoViewer(context);
         break;
     }
   }
@@ -1315,6 +1337,91 @@ class _SummaryRow extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Photo Gallery Dialog Widget
+class _PhotoGalleryDialog extends StatefulWidget {
+  final List<String> photos;
+
+  const _PhotoGalleryDialog({required this.photos});
+
+  @override
+  State<_PhotoGalleryDialog> createState() => _PhotoGalleryDialogState();
+}
+
+class _PhotoGalleryDialogState extends State<_PhotoGalleryDialog> {
+  int _currentIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppBar(
+            title: Text('ဓာတ်ပုံ (${_currentIndex + 1}/${widget.photos.length})'),
+            automaticallyImplyLeading: true,
+          ),
+          Expanded(
+            child: PageView.builder(
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              itemCount: widget.photos.length,
+              itemBuilder: (context, index) {
+                return Image.network(
+                  widget.photos[index],
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.broken_image, size: 64),
+                          const SizedBox(height: 8),
+                          const Text('ဓာတ်ပုံ ဖွင့်မရပါ။'),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: _currentIndex > 0
+                      ? () {
+                          setState(() {
+                            _currentIndex--;
+                          });
+                        }
+                      : null,
+                  child: const Text('ယခင်'),
+                ),
+                ElevatedButton(
+                  onPressed: _currentIndex < widget.photos.length - 1
+                      ? () {
+                          setState(() {
+                            _currentIndex++;
+                          });
+                        }
+                      : null,
+                  child: const Text('နောက်'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
