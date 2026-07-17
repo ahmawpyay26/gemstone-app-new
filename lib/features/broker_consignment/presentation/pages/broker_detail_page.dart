@@ -553,6 +553,113 @@ class _ItemCard extends StatefulWidget {
 }
 
 class _ItemCardState extends State<_ItemCard> {
+  void _showItemReturnDialog(BuildContext context) {
+    final returnController = TextEditingController();
+    String? errorMessage;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text('ပစ္စည်းပြန်အပ်ရန်'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('အပ်ထားသည့်ခုနှုန်း: ${widget.item.consignedQuantity}'),
+                    Text('ရောင်းချ: ${widget.item.soldQuantity}'),
+                    Text('ယခင်ပြန်လည်ရယူ: ${widget.item.returnedQuantity}'),
+                    Text('လက်ကျန်ခုနှုန်း: ${widget.item.remainingQuantity}'),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: returnController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'ပြန်လည်ရယူမည့်ခုနှုန်း',
+                        hintText: '0.00',
+                        errorText: errorMessage,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'မှတ်ချက် (ရွေးချယ်ခွင့်)',
+                        hintText: 'ပြန်လည်ရယူရခြင်းအကြောင်း မှတ်ချက်',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('မပြန်အပ်တော့ပါ'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final returnQtyStr = returnController.text.trim();
+                    if (returnQtyStr.isEmpty) {
+                      setState(() {
+                        errorMessage = 'ခုနှုန်းထည့်သွင်းပါ';
+                      });
+                      return;
+                    }
+
+                    final returnQty = double.tryParse(returnQtyStr);
+                    if (returnQty == null || returnQty <= 0) {
+                      setState(() {
+                        errorMessage = 'ခုနှုန်းသည် သုည ထက် ကြီးရမည်';
+                      });
+                      return;
+                    }
+
+                    if (returnQty > widget.item.remainingQuantity) {
+                      setState(() {
+                        errorMessage = 'ပြန်လည်ရယူမည့်ခုနှုန်း လက်ကျန်ထက် မများရပါ';
+                      });
+                      return;
+                    }
+
+                    try {
+                      await LocalDb.processBrokerReturn(
+                        brokerConsignmentId: widget.item.id,
+                        returnedQuantity: returnQty,
+                      );
+
+                      if (context.mounted) {
+                        Navigator.pop(dialogContext);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${returnQty.toStringAsFixed(2)} ခု ပြန်လည်ရယူခြင်း အောင်မြင်ပြီး'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        // Trigger parent refresh
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pop();
+                        }
+                      }
+                    } catch (e) {
+                      setState(() {
+                        errorMessage = e.toString();
+                      });
+                    }
+                  },
+                  child: const Text('ပြန်အပ်မည်'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _handleItemMenuAction(BuildContext context, String action) {
     switch (action) {
       case 'edit':
@@ -566,9 +673,7 @@ class _ItemCardState extends State<_ItemCard> {
         );
         break;
       case 'return':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပစ္စည်းပြန်အပ်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _showItemReturnDialog(context);
         break;
       case 'photos':
         ScaffoldMessenger.of(context).showSnackBar(
