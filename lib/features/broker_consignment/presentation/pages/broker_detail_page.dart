@@ -336,13 +336,15 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
 
   @override
   Widget build(BuildContext context) {
-    double totalWholeQty = 0;
-    double totalFragmentQty = 0;
+    double totalConsigned = 0;
+    double totalSold = 0;
+    double totalReturned = 0;
     double totalRemaining = 0;
 
     for (final item in widget.items) {
-      totalWholeQty += item.wholeStoneQuantity;
-      totalFragmentQty += item.breakdownItemQuantity;
+      totalConsigned += item.consignedQuantity;
+      totalSold += item.soldQuantity;
+      totalReturned += item.returnedQuantity;
       totalRemaining += item.remainingQuantity;
     }
 
@@ -406,8 +408,9 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _SummaryRow('စုစုပေါင်းခုနှုန်း', '${widget.items.length}'),
-                  _SummaryRow('စုစုပေါင်း (ကျောက်အလုံး)', totalWholeQty.toStringAsFixed(2)),
-                  _SummaryRow('စုစုပေါင်း (အစိတ်စိတ်)', totalFragmentQty.toStringAsFixed(2)),
+                  _SummaryRow('စုစုပေါင်းအပ်ထားသည့်ခုနှုန်း', totalConsigned.toStringAsFixed(2)),
+                  _SummaryRow('စုစုပေါင်းရောင်းချ', totalSold.toStringAsFixed(2)),
+                  _SummaryRow('စုစုပေါင်းပြန်လည်ရယူ', totalReturned.toStringAsFixed(2)),
                   _SummaryRow('ကျန်ရှိ', totalRemaining.toStringAsFixed(2)),
                   const Divider(),
                   const SizedBox(height: 8),
@@ -434,8 +437,9 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
                               'အရေးအသား $idx',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            Text('ကျောက်အလုံး: ${item.wholeStoneQuantity}'),
-                            Text('အစိတ်စိတ်: ${item.breakdownItemQuantity}'),
+                            Text('အပ်ထားသည့်ခုနှုန်း: ${item.consignedQuantity}'),
+                            Text('ရောင်းချ: ${item.soldQuantity}'),
+                            Text('ပြန်လည်ရယူ: ${item.returnedQuantity}'),
                             Text('ကျန်ရှိ: ${item.remainingQuantity}'),
                           ],
                         ),

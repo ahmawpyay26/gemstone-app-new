@@ -2560,7 +2560,7 @@ class LocalDb {
     List<BrokerConsignment> completedVouchers,
   ) {
     final grouped = <String, List<BrokerSaleRecord>>{};
-    final salesBox = Hive.box<BrokerSaleRecord>(brokerSalesBox);
+    final salesBox = brokerSaleRecords();
 
     for (final bc in completedVouchers) {
       if (!bc.isCompleted || bc.deletedAt != null) continue;
