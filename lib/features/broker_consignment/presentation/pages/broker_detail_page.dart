@@ -1428,3 +1428,33 @@ class _PhotoGalleryDialogState extends State<_PhotoGalleryDialog> {
     );
   }
 }
+
+// Extension for export functionality
+extension VoucherExport on _VoucherGroupCardState {
+  void _handleVoucherPrint(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('ပရင့်ထုတ်ခြင်း - လုပ်ဆောင်နေသည်'),
+        backgroundColor: Colors.blue,
+      ),
+    );
+  }
+
+  void _handleVoucherImageExport(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('ပုံထုတ်ခြင်း - လုပ်ဆောင်နေသည်'),
+        backgroundColor: Colors.blue,
+      ),
+    );
+  }
+
+  void _handleVoucherPdfExport(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('PDF ထုတ်ခြင်း - လုပ်ဆောင်နေသည်'),
+        backgroundColor: Colors.blue,
+      ),
+    );
+  }
+}
