@@ -37,9 +37,7 @@ class ConsignmentItemTemp {
 }
 
 class BrokerFormPage extends StatefulWidget {
-  final String? brokerId;
-
-  const BrokerFormPage({Key? key, this.brokerId}) : super(key: key);
+  const BrokerFormPage({Key? key}) : super(key: key);
 
   @override
   State<BrokerFormPage> createState() => _BrokerFormPageState();
