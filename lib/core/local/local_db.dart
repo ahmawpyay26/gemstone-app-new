@@ -1708,12 +1708,55 @@ class LocalDb {
     Gemstone updated,
   ) async {
     final gemstones = Hive.box<Gemstone>(gemstonesBox);
+    
+    // LOG: Entry with purchaseId
+    developer.log(
+      '[HIVE-LOOKUP-START] Searching for purchaseId=$purchaseId in Hive box',
+      level: 1000,
+      name: 'HIVE_LOOKUP_DEBUG',
+    );
+    
+    // LOG: All Hive keys and gemstone IDs
+    final allKeys = gemstones.keys.toList();
+    developer.log(
+      '[HIVE-LOOKUP-KEYS] Total Hive keys: ${allKeys.length}',
+      level: 1000,
+      name: 'HIVE_LOOKUP_DEBUG',
+    );
+    
+    for (final k in allKeys) {
+      final g = gemstones.get(k);
+      developer.log(
+        '[HIVE-LOOKUP-ENTRY] hiveKey=$k | gemstoneId=${g?.id} | gemstoneName=${g?.name} | matches=${g?.id == purchaseId}',
+        level: 1000,
+        name: 'HIVE_LOOKUP_DEBUG',
+      );
+    }
+    
     final key = gemstones.keys.firstWhere(
       (k) => gemstones.get(k)?.id == purchaseId,
       orElse: () => null,
     );
+    
+    // LOG: Result of lookup
     if (key != null) {
+      developer.log(
+        '[HIVE-LOOKUP-FOUND] purchaseId=$purchaseId | foundHiveKey=$key | WILL EXECUTE gemstones.put()',
+        level: 1000,
+        name: 'HIVE_LOOKUP_DEBUG',
+      );
       await gemstones.put(key, updated);
+      developer.log(
+        '[HIVE-LOOKUP-SAVED] purchaseId=$purchaseId | hiveKey=$key | SAVE COMPLETED',
+        level: 1000,
+        name: 'HIVE_LOOKUP_DEBUG',
+      );
+    } else {
+      developer.log(
+        '[HIVE-LOOKUP-NOT-FOUND] purchaseId=$purchaseId | NO MATCHING HIVE KEY FOUND | gemstones.put() SKIPPED',
+        level: 1000,
+        name: 'HIVE_LOOKUP_DEBUG',
+      );
     }
   }
 
