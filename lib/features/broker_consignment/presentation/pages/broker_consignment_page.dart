@@ -409,7 +409,9 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                   showDialog(
                     context: context,
                     builder: (context) {
-                      developer.log('[RESTORE-DIALOG-BUILD] item.id=${item.id}');
+                      // Capture item in local scope for the dialog
+                      final brokerItem = item;
+                      developer.log('[RESTORE-DIALOG-BUILD] brokerItem.id=${brokerItem.id}');
                       
                       return AlertDialog(
                         title: const Text('ပြန်လည်လက်ခံရန်'),
@@ -417,37 +419,37 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('လက်ကျန်အရေအတွက်: ${item.remainingQuantity.toStringAsFixed(0)}'),
+                            Text('လက်ကျန်အရေအတွက်: ${brokerItem.remainingQuantity.toStringAsFixed(0)}'),
                             const SizedBox(height: 12),
                             TextField(
-                              controller: _returnedQtyControllers[item.id],
+                              controller: _returnedQtyControllers[brokerItem.id],
                               keyboardType: TextInputType.number,
                               decoration: InputDecoration(
                                 hintText: 'အရေအတွက်ထည့်သွင်းရန်',
-                                errorText: _returnedQtyErrors[item.id],
+                                errorText: _returnedQtyErrors[brokerItem.id],
                               ),
                               onChanged: (value) {
-                                final controller = _returnedQtyControllers[item.id];
-                                final error = _returnedQtyErrors[item.id];
+                                final controller = _returnedQtyControllers[brokerItem.id];
+                                final error = _returnedQtyErrors[brokerItem.id];
                                 final canRestore = controller != null &&
                                     controller.text.trim().isNotEmpty &&
                                     error == null;
                                 
                                 developer.log(
-                                  '[RESTORE-ONCHANGED-BEFORE] item.id=${item.id} | enteredValue=$value | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | remainingQty=${item.remainingQuantity} | canRestore=$canRestore',
+                                  '[RESTORE-ONCHANGED-BEFORE] brokerItem.id=${brokerItem.id} | enteredValue=$value | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | remainingQty=${brokerItem.remainingQuantity} | canRestore=$canRestore',
                                   level: 1000,
                                 );
                                 
                                 setState(() {
-                                  _validateReturnedQuantity(item, value);
+                                  _validateReturnedQuantity(brokerItem, value);
                                   
-                                  final errorAfter = _returnedQtyErrors[item.id];
+                                  final errorAfter = _returnedQtyErrors[brokerItem.id];
                                   final canRestoreAfter = controller != null &&
                                       controller.text.trim().isNotEmpty &&
                                       errorAfter == null;
                                   
                                   developer.log(
-                                    '[RESTORE-ONCHANGED-AFTER] item.id=${item.id} | enteredValue=$value | errorAfter=$errorAfter | canRestoreAfter=$canRestoreAfter',
+                                    '[RESTORE-ONCHANGED-AFTER] brokerItem.id=${brokerItem.id} | enteredValue=$value | errorAfter=$errorAfter | canRestoreAfter=$canRestoreAfter',
                                     level: 1000,
                                   );
                                 });
@@ -462,23 +464,23 @@ class _BrokerConsignmentPageState extends State<BrokerConsignmentPage> {
                           ),
                           Builder(
                             builder: (buttonContext) {
-                              final controller = _returnedQtyControllers[item.id];
-                              final error = _returnedQtyErrors[item.id];
+                              final controller = _returnedQtyControllers[brokerItem.id];
+                              final error = _returnedQtyErrors[brokerItem.id];
                               final canRestore = controller != null &&
                                   controller.text.trim().isNotEmpty &&
                                   error == null;
                               
                               developer.log(
-                                '[RESTORE-BUTTON-BUILD] item.id=${item.id} | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | canRestore=$canRestore',
+                                '[RESTORE-BUTTON-BUILD] brokerItem.id=${brokerItem.id} | controller=${controller != null ? "EXISTS" : "NULL"} | controller.text="${controller?.text ?? "NULL"}" | text.isNotEmpty=${controller?.text.isNotEmpty ?? false} | text.trim().isNotEmpty=${controller?.text.trim().isNotEmpty ?? false} | error=$error | canRestore=$canRestore',
                                 level: 1000,
                               );
                               
                               return TextButton(
                                 onPressed: canRestore
                                     ? () {
-                                        developer.log('[RESTORE-BUTTON-PRESSED] item.id=${item.id}');
+                                        developer.log('[RESTORE-BUTTON-PRESSED] brokerItem.id=${brokerItem.id}');
                                         Navigator.pop(context);
-                                        _processReturn(item);
+                                        _processReturn(brokerItem);
                                       }
                                     : null,
                                 child: const Text('လက်ခံရန်'),
