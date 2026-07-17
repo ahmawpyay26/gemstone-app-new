@@ -16,6 +16,7 @@ class RCALogCollector {
     'HIVE_LOOKUP_DEBUG',
     'RCA_BROKER_CONSIGNMENT',
     'RCA_FINAL_SAVE',
+    'RCA_RESTORE_DIALOG',
   ];
 
   /// Add a log entry
