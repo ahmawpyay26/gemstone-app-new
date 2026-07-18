@@ -272,11 +272,53 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         if (item.selectedPurchase == null || item.selectedBreakdownItem == null) {
           return false;
         }
-        // Check quantity against breakdown item available quantity
-        if (item.availableBreakdownItems.containsKey(item.selectedBreakdownItem)) {
-          final availableQty = item.availableBreakdownItems[item.selectedBreakdownItem]!;
-          if (item.consignedQuantity > availableQty) {
-            return false;
+        
+        // Edit mode: apply inventory safety formula for breakdown items
+        if (_isEditMode) {
+          final originalQty = _editOriginalQuantities[item.id] ?? 0.0;
+          
+          if (item.availableBreakdownItems.containsKey(item.selectedBreakdownItem)) {
+            final currentAvailable = item.availableBreakdownItems[item.selectedBreakdownItem]!.toDouble();
+            final effectiveAvailable = currentAvailable + originalQty;
+            
+            developer.log(
+              'INVENTORY_VALIDATION (EDIT BREAKDOWN): id=${item.id}, '
+              'breakdownItem=${item.selectedBreakdownItem}, '
+              'currentAvailable=$currentAvailable, '
+              'originalQty=$originalQty, '
+              'editedQty=${item.consignedQuantity}, '
+              'effectiveAvailable=$effectiveAvailable',
+              name: 'BrokerFormPage',
+            );
+            
+            if (item.consignedQuantity > effectiveAvailable) {
+              developer.log(
+                'VALIDATION_FAILED: breakdown item edited quantity exceeds effective available',
+                name: 'BrokerFormPage',
+              );
+              return false;
+            }
+          }
+        } else {
+          // Create mode: validate against current available only
+          if (item.availableBreakdownItems.containsKey(item.selectedBreakdownItem)) {
+            final availableQty = item.availableBreakdownItems[item.selectedBreakdownItem]!;
+            
+            developer.log(
+              'INVENTORY_VALIDATION (CREATE BREAKDOWN): id=${item.id}, '
+              'breakdownItem=${item.selectedBreakdownItem}, '
+              'availableQty=$availableQty, '
+              'editedQty=${item.consignedQuantity}',
+              name: 'BrokerFormPage',
+            );
+            
+            if (item.consignedQuantity > availableQty) {
+              developer.log(
+                'VALIDATION_FAILED: breakdown item edited quantity exceeds available',
+                name: 'BrokerFormPage',
+              );
+              return false;
+            }
           }
         }
       } else {
@@ -284,9 +326,48 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         if (item.gemstone == null) {
           return false;
         }
-        // Check quantity against gemstone remaining quantity
-        if (item.consignedQuantity > LocalDb.gemstoneRemainingQuantity(item.gemstone!)) {
-          return false;
+        
+        // Edit mode: apply inventory safety formula
+        // effectiveAvailable = currentRemaining + originalQuantity - editedQuantity
+        if (_isEditMode) {
+          final originalQty = _editOriginalQuantities[item.id] ?? 0.0;
+          final currentRemaining = LocalDb.gemstoneRemainingQuantity(item.gemstone!);
+          final effectiveAvailable = currentRemaining + originalQty;
+          
+          developer.log(
+            'INVENTORY_VALIDATION (EDIT): id=${item.id}, '
+            'currentRemaining=$currentRemaining, '
+            'originalQty=$originalQty, '
+            'editedQty=${item.consignedQuantity}, '
+            'effectiveAvailable=$effectiveAvailable',
+            name: 'BrokerFormPage',
+          );
+          
+          if (item.consignedQuantity > effectiveAvailable) {
+            developer.log(
+              'VALIDATION_FAILED: edited quantity exceeds effective available',
+              name: 'BrokerFormPage',
+            );
+            return false;
+          }
+        } else {
+          // Create mode: validate against current remaining only
+          final currentRemaining = LocalDb.gemstoneRemainingQuantity(item.gemstone!);
+          
+          developer.log(
+            'INVENTORY_VALIDATION (CREATE): id=${item.id}, '
+            'currentRemaining=$currentRemaining, '
+            'editedQty=${item.consignedQuantity}',
+            name: 'BrokerFormPage',
+          );
+          
+          if (item.consignedQuantity > currentRemaining) {
+            developer.log(
+              'VALIDATION_FAILED: edited quantity exceeds current remaining',
+              name: 'BrokerFormPage',
+            );
+            return false;
+          }
         }
       }
     }
