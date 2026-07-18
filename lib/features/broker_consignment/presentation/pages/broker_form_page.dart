@@ -12,6 +12,7 @@ import '../../domain/broker_consignment_validation.dart';
 import '../../../../core/rca/rca_log_collector.dart';
 import 'dart:developer' as developer;
 import 'package:flutter/services.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 /// Temporary model for consignment items during form editing
 class ConsignmentItemTemp {
@@ -676,7 +677,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     developer.log('EDIT MODE: Aggregate validation passed');
     
     // Update existing items
-    final brokerBox = Hive.box<BrokerConsignment>('broker_consignments');
+      final brokerBox = Hive.box<BrokerConsignment>('broker_consignments') as Box<BrokerConsignment>;
     for (final item in _currentDraftItems) {
       if (item.isNew || item.isDeleted) continue;
       
