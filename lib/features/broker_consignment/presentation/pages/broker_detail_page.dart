@@ -1329,11 +1329,25 @@ class _ItemCardState extends State<_ItemCard> {
                 Expanded(
                   child: Row(
                     children: [
-                      Text(
-                        'အရေးအသား ${widget.itemIndex}: ${LocalDb.resolveBrokerConsignmentGemstone(widget.item)?['name'] ?? "Unknown"}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'အရေးအသား ${widget.itemIndex}: ${LocalDb.resolveBrokerConsignmentGemstone(widget.item)?['name'] ?? "Unknown"}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            if (widget.item.weight != null && widget.item.weight! > 0 && widget.item.weightUnit != null && widget.item.weightUnit!.isNotEmpty)
+                              Text(
+                                'အလေးချိန်: ${widget.item.weight} ${widget.item.weightUnit}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
@@ -1402,9 +1416,20 @@ class _ItemCardState extends State<_ItemCard> {
               ],
             ),
             const SizedBox(height: 8),
-            Text('အပ်ထားသည့်ခုနှုန်း: ${widget.item.consignedQuantity}'),
-            if (widget.item.weight != null && widget.item.weight! > 0)
-              Text('အလေးချိန်: ${widget.item.weight} ${widget.item.weightUnit ?? ""}'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('အပ်ထားသည့်ခုနှုန်း: ${widget.item.consignedQuantity}'),
+                    if (widget.item.weight != null && widget.item.weight! > 0 && widget.item.weightUnit != null && widget.item.weightUnit!.isNotEmpty)
+                      Text('အလေးချိန်: ${widget.item.weight} ${widget.item.weightUnit}'),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             Text('ရောင်းချ: ${widget.item.soldQuantity}'),
             Text('ပြန်လည်ရယူ: ${widget.item.returnedQuantity}'),
             Text('ကျန်ရှိ: ${widget.item.remainingQuantity}'),
