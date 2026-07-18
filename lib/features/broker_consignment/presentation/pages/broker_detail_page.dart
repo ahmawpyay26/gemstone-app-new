@@ -364,7 +364,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
     return result;
   }
 
-  void _showVoucherEditDialog(BuildContext context) {
+  Future<void> _showVoucherEditDialog(BuildContext context) async {
     // Navigate to BrokerFormPage in edit mode
     if (widget.items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -391,7 +391,8 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
       );
     }).toList();
     
-    Navigator.of(context).push(
+    // Capture the return value from the edit form
+    final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (context) => BrokerFormPage(
           editVoucherId: firstItem.voucherId,
@@ -410,6 +411,11 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         ),
       ),
     );
+    
+    // If edit was successful, reload the data from Hive
+    if (changed == true && mounted) {
+      setState(() {});
+    }
   }
 
 
