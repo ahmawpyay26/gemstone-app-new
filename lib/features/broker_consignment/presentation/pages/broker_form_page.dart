@@ -557,11 +557,22 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   
   void _autoPrefillWeightFromPurchase(Gemstone gemstone) {
     // Extract weight and unit from the purchase record
+    // ONLY auto-prefill if valid data exists; otherwise leave fields empty
+    
+    // Only set weight if it's a valid positive value
     if (gemstone.weightCarat > 0) {
       _currentEditingItem.weight = gemstone.weightCarat;
+    } else {
+      // Ensure weight is null (empty) if purchase has no valid weight
+      _currentEditingItem.weight = null;
     }
+    
+    // Only set unit if it's a non-empty string
     if (gemstone.weightUnit.isNotEmpty) {
       _currentEditingItem.weightUnit = gemstone.weightUnit;
+    } else {
+      // Ensure unit is null (unselected) if purchase has no unit
+      _currentEditingItem.weightUnit = null;
     }
   }
 
@@ -1834,7 +1845,11 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                             filled: true,
                             fillColor: Colors.grey[900],
                           ),
-                          controller: TextEditingController(text: _currentEditingItem.weight?.toString() ?? ''),
+                          controller: TextEditingController(
+                            text: _currentEditingItem.weight != null && _currentEditingItem.weight! > 0
+                                ? _currentEditingItem.weight.toString()
+                                : '',
+                          ),
                           onChanged: (value) {
                             final weight = double.tryParse(value);
                             if (weight != null && weight > 0) {
@@ -1848,7 +1863,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _currentEditingItem.weightUnit ?? 'ပိသာ',
+                          value: _currentEditingItem.weightUnit,
                           isExpanded: true,
                           dropdownColor: AppTheme.surfaceDark,
                           style: const TextStyle(color: Colors.white),
