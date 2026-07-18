@@ -648,17 +648,31 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       DiagnosticLogService.addLog('Total draft items: ${_currentDraftItems.length}');
       int existingItemCount = 0;
       int newItemCountDraft = 0;
+      int deletedItemCount = 0;
+      List<String> existingIds = [];
+      List<String> newIds = [];
+      List<String> deletedIds = [];
       for (int i = 0; i < _currentDraftItems.length; i++) {
         final item = _currentDraftItems[i];
-        if (item.isDeleted) continue;
+        if (item.isDeleted) {
+          deletedItemCount++;
+          if (item.originalBcId != null) deletedIds.add(item.originalBcId!);
+          DiagnosticLogService.addLog('  [$i] DELETED | originalBcId=${item.originalBcId} | sourceType=${item.sourceType} | gemName=${item.gemstone?.name}');
+          continue;
+        }
         if (item.isNew) {
           newItemCountDraft++;
+          newIds.add(item.id);
         } else {
           existingItemCount++;
+          if (item.originalBcId != null) existingIds.add(item.originalBcId!);
         }
         DiagnosticLogService.addLog('  [$i] isNew=${item.isNew} | isDeleted=${item.isDeleted} | originalBcId=${item.originalBcId} | sourceType=${item.sourceType} | gemstoneId=${item.gemstone?.id} | gemName=${item.gemstone?.name} | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
       }
-      DiagnosticLogService.addLog('Existing items: $existingItemCount | New items (draft): $newItemCountDraft');
+      DiagnosticLogService.addLog('Existing items: $existingItemCount | New items (draft): $newItemCountDraft | Deleted items: $deletedItemCount');
+      DiagnosticLogService.addLog('Existing IDs: $existingIds');
+      DiagnosticLogService.addLog('New IDs (draft): $newIds');
+      DiagnosticLogService.addLog('Deleted IDs: $deletedIds');
       
       developer.log('EDIT MODE: Starting atomic save');
       developer.log('STAGE 1: DRAFT ITEMS BEFORE SAVE');
@@ -775,20 +789,25 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       DiagnosticLogService.addLog('Total new items created: $newItemCountCreated');
       developer.log('STAGE 2: Total new items added: $newItemCountCreated');
       
-      // Soft delete removed items
+      // ===== STAGE 2B: SOFT DELETE REMOVED ITEMS =====
+      DiagnosticLogService.addLog('\n===== STAGE 2B: SOFT DELETE REMOVED ITEMS =====');
+      int softDeletedCount = 0;
       for (final item in _currentDraftItems) {
         if (!item.isDeleted) continue;
         if (item.originalBcId == null) continue;
         
         final record = LocalDb.getBrokerConsignment(item.originalBcId!);
         if (record != null && record.voucherId == _editVoucherId) {
+          softDeletedCount++;
+          DiagnosticLogService.addLog('  [SOFT-DELETE-$softDeletedCount] BEFORE: id=${record.id} | sourceType=${record.sourceType} | breakdownItem=${record.breakdownItemName}');
           record.deletedAt = DateTime.now().millisecondsSinceEpoch;
           final brokers = Hive.box<BrokerConsignment>('brokerConsignments');
           await brokers.put(record.id, record);
           developer.log('EDIT MODE: Soft deleted ${record.id}');
-          DiagnosticLogService.addLog('Soft deleted: ${record.id}');
+          DiagnosticLogService.addLog('  [SOFT-DELETE-$softDeletedCount] AFTER: id=${record.id} | deletedAt=${record.deletedAt}');
         }
       }
+      DiagnosticLogService.addLog('Total soft deleted: $softDeletedCount');
       
       developer.log('EDIT MODE: All changes saved successfully');
       
@@ -797,13 +816,16 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       developer.log('STAGE 3: VERIFYING HIVE AFTER SAVE');
       final brokers = Hive.box<BrokerConsignment>(LocalDb.brokerConsignmentsBox);
       final savedItems = brokers.values.where((b) => b.voucherId == _editVoucherId && b.deletedAt == null).toList();
-      DiagnosticLogService.addLog('Total items in Hive for voucherId=$_editVoucherId: ${savedItems.length}');
+      List<String> hiveIds = [];
+      DiagnosticLogService.addLog('Total items in Hive for voucherId=$_editVoucherId (non-deleted): ${savedItems.length}');
       developer.log('Total items in Hive for voucherId=$_editVoucherId: ${savedItems.length}');
       for (int i = 0; i < savedItems.length; i++) {
         final item = savedItems[i];
-        DiagnosticLogService.addLog('  [$i] id=${item.id} | sourceType=${item.sourceType} | purchaseId=${item.purchaseId} | breakdownItem=${item.breakdownItemName} | qty=${item.consignedQuantity}');
+        hiveIds.add(item.id);
+        DiagnosticLogService.addLog('  [$i] id=${item.id} | sourceType=${item.sourceType} | purchaseId=${item.purchaseId} | breakdownItem=${item.breakdownItemName} | qty=${item.consignedQuantity} | createdAt=${item.createdAt}');
         developer.log('  [$i] id=${item.id} | sourceType=${item.sourceType} | purchaseId=${item.purchaseId} | breakdownItem=${item.breakdownItemName} | qty=${item.consignedQuantity}');
       }
+      DiagnosticLogService.addLog('Hive IDs (non-deleted): $hiveIds');
       
       // Check for validation errors
       if (validationErrors.isNotEmpty) {
@@ -834,15 +856,40 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         return;
       }
       
-      // Compare counts
+      // Compare counts and IDs
+      List<String> expectedIds = [...existingIds];
       int expectedHiveCount = existingItemCount + newItemCountCreated;
       DiagnosticLogService.addLog('\n===== VERIFICATION SUMMARY =====');
       DiagnosticLogService.addLog('Draft items (non-deleted): ${existingItemCount + newItemCountDraft}');
-      DiagnosticLogService.addLog('  - Existing: $existingItemCount');
+      DiagnosticLogService.addLog('  - Existing: $existingItemCount (IDs: $existingIds)');
       DiagnosticLogService.addLog('  - New: $newItemCountDraft');
+      DiagnosticLogService.addLog('  - Deleted: $deletedItemCount (IDs: $deletedIds)');
       DiagnosticLogService.addLog('Items created in Hive: $newItemCountCreated');
       DiagnosticLogService.addLog('Expected Hive count: $expectedHiveCount');
       DiagnosticLogService.addLog('Actual Hive count: ${savedItems.length}');
+      DiagnosticLogService.addLog('Expected IDs (existing only): $expectedIds');
+      DiagnosticLogService.addLog('Actual Hive IDs: $hiveIds');
+      
+      // Find extra or missing records
+      final extraIds = hiveIds.where((id) => !expectedIds.contains(id)).toList();
+      final missingIds = expectedIds.where((id) => !hiveIds.contains(id)).toList();
+      
+      if (extraIds.isNotEmpty) {
+        DiagnosticLogService.addLog('\n⚠️ EXTRA RECORDS IN HIVE:');
+        for (final extraId in extraIds) {
+          final record = LocalDb.getBrokerConsignment(extraId);
+          if (record != null) {
+            DiagnosticLogService.addLog('  EXTRA: id=$extraId | sourceType=${record.sourceType} | purchaseId=${record.purchaseId} | breakdownItem=${record.breakdownItemName} | createdAt=${record.createdAt} | updatedAt=${record.updatedAt}');
+          }
+        }
+      }
+      
+      if (missingIds.isNotEmpty) {
+        DiagnosticLogService.addLog('\n⚠️ MISSING RECORDS IN HIVE:');
+        for (final missingId in missingIds) {
+          DiagnosticLogService.addLog('  MISSING: id=$missingId');
+        }
+      }
       
       if (savedItems.length != expectedHiveCount) {
         DiagnosticLogService.addLog('\n⚠️ MISMATCH DETECTED!');
