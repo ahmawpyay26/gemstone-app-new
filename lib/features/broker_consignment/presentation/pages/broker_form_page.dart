@@ -1711,6 +1711,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     final tempBrokerConsignment = BrokerConsignment(
       id: _tempBrokerId,
       purchaseId: '',
+      sourceType: 'whole_stone',
       consignedQuantity: 0,
       historicalData: tempHistoricalData,
       brokerName: _brokerNameCtrl.text,

@@ -342,6 +342,28 @@ class _VoucherGroupCard extends StatefulWidget {
 class _VoucherGroupCardState extends State<_VoucherGroupCard> {
   bool _isExpanded = false;
 
+  /// Convert breakdown items map to Map<String, int> safely
+  Map<String, int> _convertBreakdownItemsToIntMap(Map<dynamic, dynamic> input) {
+    final result = <String, int>{};
+    input.forEach((key, value) {
+      if (key is String) {
+        if (value is int) {
+          result[key] = value;
+        } else if (value is double) {
+          result[key] = value.toInt();
+        } else if (value is Map && value.containsKey('quantity')) {
+          final qty = value['quantity'];
+          if (qty is int) {
+            result[key] = qty;
+          } else if (qty is double) {
+            result[key] = qty.toInt();
+          }
+        }
+      }
+    });
+    return result;
+  }
+
   void _showVoucherEditDialog(BuildContext context) {
     // Navigate to BrokerFormPage in edit mode
     if (widget.items.isEmpty) {
@@ -359,7 +381,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         gemstone: gemstone,
         consignedQuantity: item.consignedQuantity,
         selectedBreakdownItem: item.breakdownItemName ?? '',
-        availableBreakdownItems: gemstone?.breakdownItems ?? {},
+        availableBreakdownItems: _convertBreakdownItemsToIntMap(gemstone?.breakdownItems ?? {}),
         sourceType: item.sourceType,
         selectedPurchase: gemstone,
         originalBcId: item.id,
