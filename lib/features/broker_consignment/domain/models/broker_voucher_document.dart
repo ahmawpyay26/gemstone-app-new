@@ -46,8 +46,10 @@ class BrokerVoucherDocumentItem {
   final int itemNumber; // 1-based index
   final String itemName;
   final String sourceType; // 'အပြည့်အစုံ' or 'အခွဲ'
-  final double weight;
-  final String weightUnit; // 'ကျပ်' or 'ဂရမ်'
+  /// Nullable: null means no consignment-specific weight was entered.
+  /// Display '-' when null. Never fall back to gemstone inventory weight.
+  final double? weight;
+  final String? weightUnit; // 'ကျပ်' or 'ဂရမ်' — null when weight is null
   final double consignedQuantity;
   final double soldQuantity;
   final double returnedQuantity;
@@ -59,8 +61,8 @@ class BrokerVoucherDocumentItem {
     required this.itemNumber,
     required this.itemName,
     required this.sourceType,
-    required this.weight,
-    required this.weightUnit,
+    this.weight,
+    this.weightUnit,
     required this.consignedQuantity,
     required this.soldQuantity,
     required this.returnedQuantity,
@@ -68,6 +70,13 @@ class BrokerVoucherDocumentItem {
     this.notes,
     required this.photoPaths,
   });
+
+  /// Formatted weight string: '-' when no weight, otherwise 'value unit'
+  String get weightDisplay {
+    if (weight == null || weight == 0) return '-';
+    final unit = weightUnit ?? '';
+    return unit.isNotEmpty ? '$weight $unit' : '$weight';
+  }
 
   /// Check if this item has any photos
   bool get hasPhotos => photoPaths.isNotEmpty;

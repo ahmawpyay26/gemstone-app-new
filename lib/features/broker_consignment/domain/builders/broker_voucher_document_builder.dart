@@ -26,8 +26,9 @@ class BrokerVoucherDocumentBuilder {
           itemNumber: i + 1,
           itemName: item.historicalData.gemstoneType,
           sourceType: item.historicalData.sourceType,
-          weight: item.historicalData.originalWeight,
-          weightUnit: 'ကျပ်', // Fixed unit for Myanmar gemstones
+          // weight and weightUnit are intentionally omitted:
+          // BrokerConsignment has no consignment-specific weight field.
+          // weightDisplay will show '-' for all items.
           consignedQuantity: item.consignedQuantity,
           soldQuantity: item.soldQuantity,
           returnedQuantity: item.returnedQuantity,

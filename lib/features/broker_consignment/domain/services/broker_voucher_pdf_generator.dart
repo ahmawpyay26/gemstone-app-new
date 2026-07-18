@@ -78,32 +78,68 @@ class BrokerVoucherPdfGenerator {
     return pw.Font.ttf(fontData);
   }
 
-  /// Build header section with app name and voucher title
+  /// Build header section with business profile info and voucher title
   static pw.Widget _buildHeader(BrokerVoucherDocumentData data, pw.Font padaukFont) {
-    final shopName = LocalDb.getBusinessProfile().shopName;
+    final profile = LocalDb.getBusinessProfile();
+    final shopName = profile.shopName.isNotEmpty
+        ? profile.shopName
+        : 'ပွဲစားအပ်နှံဘောင်ချာ';
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        // App/Business name
+        // Shop name — large bold title
         pw.Text(
-          shopName.isNotEmpty ? shopName : 'ပွဲစားအပ်နှံဘောင်ချာ',
+          shopName,
           style: pw.TextStyle(
-            font: pw.Font.helvetica(),
+            font: padaukFont,
             fontSize: 18,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+        pw.SizedBox(height: 2),
+
+        // Voucher subtitle
+        pw.Text(
+          'ပွဲစားအပ်နှံဘောင်ချာ',
+          style: pw.TextStyle(
+            font: padaukFont,
+            fontSize: 14,
             fontWeight: pw.FontWeight.bold,
           ),
         ),
         pw.SizedBox(height: 4),
 
-        // Voucher title
-        pw.Text(
-          'ပွဲစားအပ်နှံဘောင်ချာ',
-          style: pw.TextStyle(
-            font: padaukFont,
-            fontSize: 16,
-            fontWeight: pw.FontWeight.bold,
+        // Business contact info — only show non-empty fields
+        if (profile.phone.isNotEmpty)
+          pw.Text(
+            'ဖုန်း: ${profile.phone}',
+            style: pw.TextStyle(font: padaukFont, fontSize: 10),
           ),
-        ),
+        if (profile.address.isNotEmpty)
+          pw.Text(
+            'လိပ်စာ: ${profile.address}',
+            style: pw.TextStyle(font: padaukFont, fontSize: 10),
+          ),
+        if (profile.email.isNotEmpty)
+          pw.Text(
+            'Email: ${profile.email}',
+            style: pw.TextStyle(font: padaukFont, fontSize: 10),
+          ),
+        if (profile.facebook.isNotEmpty)
+          pw.Text(
+            'Facebook: ${profile.facebook}',
+            style: pw.TextStyle(font: padaukFont, fontSize: 10),
+          ),
+        if (profile.viber.isNotEmpty)
+          pw.Text(
+            'Viber: ${profile.viber}',
+            style: pw.TextStyle(font: padaukFont, fontSize: 10),
+          ),
+        if (profile.website.isNotEmpty)
+          pw.Text(
+            'Website: ${profile.website}',
+            style: pw.TextStyle(font: padaukFont, fontSize: 10),
+          ),
         pw.SizedBox(height: 8),
 
         // Voucher number and date
@@ -225,7 +261,7 @@ class BrokerVoucherPdfGenerator {
               _buildTableCell('${item.itemNumber}', padaukFont),
               _buildTableCell(item.itemName, padaukFont),
               _buildTableCell(item.sourceType, padaukFont),
-              _buildTableCell('${item.weight} ${item.weightUnit}', padaukFont),
+              _buildTableCell(item.weightDisplay, padaukFont),
               _buildTableCell('${item.consignedQuantity.toStringAsFixed(2)}', padaukFont),
               _buildTableCell('${item.soldQuantity.toStringAsFixed(2)}', padaukFont),
               _buildTableCell('${item.returnedQuantity.toStringAsFixed(2)}', padaukFont),

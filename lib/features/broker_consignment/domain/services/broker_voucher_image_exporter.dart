@@ -317,27 +317,71 @@ class _VoucherPageWidget extends StatelessWidget {
                       onWidgetStep?.call('widget_header_title');
                       dev.log('[ImageExport] widget=Text(header_title)',
                           name: 'BrokerVoucherImageExporter');
-                      final shopName = LocalDb.getBusinessProfile().shopName;
-                      return Text(
-                        shopName.isNotEmpty ? shopName : 'ပွဲစားအပ်နှံဘောင်ချာ',
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 4),
-                  Builder(
-                    builder: (ctx3) {
-                      onWidgetStep?.call('widget_header_subtitle');
-                      dev.log('[ImageExport] widget=Text(header_subtitle)',
-                          name: 'BrokerVoucherImageExporter');
-                      return const Text(
-                        'ပွဲစားအပ်နှံဘောင်ချာ',
-                        style: TextStyle(
-                          fontFamily: 'Padauk',
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      final profile = LocalDb.getBusinessProfile();
+                      final shopName = profile.shopName.isNotEmpty
+                          ? profile.shopName
+                          : 'ပွဲစားအပ်နှံဘောင်ချာ';
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Shop name — large bold title
+                          Text(
+                            shopName,
+                            style: const TextStyle(
+                              fontFamily: 'Padauk',
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          // Subtitle
+                          const Text(
+                            'ပွဲစားအပ်နှံဘောင်ချာ',
+                            style: TextStyle(
+                              fontFamily: 'Padauk',
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // Contact info row
+                          if (profile.phone.isNotEmpty)
+                            Text(
+                              'ဖုန်း: ${profile.phone}',
+                              style: const TextStyle(
+                                  fontFamily: 'Padauk', fontSize: 10),
+                            ),
+                          if (profile.address.isNotEmpty)
+                            Text(
+                              'လိပ်စာ: ${profile.address}',
+                              style: const TextStyle(
+                                  fontFamily: 'Padauk', fontSize: 10),
+                            ),
+                          if (profile.email.isNotEmpty)
+                            Text(
+                              'Email: ${profile.email}',
+                              style: const TextStyle(
+                                  fontFamily: 'Padauk', fontSize: 10),
+                            ),
+                          if (profile.facebook.isNotEmpty)
+                            Text(
+                              'Facebook: ${profile.facebook}',
+                              style: const TextStyle(
+                                  fontFamily: 'Padauk', fontSize: 10),
+                            ),
+                          if (profile.viber.isNotEmpty)
+                            Text(
+                              'Viber: ${profile.viber}',
+                              style: const TextStyle(
+                                  fontFamily: 'Padauk', fontSize: 10),
+                            ),
+                          if (profile.website.isNotEmpty)
+                            Text(
+                              'Website: ${profile.website}',
+                              style: const TextStyle(
+                                  fontFamily: 'Padauk', fontSize: 10),
+                            ),
+                        ],
                       );
                     },
                   ),
@@ -546,7 +590,7 @@ class _VoucherPageWidget extends StatelessWidget {
               _buildTableCell('${item.itemNumber}'),
               _buildTableCell(item.itemName),
               _buildTableCell(item.sourceType),
-              _buildTableCell('${item.weight}${item.weightUnit}'),
+              _buildTableCell(item.weightDisplay),
               _buildTableCell(
                   '${item.consignedQuantity.toStringAsFixed(2)}'),
               _buildTableCell(
