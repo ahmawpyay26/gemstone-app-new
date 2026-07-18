@@ -1354,39 +1354,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             
             // Items list
             // Filter to show only non-deleted items in the UI
-            final visibleItems = _confirmedItems.where((item) => !item.isDeleted).toList();
-            if (visibleItems.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[700]!),
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.grey[900],
-                ),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.inbox_outlined, color: Colors.grey[600], size: 32),
-                      const SizedBox(height: 8),
-                      Text(
-                        'ထည့်သွင်းထားသောကျောက်မရှိသေးပါ',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: visibleItems.length,
-                itemBuilder: (context, index) {
-                  final item = visibleItems[index];
-                  return _buildConfirmedItemRow(item);
-                },
-              ),
+            ..._buildConfirmedItemsList(),
             
             const SizedBox(height: 24),
             
@@ -1933,6 +1901,49 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         ],
       ),
     );
+  }
+
+  // Helper method to build the filtered items list for the UI
+  List<Widget> _buildConfirmedItemsList() {
+    final visibleItems = _confirmedItems.where((item) => !item.isDeleted).toList();
+    
+    if (visibleItems.isEmpty) {
+      return [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[700]!),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.grey[900],
+          ),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(Icons.inbox_outlined, color: Colors.grey[600], size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  'ထည့်သွင်းထားသောကျောက်မရှိသေးပါ',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ];
+    } else {
+      return [
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: visibleItems.length,
+          itemBuilder: (context, index) {
+            final item = visibleItems[index];
+            return _buildConfirmedItemRow(item);
+          },
+        ),
+      ];
+    }
   }
 
   // Helper method to build compact summary text for confirmed items
