@@ -1,4 +1,5 @@
 // ignore_for_file: avoid_catches_without_on_clauses
+import 'dart:async';
 import 'dart:developer' as dev;
 import 'dart:io';
 import 'dart:typed_data';
@@ -9,6 +10,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/broker_voucher_document.dart';
 import '../../../../core/local/local_db.dart';
+
+/// Holds a pre-decoded [ui.Image] alongside the raw bytes so both are
+/// available to the off-screen render tree without relying on ImageCache.
+class _DecodedLogo {
+  final Uint8List bytes;
+  final ui.Image image;
+  const _DecodedLogo({required this.bytes, required this.image});
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEBUG FLAG — set to false before production release
@@ -60,7 +69,7 @@ class BrokerVoucherImageExporter {
       // step: load_logo_bytes
       onStep?.call('load_logo_bytes');
       dev.log('[ImageExport] step=load_logo_bytes', name: 'BrokerVoucherImageExporter');
-      final Uint8List? logoBytes = await _loadLogoBytes(onStep);
+      final _DecodedLogo? decodedLogo = await _loadDecodedLogo(onStep);
 
       final imageFiles = <XFile>[];
 
@@ -82,7 +91,7 @@ class BrokerVoucherImageExporter {
       final widget = _VoucherPageWidget(
         data: data,
         items: pageItems,
-        logoBytes: logoBytes,
+        decodedLogo: decodedLogo,
         pageNum: pageNum + 1,
         totalPages: totalPages,
         onWidgetStep: onStep,
@@ -123,44 +132,85 @@ class BrokerVoucherImageExporter {
     return true;
   }
 
-  /// Load logo file bytes safely. Returns null if unavailable (no crash).
-  static Future<Uint8List?> _loadLogoBytes(
+  /// Load and PRE-DECODE the logo so the off-screen render tree receives a
+  /// [ui.Image] directly via [RawImage] — bypassing ImageCache entirely.
+  ///
+  /// Steps emitted:
+  ///   logo_profile_loaded → logo_path_empty / logo_file_exists
+  ///   → logo_bytes_loaded → logo_header_branch_selected
+  ///   → logo_widget_inserted → logo_render_success
+  ///   (or logo_path_empty / logo_file_missing / logo_read_failed /
+  ///    logo_decode_failed on failure)
+  static Future<_DecodedLogo?> _loadDecodedLogo(
       void Function(String step)? onStep) async {
     try {
+      // ── Step 1: profile loaded ──────────────────────────────────────────
       final profile = LocalDb.getBusinessProfile();
-      final rawPath = profile.logoPath;
+      onStep?.call('logo_profile_loaded');
+      dev.log('[ImageExport] logo_profile_loaded logoPath=${profile.logoPath}',
+          name: 'BrokerVoucherImageExporter');
 
+      final rawPath = profile.logoPath;
       if (rawPath == null || rawPath.trim().isEmpty) {
-        dev.log('[ImageExport] logo_path_empty', name: 'BrokerVoucherImageExporter');
         onStep?.call('logo_path_empty');
+        dev.log('[ImageExport] logo_path_empty', name: 'BrokerVoucherImageExporter');
         return null;
       }
 
+      // ── Step 2: file exists ─────────────────────────────────────────────
       final logoFile = File(rawPath.trim());
       if (!logoFile.existsSync()) {
+        onStep?.call('logo_file_missing');
         dev.log('[ImageExport] logo_file_missing path=$rawPath',
             name: 'BrokerVoucherImageExporter');
-        onStep?.call('logo_file_missing');
         return null;
       }
+      onStep?.call('logo_file_exists');
+      dev.log('[ImageExport] logo_file_exists path=$rawPath',
+          name: 'BrokerVoucherImageExporter');
 
+      // ── Step 3: read bytes ──────────────────────────────────────────────
       final bytes = await logoFile.readAsBytes();
       if (bytes.isEmpty) {
+        onStep?.call('logo_read_failed');
         dev.log('[ImageExport] logo_read_failed (empty bytes)',
             name: 'BrokerVoucherImageExporter');
-        onStep?.call('logo_read_failed');
         return null;
       }
-
-      dev.log(
-          '[ImageExport] logo_render_success bytes=${bytes.length}',
+      onStep?.call('logo_bytes_loaded');
+      dev.log('[ImageExport] logo_bytes_loaded bytes=${bytes.length}',
           name: 'BrokerVoucherImageExporter');
+
+      // ── Step 4: decode to ui.Image (bypasses ImageCache) ───────────────
+      // This is the critical fix: Image.memory() relies on the Flutter
+      // ImageCache pipeline which is unavailable in the off-screen render
+      // tree. ui.decodeImageFromList() decodes directly to a ui.Image that
+      // RawImage can paint without any cache lookup.
+      onStep?.call('logo_header_branch_selected');
+      dev.log('[ImageExport] logo_header_branch_selected — decoding ui.Image',
+          name: 'BrokerVoucherImageExporter');
+
+      final completer = Completer<ui.Image>();
+      ui.decodeImageFromList(bytes, (ui.Image img) {
+        completer.complete(img);
+      });
+      final uiImage = await completer.future;
+
+      onStep?.call('logo_widget_inserted');
+      dev.log(
+          '[ImageExport] logo_widget_inserted — ui.Image decoded '
+          '${uiImage.width}x${uiImage.height}',
+          name: 'BrokerVoucherImageExporter');
+
       onStep?.call('logo_render_success');
-      return bytes;
+      dev.log('[ImageExport] logo_render_success',
+          name: 'BrokerVoucherImageExporter');
+
+      return _DecodedLogo(bytes: bytes, image: uiImage);
     } catch (e) {
+      onStep?.call('logo_decode_failed');
       dev.log('[ImageExport] logo_decode_failed error=$e',
           name: 'BrokerVoucherImageExporter');
-      onStep?.call('logo_decode_failed');
       return null;
     }
   }
@@ -321,7 +371,7 @@ class BrokerVoucherImageExporter {
 class _VoucherPageWidget extends StatelessWidget {
   final BrokerVoucherDocumentData data;
   final List<BrokerVoucherDocumentItem> items;
-  final Uint8List? logoBytes;
+  final _DecodedLogo? decodedLogo;
   final int pageNum;
   final int totalPages;
   // ignore: prefer_function_declarations_over_variables
@@ -332,7 +382,7 @@ class _VoucherPageWidget extends StatelessWidget {
     required this.items,
     required this.pageNum,
     required this.totalPages,
-    this.logoBytes,
+    this.decodedLogo,
     this.onWidgetStep,
   });
 
@@ -372,38 +422,38 @@ class _VoucherPageWidget extends StatelessWidget {
                           ? profile.shopName
                           : 'ပွဲစားအပ်နှံဘောင်ချာ';
 
-                      // Build logo widget from pre-loaded bytes
-                      Widget logoWidget;
-                      if (logoBytes != null && logoBytes!.isNotEmpty) {
-                        logoWidget = Image.memory(
-                          logoBytes!,
+                      // Build logo widget using pre-decoded ui.Image via RawImage.
+                      // RawImage paints a ui.Image directly without ImageCache,
+                      // making it safe inside the off-screen render tree.
+                      Widget? logoWidget;
+                      if (decodedLogo != null) {
+                        logoWidget = RawImage(
+                          image: decodedLogo!.image,
                           width: 80,
                           height: 80,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.store,
-                            size: 48,
-                            color: Colors.grey,
-                          ),
-                        );
-                      } else {
-                        logoWidget = const Icon(
-                          Icons.store,
-                          size: 48,
-                          color: Colors.grey,
                         );
                       }
 
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Logo area — fixed 80×80 bounded box
-                          SizedBox(
-                            width: 80,
-                            height: 80,
-                            child: logoWidget,
-                          ),
-                          const SizedBox(width: 12),
+                          // Logo area — fixed 80×80 bounded box with debug border
+                          if (logoWidget != null) ...[  
+                            Container(
+                              width: 80,
+                              height: 80,
+                              // Temporary debug border — proves logo widget is
+                              // inside the capture boundary. Remove after confirmed.
+                              decoration: showImageExportDebug
+                                  ? BoxDecoration(
+                                      border: Border.all(
+                                          color: Colors.red, width: 1.5))
+                                  : null,
+                              child: logoWidget,
+                            ),
+                            const SizedBox(width: 12),
+                          ],
                           // Shop info column
                           Expanded(
                             child: Column(
