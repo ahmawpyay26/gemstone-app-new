@@ -47,15 +47,22 @@ class _BrokerDetailPageState extends State<BrokerDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    final active = LocalDb.getActiveBrokerVouchers(widget.vouchers);
-    final completed = LocalDb.getCompletedBrokerVouchers(widget.vouchers);
+    // Refresh vouchers from Hive to ensure newly added items are displayed
+    final brokerName = widget.vouchers.isNotEmpty ? widget.vouchers.first.brokerName : widget.brokerName;
+    final brokers = Hive.box<BrokerConsignment>(LocalDb.brokerConsignmentsBox);
+    final allBrokerVouchers = brokers.values
+        .where((b) => b.brokerName == brokerName && b.deletedAt == null)
+        .toList();
+    
+    final active = LocalDb.getActiveBrokerVouchers(allBrokerVouchers);
+    final completed = LocalDb.getCompletedBrokerVouchers(allBrokerVouchers);
 
     // Group by voucherNumber
     final activeGrouped = LocalDb.groupBrokerConsignmentsByVoucher(active);
     final completedGrouped = LocalDb.groupBrokerSaleRecordsByVoucher(completed);
 
     double totalRemaining = 0;
-    for (final bc in widget.vouchers) {
+    for (final bc in allBrokerVouchers) {
       totalRemaining += bc.remainingQuantity;
     }
 
