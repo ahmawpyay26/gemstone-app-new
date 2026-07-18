@@ -1009,6 +1009,8 @@ class BrokerHistoricalDataAdapter extends TypeAdapter<BrokerHistoricalData> {
 class BrokerConsignment {
   String id;
   String purchaseId; // Permanent reference to source Purchase Record
+  String sourceType; // "whole_stone" or "breakdown_item" - REQUIRED for identity resolution
+  String? breakdownItemName; // For breakdown items, the specific breakdown item name
   
   // Voucher Grouping (NEW)
   String? voucherId; // Groups multiple items submitted together
@@ -1040,6 +1042,8 @@ class BrokerConsignment {
   BrokerConsignment({
     required this.id,
     required this.purchaseId,
+    required this.sourceType,
+    this.breakdownItemName,
     required this.consignedQuantity,
     this.soldQuantity = 0,
     this.returnedQuantity = 0,
@@ -1080,6 +1084,8 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
     return BrokerConsignment(
       id: fields[0] as String,
       purchaseId: fields[1] as String,
+      sourceType: (fields[17] as String?) ?? 'whole_stone',
+      breakdownItemName: fields[18] as String?,
       consignedQuantity: fields[2] as double,
       soldQuantity: (fields[3] as double?) ?? 0,
       returnedQuantity: (fields[4] as double?) ?? 0,
@@ -1101,11 +1107,15 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
   @override
   void write(BinaryWriter writer, BrokerConsignment obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.purchaseId)
+      ..writeByte(17)
+      ..write(obj.sourceType)
+      ..writeByte(18)
+      ..write(obj.breakdownItemName)
       ..writeByte(2)
       ..write(obj.consignedQuantity)
       ..writeByte(3)

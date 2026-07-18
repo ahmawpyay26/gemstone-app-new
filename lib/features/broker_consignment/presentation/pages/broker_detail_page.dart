@@ -352,18 +352,21 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
     }
     
     final firstItem = widget.items.first;
-    final editItems = widget.items.map((item) => ConsignmentItemTemp(
-      id: item.id,
-      gemstone: LocalDb.gemstoneById(item.purchaseId),
-      consignedQuantity: item.consignedQuantity,
-      selectedBreakdownItem: '',
-      availableBreakdownItems: {},
-      sourceType: 'whole',
-      originalBcId: item.id,
-      isNew: false,
-      isDeleted: false,
-      originalQuantity: item.consignedQuantity,
-    )).toList();
+    final editItems = widget.items.map((item) {
+      final gemstone = LocalDb.gemstoneById(item.purchaseId);
+      return ConsignmentItemTemp(
+        id: item.id,
+        gemstone: gemstone,
+        consignedQuantity: item.consignedQuantity,
+        selectedBreakdownItem: item.breakdownItemName ?? '',
+        availableBreakdownItems: gemstone?.breakdownItems ?? {},
+        sourceType: item.sourceType,
+        originalBcId: item.id,
+        isNew: false,
+        isDeleted: false,
+        originalQuantity: item.consignedQuantity,
+      );
+    }).toList();
     
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -1286,7 +1289,7 @@ class _ItemCardState extends State<_ItemCard> {
                   child: Row(
                     children: [
                       Text(
-                        'အရေးအသား ${widget.itemIndex}',
+                        'အရေးအသား ${widget.itemIndex}: ${LocalDb.resolveBrokerConsignmentGemstone(widget.item)?['name'] ?? "Unknown"}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 8),

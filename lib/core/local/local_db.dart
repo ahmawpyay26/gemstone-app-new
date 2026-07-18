@@ -1906,6 +1906,8 @@ class LocalDb {
     final brokerConsignment = BrokerConsignment(
       id: genId(),
       purchaseId: purchaseId,
+      sourceType: sourceType,
+      breakdownItemName: breakdownItemName,
       consignedQuantity: consignedQuantity,
       historicalData: historicalData,
       brokerName: brokerName,
@@ -2600,6 +2602,48 @@ class LocalDb {
       }
     }
     return grouped;
+  }
+
+  /// Resolve gemstone name and details for a BrokerConsignment item
+  /// Handles both whole_stone and breakdown_item source types
+  /// Returns null if gemstone was deleted or sourceType is invalid
+  static Map<String, dynamic>? resolveBrokerConsignmentGemstone(BrokerConsignment item) {
+    try {
+      // Get the parent gemstone
+      final gemstone = gemstoneById(item.purchaseId);
+      if (gemstone == null) return null;
+
+      // Whole stone: return gemstone name directly
+      if (item.sourceType == 'whole_stone') {
+        return {
+          'name': gemstone.name,
+          'type': gemstone.type,
+          'gemstone': gemstone,
+          'isBreakdown': false,
+        };
+      }
+
+      // Breakdown item: combine parent name + breakdown item name
+      if (item.sourceType == 'breakdown_item' && item.breakdownItemName != null) {
+        return {
+          'name': '${gemstone.name} / ${item.breakdownItemName}',
+          'type': gemstone.type,
+          'gemstone': gemstone,
+          'breakdownItemName': item.breakdownItemName,
+          'isBreakdown': true,
+        };
+      }
+
+      // Fallback: return parent gemstone if breakdown item name is missing
+      return {
+        'name': gemstone.name,
+        'type': gemstone.type,
+        'gemstone': gemstone,
+        'isBreakdown': false,
+      };
+    } catch (e) {
+      return null;
+    }
   }
 }
 
