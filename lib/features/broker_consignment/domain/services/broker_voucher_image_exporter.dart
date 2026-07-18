@@ -183,8 +183,16 @@ class BrokerVoucherImageExporter {
             viewPadding: EdgeInsets.zero,
             viewInsets: EdgeInsets.zero,
           ),
-          child: Material(
-            child: widget,
+          // CRITICAL: Material.build() calls Theme.of(context)! internally.
+          // Without a Theme ancestor in the off-screen tree, this crashes with:
+          //   _TypeError: Null check operator used on a null value
+          // at the build_widget_tree step.
+          // Fix: wrap with Theme so Material can find its InheritedTheme.
+          child: Theme(
+            data: ThemeData.light(),
+            child: Material(
+              child: widget,
+            ),
           ),
         ),
       ),
