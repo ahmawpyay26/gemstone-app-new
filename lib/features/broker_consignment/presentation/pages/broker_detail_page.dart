@@ -9,6 +9,7 @@ import '../../../broker_consignment/domain/services/broker_voucher_export_servic
 import '../../../broker_consignment/domain/services/broker_voucher_image_exporter.dart';
 import '../widgets/photo_gallery_viewer.dart';
 import '../helpers/photo_helpers.dart';
+import 'broker_form_page.dart';
 
 class BrokerDetailPage extends StatefulWidget {
   final String brokerName;
