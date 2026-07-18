@@ -47,19 +47,27 @@ class _BrokerDetailPageState extends State<BrokerDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    final active = LocalDb.getActiveBrokerVouchers(widget.vouchers);
-    final completed = LocalDb.getCompletedBrokerVouchers(widget.vouchers);
+    return ValueListenableBuilder(
+      valueListenable: Hive.box<BrokerConsignment>('brokerConsignments').listenable(),
+      builder: (context, Box<BrokerConsignment> box, _) {
+        // Reload vouchers from Hive for this broker to get fresh data
+        final freshVouchers = box.values
+            .where((vc) => vc.brokerName == widget.brokerName && vc.brokerPhone == widget.brokerPhone && vc.isActive)
+            .toList();
+        
+        final active = LocalDb.getActiveBrokerVouchers(freshVouchers);
+        final completed = LocalDb.getCompletedBrokerVouchers(freshVouchers);
 
-    // Group by voucherNumber
-    final activeGrouped = LocalDb.groupBrokerConsignmentsByVoucher(active);
-    final completedGrouped = LocalDb.groupBrokerSaleRecordsByVoucher(completed);
+        // Group by voucherNumber
+        final activeGrouped = LocalDb.groupBrokerConsignmentsByVoucher(active);
+        final completedGrouped = LocalDb.groupBrokerSaleRecordsByVoucher(completed);
 
-    double totalRemaining = 0;
-    for (final bc in widget.vouchers) {
-      totalRemaining += bc.remainingQuantity;
-    }
+        double totalRemaining = 0;
+        for (final bc in freshVouchers) {
+          totalRemaining += bc.remainingQuantity;
+        }
 
-    return Scaffold(
+        return Scaffold(
       appBar: AppBar(
         title: Text(widget.brokerName),
         elevation: 0,
@@ -99,6 +107,8 @@ class _BrokerDetailPageState extends State<BrokerDetailPage>
           ),
         ],
       ),
+        );
+      },
     );
   }
 }
