@@ -361,6 +361,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         selectedBreakdownItem: item.breakdownItemName ?? '',
         availableBreakdownItems: gemstone?.breakdownItems ?? {},
         sourceType: item.sourceType,
+        selectedPurchase: gemstone,
         originalBcId: item.id,
         isNew: false,
         isDeleted: false,
