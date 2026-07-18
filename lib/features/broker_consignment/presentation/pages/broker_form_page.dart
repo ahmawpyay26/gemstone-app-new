@@ -1353,7 +1353,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               const SizedBox(height: 12),
             
             // Items list
-            if (_confirmedItems.isEmpty)
+            // Filter to show only non-deleted items in the UI
+            final visibleItems = _confirmedItems.where((item) => !item.isDeleted).toList();
+            if (visibleItems.isEmpty)
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -1379,9 +1381,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: _confirmedItems.length,
+                itemCount: visibleItems.length,
                 itemBuilder: (context, index) {
-                  final item = _confirmedItems[index];
+                  final item = visibleItems[index];
                   return _buildConfirmedItemRow(item);
                 },
               ),
