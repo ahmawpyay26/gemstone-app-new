@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../models/broker_voucher_document.dart';
+import '../../../../core/local/local_db.dart';
 
 /// Generates multi-page PDF bytes for broker vouchers with Myanmar text support
 class BrokerVoucherPdfGenerator {
@@ -79,12 +80,13 @@ class BrokerVoucherPdfGenerator {
 
   /// Build header section with app name and voucher title
   static pw.Widget _buildHeader(BrokerVoucherDocumentData data, pw.Font padaukFont) {
+    final shopName = LocalDb.getBusinessProfile().shopName;
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         // App/Business name
         pw.Text(
-          'အတ္တကြ မြန်မာ ကျောက်မျ',
+          shopName.isNotEmpty ? shopName : 'ပွဲစားအပ်နှံဘောင်ချာ',
           style: pw.TextStyle(
             font: pw.Font.helvetica(),
             fontSize: 18,

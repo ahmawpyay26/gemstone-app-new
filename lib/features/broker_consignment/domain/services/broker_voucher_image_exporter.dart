@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import '../models/broker_voucher_document.dart';
+import '../../../../core/local/local_db.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEBUG FLAG — set to false before production release
@@ -316,8 +317,9 @@ class _VoucherPageWidget extends StatelessWidget {
                       onWidgetStep?.call('widget_header_title');
                       dev.log('[ImageExport] widget=Text(header_title)',
                           name: 'BrokerVoucherImageExporter');
+                      final shopName = LocalDb.getBusinessProfile().shopName;
                       return Text(
-                        'အတ္တကြ မြန်မာ ကျောက်မျ',
+                        shopName.isNotEmpty ? shopName : 'ပွဲစားအပ်နှံဘောင်ချာ',
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       );

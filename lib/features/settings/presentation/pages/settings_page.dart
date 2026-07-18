@@ -233,6 +233,25 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // Business Profile Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.push('/business-profile'),
+                    icon: const Icon(Icons.store, color: AppTheme.primaryDark),
+                    label: const Text(
+                      'ဆိုင်အချက်အလက် ပြင်ဆင်မည်',
+                      style: TextStyle(color: AppTheme.primaryDark, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryAccent,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 24),
 
                 // Password Change Form

@@ -17,6 +17,7 @@ import '../../features/broker_consignment/presentation/pages/broker_details_page
 import '../../features/broker_consignment/presentation/pages/broker_list_page.dart';
 import '../../features/broker_consignment/presentation/pages/broker_detail_page.dart';
 import '../../features/customers/presentation/pages/customers_page.dart';
+import '../../features/settings/presentation/pages/business_profile_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -120,6 +121,11 @@ final GoRouter appRouter = GoRouter(
       path: '/customers',
       name: 'customers',
       builder: (context, state) => const CustomersPage(),
+    ),
+    GoRoute(
+      path: '/business-profile',
+      name: 'business-profile',
+      builder: (context, state) => const BusinessProfilePage(),
     ),
   ],
 );

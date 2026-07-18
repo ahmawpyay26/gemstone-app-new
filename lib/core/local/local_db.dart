@@ -26,6 +26,7 @@ class LocalDb {
   static const String customersBox = 'customers';
   static const String customerLedgerBox = 'customerLedger';
   static const String paymentsBox = 'payments';
+  static const String businessProfileBox = 'businessProfile';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -46,6 +47,7 @@ class LocalDb {
     if (!Hive.isAdapterRegistered(13)) Hive.registerAdapter(CustomerAdapter());
     if (!Hive.isAdapterRegistered(14)) Hive.registerAdapter(CustomerLedgerAdapter());
     if (!Hive.isAdapterRegistered(15)) Hive.registerAdapter(PaymentAdapter());
+    if (!Hive.isAdapterRegistered(16)) Hive.registerAdapter(BusinessProfileAdapter());
 
     await Hive.openBox<AppUser>(usersBox);
     await Hive.openBox<Gemstone>(gemstonesBox);
@@ -62,6 +64,7 @@ class LocalDb {
     await Hive.openBox<Customer>(customersBox);
     await Hive.openBox<CustomerLedger>(customerLedgerBox);
     await Hive.openBox<Payment>(paymentsBox);
+    await Hive.openBox<BusinessProfile>(businessProfileBox);
 
     await _seedDefaults();
     await _migrateGemstonesCostTracking();
@@ -530,6 +533,28 @@ class LocalDb {
   static Box<CustomerLedger> customerLedger() => Hive.box<CustomerLedger>(customerLedgerBox);
   static Box<Payment> payments() => Hive.box<Payment>(paymentsBox);
   static Box<BrokerSaleRecord> brokerSaleRecords() => Hive.box<BrokerSaleRecord>(brokerSaleRecordsBox);
+  static Box<BusinessProfile> businessProfiles() => Hive.box<BusinessProfile>(businessProfileBox);
+
+  // ---------------------------------------------------------------------------
+  // BusinessProfile helpers
+  // ---------------------------------------------------------------------------
+
+  /// Returns the single BusinessProfile, creating a default one if none exists.
+  static BusinessProfile getBusinessProfile() {
+    final box = businessProfiles();
+    if (box.isEmpty) {
+      final profile = BusinessProfile.empty();
+      box.put('profile', profile);
+      return profile;
+    }
+    return box.getAt(0) ?? BusinessProfile.empty();
+  }
+
+  /// Saves (overwrites) the single BusinessProfile.
+  static Future<void> saveBusinessProfile(BusinessProfile profile) async {
+    final box = businessProfiles();
+    await box.put('profile', profile);
+  }
 
   // -------------------------------------------------------------------------
   // Customer CRUD operations

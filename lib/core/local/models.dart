@@ -1525,3 +1525,84 @@ class PaymentAdapter extends TypeAdapter<Payment> {
       ..write(obj.createdAt);
   }
 }
+
+// ---------------------------------------------------------------------------
+// BusinessProfile (ဆိုင်အချက်အလက်)
+// ---------------------------------------------------------------------------
+class BusinessProfile {
+  String shopName;          // ဆိုင်အမည် (required)
+  String? logoPath;         // Local file path to logo image
+  String? phone;            // ဖုန်းနံပါတ်
+  String? address;          // လိပ်စာ
+  String? email;            // Email (optional)
+  String? facebook;         // Facebook (optional)
+  String? viber;            // Viber (optional)
+  String? website;          // Website (optional)
+  int updatedAt;            // Last updated timestamp
+
+  BusinessProfile({
+    required this.shopName,
+    this.logoPath,
+    this.phone,
+    this.address,
+    this.email,
+    this.facebook,
+    this.viber,
+    this.website,
+    required this.updatedAt,
+  });
+
+  /// Returns a default empty profile
+  factory BusinessProfile.empty() => BusinessProfile(
+        shopName: '',
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+}
+
+class BusinessProfileAdapter extends TypeAdapter<BusinessProfile> {
+  @override
+  final int typeId = 16;
+
+  @override
+  BusinessProfile read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return BusinessProfile(
+      shopName: (fields[0] as String?) ?? '',
+      logoPath: fields[1] as String?,
+      phone: fields[2] as String?,
+      address: fields[3] as String?,
+      email: fields[4] as String?,
+      facebook: fields[5] as String?,
+      viber: fields[6] as String?,
+      website: fields[7] as String?,
+      updatedAt: (fields[8] as int?) ?? 0,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, BusinessProfile obj) {
+    writer
+      ..writeByte(9)
+      ..writeByte(0)
+      ..write(obj.shopName)
+      ..writeByte(1)
+      ..write(obj.logoPath)
+      ..writeByte(2)
+      ..write(obj.phone)
+      ..writeByte(3)
+      ..write(obj.address)
+      ..writeByte(4)
+      ..write(obj.email)
+      ..writeByte(5)
+      ..write(obj.facebook)
+      ..writeByte(6)
+      ..write(obj.viber)
+      ..writeByte(7)
+      ..write(obj.website)
+      ..writeByte(8)
+      ..write(obj.updatedAt);
+  }
+}
