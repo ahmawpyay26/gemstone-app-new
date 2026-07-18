@@ -543,7 +543,26 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       _currentEditingItem.gemstone = gemstone;
       // Reset quantity if gemstone changed
       _currentEditingItem.consignedQuantity = 0;
+      
+      // Auto-prefill weight and unit from purchase record if not in edit mode
+      if (gemstone != null && !_isEditMode) {
+        _autoPrefillWeightFromPurchase(gemstone);
+      } else if (gemstone == null) {
+        // Clear weight/unit if gemstone is deselected
+        _currentEditingItem.weight = null;
+        _currentEditingItem.weightUnit = null;
+      }
     });
+  }
+  
+  void _autoPrefillWeightFromPurchase(Gemstone gemstone) {
+    // Extract weight and unit from the purchase record
+    if (gemstone.weight != null && gemstone.weight! > 0) {
+      _currentEditingItem.weight = gemstone.weight;
+    }
+    if (gemstone.weightUnit != null && gemstone.weightUnit!.isNotEmpty) {
+      _currentEditingItem.weightUnit = gemstone.weightUnit;
+    }
   }
 
   void _updateCurrentItemQuantity(double quantity) {
