@@ -343,55 +343,23 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
 
   void _showVoucherEditDialog(BuildContext context) async {
     try {
-      // Collect all broker consignment records for this voucher
-      final voucherId = widget.items.first.voucherId;
-      final existingItems = <ConsignmentItemTemp>[];
-      final originalQuantities = <String, double>{};
-      
-      for (final bc in widget.items) {
-        // Build ConsignmentItemTemp from BrokerConsignment
-        Gemstone? gemstone;
-        if (bc.sourceType == 'whole_stone') {
-          gemstone = LocalDb.gemstones()[bc.purchaseId];
-        }
-        
-        final item = ConsignmentItemTemp(
-          id: bc.id,
-          originalBcId: bc.id,
-          gemstone: gemstone,
-          consignedQuantity: bc.consignedQuantity,
-          sourceType: bc.sourceType,
-          selectedPurchase: bc.sourceType == 'breakdown_item' 
-            ? LocalDb.gemstones()[bc.purchaseId]
-            : null,
-          selectedBreakdownItem: bc.breakdownItemName,
-          photoPaths: bc.photoPaths ?? [],
-          isNew: false,
-          isDeleted: false,
-          originalQuantity: bc.consignedQuantity,
-        );
-        
-        existingItems.add(item);
-        originalQuantities[bc.id] = bc.consignedQuantity;
-      }
-      
-      // Navigate to edit form
+      // Edit mode not yet fully implemented
       if (context.mounted) {
-        final result = await context.push<bool>(
-          '/broker-form',
-          extra: {
-            'editVoucherId': voucherId,
-            'editVoucherNumber': widget.voucherNumber,
-            'editBrokerName': widget.items.first.brokerName,
-            'editBrokerPhone': widget.items.first.brokerPhone,
-            'editBrokerAddress': widget.items.first.brokerAddress,
-            'editBrokerSocial': widget.items.first.brokerSocialAccount,
-            'editConsignmentDate': widget.items.first.consignmentDate,
-            'editNotes': widget.items.first.notes,
-            'editExistingItems': existingItems,
-            'editOriginalQuantities': originalQuantities,
-          },
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('အကြောင်းကြားချက်'),
+            content: const Text('ဘောင်ချာသည်ပြီးသားမရပါ။'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('နားလည်ပါပြီ'),
+              ),
+            ],
+          ),
         );
+      }
+      return;
         
         // Refresh if edit was successful
         if (result == true && context.mounted) {

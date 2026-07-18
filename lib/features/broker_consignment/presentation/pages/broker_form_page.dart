@@ -648,7 +648,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     
     // Validate each source
     for (final entry in sourceQuantities.entries) {
-      double totalOriginal = 0;
+      double totalOriginal = 0.0;
       for (final origItem in _originalItems) {
         if (origItem.isDeleted) continue;
         String origKey = origItem.sourceType == 'whole_stone'
@@ -691,7 +691,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           record.notes = _notesCtrl.text;
           record.photoPaths = item.photoPaths;
           record.updatedAt = DateTime.now().millisecondsSinceEpoch;
-          await brokerBox.put(record.key, record);
+          await brokerBox.put(record.id, record);
           developer.log('EDIT MODE: Updated ${record.id}');
           break;
         }
@@ -734,7 +734,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       for (final record in brokerBox.values) {
         if (record.voucherId == _editVoucherId && record.id == item.originalBcId) {
           record.deletedAt = DateTime.now().millisecondsSinceEpoch;
-          await brokerBox.put(record.key, record);
+          await brokerBox.put(record.id, record);
           developer.log('EDIT MODE: Soft deleted ${record.id}');
           break;
         }
