@@ -27,7 +27,12 @@ class _PhotoGalleryViewerState extends State<PhotoGalleryViewer> {
   void initState() {
     super.initState();
     _pageController = PageController();
-    _validPhotos = widget.photoPaths.where((path) => File(path).existsSync()).toList();
+    // Use the same photo source as the photo-count badge:
+    // filter only blank/empty paths, do NOT filter by File.existsSync()
+    // so the viewer shows the same photos the badge counts.
+    _validPhotos = widget.photoPaths
+        .where((path) => path.trim().isNotEmpty)
+        .toList();
   }
 
   @override

@@ -435,7 +435,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
               onPressed: () async {
                 try {
                   // Delete all items in this voucher
-                  final brokers = Hive.box<BrokerConsignment>('broker_consignments');
+                  final brokers = Hive.box<BrokerConsignment>(LocalDb.brokerConsignmentsBox);
                   for (final item in widget.items) {
                     await brokers.delete(item.id);
                   }
@@ -900,7 +900,7 @@ class _ItemCardState extends State<_ItemCard> {
 
                     try {
                       widget.item.consignedQuantity = newConsigned;
-                      final brokers = Hive.box<BrokerConsignment>('broker_consignments');
+                      final brokers = Hive.box<BrokerConsignment>(LocalDb.brokerConsignmentsBox);
                       await brokers.put(widget.item.id, widget.item);
 
                       if (context.mounted) {
@@ -980,7 +980,7 @@ class _ItemCardState extends State<_ItemCard> {
               ElevatedButton(
                 onPressed: () async {
                   try {
-                    final brokers = Hive.box<BrokerConsignment>('broker_consignments');
+                    final brokers = Hive.box<BrokerConsignment>(LocalDb.brokerConsignmentsBox);
                     await brokers.delete(widget.item.id);
 
                     if (context.mounted) {
