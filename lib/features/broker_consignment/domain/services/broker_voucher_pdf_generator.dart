@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
@@ -15,12 +16,30 @@ class BrokerVoucherPdfGenerator {
   static final double _pageHeight = PdfPageFormat.a4.height;
   static final double _contentWidth = _pageWidth - (2 * _margin);
 
+  /// Load logo bytes safely for PDF. Returns null if unavailable.
+  static Future<Uint8List?> _loadLogoBytes() async {
+    try {
+      final profile = LocalDb.getBusinessProfile();
+      final rawPath = profile.logoPath;
+      if (rawPath == null || rawPath.trim().isEmpty) return null;
+      final logoFile = File(rawPath.trim());
+      if (!logoFile.existsSync()) return null;
+      final bytes = await logoFile.readAsBytes();
+      return bytes.isEmpty ? null : bytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Generate PDF bytes from voucher document data
   static Future<Uint8List> generatePdf(
     BrokerVoucherDocumentData data,
   ) async {
     // Load Padauk font
     final padaukFont = await _loadPadaukFont();
+
+    // Load logo bytes before building pages
+    final Uint8List? logoBytes = await _loadLogoBytes();
     
     final pdf = pw.Document(
       theme: pw.ThemeData.withFont(
@@ -47,7 +66,7 @@ class BrokerVoucherPdfGenerator {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 // Header
-                _buildHeader(data, padaukFont),
+                _buildHeader(data, padaukFont, logoBytes),
                 pw.SizedBox(height: 12),
 
                 // Broker Information
@@ -78,13 +97,31 @@ class BrokerVoucherPdfGenerator {
     return pw.Font.ttf(fontData);
   }
 
-  /// Build header section with business profile info and voucher title
-  static pw.Widget _buildHeader(BrokerVoucherDocumentData data, pw.Font padaukFont) {
+  /// Build header section with business profile info, logo, and voucher title
+  static pw.Widget _buildHeader(
+      BrokerVoucherDocumentData data, pw.Font padaukFont, Uint8List? logoBytes) {
     final profile = LocalDb.getBusinessProfile();
     final shopName = profile.shopName.isNotEmpty
         ? profile.shopName
         : 'ပွဲစားအပ်နှံဘောင်ချာ';
-    return pw.Column(
+
+    // Build logo widget from pre-loaded bytes
+    pw.Widget? logoWidget;
+    if (logoBytes != null && logoBytes.isNotEmpty) {
+      try {
+        final pdfImage = pw.MemoryImage(logoBytes);
+        logoWidget = pw.Container(
+          width: 60,
+          height: 60,
+          child: pw.Image(pdfImage, fit: pw.BoxFit.contain),
+        );
+      } catch (_) {
+        logoWidget = null; // fallback: omit logo cleanly
+      }
+    }
+
+    // Build the info column
+    final infoColumn = pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         // Shop name — large bold title
@@ -140,6 +177,20 @@ class BrokerVoucherPdfGenerator {
             'Website: ${profile.website}',
             style: pw.TextStyle(font: padaukFont, fontSize: 10),
           ),
+      ],
+    );
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // Logo + info row
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            if (logoWidget != null) ...[logoWidget, pw.SizedBox(width: 10)],
+            pw.Expanded(child: infoColumn),
+          ],
+        ),
         pw.SizedBox(height: 8),
 
         // Voucher number and date

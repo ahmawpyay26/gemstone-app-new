@@ -1,12 +1,12 @@
 // ignore_for_file: avoid_catches_without_on_clauses
 import 'dart:developer' as dev;
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'dart:io';
 import '../models/broker_voucher_document.dart';
 import '../../../../core/local/local_db.dart';
 
@@ -52,14 +52,19 @@ class BrokerVoucherImageExporter {
     dev.log('[ImageExport] step=calculate_pages', name: 'BrokerVoucherImageExporter');
     final totalPages = ((data.items.length - 1) ~/ _itemsPerPage.toInt()) + 1;
 
-    // step: get_temp_dir
-    onStep?.call('get_temp_dir');
-    dev.log('[ImageExport] step=get_temp_dir', name: 'BrokerVoucherImageExporter');
-    final tempDir = await getTemporaryDirectory();
+      // step: get_temp_dir
+      onStep?.call('get_temp_dir');
+      dev.log('[ImageExport] step=get_temp_dir', name: 'BrokerVoucherImageExporter');
+      final tempDir = await getTemporaryDirectory();
 
-    final imageFiles = <XFile>[];
+      // step: load_logo_bytes
+      onStep?.call('load_logo_bytes');
+      dev.log('[ImageExport] step=load_logo_bytes', name: 'BrokerVoucherImageExporter');
+      final Uint8List? logoBytes = await _loadLogoBytes(onStep);
 
-    for (int pageNum = 0; pageNum < totalPages; pageNum++) {
+      final imageFiles = <XFile>[];
+
+      for (int pageNum = 0; pageNum < totalPages; pageNum++) {
       onStep?.call('render_page_${pageNum + 1}_of_$totalPages');
       dev.log(
         '[ImageExport] step=render_page page=${pageNum + 1}/$totalPages',
@@ -77,6 +82,7 @@ class BrokerVoucherImageExporter {
       final widget = _VoucherPageWidget(
         data: data,
         items: pageItems,
+        logoBytes: logoBytes,
         pageNum: pageNum + 1,
         totalPages: totalPages,
         onWidgetStep: onStep,
@@ -115,6 +121,48 @@ class BrokerVoucherImageExporter {
     onStep?.call('completed');
     dev.log('[ImageExport] success', name: 'BrokerVoucherImageExporter');
     return true;
+  }
+
+  /// Load logo file bytes safely. Returns null if unavailable (no crash).
+  static Future<Uint8List?> _loadLogoBytes(
+      void Function(String step)? onStep) async {
+    try {
+      final profile = LocalDb.getBusinessProfile();
+      final rawPath = profile.logoPath;
+
+      if (rawPath == null || rawPath.trim().isEmpty) {
+        dev.log('[ImageExport] logo_path_empty', name: 'BrokerVoucherImageExporter');
+        onStep?.call('logo_path_empty');
+        return null;
+      }
+
+      final logoFile = File(rawPath.trim());
+      if (!logoFile.existsSync()) {
+        dev.log('[ImageExport] logo_file_missing path=$rawPath',
+            name: 'BrokerVoucherImageExporter');
+        onStep?.call('logo_file_missing');
+        return null;
+      }
+
+      final bytes = await logoFile.readAsBytes();
+      if (bytes.isEmpty) {
+        dev.log('[ImageExport] logo_read_failed (empty bytes)',
+            name: 'BrokerVoucherImageExporter');
+        onStep?.call('logo_read_failed');
+        return null;
+      }
+
+      dev.log(
+          '[ImageExport] logo_render_success bytes=${bytes.length}',
+          name: 'BrokerVoucherImageExporter');
+      onStep?.call('logo_render_success');
+      return bytes;
+    } catch (e) {
+      dev.log('[ImageExport] logo_decode_failed error=$e',
+          name: 'BrokerVoucherImageExporter');
+      onStep?.call('logo_decode_failed');
+      return null;
+    }
   }
 
   /// Render a widget to PNG bytes using an off-screen render tree.
@@ -273,6 +321,7 @@ class BrokerVoucherImageExporter {
 class _VoucherPageWidget extends StatelessWidget {
   final BrokerVoucherDocumentData data;
   final List<BrokerVoucherDocumentItem> items;
+  final Uint8List? logoBytes;
   final int pageNum;
   final int totalPages;
   // ignore: prefer_function_declarations_over_variables
@@ -283,6 +332,7 @@ class _VoucherPageWidget extends StatelessWidget {
     required this.items,
     required this.pageNum,
     required this.totalPages,
+    this.logoBytes,
     this.onWidgetStep,
   });
 
@@ -321,66 +371,104 @@ class _VoucherPageWidget extends StatelessWidget {
                       final shopName = profile.shopName.isNotEmpty
                           ? profile.shopName
                           : 'ပွဲစားအပ်နှံဘောင်ချာ';
-                      return Column(
+
+                      // Build logo widget from pre-loaded bytes
+                      Widget logoWidget;
+                      if (logoBytes != null && logoBytes!.isNotEmpty) {
+                        logoWidget = Image.memory(
+                          logoBytes!,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.store,
+                            size: 48,
+                            color: Colors.grey,
+                          ),
+                        );
+                      } else {
+                        logoWidget = const Icon(
+                          Icons.store,
+                          size: 48,
+                          color: Colors.grey,
+                        );
+                      }
+
+                      return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Shop name — large bold title
-                          Text(
-                            shopName,
-                            style: const TextStyle(
-                              fontFamily: 'Padauk',
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                          // Logo area — fixed 80×80 bounded box
+                          SizedBox(
+                            width: 80,
+                            height: 80,
+                            child: logoWidget,
+                          ),
+                          const SizedBox(width: 12),
+                          // Shop info column
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Shop name — large bold title
+                                Text(
+                                  shopName,
+                                  style: const TextStyle(
+                                    fontFamily: 'Padauk',
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                // Subtitle
+                                const Text(
+                                  'ပွဲစားအပ်နှံဘောင်ချာ',
+                                  style: TextStyle(
+                                    fontFamily: 'Padauk',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                // Contact info
+                                if (profile.phone?.isNotEmpty == true)
+                                  Text(
+                                    'ဖုန်း: ${profile.phone}',
+                                    style: const TextStyle(
+                                        fontFamily: 'Padauk', fontSize: 10),
+                                  ),
+                                if (profile.address?.isNotEmpty == true)
+                                  Text(
+                                    'လိပ်စာ: ${profile.address}',
+                                    style: const TextStyle(
+                                        fontFamily: 'Padauk', fontSize: 10),
+                                  ),
+                                if (profile.email?.isNotEmpty == true)
+                                  Text(
+                                    'Email: ${profile.email}',
+                                    style: const TextStyle(
+                                        fontFamily: 'Padauk', fontSize: 10),
+                                  ),
+                                if (profile.facebook?.isNotEmpty == true)
+                                  Text(
+                                    'Facebook: ${profile.facebook}',
+                                    style: const TextStyle(
+                                        fontFamily: 'Padauk', fontSize: 10),
+                                  ),
+                                if (profile.viber?.isNotEmpty == true)
+                                  Text(
+                                    'Viber: ${profile.viber}',
+                                    style: const TextStyle(
+                                        fontFamily: 'Padauk', fontSize: 10),
+                                  ),
+                                if (profile.website?.isNotEmpty == true)
+                                  Text(
+                                    'Website: ${profile.website}',
+                                    style: const TextStyle(
+                                        fontFamily: 'Padauk', fontSize: 10),
+                                  ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          // Subtitle
-                          const Text(
-                            'ပွဲစားအပ်နှံဘောင်ချာ',
-                            style: TextStyle(
-                              fontFamily: 'Padauk',
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          // Contact info row
-                          if (profile.phone?.isNotEmpty == true)
-                            Text(
-                              'ဖုန်း: ${profile.phone}',
-                              style: const TextStyle(
-                                  fontFamily: 'Padauk', fontSize: 10),
-                            ),
-                          if (profile.address?.isNotEmpty == true)
-                            Text(
-                              'လိပ်စာ: ${profile.address}',
-                              style: const TextStyle(
-                                  fontFamily: 'Padauk', fontSize: 10),
-                            ),
-                          if (profile.email?.isNotEmpty == true)
-                            Text(
-                              'Email: ${profile.email}',
-                              style: const TextStyle(
-                                  fontFamily: 'Padauk', fontSize: 10),
-                            ),
-                          if (profile.facebook?.isNotEmpty == true)
-                            Text(
-                              'Facebook: ${profile.facebook}',
-                              style: const TextStyle(
-                                  fontFamily: 'Padauk', fontSize: 10),
-                            ),
-                          if (profile.viber?.isNotEmpty == true)
-                            Text(
-                              'Viber: ${profile.viber}',
-                              style: const TextStyle(
-                                  fontFamily: 'Padauk', fontSize: 10),
-                            ),
-                          if (profile.website?.isNotEmpty == true)
-                            Text(
-                              'Website: ${profile.website}',
-                              style: const TextStyle(
-                                  fontFamily: 'Padauk', fontSize: 10),
-                            ),
                         ],
                       );
                     },

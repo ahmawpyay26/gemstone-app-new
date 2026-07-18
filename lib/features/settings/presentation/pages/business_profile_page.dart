@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -8,6 +9,9 @@ import '../../../../core/theme/app_theme.dart';
 /// Business Profile page — allows the user to set shop name, logo,
 /// phone, address, and optional social/contact fields.
 /// Only ONE BusinessProfile exists (singleton key: 'profile').
+///
+/// Logo is copied to a PERMANENT location inside the app documents directory
+/// so it survives app restarts and cache cleanup.
 class BusinessProfilePage extends StatefulWidget {
   const BusinessProfilePage({Key? key}) : super(key: key);
 
@@ -54,17 +58,62 @@ class _BusinessProfilePageState extends State<BusinessProfilePage> {
     super.dispose();
   }
 
+  /// Copy the picked image into the app's permanent documents directory.
+  /// Returns the permanent path, or null on failure.
+  static Future<String?> _copyLogoToPermanentStorage(String sourcePath) async {
+    try {
+      final sourceFile = File(sourcePath);
+      if (!sourceFile.existsSync()) return null;
+
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final logoDir = Directory('${appDocDir.path}/business_profile');
+      if (!logoDir.existsSync()) {
+        logoDir.createSync(recursive: true);
+      }
+
+      // Use a stable filename so old logos are automatically replaced.
+      final parts = sourcePath.split('.');
+      final rawExt = parts.length > 1 ? '.${parts.last.toLowerCase()}' : '';
+      final safeExt = (rawExt == '.jpg' || rawExt == '.jpeg' || rawExt == '.png' || rawExt == '.webp')
+          ? rawExt
+          : '.jpg';
+      final targetPath = '${logoDir.path}/business_profile_logo$safeExt';
+
+      // Remove old logo if it exists at a different path.
+      final targetFile = File(targetPath);
+      if (targetFile.existsSync()) {
+        targetFile.deleteSync();
+      }
+
+      await sourceFile.copy(targetPath);
+      return targetPath;
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<void> _pickLogo(ImageSource source) async {
     try {
       final picker = ImagePicker();
       final picked = await picker.pickImage(
         source: source,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 85,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 90,
       );
-      if (picked != null && mounted) {
-        setState(() => _logoPath = picked.path);
+      if (picked == null || !mounted) return;
+
+      // Copy to permanent storage immediately after picking.
+      final permanentPath = await _copyLogoToPermanentStorage(picked.path);
+      if (permanentPath != null && mounted) {
+        setState(() => _logoPath = permanentPath);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logo ကို သိမ်းဆည်း၍မရပါ။ ထပ်မံကြိုးစားပါ။'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
