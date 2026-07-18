@@ -677,7 +677,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     developer.log('EDIT MODE: Aggregate validation passed');
     
     // Update existing items
-      final brokerBox = Hive.box<BrokerConsignment>('broker_consignments') as Box<BrokerConsignment>;
+    final brokerBox = Hive.box<BrokerConsignment>('broker_consignments') as Box<BrokerConsignment>;
     for (final item in _currentDraftItems) {
       if (item.isNew || item.isDeleted) continue;
       
