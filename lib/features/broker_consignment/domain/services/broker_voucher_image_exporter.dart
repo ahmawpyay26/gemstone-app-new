@@ -192,6 +192,12 @@ class BrokerVoucherImageExporter {
 
     buildOwner.finalizeTree();
 
+    // CRITICAL: prepareInitialFrame() bootstraps the render view so that
+    // RenderRepaintBoundary.toImage() can find a valid composited layer.
+    // Without this call, repaintBoundary.layer is null and toImage() crashes
+    // with "Null check operator used on a null value" at convert_to_image.
+    renderView.prepareInitialFrame();
+
     // step: layout
     onStep?.call('layout');
     dev.log('[ImageExport] step=layout', name: 'BrokerVoucherImageExporter');
