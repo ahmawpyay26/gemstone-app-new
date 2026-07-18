@@ -748,6 +748,19 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
   }
 
   Future<void> _handleImageExportAction(BuildContext context) async {
+    // Guard: items must be non-empty before accessing .first
+    if (widget.items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'ဘောင်ချာပုံ ထုတ်ယူ၍မရပါ။ ပစ္စည်းများ မပါဝင်ပါ။',
+            style: TextStyle(fontFamily: 'Padauk'),
+          ),
+        ),
+      );
+      return;
+    }
+
     try {
       // Show loading dialog
       if (!context.mounted) return;
@@ -756,10 +769,10 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         barrierDismissible: false,
         builder: (ctx) => Dialog(
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: [
+              children: const [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
                 Text(
@@ -772,7 +785,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         ),
       );
 
-      // Build document data
+      // Build document data — safe: items non-empty checked above
       final documentData = BrokerVoucherDocumentBuilder.buildFromVoucher(
         voucherItems: widget.items,
         voucherNumber: widget.voucherNumber,
@@ -790,18 +803,34 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပုံ သိမ်းဆည်းပြီးပါပြီ')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပုံ သိမ်းဆည်းရန် ပരिवर्तन ဖြစ်ခဲ့သည်')),
+          const SnackBar(
+            content: Text(
+              'ပုံ ထုတ်ယူပြီးပါပြီ',
+              style: TextStyle(fontFamily: 'Padauk'),
+            ),
+          ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log full details for developer debugging
+      // ignore: avoid_print
+      print('[ImageExport] ERROR voucher=${widget.voucherNumber} items=${widget.items.length}\n$e\n$stackTrace');
+
       if (!context.mounted) return;
-      Navigator.of(context).pop(); // Close loading dialog
+      // Pop loading dialog if still open
+      try {
+        Navigator.of(context).pop();
+      } catch (_) {}
+
+      // Show Burmese error — never expose raw Dart exception to user
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('အမှားအယွင်း: ${e.toString()}')),
+        const SnackBar(
+          content: Text(
+            'ဘောင်ချာပုံ ထုတ်ယူ၍မရပါ။ ထပ်မံကြိုးစားပါ။',
+            style: TextStyle(fontFamily: 'Padauk'),
+          ),
+          duration: Duration(seconds: 4),
+        ),
       );
     }
   }
