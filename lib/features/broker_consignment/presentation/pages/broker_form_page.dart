@@ -26,6 +26,10 @@ class ConsignmentItemTemp {
   Map<String, int> availableBreakdownItems; // Filtered breakdown items from purchase
   List<String> photoPaths; // Independent photo list for this item
   
+  // Weight Tracking (NEW)
+  double? weight; // Optional weight value
+  String? weightUnit; // Unit of weight
+  
   // Edit mode tracking
   String? originalBcId; // Original BrokerConsignment record ID (for updates)
   bool isNew; // true = new item, false = existing item
@@ -41,6 +45,8 @@ class ConsignmentItemTemp {
     this.selectedBreakdownItem,
     this.availableBreakdownItems = const {},
     this.photoPaths = const [],
+    this.weight,
+    this.weightUnit,
     this.originalBcId,
     this.isNew = true,
     this.isDeleted = false,
@@ -158,6 +164,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             selectedBreakdownItem: item.selectedBreakdownItem,
             availableBreakdownItems: Map<String, int>.from(item.availableBreakdownItems),
             photoPaths: List<String>.from(item.photoPaths),
+            weight: item.weight,
+            weightUnit: item.weightUnit,
             originalBcId: item.originalBcId,
             isNew: item.isNew,
             isDeleted: item.isDeleted,
@@ -748,6 +756,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           record.brokerSocialAccount = _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text;
           record.notes = _notesCtrl.text;
           record.photoPaths = item.photoPaths;
+          record.weight = item.weight; // Update weight
+          record.weightUnit = item.weightUnit; // Update weight unit
           record.updatedAt = DateTime.now().millisecondsSinceEpoch;
           final brokers = Hive.box<BrokerConsignment>('brokerConsignments');
           await brokers.put(record.id, record);
@@ -795,6 +805,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           photoPaths: item.photoPaths,
           voucherId: _editVoucherId,
           voucherNumber: _editVoucherNumber,
+          weight: item.weight,
+          weightUnit: item.weightUnit,
         );
         DiagnosticLogService.addLog('  [NEW-$newItemCountCreated] AFTER createBrokerConsignment');
         developer.log('  [NEW-$newItemCountCreated] AFTER createBrokerConsignment');
@@ -1765,6 +1777,102 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                 ),
               ],
             ),
+            
+            // Weight and Unit input (NEW)
+            if (_currentEditingItem.gemstone != null || _currentEditingItem.selectedBreakdownItem != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 12),
+                  Text(
+                    'အလေးချိန်နှင့်ယူနစ်',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: 'အလေးချိန်',
+                            labelStyle: TextStyle(color: Colors.grey[400]),
+                            hintText: 'ဥပမာ: 5.2',
+                            hintStyle: TextStyle(color: Colors.grey[600]),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[700]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[700]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[900],
+                          ),
+                          controller: TextEditingController(text: _currentEditingItem.weight?.toString() ?? ''),
+                          onChanged: (value) {
+                            final weight = double.tryParse(value);
+                            if (weight != null && weight > 0) {
+                              _currentEditingItem.weight = weight;
+                            } else if (value.isEmpty) {
+                              _currentEditingItem.weight = null;
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _currentEditingItem.weightUnit ?? 'ပိသာ',
+                          isExpanded: true,
+                          dropdownColor: AppTheme.surfaceDark,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: 'ယူနစ်',
+                            labelStyle: TextStyle(color: Colors.grey[400]),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[700]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[700]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[900],
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'ပိသာ', child: Text('ပိသာ')),
+                            DropdownMenuItem(value: 'ကျပ်သား', child: Text('ကျပ်သား')),
+                            DropdownMenuItem(value: 'ကာရက်', child: Text('ကာရက်')),
+                            DropdownMenuItem(value: 'kg', child: Text('ကီလို (kg)')),
+                            DropdownMenuItem(value: 'g', child: Text('ဂရမ် (g)')),
+                            DropdownMenuItem(value: 'lb', child: Text('ပေါင် (lb)')),
+                            DropdownMenuItem(value: 'oz', child: Text('အောင်စ (oz)')),
+                          ],
+                          onChanged: (String? value) {
+                            if (value != null) {
+                              setState(() {
+                                _currentEditingItem.weightUnit = value;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
         ],
       ),
     );
@@ -1830,6 +1938,18 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                           style: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    if (item.weight != null && item.weight! > 0 && item.weightUnit != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'အလေးချိန်: ${item.weight} ${item.weightUnit}',
+                          style: TextStyle(
+                            color: AppTheme.primaryAccent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),

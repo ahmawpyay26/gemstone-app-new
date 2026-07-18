@@ -1034,6 +1034,10 @@ class BrokerConsignment {
   String notes;
   List<String> photoPaths; // Paths to broker photos
   
+  // Weight Tracking (NEW)
+  double? weight; // Optional weight value
+  String? weightUnit; // Unit of weight (ပိသာ, ကျပ်သား, ကာရက်, kg, g, lb, oz)
+  
   // Timestamps
   int createdAt;
   int updatedAt;
@@ -1059,6 +1063,8 @@ class BrokerConsignment {
     this.deletedAt,
     this.voucherId,
     this.voucherNumber,
+    this.weight,
+    this.weightUnit,
   }) : updatedAt = updatedAt ?? createdAt;
 
   /// Calculate remaining quantity with broker
@@ -1101,13 +1107,15 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
       deletedAt: fields[14] as int?,
       voucherId: fields[15] as String?,
       voucherNumber: fields[16] as String?,
+      weight: (fields[19] as double?),
+      weightUnit: (fields[20] as String?),
     );
   }
 
   @override
   void write(BinaryWriter writer, BrokerConsignment obj) {
     writer
-      ..writeByte(19)
+      ..writeByte(21)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -1145,7 +1153,11 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
       ..writeByte(15)
       ..write(obj.voucherId)
       ..writeByte(16)
-      ..write(obj.voucherNumber);
+      ..write(obj.voucherNumber)
+      ..writeByte(19)
+      ..write(obj.weight)
+      ..writeByte(20)
+      ..write(obj.weightUnit);
   }
 }
 

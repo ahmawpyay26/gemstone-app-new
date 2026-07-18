@@ -1798,6 +1798,8 @@ class LocalDb {
     List<String> photoPaths = const [],
     String? voucherId, // Shared UUID for grouped submission
     String? voucherNumber, // Shared human-readable number (BC-YYYYMMDD-NNNN)
+    double? weight, // Optional weight value
+    String? weightUnit, // Unit of weight
   }) async {
     final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
     final gemstones = Hive.box<Gemstone>(gemstonesBox);
@@ -1919,6 +1921,8 @@ class LocalDb {
       createdAt: now,
       voucherId: voucherId, // Assign shared voucher ID
       voucherNumber: voucherNumber, // Assign shared voucher number
+      weight: weight, // Optional weight value
+      weightUnit: weightUnit, // Unit of weight
     );
 
     // PHASE 1: Deduct quantity based on source type
