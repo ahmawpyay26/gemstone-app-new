@@ -577,6 +577,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
 
     try {
       if (_isEditMode) {
+        // CRITICAL: Sync _confirmedItems (user-edited list) to _currentDraftItems before save
+        // This ensures newly added items are included in the save process
+        _currentDraftItems = List<ConsignmentItemTemp>.from(_confirmedItems);
         await _saveEditMode();
       } else {
         await _saveCreateMode();
