@@ -1294,24 +1294,16 @@ class _CompletedVoucherCardState extends State<_CompletedVoucherCard> {
         );
         break;
       case 'print':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပွဲစား ပရင့်ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _handleCompletedVoucherPrint(context);
         break;
       case 'image':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပွဲစား ပုံထုတ်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _handleCompletedVoucherImageExport(context);
         break;
       case 'pdf':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပွဲစား PDF ထုတ်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _handleCompletedVoucherPdfExport(context);
         break;
       case 'photos':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ပွဲစား ဓာတ်ပုံများ - လုပ်ဆောင်နေသည်')),
-        );
+        _showCompletedVoucherPhotos(context);
         break;
     }
   }
@@ -1495,6 +1487,30 @@ class _CompletedVoucherCardState extends State<_CompletedVoucherCard> {
             ),
         ],
       ),
+    );
+  }
+
+  Future<void> _handleCompletedVoucherPdfExport(BuildContext context) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('ပွဲစား PDF ပြင်ဆင်နေသည်...')),
+    );
+  }
+
+  Future<void> _handleCompletedVoucherPrint(BuildContext context) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('ပွဲစား ပရင့်ထုတ်နေသည်...')),
+    );
+  }
+
+  Future<void> _handleCompletedVoucherImageExport(BuildContext context) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('ပွဲစား ပုံ ပြင်ဆင်နေသည်...')),
+    );
+  }
+
+  void _showCompletedVoucherPhotos(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('ပွဲစား ဓာတ်ပုံ မရှိပါ။')),
     );
   }
 }
