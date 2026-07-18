@@ -8,6 +8,7 @@ import '../../../broker_consignment/domain/builders/broker_voucher_document_buil
 import '../../../broker_consignment/domain/services/broker_voucher_export_service.dart';
 import '../../../broker_consignment/domain/services/broker_voucher_image_exporter.dart';
 import '../widgets/photo_gallery_viewer.dart';
+import '../helpers/photo_helpers.dart';
 
 class BrokerDetailPage extends StatefulWidget {
   final String brokerName;
@@ -1140,9 +1141,7 @@ class _ItemCardState extends State<_ItemCard> {
         _showItemReturnDialog(context);
         break;
       case 'photos':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ဓာတ်ပုံကြည့်ရန် - လုပ်ဆောင်နေသည်')),
-        );
+        _showItemPhotoViewer(context);
         break;
     }
   }
@@ -1247,9 +1246,14 @@ class _ItemCardState extends State<_ItemCard> {
   }
 
   void _showItemPhotoViewer(BuildContext context) {
-    if (widget.item.photoPaths == null || widget.item.photoPaths!.isEmpty) {
+    final validPaths = widget.item.photoPaths
+        ?.where((path) => path.trim().isNotEmpty)
+        .toSet()
+        .toList() ?? [];
+
+    if (validPaths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ဓာတ်ပုံ မရှိပါ။')),
+        const SnackBar(content: Text('ဤပစ္စည်းတွင် ကြည့်ရှုနိုင်သော ဓာတ်ပုံမရှိပါ။')),
       );
       return;
     }
@@ -1257,7 +1261,7 @@ class _ItemCardState extends State<_ItemCard> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => PhotoGalleryViewer(
-          photoPaths: widget.item.photoPaths!,
+          photoPaths: validPaths,
           title: 'အရည်အသွေး ${widget.itemIndex + 1} ဓာတ်ပုံများ',
         ),
       ),
