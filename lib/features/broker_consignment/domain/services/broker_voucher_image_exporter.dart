@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_catches_without_on_clauses
 import 'dart:developer' as dev;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -77,6 +78,7 @@ class BrokerVoucherImageExporter {
         items: pageItems,
         pageNum: pageNum + 1,
         totalPages: totalPages,
+        onWidgetStep: onStep,
       );
 
       // step: render_to_image
@@ -158,6 +160,10 @@ class BrokerVoucherImageExporter {
         alignment: Alignment.topLeft,
         child: repaintBoundary,
       ),
+      configuration: ViewConfiguration(
+        logicalConstraints: BoxConstraints.tight(logicalSize),
+        devicePixelRatio: dpr,
+      ),
     );
 
     final pipelineOwner = PipelineOwner();
@@ -168,6 +174,11 @@ class BrokerVoucherImageExporter {
         FocusHighlightStrategy.automatic;
 
     // step: build_widget_tree
+    // NOTE: The onStep callback fires BEFORE attachToRenderTree.
+    // To identify which widget inside the tree crashes, _VoucherPageWidget
+    // accepts onWidgetStep and uses Builder widgets to call it from inside
+    // each widget's build() method. The last Builder checkpoint that fires
+    // before the crash tells us the exact failing widget.
     onStep?.call('build_widget_tree');
     dev.log('[ImageExport] step=build_widget_tree', name: 'BrokerVoucherImageExporter');
 
@@ -183,11 +194,6 @@ class BrokerVoucherImageExporter {
             viewPadding: EdgeInsets.zero,
             viewInsets: EdgeInsets.zero,
           ),
-          // CRITICAL: Material.build() calls Theme.of(context)! internally.
-          // Without a Theme ancestor in the off-screen tree, this crashes with:
-          //   _TypeError: Null check operator used on a null value
-          // at the build_widget_tree step.
-          // Fix: wrap with Theme so Material can find its InheritedTheme.
           child: Theme(
             data: ThemeData.light(),
             child: Material(
@@ -202,8 +208,6 @@ class BrokerVoucherImageExporter {
 
     // CRITICAL: prepareInitialFrame() bootstraps the render view so that
     // RenderRepaintBoundary.toImage() can find a valid composited layer.
-    // Without this call, repaintBoundary.layer is null and toImage() crashes
-    // with "Null check operator used on a null value" at convert_to_image.
     renderView.prepareInitialFrame();
 
     // step: layout
@@ -259,129 +263,248 @@ class BrokerVoucherImageExporter {
   }
 }
 
-/// Widget that renders a single page of a broker voucher
+/// Widget that renders a single page of a broker voucher.
+///
+/// [onWidgetStep] is called from inside Builder widgets at each major
+/// checkpoint so we can identify the exact widget that crashes during
+/// attachToRenderTree. Each Builder fires its callback synchronously
+/// during the build phase, so the last fired step = last built widget.
 class _VoucherPageWidget extends StatelessWidget {
   final BrokerVoucherDocumentData data;
   final List<BrokerVoucherDocumentItem> items;
   final int pageNum;
   final int totalPages;
+  // ignore: prefer_function_declarations_over_variables
+  final void Function(String step)? onWidgetStep;
 
   const _VoucherPageWidget({
     required this.data,
     required this.items,
     required this.pageNum,
     required this.totalPages,
+    this.onWidgetStep,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 800,
-      height: 1100,
-      color: Colors.white,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Text(
-            'အတ္တကြ မြန်မာ ကျောက်မျ',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'ပွဲစားအပ်နှံဘောင်ချာ',
-            style: const TextStyle(
-              fontFamily: 'Padauk',
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'ဘောင်ချာ နံပါတ်: ${data.voucherNumber}',
-                style: const TextStyle(fontFamily: 'Padauk', fontSize: 11),
-              ),
-              Text(
-                'ရက်စွဲ: ${data.formattedDate}',
-                style: const TextStyle(fontFamily: 'Padauk', fontSize: 11),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+    // Checkpoint: entering _VoucherPageWidget.build()
+    onWidgetStep?.call('widget_build_enter');
+    dev.log('[ImageExport] widget=_VoucherPageWidget.build enter',
+        name: 'BrokerVoucherImageExporter');
 
-          // Broker info
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ပွဲစားအချက်အလက်',
-                  style: const TextStyle(
-                    fontFamily: 'Padauk',
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+    return Builder(
+      builder: (ctx) {
+        onWidgetStep?.call('widget_container_outer');
+        dev.log('[ImageExport] widget=Container(outer)',
+            name: 'BrokerVoucherImageExporter');
+        return Container(
+          width: _VoucherPageWidget._kPageWidth,
+          height: _VoucherPageWidget._kPageHeight,
+          color: Colors.white,
+          padding: const EdgeInsets.all(20),
+          child: Builder(
+            builder: (ctx2) {
+              onWidgetStep?.call('widget_column_root');
+              dev.log('[ImageExport] widget=Column(root)',
+                  name: 'BrokerVoucherImageExporter');
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Header ──────────────────────────────────────────────
+                  Builder(
+                    builder: (ctx3) {
+                      onWidgetStep?.call('widget_header_title');
+                      dev.log('[ImageExport] widget=Text(header_title)',
+                          name: 'BrokerVoucherImageExporter');
+                      return Text(
+                        'အတ္တကြ မြန်မာ ကျောက်မျ',
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      );
+                    },
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'နာမည်: ${data.brokerName}',
-                  style: const TextStyle(fontFamily: 'Padauk', fontSize: 10),
-                ),
-                Text(
-                  'ဖုန်း: ${data.brokerPhone}',
-                  style: const TextStyle(fontFamily: 'Padauk', fontSize: 10),
-                ),
-                // null-safe: brokerAddress is String? — only show if non-null and non-empty
-                if (data.brokerAddress != null &&
-                    data.brokerAddress!.isNotEmpty)
-                  Text(
-                    'လိပ်စာ: ${data.brokerAddress}',
-                    style:
-                        const TextStyle(fontFamily: 'Padauk', fontSize: 10),
+                  const SizedBox(height: 4),
+                  Builder(
+                    builder: (ctx3) {
+                      onWidgetStep?.call('widget_header_subtitle');
+                      dev.log('[ImageExport] widget=Text(header_subtitle)',
+                          name: 'BrokerVoucherImageExporter');
+                      return const Text(
+                        'ပွဲစားအပ်နှံဘောင်ချာ',
+                        style: TextStyle(
+                          fontFamily: 'Padauk',
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
+                  const SizedBox(height: 8),
+                  Builder(
+                    builder: (ctx3) {
+                      onWidgetStep?.call('widget_header_row');
+                      dev.log('[ImageExport] widget=Row(header_meta)',
+                          name: 'BrokerVoucherImageExporter');
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'ဘောင်ချာ နံပါတ်: ${data.voucherNumber}',
+                            style: const TextStyle(
+                                fontFamily: 'Padauk', fontSize: 11),
+                          ),
+                          Text(
+                            'ရက်စွဲ: ${data.formattedDate}',
+                            style: const TextStyle(
+                                fontFamily: 'Padauk', fontSize: 11),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
 
-          // Items table
-          Expanded(
-            child: SingleChildScrollView(
-              child: _buildItemsTable(),
-            ),
-          ),
+                  // ── Broker info ─────────────────────────────────────────
+                  Builder(
+                    builder: (ctx3) {
+                      onWidgetStep?.call('widget_broker_info_box');
+                      dev.log('[ImageExport] widget=Container(broker_info)',
+                          name: 'BrokerVoucherImageExporter');
+                      return Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration:
+                            BoxDecoration(border: Border.all(color: Colors.grey)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Builder(
+                              builder: (ctx4) {
+                                onWidgetStep?.call('widget_broker_label');
+                                dev.log('[ImageExport] widget=Text(broker_label)',
+                                    name: 'BrokerVoucherImageExporter');
+                                return const Text(
+                                  'ပွဲစားအချက်အလက်',
+                                  style: TextStyle(
+                                    fontFamily: 'Padauk',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 4),
+                            Builder(
+                              builder: (ctx4) {
+                                onWidgetStep?.call('widget_broker_name');
+                                dev.log('[ImageExport] widget=Text(broker_name)',
+                                    name: 'BrokerVoucherImageExporter');
+                                return Text(
+                                  'နာမည်: ${data.brokerName}',
+                                  style: const TextStyle(
+                                      fontFamily: 'Padauk', fontSize: 10),
+                                );
+                              },
+                            ),
+                            Builder(
+                              builder: (ctx4) {
+                                onWidgetStep?.call('widget_broker_phone');
+                                dev.log('[ImageExport] widget=Text(broker_phone)',
+                                    name: 'BrokerVoucherImageExporter');
+                                return Text(
+                                  'ဖုန်း: ${data.brokerPhone}',
+                                  style: const TextStyle(
+                                      fontFamily: 'Padauk', fontSize: 10),
+                                );
+                              },
+                            ),
+                            if (data.brokerAddress != null &&
+                                data.brokerAddress!.isNotEmpty)
+                              Builder(
+                                builder: (ctx4) {
+                                  onWidgetStep?.call('widget_broker_address');
+                                  dev.log(
+                                      '[ImageExport] widget=Text(broker_address)',
+                                      name: 'BrokerVoucherImageExporter');
+                                  return Text(
+                                    'လိပ်စာ: ${data.brokerAddress}',
+                                    style: const TextStyle(
+                                        fontFamily: 'Padauk', fontSize: 10),
+                                  );
+                                },
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
 
-          // Footer
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'ပွဲစား လက်မှတ်',
-                style: const TextStyle(fontFamily: 'Padauk', fontSize: 9),
-              ),
-              Text(
-                'စာမျက်နှာ $pageNum / $totalPages',
-                style: const TextStyle(fontFamily: 'Padauk', fontSize: 9),
-              ),
-              Text(
-                'ကုန်သည် လက်မှတ်',
-                style: const TextStyle(fontFamily: 'Padauk', fontSize: 9),
-              ),
-            ],
+                  // ── Items table ─────────────────────────────────────────
+                  Builder(
+                    builder: (ctx3) {
+                      onWidgetStep?.call('widget_items_table_expanded');
+                      dev.log('[ImageExport] widget=Expanded(items_table)',
+                          name: 'BrokerVoucherImageExporter');
+                      return Expanded(
+                        child: SingleChildScrollView(
+                          child: Builder(
+                            builder: (ctx4) {
+                              onWidgetStep?.call('widget_items_table_scroll');
+                              dev.log(
+                                  '[ImageExport] widget=SingleChildScrollView(items)',
+                                  name: 'BrokerVoucherImageExporter');
+                              return _buildItemsTable(onWidgetStep);
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // ── Footer ──────────────────────────────────────────────
+                  const SizedBox(height: 12),
+                  Builder(
+                    builder: (ctx3) {
+                      onWidgetStep?.call('widget_footer_row');
+                      dev.log('[ImageExport] widget=Row(footer)',
+                          name: 'BrokerVoucherImageExporter');
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'ပွဲစား လက်မှတ်',
+                            style: const TextStyle(
+                                fontFamily: 'Padauk', fontSize: 9),
+                          ),
+                          Text(
+                            'စာမျက်နှာ $pageNum / $totalPages',
+                            style: const TextStyle(
+                                fontFamily: 'Padauk', fontSize: 9),
+                          ),
+                          Text(
+                            'ကုန်သည် လက်မှတ်',
+                            style: const TextStyle(
+                                fontFamily: 'Padauk', fontSize: 9),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildItemsTable() {
+  static const double _kPageWidth = 800;
+  static const double _kPageHeight = 1100;
+
+  Widget _buildItemsTable(void Function(String)? onStep) {
+    onStep?.call('widget_table_build');
+    dev.log('[ImageExport] widget=Table(items)', name: 'BrokerVoucherImageExporter');
     return Table(
       border: TableBorder.all(color: Colors.grey),
       columnWidths: const {
@@ -395,7 +518,7 @@ class _VoucherPageWidget extends StatelessWidget {
         7: FixedColumnWidth(50),
       },
       children: [
-        // Header
+        // Header row
         TableRow(
           decoration: BoxDecoration(color: Colors.grey[300]),
           children: [
@@ -409,8 +532,13 @@ class _VoucherPageWidget extends StatelessWidget {
             _buildTableCell('ကျန်ရှိ', isHeader: true),
           ],
         ),
-        // Items
-        ...items.map((item) {
+        // Item rows
+        ...items.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final item = entry.value;
+          onStep?.call('widget_table_row_$idx');
+          dev.log('[ImageExport] widget=TableRow(item_$idx)',
+              name: 'BrokerVoucherImageExporter');
           return TableRow(
             children: [
               _buildTableCell('${item.itemNumber}'),
@@ -428,7 +556,7 @@ class _VoucherPageWidget extends StatelessWidget {
             ],
           );
         }),
-        // Totals
+        // Totals row
         TableRow(
           decoration: BoxDecoration(color: Colors.grey[200]),
           children: [
