@@ -342,18 +342,24 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
   bool _isExpanded = false;
 
   void _showVoucherEditDialog(BuildContext context) {
-    // Edit mode not yet fully implemented - show info dialog
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('အကြောင်းကြားချက်'),
-        content: const Text('ဘောင်ချာသည်ပြီးသားမရပါ။'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('နားလည်ပါပြီ'),
-          ),
-        ],
+    // Navigate to BrokerFormPage in edit mode
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BrokerFormPage(
+          editVoucherId: widget.voucherId,
+          editVoucherNumber: widget.voucherNumber,
+          editBrokerName: widget.brokerName,
+          editBrokerPhone: widget.brokerPhone,
+          editBrokerAddress: widget.brokerAddress,
+          editBrokerSocial: widget.brokerSocialAccount,
+          editConsignmentDate: widget.consignmentDate,
+          editNotes: widget.notes,
+          editExistingItems: widget.items,
+          editOriginalQuantities: {
+            for (final item in widget.items)
+              item.id: item.consignedQuantity.toDouble()
+          },
+        ),
       ),
     );
   }
