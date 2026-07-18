@@ -13,6 +13,7 @@ import '../../../../core/rca/rca_log_collector.dart';
 import 'dart:developer' as developer;
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../../../../core/services/diagnostic_log_service.dart';
 
 /// Temporary model for consignment items during form editing
 class ConsignmentItemTemp {
@@ -632,147 +633,279 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   }
 
   Future<void> _saveEditMode() async {
-    developer.log('EDIT MODE: Starting atomic save');
-    
-    // ===== STAGE 1: LOG DRAFT ITEMS BEFORE SAVE =====
-    developer.log('STAGE 1: DRAFT ITEMS BEFORE SAVE');
-    developer.log('Total draft items: ${_currentDraftItems.length}');
-    for (int i = 0; i < _currentDraftItems.length; i++) {
-      final item = _currentDraftItems[i];
-      developer.log('  [$i] isNew=${item.isNew} | isDeleted=${item.isDeleted} | originalBcId=${item.originalBcId} | sourceType=${item.sourceType} | gemstoneId=${item.gemstone?.id} | gemName=${item.gemstone?.name} | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
-    }
-    
-    // Validate aggregate quantities
-    final Map<String, double> sourceQuantities = {};
-    for (final item in _currentDraftItems) {
-      if (item.isDeleted) continue;
+    try {
+      // Initialize diagnostic logging
+      await DiagnosticLogService.init();
+      DiagnosticLogService.addLog('========== EDIT SAVE STARTED ==========');
+      DiagnosticLogService.addLog('Voucher Number: $_editVoucherNumber');
+      DiagnosticLogService.addLog('Voucher ID: $_editVoucherId');
       
-      String sourceKey = item.sourceType == 'whole_stone'
-          ? 'whole_stone_${item.gemstone?.id}'
-          : 'breakdown_${item.gemstone?.id}_${item.selectedBreakdownItem}';
+      // ===== STAGE 1: LOG DRAFT ITEMS BEFORE SAVE =====
+      DiagnosticLogService.addLog('\n===== STAGE 1: DRAFT ITEMS BEFORE SAVE =====');
+      DiagnosticLogService.addLog('Total draft items: ${_currentDraftItems.length}');
+      int existingItemCount = 0;
+      int newItemCountDraft = 0;
+      for (int i = 0; i < _currentDraftItems.length; i++) {
+        final item = _currentDraftItems[i];
+        if (item.isDeleted) continue;
+        if (item.isNew) {
+          newItemCountDraft++;
+        } else {
+          existingItemCount++;
+        }
+        DiagnosticLogService.addLog('  [$i] isNew=${item.isNew} | isDeleted=${item.isDeleted} | originalBcId=${item.originalBcId} | sourceType=${item.sourceType} | gemstoneId=${item.gemstone?.id} | gemName=${item.gemstone?.name} | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
+      }
+      DiagnosticLogService.addLog('Existing items: $existingItemCount | New items (draft): $newItemCountDraft');
       
-      sourceQuantities[sourceKey] = (sourceQuantities[sourceKey] ?? 0) + item.consignedQuantity;
-    }
-    
-    // Validate each source
-    for (final entry in sourceQuantities.entries) {
-      double totalOriginal = 0.0;
-      for (final origItem in _originalItems) {
-        if (origItem.isDeleted) continue;
-        String origKey = origItem.sourceType == 'whole_stone'
-            ? 'whole_stone_${origItem.gemstone?.id}'
-            : 'breakdown_${origItem.gemstone?.id}_${origItem.selectedBreakdownItem}';
-        if (origKey == entry.key) totalOriginal += origItem.originalQuantity;
+      developer.log('EDIT MODE: Starting atomic save');
+      developer.log('STAGE 1: DRAFT ITEMS BEFORE SAVE');
+      developer.log('Total draft items: ${_currentDraftItems.length}');
+      
+      // Validate aggregate quantities
+      final Map<String, double> sourceQuantities = {};
+      for (final item in _currentDraftItems) {
+        if (item.isDeleted) continue;
+        
+        String sourceKey = item.sourceType == 'whole_stone'
+            ? 'whole_stone_${item.gemstone?.id}'
+            : 'breakdown_${item.gemstone?.id}_${item.selectedBreakdownItem}';
+        
+        sourceQuantities[sourceKey] = (sourceQuantities[sourceKey] ?? 0) + item.consignedQuantity;
       }
       
-      double currentRemaining = 0.0;
-      if (entry.key.startsWith('whole_stone')) {
-        final gemstoneId = entry.key.replaceFirst('whole_stone_', '');
-        for (final item in _currentDraftItems) {
-          if (item.gemstone?.id == gemstoneId && item.sourceType == 'whole_stone') {
-            currentRemaining = LocalDb.gemstoneRemainingQuantity(item.gemstone!).toDouble();
-            break;
+      // Validate each source
+      for (final entry in sourceQuantities.entries) {
+        double totalOriginal = 0.0;
+        for (final origItem in _originalItems) {
+          if (origItem.isDeleted) continue;
+          String origKey = origItem.sourceType == 'whole_stone'
+              ? 'whole_stone_${origItem.gemstone?.id}'
+              : 'breakdown_${origItem.gemstone?.id}_${origItem.selectedBreakdownItem}';
+          if (origKey == entry.key) totalOriginal += origItem.originalQuantity;
+        }
+        
+        double currentRemaining = 0.0;
+        if (entry.key.startsWith('whole_stone')) {
+          final gemstoneId = entry.key.replaceFirst('whole_stone_', '');
+          for (final item in _currentDraftItems) {
+            if (item.gemstone?.id == gemstoneId && item.sourceType == 'whole_stone') {
+              currentRemaining = LocalDb.gemstoneRemainingQuantity(item.gemstone!).toDouble();
+              break;
+            }
           }
+        }
+        
+        final effectiveAvailable = currentRemaining + totalOriginal;
+        if (entry.value > effectiveAvailable) {
+          throw Exception('အရင်းအမြစ်မှ အလွန်ကျော်လွန်သည့်အရေအတွက်ကို အပ်ခွင့်မရှိပါ။');
         }
       }
       
-      final effectiveAvailable = currentRemaining + totalOriginal;
-      if (entry.value > effectiveAvailable) {
-        throw Exception('အရင်းအမြစ်မှ အလွန်ကျော်လွန်သည့်အရေအတွက်ကို အပ်ခွင့်မရှိပါ။');
-      }
-    }
-    
-    developer.log('EDIT MODE: Aggregate validation passed');
-    
-    // Update existing items
-    for (final item in _currentDraftItems) {
-      if (item.isNew || item.isDeleted) continue;
-      if (item.originalBcId == null) continue;
+      developer.log('EDIT MODE: Aggregate validation passed');
+      DiagnosticLogService.addLog('Aggregate validation passed');
       
-      final record = LocalDb.getBrokerConsignment(item.originalBcId!);
-      if (record != null && record.voucherId == _editVoucherId) {
-        record.consignedQuantity = item.consignedQuantity;
-        record.brokerName = _brokerNameCtrl.text;
-        record.brokerPhone = _brokerPhoneCtrl.text;
-        record.brokerAddress = _brokerAddressCtrl.text;
-        record.brokerSocialAccount = _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text;
-        record.notes = _notesCtrl.text;
-        record.photoPaths = item.photoPaths;
-        record.updatedAt = DateTime.now().millisecondsSinceEpoch;
-        final brokers = Hive.box<BrokerConsignment>('brokerConsignments');
-        await brokers.put(record.id, record);
-        developer.log('EDIT MODE: Updated ${record.id}');
+      // Update existing items
+      for (final item in _currentDraftItems) {
+        if (item.isNew || item.isDeleted) continue;
+        if (item.originalBcId == null) continue;
+        
+        final record = LocalDb.getBrokerConsignment(item.originalBcId!);
+        if (record != null && record.voucherId == _editVoucherId) {
+          record.consignedQuantity = item.consignedQuantity;
+          record.brokerName = _brokerNameCtrl.text;
+          record.brokerPhone = _brokerPhoneCtrl.text;
+          record.brokerAddress = _brokerAddressCtrl.text;
+          record.brokerSocialAccount = _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text;
+          record.notes = _notesCtrl.text;
+          record.photoPaths = item.photoPaths;
+          record.updatedAt = DateTime.now().millisecondsSinceEpoch;
+          final brokers = Hive.box<BrokerConsignment>('brokerConsignments');
+          await brokers.put(record.id, record);
+          developer.log('EDIT MODE: Updated ${record.id}');
+        }
       }
-    }
-    
-    // ===== STAGE 2: ADD NEW ITEMS =====
-    developer.log('STAGE 2: ADDING NEW ITEMS');
-    int newItemCount = 0;
-    for (final item in _currentDraftItems) {
-      if (!item.isNew) continue;
-      newItemCount++;
       
-      String purchaseId;
-      if (item.sourceType == 'whole_stone') {
-        if (item.gemstone == null) continue;
-        purchaseId = item.gemstone!.id;
+      // ===== STAGE 2: ADD NEW ITEMS =====
+      DiagnosticLogService.addLog('\n===== STAGE 2: ADDING NEW ITEMS =====');
+      developer.log('STAGE 2: ADDING NEW ITEMS');
+      int newItemCountCreated = 0;
+      for (final item in _currentDraftItems) {
+        if (!item.isNew) continue;
+        
+        String purchaseId;
+        if (item.sourceType == 'whole_stone') {
+          if (item.gemstone == null) continue;
+          purchaseId = item.gemstone!.id;
+        } else {
+          if (item.selectedPurchase == null) continue;
+          purchaseId = item.selectedPurchase!.id;
+        }
+        
+        newItemCountCreated++;
+        DiagnosticLogService.addLog('  [NEW-$newItemCountCreated] BEFORE createBrokerConsignment | sourceType=${item.sourceType} | purchaseId=$purchaseId | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
+        developer.log('  [NEW-$newItemCountCreated] BEFORE createBrokerConsignment | sourceType=${item.sourceType} | purchaseId=$purchaseId | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
+        
+        await LocalDb.createBrokerConsignment(
+          purchaseId: purchaseId,
+          consignedQuantity: item.consignedQuantity,
+          sourceType: item.sourceType,
+          breakdownItemName: item.selectedBreakdownItem,
+          brokerName: _brokerNameCtrl.text,
+          brokerPhone: _brokerPhoneCtrl.text,
+          brokerAddress: _brokerAddressCtrl.text,
+          brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
+          photoPaths: item.photoPaths,
+          voucherId: _editVoucherId,
+          voucherNumber: _editVoucherNumber,
+        );
+        DiagnosticLogService.addLog('  [NEW-$newItemCountCreated] AFTER createBrokerConsignment');
+        developer.log('  [NEW-$newItemCountCreated] AFTER createBrokerConsignment');
+      }
+      DiagnosticLogService.addLog('Total new items created: $newItemCountCreated');
+      developer.log('STAGE 2: Total new items added: $newItemCountCreated');
+      
+      // Soft delete removed items
+      for (final item in _currentDraftItems) {
+        if (!item.isDeleted) continue;
+        if (item.originalBcId == null) continue;
+        
+        final record = LocalDb.getBrokerConsignment(item.originalBcId!);
+        if (record != null && record.voucherId == _editVoucherId) {
+          record.deletedAt = DateTime.now().millisecondsSinceEpoch;
+          final brokers = Hive.box<BrokerConsignment>('brokerConsignments');
+          await brokers.put(record.id, record);
+          developer.log('EDIT MODE: Soft deleted ${record.id}');
+          DiagnosticLogService.addLog('Soft deleted: ${record.id}');
+        }
+      }
+      
+      developer.log('EDIT MODE: All changes saved successfully');
+      
+      // ===== STAGE 3: VERIFY HIVE AFTER SAVE =====
+      DiagnosticLogService.addLog('\n===== STAGE 3: VERIFYING HIVE AFTER SAVE =====');
+      developer.log('STAGE 3: VERIFYING HIVE AFTER SAVE');
+      final brokers = Hive.box<BrokerConsignment>(LocalDb.brokerConsignmentsBox);
+      final savedItems = brokers.values.where((b) => b.voucherId == _editVoucherId && b.deletedAt == null).toList();
+      DiagnosticLogService.addLog('Total items in Hive for voucherId=$_editVoucherId: ${savedItems.length}');
+      developer.log('Total items in Hive for voucherId=$_editVoucherId: ${savedItems.length}');
+      for (int i = 0; i < savedItems.length; i++) {
+        final item = savedItems[i];
+        DiagnosticLogService.addLog('  [$i] id=${item.id} | sourceType=${item.sourceType} | purchaseId=${item.purchaseId} | breakdownItem=${item.breakdownItemName} | qty=${item.consignedQuantity}');
+        developer.log('  [$i] id=${item.id} | sourceType=${item.sourceType} | purchaseId=${item.purchaseId} | breakdownItem=${item.breakdownItemName} | qty=${item.consignedQuantity}');
+      }
+      
+      // Compare counts
+      int expectedHiveCount = existingItemCount + newItemCountCreated;
+      DiagnosticLogService.addLog('\n===== VERIFICATION SUMMARY =====');
+      DiagnosticLogService.addLog('Draft items (non-deleted): ${existingItemCount + newItemCountDraft}');
+      DiagnosticLogService.addLog('  - Existing: $existingItemCount');
+      DiagnosticLogService.addLog('  - New: $newItemCountDraft');
+      DiagnosticLogService.addLog('Items created in Hive: $newItemCountCreated');
+      DiagnosticLogService.addLog('Expected Hive count: $expectedHiveCount');
+      DiagnosticLogService.addLog('Actual Hive count: ${savedItems.length}');
+      
+      if (savedItems.length != expectedHiveCount) {
+        DiagnosticLogService.addLog('\n⚠️ MISMATCH DETECTED!');
+        DiagnosticLogService.addLog('Expected: $expectedHiveCount items');
+        DiagnosticLogService.addLog('Found: ${savedItems.length} items');
+        
+        if (mounted) {
+          _showDiagnosticErrorDialog(
+            draftCount: existingItemCount + newItemCountDraft,
+            existingCount: existingItemCount,
+            newCount: newItemCountDraft,
+            hiveCount: savedItems.length,
+            expectedCount: expectedHiveCount,
+          );
+        }
       } else {
-        if (item.selectedPurchase == null) continue;
-        purchaseId = item.selectedPurchase!.id;
+        DiagnosticLogService.addLog('✓ All items saved correctly!');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ဘောင်ချာပြင်ဆင်မှု သိမ်းဆည်းပြီးပါပြီ။')),
+          );
+          context.pop(true);
+        }
       }
+    } catch (e, stackTrace) {
+      DiagnosticLogService.addLog('\n⚠️ ERROR DURING SAVE:');
+      DiagnosticLogService.addLog('Exception: $e');
+      DiagnosticLogService.addLog('StackTrace: $stackTrace');
+      developer.log('ERROR: $e\n$stackTrace');
       
-      developer.log('  [NEW-$newItemCount] BEFORE createBrokerConsignment | sourceType=${item.sourceType} | purchaseId=$purchaseId | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
-      
-      await LocalDb.createBrokerConsignment(
-        purchaseId: purchaseId,
-        consignedQuantity: item.consignedQuantity,
-        sourceType: item.sourceType,
-        breakdownItemName: item.selectedBreakdownItem,
-        brokerName: _brokerNameCtrl.text,
-        brokerPhone: _brokerPhoneCtrl.text,
-        brokerAddress: _brokerAddressCtrl.text,
-        brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
-        photoPaths: item.photoPaths,
-        voucherId: _editVoucherId,
-        voucherNumber: _editVoucherNumber,
-      );
-      developer.log('  [NEW-$newItemCount] AFTER createBrokerConsignment');
-    }
-    developer.log('STAGE 2: Total new items added: $newItemCount');
-    
-    // Soft delete removed items
-    for (final item in _currentDraftItems) {
-      if (!item.isDeleted) continue;
-      if (item.originalBcId == null) continue;
-      
-      final record = LocalDb.getBrokerConsignment(item.originalBcId!);
-      if (record != null && record.voucherId == _editVoucherId) {
-        record.deletedAt = DateTime.now().millisecondsSinceEpoch;
-        final brokers = Hive.box<BrokerConsignment>('brokerConsignments');
-        await brokers.put(record.id, record);
-        developer.log('EDIT MODE: Soft deleted ${record.id}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('အမှားအယွင်း: $e')),
+        );
       }
-    }
-    
-    developer.log('EDIT MODE: All changes saved successfully');
-    
-    // ===== STAGE 3: VERIFY HIVE AFTER SAVE =====
-    developer.log('STAGE 3: VERIFYING HIVE AFTER SAVE');
-    final brokers = Hive.box<BrokerConsignment>(LocalDb.brokerConsignmentsBox);
-    final savedItems = brokers.values.where((b) => b.voucherId == _editVoucherId && b.deletedAt == null).toList();
-    developer.log('Total items in Hive for voucherId=$_editVoucherId: ${savedItems.length}');
-    for (int i = 0; i < savedItems.length; i++) {
-      final item = savedItems[i];
-      developer.log('  [$i] id=${item.id} | sourceType=${item.sourceType} | purchaseId=${item.purchaseId} | breakdownItem=${item.breakdownItemName} | qty=${item.consignedQuantity}');
-    }
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ဘောင်ချာပြင်ဆင်မှု သိမ်းဆည်းပြီးပါပြီ။')),
-      );
-      context.pop(true);
     }
   }
+
+  void _showDiagnosticErrorDialog({
+    required int draftCount,
+    required int existingCount,
+    required int newCount,
+    required int hiveCount,
+    required int expectedCount,
+  }) {
+    final diagnosticLog = DiagnosticLogService.getCurrentLog();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('⚠️ အရေးအသားများ မသိမ်းဆည်းနိုင်ခြင်း'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('အရေးအသားများ မသိမ်းဆည်းနိုင်ခြင်း ရှိသည်။'),
+              const SizedBox(height: 16),
+              const Text('ရှင်းလင်းချက်:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('ပြင်ဆင်မှုမတိုင်မီ အရေးအသားများ: $draftCount'),
+              Text('  - အဟောင်း: $existingCount'),
+              Text('  - အသစ်: $newCount'),
+              Text('Hive သို့ သိမ်းဆည်းထားသည့် အရေးအသားများ: $hiveCount'),
+              Text('မျှော်လင့်ထားသည့် အရေးအသားများ: $expectedCount'),
+              const SizedBox(height: 16),
+              const Text('ဒီဗတ်ဂ်လော့ အချက်အလက်:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: SelectableText(
+                  diagnosticLog,
+                  style: const TextStyle(fontSize: 10, fontFamily: 'monospace'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ပိတ်မည်'),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.copy),
+            label: const Text('ကူးယူ'),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: diagnosticLog));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('ဒီဗတ်ဂ်လော့ ကူးယူပြီးပါပြီ')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
