@@ -662,7 +662,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         final gemstoneId = entry.key.replaceFirst('whole_stone_', '');
         for (final item in _currentDraftItems) {
           if (item.gemstone?.id == gemstoneId && item.sourceType == 'whole_stone') {
-            currentRemaining = LocalDb.gemstoneRemainingQuantity(item.gemstone!);
+            currentRemaining = LocalDb.gemstoneRemainingQuantity(item.gemstone!).toDouble();
             break;
           }
         }
