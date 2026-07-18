@@ -571,84 +571,182 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   Future<void> _saveBrokerConsignment() async {
     if (!_isFormValid()) return;
 
-    // RCA: Log entry point
-    RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'ENTRY: _saveBrokerConsignment() called', 0);
-    developer.log('ENTRY: _saveBrokerConsignment() called');
+    developer.log('ENTRY: _saveBrokerConsignment() called, isEditMode=$_isEditMode');
 
     try {
-      // PHASE B: Generate shared voucher IDs for this batch submission
-      // Generate ONCE before the loop to ensure all items in this submission share the same voucher
-      final voucherId = const Uuid().v4(); // Collision-safe UUID
-      final voucherNumber = LocalDb.generateNextVoucherNumber(); // BC-YYYYMMDD-NNNN
-      
-      RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'Generated voucherId=$voucherId, voucherNumber=$voucherNumber', 0);
-      developer.log('Generated voucherId=$voucherId, voucherNumber=$voucherNumber');
-      
-      // For now, save each item as a separate BrokerConsignment record
-      // (backward compatible with existing model)
-      // All items in this submission will share the same voucherId and voucherNumber
-      
-      int itemCount = 0;
-      for (final item in _confirmedItems) {
-        itemCount++;
-        RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'Processing item $itemCount: sourceType=${item.sourceType}, qty=${item.consignedQuantity}', 0);
-        developer.log('Processing item $itemCount: sourceType=${item.sourceType}, qty=${item.consignedQuantity}');
-        
-        // Determine purchaseId based on sourceType
-        String purchaseId;
-        if (item.sourceType == 'whole_stone') {
-          if (item.gemstone == null) {
-            RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'SKIP: whole_stone item has null gemstone', 0);
-            continue; // Skip invalid whole stone items
-          }
-          purchaseId = item.gemstone!.id;
-          RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'whole_stone: purchaseId=${item.gemstone!.id}, name=${item.gemstone!.name}', 0);
-        } else {
-          if (item.selectedPurchase == null) {
-            RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'SKIP: breakdown_item has null selectedPurchase', 0);
-            continue; // Skip invalid breakdown items
-          }
-          purchaseId = item.selectedPurchase!.id;
-          RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'breakdown_item: purchaseId=${item.selectedPurchase!.id}, breakdownItem=${item.selectedBreakdownItem}', 0);
-        }
-        
-        RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'Calling LocalDb.createBrokerConsignment with purchaseId=$purchaseId, qty=${item.consignedQuantity}', 0);
-        developer.log('Calling LocalDb.createBrokerConsignment with purchaseId=$purchaseId, qty=${item.consignedQuantity}');
-        
-        await LocalDb.createBrokerConsignment(
-          purchaseId: purchaseId,
-          consignedQuantity: item.consignedQuantity,
-          sourceType: item.sourceType,
-          breakdownItemName: item.selectedBreakdownItem,
-          brokerName: _brokerNameCtrl.text,
-          brokerPhone: _brokerPhoneCtrl.text,
-          brokerAddress: _brokerAddressCtrl.text,
-          brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
-          photoPaths: item.photoPaths,
-          voucherId: voucherId, // Assign shared voucher ID
-          voucherNumber: voucherNumber, // Assign shared voucher number
-        );
-        
-        RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'Item $itemCount saved successfully', 0);
-        developer.log('Item $itemCount saved successfully');
-      }
-
-      RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'SUCCESS: All $itemCount items saved', 0);
-      developer.log('SUCCESS: All $itemCount items saved');
-      
-      if (mounted) {
-        context.pop(true);
+      if (_isEditMode) {
+        await _saveEditMode();
+      } else {
+        await _saveCreateMode();
       }
     } catch (e, stackTrace) {
-      RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'EXCEPTION: $e', 2);
-      RCALogCollector().addLog('RCA_BROKER_CONSIGNMENT', 'StackTrace: $stackTrace', 2);
       developer.log('EXCEPTION: $e\nStackTrace: $stackTrace');
-      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('အမှားအယွင်း: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _saveCreateMode() async {
+    final voucherId = const Uuid().v4();
+    final voucherNumber = LocalDb.generateNextVoucherNumber();
+    
+    developer.log('CREATE MODE: Generated voucherId=$voucherId, voucherNumber=$voucherNumber');
+    
+    int itemCount = 0;
+    for (final item in _confirmedItems) {
+      itemCount++;
+      
+      String purchaseId;
+      if (item.sourceType == 'whole_stone') {
+        if (item.gemstone == null) continue;
+        purchaseId = item.gemstone!.id;
+      } else {
+        if (item.selectedPurchase == null) continue;
+        purchaseId = item.selectedPurchase!.id;
+      }
+      
+      await LocalDb.createBrokerConsignment(
+        purchaseId: purchaseId,
+        consignedQuantity: item.consignedQuantity,
+        sourceType: item.sourceType,
+        breakdownItemName: item.selectedBreakdownItem,
+        brokerName: _brokerNameCtrl.text,
+        brokerPhone: _brokerPhoneCtrl.text,
+        brokerAddress: _brokerAddressCtrl.text,
+        brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
+        photoPaths: item.photoPaths,
+        voucherId: voucherId,
+        voucherNumber: voucherNumber,
+      );
+    }
+    
+    developer.log('CREATE MODE: All $itemCount items saved successfully');
+    
+    if (mounted) {
+      context.pop(true);
+    }
+  }
+
+  Future<void> _saveEditMode() async {
+    developer.log('EDIT MODE: Starting atomic save');
+    
+    // Validate aggregate quantities
+    final Map<String, double> sourceQuantities = {};
+    for (final item in _currentDraftItems) {
+      if (item.isDeleted) continue;
+      
+      String sourceKey = item.sourceType == 'whole_stone'
+          ? 'whole_stone_${item.gemstone?.id}'
+          : 'breakdown_${item.gemstone?.id}_${item.selectedBreakdownItem}';
+      
+      sourceQuantities[sourceKey] = (sourceQuantities[sourceKey] ?? 0) + item.consignedQuantity;
+    }
+    
+    // Validate each source
+    for (final entry in sourceQuantities.entries) {
+      double totalOriginal = 0;
+      for (final origItem in _originalItems) {
+        if (origItem.isDeleted) continue;
+        String origKey = origItem.sourceType == 'whole_stone'
+            ? 'whole_stone_${origItem.gemstone?.id}'
+            : 'breakdown_${origItem.gemstone?.id}_${origItem.selectedBreakdownItem}';
+        if (origKey == entry.key) totalOriginal += origItem.originalQuantity;
+      }
+      
+      double currentRemaining = 0;
+      if (entry.key.startsWith('whole_stone')) {
+        final gemstoneId = entry.key.replaceFirst('whole_stone_', '');
+        for (final item in _currentDraftItems) {
+          if (item.gemstone?.id == gemstoneId && item.sourceType == 'whole_stone') {
+            currentRemaining = LocalDb.gemstoneRemainingQuantity(item.gemstone!);
+            break;
+          }
+        }
+      }
+      
+      final effectiveAvailable = currentRemaining + totalOriginal;
+      if (entry.value > effectiveAvailable) {
+        throw Exception('အရင်းအမြစ်မှ အလွန်ကျော်လွန်သည့်အရေအတွက်ကို အပ်ခွင့်မရှိပါ။');
+      }
+    }
+    
+    developer.log('EDIT MODE: Aggregate validation passed');
+    
+    // Update existing items
+    final brokerBox = Hive.box<BrokerConsignment>('broker_consignments');
+    for (final item in _currentDraftItems) {
+      if (item.isNew || item.isDeleted) continue;
+      
+      for (final record in brokerBox.values) {
+        if (record.voucherId == _editVoucherId && record.id == item.originalBcId) {
+          record.consignedQuantity = item.consignedQuantity;
+          record.brokerName = _brokerNameCtrl.text;
+          record.brokerPhone = _brokerPhoneCtrl.text;
+          record.brokerAddress = _brokerAddressCtrl.text;
+          record.brokerSocialAccount = _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text;
+          record.notes = _notesCtrl.text;
+          record.photoPaths = item.photoPaths;
+          record.updatedAt = DateTime.now().millisecondsSinceEpoch;
+          await brokerBox.put(record.key, record);
+          developer.log('EDIT MODE: Updated ${record.id}');
+          break;
+        }
+      }
+    }
+    
+    // Add new items
+    for (final item in _currentDraftItems) {
+      if (!item.isNew) continue;
+      
+      String purchaseId;
+      if (item.sourceType == 'whole_stone') {
+        if (item.gemstone == null) continue;
+        purchaseId = item.gemstone!.id;
+      } else {
+        if (item.selectedPurchase == null) continue;
+        purchaseId = item.selectedPurchase!.id;
+      }
+      
+      await LocalDb.createBrokerConsignment(
+        purchaseId: purchaseId,
+        consignedQuantity: item.consignedQuantity,
+        sourceType: item.sourceType,
+        breakdownItemName: item.selectedBreakdownItem,
+        brokerName: _brokerNameCtrl.text,
+        brokerPhone: _brokerPhoneCtrl.text,
+        brokerAddress: _brokerAddressCtrl.text,
+        brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
+        photoPaths: item.photoPaths,
+        voucherId: _editVoucherId,
+        voucherNumber: _editVoucherNumber,
+      );
+      developer.log('EDIT MODE: Added new item');
+    }
+    
+    // Soft delete removed items
+    for (final item in _currentDraftItems) {
+      if (!item.isDeleted) continue;
+      
+      for (final record in brokerBox.values) {
+        if (record.voucherId == _editVoucherId && record.id == item.originalBcId) {
+          record.deletedAt = DateTime.now().millisecondsSinceEpoch;
+          await brokerBox.put(record.key, record);
+          developer.log('EDIT MODE: Soft deleted ${record.id}');
+          break;
+        }
+      }
+    }
+    
+    developer.log('EDIT MODE: All changes saved successfully');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ဘောင်ချာပြင်ဆင်မှု သိမ်းဆည်းပြီးပါပြီ။')),
+      );
+      context.pop(true);
     }
   }
 
