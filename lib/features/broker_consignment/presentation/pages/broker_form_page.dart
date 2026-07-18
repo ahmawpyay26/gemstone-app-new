@@ -657,7 +657,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         if (origKey == entry.key) totalOriginal += origItem.originalQuantity;
       }
       
-      double currentRemaining = 0;
+      double currentRemaining = 0.0;
       if (entry.key.startsWith('whole_stone')) {
         final gemstoneId = entry.key.replaceFirst('whole_stone_', '');
         for (final item in _currentDraftItems) {
