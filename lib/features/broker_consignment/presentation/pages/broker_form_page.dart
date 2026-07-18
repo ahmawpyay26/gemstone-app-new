@@ -729,16 +729,24 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       DiagnosticLogService.addLog('\n===== STAGE 2: ADDING NEW ITEMS =====');
       developer.log('STAGE 2: ADDING NEW ITEMS');
       int newItemCountCreated = 0;
+      List<String> validationErrors = [];
       for (final item in _currentDraftItems) {
         if (!item.isNew) continue;
         
         String purchaseId;
         if (item.sourceType == 'whole_stone') {
-          if (item.gemstone == null) continue;
+          if (item.gemstone == null) {
+            validationErrors.add('Whole stone item missing gemstone reference');
+            continue;
+          }
           purchaseId = item.gemstone!.id;
         } else {
-          if (item.selectedPurchase == null) continue;
-          purchaseId = item.selectedPurchase!.id;
+          // For breakdown_item, use parent gemstone as purchaseId
+          if (item.gemstone == null) {
+            validationErrors.add('Breakdown item missing parent gemstone reference');
+            continue;
+          }
+          purchaseId = item.gemstone!.id;
         }
         
         newItemCountCreated++;
@@ -792,6 +800,35 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         final item = savedItems[i];
         DiagnosticLogService.addLog('  [$i] id=${item.id} | sourceType=${item.sourceType} | purchaseId=${item.purchaseId} | breakdownItem=${item.breakdownItemName} | qty=${item.consignedQuantity}');
         developer.log('  [$i] id=${item.id} | sourceType=${item.sourceType} | purchaseId=${item.purchaseId} | breakdownItem=${item.breakdownItemName} | qty=${item.consignedQuantity}');
+      }
+      
+      // Check for validation errors
+      if (validationErrors.isNotEmpty) {
+        DiagnosticLogService.addLog('\n⚠️ VALIDATION ERRORS DURING ITEM CREATION:');
+        for (final error in validationErrors) {
+          DiagnosticLogService.addLog('  - $error');
+        }
+        
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('⚠️ အမှားအယွင်း'),
+              content: SingleChildScrollView(
+                child: SelectableText(
+                  'အရေးအသားများ သိမ်းဆည်းရန်အတွင်း အမှားအယွင်းများ ရှိသည်:\n\n' + validationErrors.join('\n'),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('နားလည်ပါသည်'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
       }
       
       // Compare counts
