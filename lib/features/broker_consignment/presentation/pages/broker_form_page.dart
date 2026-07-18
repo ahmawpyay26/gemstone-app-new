@@ -679,8 +679,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     // Update existing items
     for (final item in _currentDraftItems) {
       if (item.isNew || item.isDeleted) continue;
+      if (item.originalBcId == null) continue;
       
-      final record = LocalDb.getBrokerConsignment(item.originalBcId);
+      final record = LocalDb.getBrokerConsignment(item.originalBcId!);
       if (record != null && record.voucherId == _editVoucherId) {
         record.consignedQuantity = item.consignedQuantity;
         record.brokerName = _brokerNameCtrl.text;
@@ -728,8 +729,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     // Soft delete removed items
     for (final item in _currentDraftItems) {
       if (!item.isDeleted) continue;
+      if (item.originalBcId == null) continue;
       
-      final record = LocalDb.getBrokerConsignment(item.originalBcId);
+      final record = LocalDb.getBrokerConsignment(item.originalBcId!);
       if (record != null && record.voucherId == _editVoucherId) {
         record.deletedAt = DateTime.now().millisecondsSinceEpoch;
         final brokers = Hive.box<BrokerConsignment>('brokerConsignments');
