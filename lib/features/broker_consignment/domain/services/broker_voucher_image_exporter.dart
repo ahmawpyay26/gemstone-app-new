@@ -8,6 +8,11 @@ import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import '../models/broker_voucher_document.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DEBUG FLAG — set to false before production release
+// ─────────────────────────────────────────────────────────────────────────────
+const bool showImageExportDebug = true;
+
 /// Generates clean PNG images of broker vouchers without app UI chrome
 class BrokerVoucherImageExporter {
   static const double _pageWidth = 800; // Pixels
@@ -15,12 +20,16 @@ class BrokerVoucherImageExporter {
   static const double _itemsPerPage = 15;
 
   /// Export voucher as PNG image(s) and share.
+  ///
+  /// [onStep] — called before each step starts with the step name.
+  ///            Used by the caller to update visible debug UI.
+  ///
   /// Returns true if successful.
-  /// Throws a [StateError] with a Burmese message on any null-safety failure.
   static Future<bool> exportImageAndShare(
     BrokerVoucherDocumentData data,
-    BuildContext context,
-  ) async {
+    BuildContext context, {
+    void Function(String step)? onStep,
+  }) async {
     final voucherNumber = data.voucherNumber;
     final itemCount = data.items.length;
 
@@ -30,22 +39,26 @@ class BrokerVoucherImageExporter {
     );
 
     // step: build_document_data
+    onStep?.call('build_document_data');
     dev.log('[ImageExport] step=build_document_data', name: 'BrokerVoucherImageExporter');
     if (data.items.isEmpty) {
       throw StateError('ဘောင်ချာတွင် ပစ္စည်းများ မပါဝင်ပါ။');
     }
 
     // step: calculate_pages
+    onStep?.call('calculate_pages');
     dev.log('[ImageExport] step=calculate_pages', name: 'BrokerVoucherImageExporter');
     final totalPages = ((data.items.length - 1) ~/ _itemsPerPage.toInt()) + 1;
 
     // step: get_temp_dir
+    onStep?.call('get_temp_dir');
     dev.log('[ImageExport] step=get_temp_dir', name: 'BrokerVoucherImageExporter');
     final tempDir = await getTemporaryDirectory();
 
     final imageFiles = <XFile>[];
 
     for (int pageNum = 0; pageNum < totalPages; pageNum++) {
+      onStep?.call('render_page_${pageNum + 1}_of_$totalPages');
       dev.log(
         '[ImageExport] step=render_page page=${pageNum + 1}/$totalPages',
         name: 'BrokerVoucherImageExporter',
@@ -57,6 +70,7 @@ class BrokerVoucherImageExporter {
       final pageItems = data.items.sublist(startIdx, endIdx);
 
       // step: create_widget_tree
+      onStep?.call('create_widget_tree');
       dev.log('[ImageExport] step=create_widget_tree', name: 'BrokerVoucherImageExporter');
       final widget = _VoucherPageWidget(
         data: data,
@@ -66,10 +80,17 @@ class BrokerVoucherImageExporter {
       );
 
       // step: render_to_image
+      onStep?.call('render_to_image');
       dev.log('[ImageExport] step=render_to_image', name: 'BrokerVoucherImageExporter');
-      final imageBytes = await _renderWidgetToImage(widget, voucherNumber, pageNum + 1);
+      final imageBytes = await _renderWidgetToImage(
+        widget,
+        voucherNumber,
+        pageNum + 1,
+        onStep: onStep,
+      );
 
       // step: write_file
+      onStep?.call('write_file');
       dev.log('[ImageExport] step=write_file', name: 'BrokerVoucherImageExporter');
       final filename = _getSafeFilename(voucherNumber, pageNum + 1, totalPages);
       final file = File('${tempDir.path}/$filename');
@@ -78,6 +99,7 @@ class BrokerVoucherImageExporter {
     }
 
     // step: open_share_sheet
+    onStep?.call('open_share_sheet');
     dev.log(
       '[ImageExport] step=open_share_sheet files=${imageFiles.length}',
       name: 'BrokerVoucherImageExporter',
@@ -87,6 +109,7 @@ class BrokerVoucherImageExporter {
       text: 'ပွဲစားအပ်နှံဘောင်ချာ - $voucherNumber',
     );
 
+    onStep?.call('completed');
     dev.log('[ImageExport] success', name: 'BrokerVoucherImageExporter');
     return true;
   }
@@ -96,9 +119,11 @@ class BrokerVoucherImageExporter {
   static Future<Uint8List> _renderWidgetToImage(
     Widget widget,
     String voucherNumber,
-    int pageNum,
-  ) async {
+    int pageNum, {
+    void Function(String step)? onStep,
+  }) async {
     // step: get_flutter_view
+    onStep?.call('get_flutter_view');
     dev.log('[ImageExport] step=get_flutter_view', name: 'BrokerVoucherImageExporter');
 
     // Obtain the first available FlutterView via PlatformDispatcher.
@@ -121,6 +146,7 @@ class BrokerVoucherImageExporter {
     final logicalSize = physicalSize / dpr;
 
     // step: create_render_view
+    onStep?.call('create_render_view');
     dev.log('[ImageExport] step=create_render_view dpr=$dpr logicalSize=$logicalSize',
         name: 'BrokerVoucherImageExporter');
 
@@ -142,6 +168,7 @@ class BrokerVoucherImageExporter {
         FocusHighlightStrategy.automatic;
 
     // step: build_widget_tree
+    onStep?.call('build_widget_tree');
     dev.log('[ImageExport] step=build_widget_tree', name: 'BrokerVoucherImageExporter');
 
     RenderObjectToWidgetAdapter<RenderBox>(
@@ -166,23 +193,28 @@ class BrokerVoucherImageExporter {
     buildOwner.finalizeTree();
 
     // step: layout
+    onStep?.call('layout');
     dev.log('[ImageExport] step=layout', name: 'BrokerVoucherImageExporter');
     pipelineOwner.flushLayout();
 
     // step: compositing_bits
+    onStep?.call('compositing_bits');
     dev.log('[ImageExport] step=compositing_bits', name: 'BrokerVoucherImageExporter');
     pipelineOwner.flushCompositingBits();
 
     // step: paint
+    onStep?.call('paint');
     dev.log('[ImageExport] step=paint', name: 'BrokerVoucherImageExporter');
     pipelineOwner.flushPaint();
 
     // step: convert_to_image
+    onStep?.call('convert_to_image');
     dev.log('[ImageExport] step=convert_to_image pixelRatio=$dpr',
         name: 'BrokerVoucherImageExporter');
     final image = await repaintBoundary.toImage(pixelRatio: dpr);
 
     // step: png_byte_data
+    onStep?.call('png_byte_data');
     dev.log('[ImageExport] step=png_byte_data', name: 'BrokerVoucherImageExporter');
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     image.dispose();

@@ -761,27 +761,55 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
       return;
     }
 
+    // ── DEBUG STEP TRACKER ────────────────────────────────────────────────────
+    // Tracks the current and last-completed step for on-screen display.
+    // Controlled by showImageExportDebug in broker_voucher_image_exporter.dart.
+    var currentStep = 'starting';
+    var lastStep = '(none)';
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // The loading dialog uses StatefulBuilder so it can update the step text live.
+    // ignore: prefer_function_declarations_over_variables
+    void Function(void Function())? dialogSetState;
+
     try {
-      // Show loading dialog
       if (!context.mounted) return;
+
+      // Show loading dialog with live step text
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (ctx) => Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text(
-                  'ပုံ ပြင်ဆင်နေသည်...',
-                  style: TextStyle(fontFamily: 'Padauk'),
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx2, setDialogState) {
+            dialogSetState = setDialogState;
+            return Dialog(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'ပုံ ပြင်ဆင်နေသည်...',
+                      style: TextStyle(fontFamily: 'Padauk'),
+                    ),
+                    if (showImageExportDebug) ...[  // debug only
+                      const SizedBox(height: 8),
+                      Text(
+                        'Step: $currentStep',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.blue,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       );
 
@@ -792,10 +820,17 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         voucherDate: widget.items.first.createdAt,
       );
 
-      // Export image
+      // Export image — pass step callback when debug mode is on
       final success = await BrokerVoucherImageExporter.exportImageAndShare(
         documentData,
         context,
+        onStep: showImageExportDebug
+            ? (step) {
+                lastStep = currentStep;
+                currentStep = step;
+                dialogSetState?.call(() {});
+              }
+            : null,
       );
 
       if (!context.mounted) return;
@@ -811,10 +846,11 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
           ),
         );
       }
+    // ignore: avoid_catches_without_on_clauses
     } catch (e, stackTrace) {
       // Log full details for developer debugging
       // ignore: avoid_print
-      print('[ImageExport] ERROR voucher=${widget.voucherNumber} items=${widget.items.length}\n$e\n$stackTrace');
+      print('[ImageExport] ERROR voucher=${widget.voucherNumber} items=${widget.items.length}\nfailing_step=$currentStep last_step=$lastStep\n$e\n$stackTrace');
 
       if (!context.mounted) return;
       // Pop loading dialog if still open
@@ -822,16 +858,68 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         Navigator.of(context).pop();
       } catch (_) {}
 
-      // Show Burmese error — never expose raw Dart exception to user
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'ဘောင်ချာပုံ ထုတ်ယူ၍မရပါ။ ထပ်မံကြိုးစားပါ။',
-            style: TextStyle(fontFamily: 'Padauk'),
+      if (showImageExportDebug) {
+        // DEBUG MODE: show persistent dialog with full step info
+        // (replace with Burmese-only snackbar when showImageExportDebug = false)
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text(
+              'ပုံ ထုတ်ယူ၍မရပါ — Debug Info',
+              style: TextStyle(fontFamily: 'Padauk', color: Colors.red),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Failing step: $currentStep',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Last completed: $lastStep',
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Exception:\n${e.runtimeType}\n${e.toString()}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('ပိတ်မည်'),
+              ),
+            ],
           ),
-          duration: Duration(seconds: 4),
-        ),
-      );
+        );
+      } else {
+        // PRODUCTION MODE: Burmese error only, no technical details
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'ဘောင်ချာပုံ ထုတ်ယူ၍မရပါ။ ထပ်မံကြိုးစားပါ။',
+              style: TextStyle(fontFamily: 'Padauk'),
+            ),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 }
