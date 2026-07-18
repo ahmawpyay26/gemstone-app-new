@@ -634,6 +634,14 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   Future<void> _saveEditMode() async {
     developer.log('EDIT MODE: Starting atomic save');
     
+    // ===== STAGE 1: LOG DRAFT ITEMS BEFORE SAVE =====
+    developer.log('STAGE 1: DRAFT ITEMS BEFORE SAVE');
+    developer.log('Total draft items: ${_currentDraftItems.length}');
+    for (int i = 0; i < _currentDraftItems.length; i++) {
+      final item = _currentDraftItems[i];
+      developer.log('  [$i] isNew=${item.isNew} | isDeleted=${item.isDeleted} | originalBcId=${item.originalBcId} | sourceType=${item.sourceType} | gemstoneId=${item.gemstone?.id} | gemName=${item.gemstone?.name} | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
+    }
+    
     // Validate aggregate quantities
     final Map<String, double> sourceQuantities = {};
     for (final item in _currentDraftItems) {
@@ -697,9 +705,12 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       }
     }
     
-    // Add new items
+    // ===== STAGE 2: ADD NEW ITEMS =====
+    developer.log('STAGE 2: ADDING NEW ITEMS');
+    int newItemCount = 0;
     for (final item in _currentDraftItems) {
       if (!item.isNew) continue;
+      newItemCount++;
       
       String purchaseId;
       if (item.sourceType == 'whole_stone') {
@@ -709,6 +720,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         if (item.selectedPurchase == null) continue;
         purchaseId = item.selectedPurchase!.id;
       }
+      
+      developer.log('  [NEW-$newItemCount] BEFORE createBrokerConsignment | sourceType=${item.sourceType} | purchaseId=$purchaseId | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
       
       await LocalDb.createBrokerConsignment(
         purchaseId: purchaseId,
@@ -723,8 +736,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         voucherId: _editVoucherId,
         voucherNumber: _editVoucherNumber,
       );
-      developer.log('EDIT MODE: Added new item');
+      developer.log('  [NEW-$newItemCount] AFTER createBrokerConsignment');
     }
+    developer.log('STAGE 2: Total new items added: $newItemCount');
     
     // Soft delete removed items
     for (final item in _currentDraftItems) {
@@ -741,6 +755,16 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     }
     
     developer.log('EDIT MODE: All changes saved successfully');
+    
+    // ===== STAGE 3: VERIFY HIVE AFTER SAVE =====
+    developer.log('STAGE 3: VERIFYING HIVE AFTER SAVE');
+    final brokers = Hive.box<BrokerConsignment>(LocalDb.brokerConsignmentsBox);
+    final savedItems = brokers.values.where((b) => b.voucherId == _editVoucherId && b.deletedAt == null).toList();
+    developer.log('Total items in Hive for voucherId=$_editVoucherId: ${savedItems.length}');
+    for (int i = 0; i < savedItems.length; i++) {
+      final item = savedItems[i];
+      developer.log('  [$i] id=${item.id} | sourceType=${item.sourceType} | purchaseId=${item.purchaseId} | breakdownItem=${item.breakdownItemName} | qty=${item.consignedQuantity}');
+    }
     
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
