@@ -341,39 +341,21 @@ class _VoucherGroupCard extends StatefulWidget {
 class _VoucherGroupCardState extends State<_VoucherGroupCard> {
   bool _isExpanded = false;
 
-  void _showVoucherEditDialog(BuildContext context) async {
-    try {
-      // Edit mode not yet fully implemented
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('အကြောင်းကြားချက်'),
-            content: const Text('ဘောင်ချာသည်ပြီးသားမရပါ။'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('နားလည်ပါပြီ'),
-              ),
-            ],
+  void _showVoucherEditDialog(BuildContext context) {
+    // Edit mode not yet fully implemented - show info dialog
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('အကြောင်းကြားချက်'),
+        content: const Text('ဘောင်ချာသည်ပြီးသားမရပါ။'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('နားလည်ပါပြီ'),
           ),
-        );
-      }
-      return;
-        
-        // Refresh if edit was successful
-        if (result == true && context.mounted) {
-          // Trigger parent refresh
-          Navigator.of(context).pop(true);
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('အမှားအယွင်း: $e')),
-        );
-      }
-    }
+        ],
+      ),
+    );
   }
 
 
