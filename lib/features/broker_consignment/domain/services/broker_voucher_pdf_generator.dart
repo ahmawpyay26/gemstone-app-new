@@ -110,32 +110,32 @@ class BrokerVoucherPdfGenerator {
         pw.SizedBox(height: 4),
 
         // Business contact info — only show non-empty fields
-        if (profile.phone.isNotEmpty)
+        if (profile.phone?.isNotEmpty == true)
           pw.Text(
             'ဖုန်း: ${profile.phone}',
             style: pw.TextStyle(font: padaukFont, fontSize: 10),
           ),
-        if (profile.address.isNotEmpty)
+        if (profile.address?.isNotEmpty == true)
           pw.Text(
             'လိပ်စာ: ${profile.address}',
             style: pw.TextStyle(font: padaukFont, fontSize: 10),
           ),
-        if (profile.email.isNotEmpty)
+        if (profile.email?.isNotEmpty == true)
           pw.Text(
             'Email: ${profile.email}',
             style: pw.TextStyle(font: padaukFont, fontSize: 10),
           ),
-        if (profile.facebook.isNotEmpty)
+        if (profile.facebook?.isNotEmpty == true)
           pw.Text(
             'Facebook: ${profile.facebook}',
             style: pw.TextStyle(font: padaukFont, fontSize: 10),
           ),
-        if (profile.viber.isNotEmpty)
+        if (profile.viber?.isNotEmpty == true)
           pw.Text(
             'Viber: ${profile.viber}',
             style: pw.TextStyle(font: padaukFont, fontSize: 10),
           ),
-        if (profile.website.isNotEmpty)
+        if (profile.website?.isNotEmpty == true)
           pw.Text(
             'Website: ${profile.website}',
             style: pw.TextStyle(font: padaukFont, fontSize: 10),

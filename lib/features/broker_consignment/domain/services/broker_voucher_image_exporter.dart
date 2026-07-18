@@ -345,37 +345,37 @@ class _VoucherPageWidget extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           // Contact info row
-                          if (profile.phone.isNotEmpty)
+                          if (profile.phone?.isNotEmpty == true)
                             Text(
                               'ဖုန်း: ${profile.phone}',
                               style: const TextStyle(
                                   fontFamily: 'Padauk', fontSize: 10),
                             ),
-                          if (profile.address.isNotEmpty)
+                          if (profile.address?.isNotEmpty == true)
                             Text(
                               'လိပ်စာ: ${profile.address}',
                               style: const TextStyle(
                                   fontFamily: 'Padauk', fontSize: 10),
                             ),
-                          if (profile.email.isNotEmpty)
+                          if (profile.email?.isNotEmpty == true)
                             Text(
                               'Email: ${profile.email}',
                               style: const TextStyle(
                                   fontFamily: 'Padauk', fontSize: 10),
                             ),
-                          if (profile.facebook.isNotEmpty)
+                          if (profile.facebook?.isNotEmpty == true)
                             Text(
                               'Facebook: ${profile.facebook}',
                               style: const TextStyle(
                                   fontFamily: 'Padauk', fontSize: 10),
                             ),
-                          if (profile.viber.isNotEmpty)
+                          if (profile.viber?.isNotEmpty == true)
                             Text(
                               'Viber: ${profile.viber}',
                               style: const TextStyle(
                                   fontFamily: 'Padauk', fontSize: 10),
                             ),
-                          if (profile.website.isNotEmpty)
+                          if (profile.website?.isNotEmpty == true)
                             Text(
                               'Website: ${profile.website}',
                               style: const TextStyle(
