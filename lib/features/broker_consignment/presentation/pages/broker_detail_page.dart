@@ -341,43 +341,73 @@ class _VoucherGroupCard extends StatefulWidget {
 class _VoucherGroupCardState extends State<_VoucherGroupCard> {
   bool _isExpanded = false;
 
-  void _showVoucherEditDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('ဘောင်ချာပြုပြင်ရန်'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ဘောင်ချာနို့: ${widget.voucherNumber}'),
-              const SizedBox(height: 8),
-              Text('အပ်ထားသည့်ခုနှုန်း: ${widget.items.length}'),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'သတိ: ဘောင်ချာသည်ပြီးသားမရပါ။ ဤ အပ်ထားသည့်ခုနှုန်းသည် ပြီးသားမရပါ။',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('မပြုပြင်တော့ပါ'),
-            ),
-          ],
+  void _showVoucherEditDialog(BuildContext context) async {
+    try {
+      // Collect all broker consignment records for this voucher
+      final voucherId = widget.items.first.voucherId;
+      final existingItems = <ConsignmentItemTemp>[];
+      final originalQuantities = <String, double>{};
+      
+      for (final bc in widget.items) {
+        // Build ConsignmentItemTemp from BrokerConsignment
+        Gemstone? gemstone;
+        if (bc.sourceType == 'whole_stone') {
+          gemstone = LocalDb.gemstones()[bc.purchaseId];
+        }
+        
+        final item = ConsignmentItemTemp(
+          id: bc.id,
+          originalBcId: bc.id,
+          gemstone: gemstone,
+          consignedQuantity: bc.consignedQuantity,
+          sourceType: bc.sourceType,
+          selectedPurchase: bc.sourceType == 'breakdown_item' 
+            ? LocalDb.gemstones()[bc.purchaseId]
+            : null,
+          selectedBreakdownItem: bc.breakdownItemName,
+          photoPaths: bc.photoPaths ?? [],
+          isNew: false,
+          isDeleted: false,
+          originalQuantity: bc.consignedQuantity,
         );
-      },
-    );
+        
+        existingItems.add(item);
+        originalQuantities[bc.id] = bc.consignedQuantity;
+      }
+      
+      // Navigate to edit form
+      if (context.mounted) {
+        final result = await context.push<bool>(
+          '/broker-form',
+          extra: {
+            'editVoucherId': voucherId,
+            'editVoucherNumber': widget.voucherNumber,
+            'editBrokerName': widget.items.first.brokerName,
+            'editBrokerPhone': widget.items.first.brokerPhone,
+            'editBrokerAddress': widget.items.first.brokerAddress,
+            'editBrokerSocial': widget.items.first.brokerSocialAccount,
+            'editConsignmentDate': widget.items.first.consignmentDate,
+            'editNotes': widget.items.first.notes,
+            'editExistingItems': existingItems,
+            'editOriginalQuantities': originalQuantities,
+          },
+        );
+        
+        // Refresh if edit was successful
+        if (result == true && context.mounted) {
+          // Trigger parent refresh
+          Navigator.of(context).pop(true);
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('အမှားအယွင်း: $e')),
+        );
+      }
+    }
   }
+
 
   void _showVoucherPhotoViewer(BuildContext context) {
     // Get all photos from items in this voucher

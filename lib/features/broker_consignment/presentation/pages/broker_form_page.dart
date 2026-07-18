@@ -23,6 +23,12 @@ class ConsignmentItemTemp {
   String? selectedBreakdownItem; // Selected breakdown item name
   Map<String, int> availableBreakdownItems; // Filtered breakdown items from purchase
   List<String> photoPaths; // Independent photo list for this item
+  
+  // Edit mode tracking
+  String? originalBcId; // Original BrokerConsignment record ID (for updates)
+  bool isNew; // true = new item, false = existing item
+  bool isDeleted; // true = marked for deletion
+  double originalQuantity; // Original consigned qty (for inventory delta)
 
   ConsignmentItemTemp({
     required this.id,
@@ -33,11 +39,39 @@ class ConsignmentItemTemp {
     this.selectedBreakdownItem,
     this.availableBreakdownItems = const {},
     this.photoPaths = const [],
+    this.originalBcId,
+    this.isNew = true,
+    this.isDeleted = false,
+    this.originalQuantity = 0,
   });
 }
 
 class BrokerFormPage extends StatefulWidget {
-  const BrokerFormPage({Key? key}) : super(key: key);
+  // Edit mode parameters (null = create mode, set = edit mode)
+  final String? editVoucherId;
+  final String? editVoucherNumber;
+  final String? editBrokerName;
+  final String? editBrokerPhone;
+  final String? editBrokerAddress;
+  final String? editBrokerSocial;
+  final DateTime? editConsignmentDate;
+  final String? editNotes;
+  final List<ConsignmentItemTemp>? editExistingItems;
+  final Map<String, double>? editOriginalQuantities;
+
+  const BrokerFormPage({
+    Key? key,
+    this.editVoucherId,
+    this.editVoucherNumber,
+    this.editBrokerName,
+    this.editBrokerPhone,
+    this.editBrokerAddress,
+    this.editBrokerSocial,
+    this.editConsignmentDate,
+    this.editNotes,
+    this.editExistingItems,
+    this.editOriginalQuantities,
+  }) : super(key: key);
 
   @override
   State<BrokerFormPage> createState() => _BrokerFormPageState();
@@ -53,7 +87,13 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   
   DateTime _consignmentDate = DateTime.now();
   
-  // Edit mode tracking
+  // Form mode tracking
+  bool _isEditMode = false; // true = edit mode, false = create mode
+  String? _editVoucherId; // Preserve during edit
+  String? _editVoucherNumber; // Preserve during edit
+  Map<String, double> _editOriginalQuantities = {}; // For inventory safety
+  
+  // Edit mode tracking (item level)
   String? _editingItemId; // null = new item, set = editing existing item
   late String _brokerConsignmentNumber;
   late String _tempBrokerId; // Temporary ID for form photos
@@ -65,6 +105,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   // Currently editing item
   late ConsignmentItemTemp _currentEditingItem;
   List<Gemstone> _availableGemstones = [];
+  
+  // Edit mode: separate original and draft items
+  List<ConsignmentItemTemp> _originalItems = []; // Original preloaded items (read-only reference)
+  List<ConsignmentItemTemp> _currentDraftItems = []; // Editable draft items (user can modify)
   
   final _date = DateFormat('dd/MM/yyyy');
   final _dateNum = DateFormat('yyyyMMdd');
@@ -79,7 +123,55 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     _notesCtrl = TextEditingController();
     
     _availableGemstones = LocalDb.gemstones().values.toList();
-    _generateBrokerConsignmentNumber();
+    
+    // Check if in edit mode
+    if (widget.editVoucherId != null) {
+      _isEditMode = true;
+      _editVoucherId = widget.editVoucherId;
+      _editVoucherNumber = widget.editVoucherNumber;
+      _brokerConsignmentNumber = widget.editVoucherNumber ?? 'BC-UNKNOWN';
+      _editOriginalQuantities = widget.editOriginalQuantities ?? {};
+      
+      // Preload header data
+      _brokerNameCtrl.text = widget.editBrokerName ?? '';
+      _brokerPhoneCtrl.text = widget.editBrokerPhone ?? '';
+      _brokerAddressCtrl.text = widget.editBrokerAddress ?? '';
+      _brokerSocialCtrl.text = widget.editBrokerSocial ?? '';
+      _consignmentDate = widget.editConsignmentDate ?? DateTime.now();
+      _notesCtrl.text = widget.editNotes ?? '';
+      
+      // Preload existing items - keep separate original and draft
+      if (widget.editExistingItems != null && widget.editExistingItems!.isNotEmpty) {
+        // Store original items (read-only reference)
+        _originalItems = List<ConsignmentItemTemp>.from(widget.editExistingItems!);
+        
+        // Create editable draft items (deep copy to allow modifications)
+        _currentDraftItems = widget.editExistingItems!.map((item) {
+          return ConsignmentItemTemp(
+            id: item.id,
+            gemstone: item.gemstone,
+            consignedQuantity: item.consignedQuantity,
+            sourceType: item.sourceType,
+            selectedPurchase: item.selectedPurchase,
+            selectedBreakdownItem: item.selectedBreakdownItem,
+            availableBreakdownItems: Map<String, int>.from(item.availableBreakdownItems),
+            photoPaths: List<String>.from(item.photoPaths),
+            originalBcId: item.originalBcId,
+            isNew: item.isNew,
+            isDeleted: item.isDeleted,
+            originalQuantity: item.originalQuantity,
+          );
+        }).toList();
+        
+        // Use draft items for display
+        _confirmedItems = List<ConsignmentItemTemp>.from(_currentDraftItems);
+      }
+    } else {
+      // Create mode
+      _isEditMode = false;
+      _generateBrokerConsignmentNumber();
+    }
+    
     _tempBrokerId = DateTime.now().millisecondsSinceEpoch.toString();
     _currentEditingItem = ConsignmentItemTemp(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -484,7 +576,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     return Scaffold(
       backgroundColor: AppTheme.primaryDark,
       appBar: AppBar(
-        title: const Text('ပွဲစားအပ်စာရင်း'),
+        title: Text(_isEditMode ? 'ပွဲစားအပ်ဘောင်ချာ ပြုပြင်ရန်' : 'ပွဲစားအပ်စာရင်း'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -875,9 +967,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   ),
                 ),
                 onPressed: _isFormValid() ? _saveBrokerConsignment : null,
-                child: const Text(
-                  'သိမ်းဆည်းရန်',
-                  style: TextStyle(
+                child: Text(
+                  _isEditMode ? 'ပြင်ဆင်မှု သိမ်းဆည်းမည်' : 'သိမ်းဆည်းရန်',
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
