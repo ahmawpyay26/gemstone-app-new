@@ -677,24 +677,22 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     developer.log('EDIT MODE: Aggregate validation passed');
     
     // Update existing items
-    final brokerBox = Hive.box<BrokerConsignment>('broker_consignments') as Box<BrokerConsignment>;
     for (final item in _currentDraftItems) {
       if (item.isNew || item.isDeleted) continue;
       
-      for (final record in brokerBox.values) {
-        if (record.voucherId == _editVoucherId && record.id == item.originalBcId) {
-          record.consignedQuantity = item.consignedQuantity;
-          record.brokerName = _brokerNameCtrl.text;
-          record.brokerPhone = _brokerPhoneCtrl.text;
-          record.brokerAddress = _brokerAddressCtrl.text;
-          record.brokerSocialAccount = _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text;
-          record.notes = _notesCtrl.text;
-          record.photoPaths = item.photoPaths;
-          record.updatedAt = DateTime.now().millisecondsSinceEpoch;
-          await brokerBox.put(record.id, record);
-          developer.log('EDIT MODE: Updated ${record.id}');
-          break;
-        }
+      final record = LocalDb.getBrokerConsignment(item.originalBcId);
+      if (record != null && record.voucherId == _editVoucherId) {
+        record.consignedQuantity = item.consignedQuantity;
+        record.brokerName = _brokerNameCtrl.text;
+        record.brokerPhone = _brokerPhoneCtrl.text;
+        record.brokerAddress = _brokerAddressCtrl.text;
+        record.brokerSocialAccount = _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text;
+        record.notes = _notesCtrl.text;
+        record.photoPaths = item.photoPaths;
+        record.updatedAt = DateTime.now().millisecondsSinceEpoch;
+        final brokers = Hive.box<BrokerConsignment>('brokerConsignments');
+        await brokers.put(record.id, record);
+        developer.log('EDIT MODE: Updated ${record.id}');
       }
     }
     
@@ -731,13 +729,12 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     for (final item in _currentDraftItems) {
       if (!item.isDeleted) continue;
       
-      for (final record in brokerBox.values) {
-        if (record.voucherId == _editVoucherId && record.id == item.originalBcId) {
-          record.deletedAt = DateTime.now().millisecondsSinceEpoch;
-          await brokerBox.put(record.id, record);
-          developer.log('EDIT MODE: Soft deleted ${record.id}');
-          break;
-        }
+      final record = LocalDb.getBrokerConsignment(item.originalBcId);
+      if (record != null && record.voucherId == _editVoucherId) {
+        record.deletedAt = DateTime.now().millisecondsSinceEpoch;
+        final brokers = Hive.box<BrokerConsignment>('brokerConsignments');
+        await brokers.put(record.id, record);
+        developer.log('EDIT MODE: Soft deleted ${record.id}');
       }
     }
     
@@ -1551,9 +1548,15 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     if (item.sourceType == 'whole_stone' && item.gemstone != null) {
       gemName = item.gemstone!.name;
       weight = item.gemstone!.weightCarat;
-    } else if (item.sourceType == 'breakdown_item' && item.selectedBreakdownItem != null) {
-      gemName = '${item.selectedPurchase?.name ?? "Unknown"} / ${item.selectedBreakdownItem}';
-      weight = item.selectedPurchase?.weightCarat;
+    } else if (item.sourceType == 'breakdown_item') {
+      if (item.selectedPurchase != null && item.selectedBreakdownItem != null) {
+        gemName = '${item.selectedPurchase!.name} / ${item.selectedBreakdownItem}';
+        weight = item.selectedPurchase!.weightCarat;
+      } else if (item.gemstone != null && item.selectedBreakdownItem != null) {
+        // Fallback: resolve gemstone from gemstone object if selectedPurchase is null
+        gemName = '${item.gemstone!.name} / ${item.selectedBreakdownItem}';
+        weight = item.gemstone!.weightCarat;
+      }
     }
     
     final photoCount = item.photoPaths.length;
