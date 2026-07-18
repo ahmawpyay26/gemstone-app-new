@@ -478,7 +478,20 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                _confirmedItems.removeWhere((item) => item.id == itemId);
+                // FIX: Mark as deleted instead of removing, to preserve originalBcId for soft-delete
+                // For existing items (with originalBcId): mark isDeleted = true
+                // For new items (without originalBcId): remove them since they don't exist in Hive
+                final itemIndex = _confirmedItems.indexWhere((item) => item.id == itemId);
+                if (itemIndex >= 0) {
+                  final item = _confirmedItems[itemIndex];
+                  if (item.originalBcId != null) {
+                    // Existing item: mark as deleted to preserve originalBcId for soft-delete
+                    item.isDeleted = true;
+                  } else {
+                    // New item: remove it since it doesn't exist in Hive
+                    _confirmedItems.removeAt(itemIndex);
+                  }
+                }
                 // If we were editing this item, clear the form
                 if (_editingItemId == itemId) {
                   _resetCurrentItemForm();
