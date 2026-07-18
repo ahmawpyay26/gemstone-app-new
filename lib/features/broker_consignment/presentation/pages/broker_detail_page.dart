@@ -398,6 +398,8 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         isNew: false,
         isDeleted: false,
         originalQuantity: item.consignedQuantity,
+        weight: item.weight,
+        weightUnit: item.weightUnit,
       );
     }).toList();
     
@@ -1401,6 +1403,8 @@ class _ItemCardState extends State<_ItemCard> {
             ),
             const SizedBox(height: 8),
             Text('အပ်ထားသည့်ခုနှုန်း: ${widget.item.consignedQuantity}'),
+            if (widget.item.weight != null && widget.item.weight! > 0)
+              Text('အလေးချိန်: ${widget.item.weight} ${widget.item.weightUnit ?? ""}'),
             Text('ရောင်းချ: ${widget.item.soldQuantity}'),
             Text('ပြန်လည်ရယူ: ${widget.item.returnedQuantity}'),
             Text('ကျန်ရှိ: ${widget.item.remainingQuantity}'),

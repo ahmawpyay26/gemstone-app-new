@@ -26,9 +26,8 @@ class BrokerVoucherDocumentBuilder {
           itemNumber: i + 1,
           itemName: item.historicalData.gemstoneType,
           sourceType: item.historicalData.sourceType,
-          // weight and weightUnit are intentionally omitted:
-          // BrokerConsignment has no consignment-specific weight field.
-          // weightDisplay will show '-' for all items.
+          weight: item.weight,
+          weightUnit: item.weightUnit,
           consignedQuantity: item.consignedQuantity,
           soldQuantity: item.soldQuantity,
           returnedQuantity: item.returnedQuantity,

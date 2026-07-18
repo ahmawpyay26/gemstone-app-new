@@ -676,6 +676,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         photoPaths: item.photoPaths,
         voucherId: voucherId,
         voucherNumber: voucherNumber,
+        weight: item.weight,
+        weightUnit: item.weightUnit,
       );
     }
     

@@ -488,9 +488,10 @@ class VoucherItemRow extends StatelessWidget {
         ? item.historicalData.breakdownItemName
         : item.historicalData.purchaseName;
 
-    final weight = item.historicalData.originalWeight;
-    final weightUnit = 'viss'; // Default unit from historical data
-    final weightStr = weight != null && weight > 0
+    // Use saved weight/unit from the item, not historical purchase weight
+    final weight = item.weight;
+    final weightUnit = item.weightUnit;
+    final weightStr = weight != null && weight > 0 && weightUnit != null && weightUnit.isNotEmpty
         ? ' ($weight $weightUnit)'
         : '';
 
@@ -548,6 +549,8 @@ class VoucherItemRow extends StatelessWidget {
             runSpacing: 6,
             children: [
               _buildQuantityBadge('🔢 အပ်', item.consignedQuantity.toStringAsFixed(0)),
+              if (weight != null && weight > 0 && weightUnit != null && weightUnit.isNotEmpty)
+                _buildQuantityBadge('⚖️ အလေး', '$weight $weightUnit'),
               _buildQuantityBadge('💰 ရောင်း', item.soldQuantity.toStringAsFixed(0)),
               _buildQuantityBadge('📥 ပြန်', item.returnedQuantity.toStringAsFixed(0)),
               _buildQuantityBadge('📦 ကျန်', item.remainingQuantity.toStringAsFixed(0)),
