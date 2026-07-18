@@ -343,17 +343,25 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
 
   void _showVoucherEditDialog(BuildContext context) {
     // Navigate to BrokerFormPage in edit mode
+    if (widget.items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ဘောင်ချာ အရေးအသားများ မရှိပါ။')),
+      );
+      return;
+    }
+    
+    final firstItem = widget.items.first;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => BrokerFormPage(
-          editVoucherId: widget.voucherId,
+          editVoucherId: firstItem.voucherId,
           editVoucherNumber: widget.voucherNumber,
-          editBrokerName: widget.brokerName,
-          editBrokerPhone: widget.brokerPhone,
-          editBrokerAddress: widget.brokerAddress,
-          editBrokerSocial: widget.brokerSocialAccount,
-          editConsignmentDate: widget.consignmentDate,
-          editNotes: widget.notes,
+          editBrokerName: firstItem.brokerName,
+          editBrokerPhone: firstItem.brokerPhone,
+          editBrokerAddress: firstItem.brokerAddress,
+          editBrokerSocial: firstItem.brokerSocialAccount,
+          editConsignmentDate: firstItem.createdAt,
+          editNotes: firstItem.notes,
           editExistingItems: widget.items,
           editOriginalQuantities: {
             for (final item in widget.items)
