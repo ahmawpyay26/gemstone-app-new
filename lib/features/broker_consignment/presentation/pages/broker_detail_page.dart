@@ -352,6 +352,19 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
     }
     
     final firstItem = widget.items.first;
+    final editItems = widget.items.map((item) => ConsignmentItemTemp(
+      id: item.id,
+      gemstone: item.purchaseId,
+      consignedQuantity: item.consignedQuantity,
+      selectedBreakdownItem: '',
+      availableBreakdownItems: {},
+      sourceType: 'whole',
+      originalBcId: item.id,
+      isNew: false,
+      isDeleted: false,
+      originalQuantity: item.consignedQuantity,
+    )).toList();
+    
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => BrokerFormPage(
@@ -361,9 +374,9 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
           editBrokerPhone: firstItem.brokerPhone,
           editBrokerAddress: firstItem.brokerAddress,
           editBrokerSocial: firstItem.brokerSocialAccount,
-          editConsignmentDate: firstItem.createdAt,
+          editConsignmentDate: DateTime.fromMillisecondsSinceEpoch(firstItem.createdAt),
           editNotes: firstItem.notes,
-          editExistingItems: widget.items,
+          editExistingItems: editItems,
           editOriginalQuantities: {
             for (final item in widget.items)
               item.id: item.consignedQuantity.toDouble()
