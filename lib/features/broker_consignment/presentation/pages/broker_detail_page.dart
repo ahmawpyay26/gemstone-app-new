@@ -1162,9 +1162,30 @@ class _ItemCardState extends State<_ItemCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'အရေးအသား ${widget.itemIndex}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Text(
+                        'အရေးအသား ${widget.itemIndex}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          '📷${PhotoHelpers.validPhotoCount(widget.item)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 PopupMenuButton<String>(
                   onSelected: (value) {

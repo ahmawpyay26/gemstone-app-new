@@ -62,7 +62,11 @@ class BrokerVoucherDocumentBuilder {
     // Collect all unique photos from all items
     final allPhotos = <String>{};
     for (final item in voucherItems) {
-      allPhotos.addAll(item.photoPaths);
+      if (item.photoPaths != null && item.photoPaths!.isNotEmpty) {
+        allPhotos.addAll(
+          item.photoPaths!.where((path) => path.trim().isNotEmpty),
+        );
+      }
     }
 
     return BrokerVoucherDocumentData(
