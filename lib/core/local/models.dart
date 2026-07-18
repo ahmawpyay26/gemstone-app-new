@@ -1107,7 +1107,7 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
   @override
   void write(BinaryWriter writer, BrokerConsignment obj) {
     writer
-      ..writeByte(19)
+      ..writeByte(18)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
