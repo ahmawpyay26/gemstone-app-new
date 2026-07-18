@@ -1085,7 +1085,7 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
       id: fields[0] as String,
       purchaseId: fields[1] as String,
       sourceType: (fields[17] as String?) ?? 'whole_stone',
-      breakdownItemName: fields[18] as String?,
+      breakdownItemName: (fields[18] as String?),
       consignedQuantity: fields[2] as double,
       soldQuantity: (fields[3] as double?) ?? 0,
       returnedQuantity: (fields[4] as double?) ?? 0,
