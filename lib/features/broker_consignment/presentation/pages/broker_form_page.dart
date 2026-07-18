@@ -557,10 +557,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   
   void _autoPrefillWeightFromPurchase(Gemstone gemstone) {
     // Extract weight and unit from the purchase record
-    if (gemstone.weight != null && gemstone.weight! > 0) {
-      _currentEditingItem.weight = gemstone.weight;
+    if (gemstone.weightCarat > 0) {
+      _currentEditingItem.weight = gemstone.weightCarat;
     }
-    if (gemstone.weightUnit != null && gemstone.weightUnit!.isNotEmpty) {
+    if (gemstone.weightUnit.isNotEmpty) {
       _currentEditingItem.weightUnit = gemstone.weightUnit;
     }
   }
