@@ -381,12 +381,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
 
   void _showVoucherPhotoViewer(BuildContext context) {
     // Get all photos from items in this voucher
-    final allPhotos = <String>[];
-    for (final item in widget.items) {
-      if (item.photoPaths != null && item.photoPaths!.isNotEmpty) {
-        allPhotos.addAll(item.photoPaths!);
-      }
-    }
+    final allPhotos = getVoucherPhotoPaths(widget.items);
 
     if (allPhotos.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1177,7 +1172,7 @@ class _ItemCardState extends State<_ItemCard> {
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: Text(
-                          '📷${PhotoHelpers.validPhotoCount(widget.item)}',
+                          '📷${validPhotoCount(widget.item)}',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -1267,10 +1262,7 @@ class _ItemCardState extends State<_ItemCard> {
   }
 
   void _showItemPhotoViewer(BuildContext context) {
-    final validPaths = widget.item.photoPaths
-        ?.where((path) => path.trim().isNotEmpty)
-        .toSet()
-        .toList() ?? [];
+    final validPaths = getValidPhotoPaths(widget.item);
 
     if (validPaths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

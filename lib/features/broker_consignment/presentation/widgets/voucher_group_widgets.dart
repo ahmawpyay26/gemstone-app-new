@@ -354,7 +354,7 @@ class _VoucherGroupCardState extends State<VoucherGroupCard> {
                           PhotoCountBadge(
                             count: widget.items.fold<int>(
                               0,
-                              (sum, item) => sum + (item.photoPaths?.length ?? 0),
+                              (sum, item) => sum + item.photoPaths.length,
                             ),
                             fontSize: 11,
                           ),
@@ -521,10 +521,10 @@ class VoucherItemRow extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (item.photoPaths != null && item.photoPaths!.isNotEmpty)
+                        if (item.photoPaths.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(left: 8),
-                            child: PhotoCountBadge(count: item.photoPaths!.length, fontSize: 10),
+                            child: PhotoCountBadge(count: item.photoPaths.length, fontSize: 10),
                           ),
                       ],
                     ),
