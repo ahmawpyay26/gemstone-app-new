@@ -354,7 +354,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
     final firstItem = widget.items.first;
     final editItems = widget.items.map((item) => ConsignmentItemTemp(
       id: item.id,
-      gemstone: item.purchaseId,
+      gemstone: LocalDb.gemstoneById(item.purchaseId),
       consignedQuantity: item.consignedQuantity,
       selectedBreakdownItem: '',
       availableBreakdownItems: {},
