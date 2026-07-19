@@ -768,10 +768,6 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         voucherDate: widget.items.first.createdAt,
       );
 
-      // TEMPORARY DEBUG: Show debug dialog with PDF total weight values
-      if (!context.mounted) return;
-      _showPdfDebugDialog(context, documentData);
-
       // Export PDF
       final success = await BrokerVoucherExportService.exportPdfAndShare(documentData);
 
