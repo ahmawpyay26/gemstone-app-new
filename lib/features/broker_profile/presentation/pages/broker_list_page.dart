@@ -247,7 +247,7 @@ class _BrokerListPageState extends State<BrokerListPage> {
           ],
         ),
         onTap: () {
-          context.push('/brokers/${broker.id}');
+          context.push('/brokers/${broker.id}/vouchers');
         },
       ),
     );

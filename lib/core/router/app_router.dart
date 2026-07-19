@@ -21,6 +21,7 @@ import '../../features/settings/presentation/pages/business_profile_page.dart';
 import '../../features/broker_profile/presentation/pages/broker_list_page.dart' as profile;
 import '../../features/broker_profile/presentation/pages/add_broker_page.dart';
 import '../../features/broker_profile/presentation/pages/broker_detail_page.dart' as profile_detail;
+import '../../features/broker_profile/presentation/pages/broker_voucher_list_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -146,6 +147,14 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) {
             final id = state.pathParameters['id'];
             return profile_detail.BrokerProfileDetailPage(brokerId: id ?? '');
+          },
+        ),
+        GoRoute(
+          path: ':id/vouchers',
+          name: 'broker-vouchers',
+          builder: (context, state) {
+            final id = state.pathParameters['id'];
+            return BrokerVoucherListPage(brokerId: id ?? '');
           },
         ),
       ],
