@@ -5,6 +5,9 @@ import '../../../../core/utils/total_weight_calculator.dart';
 
 /// Builds BrokerVoucherDocumentData from a list of grouped BrokerConsignment items
 /// Ensures single source of truth for all export formats
+// TEMPORARY DEBUG: Store debug values globally for UI display
+Map<String, dynamic>? _lastDebugInfo;
+
 class BrokerVoucherDocumentBuilder {
   /// Build document data from a grouped voucher (list of items with same voucherNumber)
   static BrokerVoucherDocumentData buildFromVoucher({
@@ -107,6 +110,15 @@ class BrokerVoucherDocumentBuilder {
       }
     }
 
+    // TEMPORARY DEBUG: Store debug info for UI display
+    final debugInfo = {
+      'voucherItemsLength': voucherItems.length,
+      'totalWeightKg': totalWeight,
+      'totalWeightUnit': totalWeightUnit,
+      'conditionResult': totalWeight > 0,
+      'builder': 'BrokerVoucherDocumentBuilder',
+    };
+
     return BrokerVoucherDocumentData(
       voucherNumber: voucherNumber,
       voucherDate: voucherDate,
@@ -117,6 +129,7 @@ class BrokerVoucherDocumentBuilder {
       items: documentItems,
       totals: totals,
       photoPaths: allPhotos.toList(),
+      debugInfo: debugInfo, // TEMPORARY DEBUG
     );
   }
 }

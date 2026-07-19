@@ -768,6 +768,10 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
         voucherDate: widget.items.first.createdAt,
       );
 
+      // TEMPORARY DEBUG: Show debug dialog with PDF total weight values
+      if (!context.mounted) return;
+      _showPdfDebugDialog(context, documentData);
+
       // Export PDF
       final success = await BrokerVoucherExportService.exportPdfAndShare(documentData);
 
@@ -1909,4 +1913,44 @@ extension VoucherExport on _VoucherGroupCardState {
       ),
     );
   }
+}
+
+  // TEMPORARY DEBUG: Show PDF total weight debug dialog
+  void _showPdfDebugDialog(BuildContext context, BrokerVoucherDocumentData data) {
+    final debugInfo = data.debugInfo ?? {};
+    final voucherItemsLength = debugInfo['voucherItemsLength'] ?? 0;
+    final totalWeightKg = debugInfo['totalWeightKg'] ?? 0.0;
+    final totalWeightUnit = debugInfo['totalWeightUnit'] ?? '';
+    final conditionResult = debugInfo['conditionResult'] ?? false;
+    final builder = debugInfo['builder'] ?? 'Unknown';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('PDF Total Weight Debug'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('voucherItems.length: $voucherItemsLength'),
+                Text('totalWeightKg: $totalWeightKg'),
+                Text('totalWeightUnit: $totalWeightUnit'),
+                Text('condition (totalWeightKg > 0): $conditionResult'),
+                Text('builder: $builder'),
+                Text('generator: BrokerVoucherPdfGenerator'),
+                Text('rowAdded: $conditionResult'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
 }
