@@ -709,32 +709,77 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     }
   }
 
+  String _normalizePhone(String phone) {
+    return phone
+        .replaceAll(' ', '')
+        .replaceAll('-', '')
+        .replaceAll('(', '')
+        .replaceAll(')', '')
+        .trim();
+  }
+
   Future<void> _saveCreateMode() async {
     final voucherId = const Uuid().v4();
     final voucherNumber = LocalDb.generateNextVoucherNumber();
     
     developer.log('CREATE MODE: Generated voucherId=$voucherId, voucherNumber=$voucherNumber');
     
-    // PHASE 1: Broker Profile Resolution
+    // PHASE 1: Broker Profile Resolution with Phone Normalization
     String? brokerProfileId;
     final brokerName = _brokerNameCtrl.text.trim();
     final brokerPhone = _brokerPhoneCtrl.text.trim();
+    final normalizedPhone = _normalizePhone(brokerPhone);
     
-    // Search for existing broker profile by name or phone
-    final existingProfile = LocalDb.searchBrokerProfiles(
-      brokerName.isNotEmpty ? brokerName : brokerPhone,
-    ).firstWhereOrNull((profile) {
-      final nameMatch = brokerName.isNotEmpty && profile.name.toLowerCase() == brokerName.toLowerCase();
-      final phoneMatch = brokerPhone.isNotEmpty && profile.phone == brokerPhone;
-      return nameMatch || phoneMatch;
-    });
+    developer.log('CREATE MODE: Searching for broker - name=$brokerName, phone=$brokerPhone, normalized=$normalizedPhone');
     
-    if (existingProfile != null) {
-      // Use existing profile
-      brokerProfileId = existingProfile.id;
-      developer.log('CREATE MODE: Found existing broker profile: id=${existingProfile.id}, name=${existingProfile.name}');
+    // Search for existing broker profile by normalized phone (exact match)
+    BrokerProfile? existingProfileByPhone;
+    if (normalizedPhone.isNotEmpty) {
+      existingProfileByPhone = LocalDb.searchBrokerProfiles('').firstWhereOrNull((profile) {
+        final normalizedExistingPhone = _normalizePhone(profile.phone);
+        return normalizedExistingPhone == normalizedPhone;
+      });
+    }
+    
+    if (existingProfileByPhone != null) {
+      // Phone match found - show confirmation dialog
+      developer.log('CREATE MODE: Found existing broker by phone: id=${existingProfileByPhone.id}, name=${existingProfileByPhone.name}');
+      
+      if (mounted) {
+        final shouldUseExisting = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('ပွဲစားအချက်အလက် တွေ့ရှိပါသည်'),
+            content: Text(
+              'ဤဖုန်းနံပါတ်ဖြင့် ပွဲစားမှတ်တမ်းရှိပြီးသားဖြစ်ပါသည်။\n'
+              'အမည်: ${existingProfileByPhone.name}\n'
+              'ဖုန်းနံပါတ်: ${existingProfileByPhone.phone}\n\n'
+              'ရှိပြီးသားပွဲစားကို အသုံးပြုမလား?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('မသုံးတော့ပါ'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('အသုံးပြုမည်'),
+              ),
+            ],
+          ),
+        ) ?? false;
+        
+        if (!shouldUseExisting) {
+          developer.log('CREATE MODE: User rejected existing broker, cancelling save');
+          return;
+        }
+      }
+      
+      brokerProfileId = existingProfileByPhone.id;
+      developer.log('CREATE MODE: Using existing broker profile: id=${existingProfileByPhone.id}');
     } else {
-      // Create new broker profile
+      // No phone match - create new broker profile
       final newProfile = BrokerProfile(
         id: const Uuid().v4(),
         name: brokerName,
