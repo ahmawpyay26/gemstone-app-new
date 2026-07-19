@@ -1075,6 +1075,31 @@ class BrokerConsignment {
 
   /// Check if this broker consignment is completed (no remaining quantity)
   bool get isCompleted => remainingQuantity <= 0;
+
+  /// Calculate total weight in kilograms
+  /// Converts weight from any unit to kg using WeightConverter
+  double get totalWeightKg {
+    if (weight == null || weight! <= 0 || weightUnit == null || weightUnit!.isEmpty) {
+      return 0.0;
+    }
+    // Import WeightConverter at top of file
+    // This getter will be used by UI and PDF generation
+    return weight! * _getConversionFactor(weightUnit!);
+  }
+
+  /// Helper to get conversion factor for weight unit
+  static double _getConversionFactor(String unit) {
+    const factors = {
+      'kg': 1.0,
+      'g': 0.001,
+      'lb': 0.453592,
+      'oz': 0.0283495,
+      'ပိသာ': 1.63293,
+      'ကျပ်သား': 0.408233,
+      'ကာရက်': 0.0002,
+    };
+    return factors[unit] ?? 1.0;
+  }
 }
 
 class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {

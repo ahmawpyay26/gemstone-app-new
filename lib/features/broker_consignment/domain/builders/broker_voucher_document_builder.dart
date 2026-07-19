@@ -39,6 +39,13 @@ class BrokerVoucherDocumentBuilder {
     }
 
     // Calculate totals
+    double totalWeightKg = 0.0;
+    for (final item in voucherItems) {
+      if (item.weight != null && item.weight! > 0 && item.weightUnit != null && item.weightUnit!.isNotEmpty) {
+        totalWeightKg += item.totalWeightKg;
+      }
+    }
+
     final totals = BrokerVoucherDocumentTotals(
       distinctItemCount: voucherItems.length,
       totalConsignedQuantity: voucherItems.fold(
@@ -57,6 +64,7 @@ class BrokerVoucherDocumentBuilder {
         0.0,
         (sum, item) => sum + item.remainingQuantity,
       ),
+      totalWeightKg: totalWeightKg,
     );
 
     // Collect all unique photos from all items

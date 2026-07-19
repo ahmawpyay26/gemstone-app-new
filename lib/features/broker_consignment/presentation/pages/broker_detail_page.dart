@@ -549,6 +549,16 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
     }
   }
 
+  double _calculateTotalWeightKg() {
+    double totalWeightKg = 0.0;
+    for (final item in widget.items) {
+      if (item.weight != null && item.weight! > 0 && item.weightUnit != null && item.weightUnit!.isNotEmpty) {
+        totalWeightKg += item.totalWeightKg;
+      }
+    }
+    return totalWeightKg;
+  }
+
   @override
   Widget build(BuildContext context) {
     double totalConsigned = 0;
@@ -695,6 +705,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
                   _SummaryRow('စုစုပေါင်းရောင်းချ', totalSold.toStringAsFixed(2)),
                   _SummaryRow('စုစုပေါင်းပြန်လည်ရယူ', totalReturned.toStringAsFixed(2)),
                   _SummaryRow('ကျန်ရှိ', totalRemaining.toStringAsFixed(2)),
+                  if (_calculateTotalWeightKg() > 0) ...[const SizedBox(height: 4), _SummaryRow('စုစုပေါင်းအလေးချိန်', '${_calculateTotalWeightKg().toStringAsFixed(2)} kg')],
                   const Divider(),
                   const SizedBox(height: 8),
                   const Text(
