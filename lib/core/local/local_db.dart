@@ -2652,7 +2652,6 @@ class LocalDb {
       return null;
     }
   }
-}
 
   // ---------------------------------------------------------------------------
   // Broker Profile Methods
@@ -2716,3 +2715,4 @@ class LocalDb {
       return nameMatch || phoneMatch;
     }).toList();
   }
+}
