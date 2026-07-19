@@ -747,7 +747,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         updatedAt: DateTime.now().millisecondsSinceEpoch,
       );
       
-      await LocalDb.createBrokerProfile(newProfile);
+      await LocalDb.saveBrokerProfile(newProfile);
       brokerProfileId = newProfile.id;
       developer.log('CREATE MODE: Created new broker profile: id=${newProfile.id}, name=${newProfile.name}');
     }
