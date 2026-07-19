@@ -1,6 +1,7 @@
 import 'package:gemstone_management/core/local/models.dart';
 import '../models/broker_voucher_document.dart';
 import '../../../../core/utils/weight_converter.dart';
+import '../../../../core/utils/total_weight_calculator.dart';
 
 /// Builds BrokerVoucherDocumentData from a list of grouped BrokerConsignment items
 /// Ensures single source of truth for all export formats
@@ -39,34 +40,10 @@ class BrokerVoucherDocumentBuilder {
       );
     }
 
-    // Calculate totals
-    double totalWeight = 0.0;
-    String totalWeightUnit = '';
-    
-    // Collect all valid items with weight
-    final validItems = voucherItems.where((item) {
-      return item.weight != null && item.weight! > 0 && item.weightUnit != null && item.weightUnit!.isNotEmpty;
-    }).toList();
-
-    if (validItems.isNotEmpty) {
-      // Get all units from valid items
-      final units = validItems.map((item) => item.weightUnit!).toList();
-      
-      // Check if all units are the same
-      if (WeightConverter.areAllUnitsSame(units)) {
-        // All same unit - sum directly in original unit
-        totalWeightUnit = WeightConverter.normalizeUnit(units.first);
-        for (final item in validItems) {
-          totalWeight += item.displayWeight;
-        }
-      } else {
-        // Mixed units - convert all to kg
-        totalWeightUnit = 'kg';
-        for (final item in validItems) {
-          totalWeight += item.totalWeightKg;
-        }
-      }
-    }
+    // Calculate totals using shared calculator
+    final weightResult = TotalWeightCalculator.calculateTotalWeight(voucherItems);
+    final totalWeight = TotalWeightCalculator.getTotalWeightValue(weightResult);
+    final totalWeightUnit = TotalWeightCalculator.getTotalWeightUnit(weightResult);
 
     final totals = BrokerVoucherDocumentTotals(
       distinctItemCount: voucherItems.length,

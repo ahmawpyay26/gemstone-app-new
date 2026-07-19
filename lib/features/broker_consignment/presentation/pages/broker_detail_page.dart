@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../core/utils/weight_converter.dart';
+import '../../../../core/utils/total_weight_calculator.dart';
 import '../../../broker_consignment/domain/builders/broker_voucher_document_builder.dart';
 import '../../../broker_consignment/domain/services/broker_voucher_export_service.dart';
 import '../../../broker_consignment/domain/services/broker_voucher_image_exporter.dart';
@@ -550,49 +551,18 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
     }
   }
 
-  /// Calculate total weight with smart unit handling
-  /// Returns total weight in original unit if all items use same unit
-  /// Returns total weight in kg if mixed units are detected
   Map<String, dynamic> _calculateTotalWeight() {
-    // Collect all valid items with weight
-    final validItems = widget.items.where((item) {
-      return item.weight != null && item.weight! > 0 && item.weightUnit != null && item.weightUnit!.isNotEmpty;
-    }).toList();
-
-    if (validItems.isEmpty) {
-      return {'weight': 0.0, 'unit': '', 'hasWeight': false};
-    }
-
-    // Get all units from valid items
-    final units = validItems.map((item) => item.weightUnit!).toList();
-
-    // Check if all units are the same
-    if (WeightConverter.areAllUnitsSame(units)) {
-      // All same unit - sum directly in original unit
-      final commonUnit = WeightConverter.normalizeUnit(units.first);
-      double totalWeight = 0.0;
-      for (final item in validItems) {
-        totalWeight += item.displayWeight;
-      }
-      return {'weight': totalWeight, 'unit': commonUnit, 'hasWeight': true};
-    } else {
-      // Mixed units - convert all to kg
-      double totalWeightKg = 0.0;
-      for (final item in validItems) {
-        totalWeightKg += item.totalWeightKg;
-      }
-      return {'weight': totalWeightKg, 'unit': 'kg', 'hasWeight': true};
-    }
+    return TotalWeightCalculator.calculateTotalWeight(widget.items);
   }
 
   double _calculateTotalWeightKg() {
     final result = _calculateTotalWeight();
-    return result['weight'] as double? ?? 0.0;
+    return TotalWeightCalculator.getTotalWeightValue(result);
   }
 
   String _calculateTotalWeightUnit() {
     final result = _calculateTotalWeight();
-    return result['unit'] as String? ?? '';
+    return TotalWeightCalculator.getTotalWeightUnit(result);
   }
 
   @override
