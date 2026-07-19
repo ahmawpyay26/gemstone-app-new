@@ -35,16 +35,17 @@ class BrokerVoucherPdfGenerator {
   static Future<Uint8List> generatePdf(
     BrokerVoucherDocumentData data,
   ) async {
-    // Load Padauk font
-    final padaukFont = await _loadPadaukFont();
+    // Load Padauk fonts (regular and bold)
+    final padaukRegular = await _loadPadaukFont('Regular');
+    final padaukBold = await _loadPadaukFont('Bold');
 
     // Load logo bytes before building pages
     final Uint8List? logoBytes = await _loadLogoBytes();
     
     final pdf = pw.Document(
       theme: pw.ThemeData.withFont(
-        base: padaukFont,
-        bold: padaukFont,
+        base: padaukRegular,
+        bold: padaukBold,
       ),
     );
 
@@ -92,8 +93,10 @@ class BrokerVoucherPdfGenerator {
   }
 
   /// Load Padauk font from assets
-  static Future<pw.Font> _loadPadaukFont() async {
-    final fontData = await rootBundle.load('assets/fonts/Padauk-Regular.ttf');
+  /// [variant] can be 'Regular' or 'Bold'
+  static Future<pw.Font> _loadPadaukFont(String variant) async {
+    final fontPath = 'assets/fonts/Padauk-$variant.ttf';
+    final fontData = await rootBundle.load(fontPath);
     return pw.Font.ttf(fontData);
   }
 

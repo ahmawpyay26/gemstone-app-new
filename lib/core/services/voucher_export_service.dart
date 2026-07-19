@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -19,7 +20,16 @@ class VoucherExportService {
   /// Generate PDF voucher for a sale record
   Future<File?> generatePdfVoucher(Sale sale) async {
     try {
-      final pdf = pw.Document();
+      // Load Padauk fonts
+      final padaukRegular = await _loadPadaukFont('Regular');
+      final padaukBold = await _loadPadaukFont('Bold');
+      
+      final pdf = pw.Document(
+        theme: pw.ThemeData.withFont(
+          base: padaukRegular,
+          bold: padaukBold,
+        ),
+      );
       final moneyFormat = NumberFormat('#,##0', 'en_US');
       final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
 
@@ -246,6 +256,14 @@ class VoucherExportService {
     }
   }
 
+  /// Load Padauk font from assets
+  /// [variant] can be 'Regular' or 'Bold'
+  static Future<pw.Font> _loadPadaukFont(String variant) async {
+    final fontPath = 'assets/fonts/Padauk-$variant.ttf';
+    final fontData = await rootBundle.load(fontPath);
+    return pw.Font.ttf(fontData);
+  }
+
   String _getWeightUnit(Sale sale) {
     // Use Sale's weightUnit if available (whole-stone sales)
     if (sale.weightUnit != null && sale.weightUnit!.isNotEmpty) {
@@ -262,7 +280,16 @@ class VoucherExportService {
   /// Print voucher
   Future<void> printVoucher(Sale sale) async {
     try {
-      final pdf = pw.Document();
+      // Load Padauk fonts
+      final padaukRegular = await _loadPadaukFont('Regular');
+      final padaukBold = await _loadPadaukFont('Bold');
+      
+      final pdf = pw.Document(
+        theme: pw.ThemeData.withFont(
+          base: padaukRegular,
+          bold: padaukBold,
+        ),
+      );
       final moneyFormat = NumberFormat('#,##0', 'en_US');
       final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
 
