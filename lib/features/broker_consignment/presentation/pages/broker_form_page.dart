@@ -1405,7 +1405,6 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
               ],
               style: const TextStyle(color: Colors.white),
               onChanged: (_) {
-                _autoSearchBrokerProfile();
                 setState(() {});
               },
               decoration: InputDecoration(
