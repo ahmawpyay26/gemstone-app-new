@@ -1913,7 +1913,6 @@ extension VoucherExport on _VoucherGroupCardState {
       ),
     );
   }
-}
 
   // TEMPORARY DEBUG: Show PDF total weight debug dialog
   void _showPdfDebugDialog(BuildContext context, BrokerVoucherDocumentData data) {
@@ -1953,4 +1952,5 @@ extension VoucherExport on _VoucherGroupCardState {
         );
       },
     );
+  }
 }
