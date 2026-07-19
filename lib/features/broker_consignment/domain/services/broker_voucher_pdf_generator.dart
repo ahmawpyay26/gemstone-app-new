@@ -329,28 +329,13 @@ class BrokerVoucherPdfGenerator {
             _buildTableCell('စုစုပေါင်း', padaukFont, isHeader: true),
             _buildTableCell('${totals.distinctItemCount} ပစ္စည်း', padaukFont, isHeader: true),
             _buildTableCell('', padaukFont, isHeader: true),
-            _buildTableCell('', padaukFont, isHeader: true),
+            _buildTableCell(totals.totalWeightKg > 0 ? '${totals.totalWeightKg.toStringAsFixed(2)} ${totals.totalWeightUnit}' : '', padaukFont, isHeader: true),
             _buildTableCell('${totals.totalConsignedQuantity.toStringAsFixed(2)}', padaukFont, isHeader: true),
             _buildTableCell('${totals.totalSoldQuantity.toStringAsFixed(2)}', padaukFont, isHeader: true),
             _buildTableCell('${totals.totalReturnedQuantity.toStringAsFixed(2)}', padaukFont, isHeader: true),
             _buildTableCell('${totals.totalRemainingQuantity.toStringAsFixed(2)}', padaukFont, isHeader: true),
           ],
         ),
-        if (totals.totalWeightKg > 0)
-          pw.TableRow(
-
-            decoration: pw.BoxDecoration(color: PdfColors.grey100),
-            children: [
-              _buildTableCell('စုစုပေါင်းအလေးချိန်', padaukFont, isHeader: true),
-              _buildTableCell('${totals.totalWeightKg.toStringAsFixed(2)} ${totals.totalWeightUnit}', padaukFont, isHeader: true),
-              _buildTableCell('', padaukFont, isHeader: true),
-              _buildTableCell('', padaukFont, isHeader: true),
-              _buildTableCell('', padaukFont, isHeader: true),
-              _buildTableCell('', padaukFont, isHeader: true),
-              _buildTableCell('', padaukFont, isHeader: true),
-              _buildTableCell('', padaukFont, isHeader: true),
-            ],
-          ),
       ],
     );
   }
