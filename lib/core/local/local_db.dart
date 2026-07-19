@@ -27,6 +27,7 @@ class LocalDb {
   static const String customerLedgerBox = 'customerLedger';
   static const String paymentsBox = 'payments';
   static const String businessProfileBox = 'businessProfile';
+  static const String brokerProfilesBox = 'brokerProfiles';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -48,6 +49,7 @@ class LocalDb {
     if (!Hive.isAdapterRegistered(14)) Hive.registerAdapter(CustomerLedgerAdapter());
     if (!Hive.isAdapterRegistered(15)) Hive.registerAdapter(PaymentAdapter());
     if (!Hive.isAdapterRegistered(16)) Hive.registerAdapter(BusinessProfileAdapter());
+    if (!Hive.isAdapterRegistered(17)) Hive.registerAdapter(BrokerProfileAdapter());
 
     await Hive.openBox<AppUser>(usersBox);
     await Hive.openBox<Gemstone>(gemstonesBox);
@@ -65,6 +67,7 @@ class LocalDb {
     await Hive.openBox<CustomerLedger>(customerLedgerBox);
     await Hive.openBox<Payment>(paymentsBox);
     await Hive.openBox<BusinessProfile>(businessProfileBox);
+    await Hive.openBox<BrokerProfile>(brokerProfilesBox);
 
     await _seedDefaults();
     await _migrateGemstonesCostTracking();
@@ -2651,3 +2654,65 @@ class LocalDb {
   }
 }
 
+  // ---------------------------------------------------------------------------
+  // Broker Profile Methods
+  // ---------------------------------------------------------------------------
+
+  /// Get all broker profiles (active and deleted)
+  static List<BrokerProfile> brokerProfiles() {
+    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    return box.values.toList();
+  }
+
+  /// Get only active (non-deleted) broker profiles
+  static List<BrokerProfile> activeBrokerProfiles() {
+    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    return box.values.where((broker) => !broker.isDeleted).toList();
+  }
+
+  /// Get broker profile by ID
+  static BrokerProfile? brokerProfileById(String id) {
+    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    return box.values.firstWhereOrNull((broker) => broker.id == id);
+  }
+
+  /// Save a new broker profile
+  static Future<void> saveBrokerProfile(BrokerProfile broker) async {
+    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    await box.put(broker.id, broker);
+  }
+
+  /// Update an existing broker profile
+  static Future<void> updateBrokerProfile(BrokerProfile broker) async {
+    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    await box.put(broker.id, broker);
+  }
+
+  /// Soft delete a broker profile (mark as deleted, don't remove)
+  static Future<void> softDeleteBrokerProfile(String id) async {
+    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    final broker = box.get(id);
+    if (broker != null) {
+      broker.isDeleted = true;
+      broker.deletedAt = DateTime.now().millisecondsSinceEpoch;
+      await box.put(id, broker);
+    }
+  }
+
+  /// Search broker profiles by name or phone (case-insensitive)
+  /// Empty query returns all active brokers
+  static List<BrokerProfile> searchBrokerProfiles(String query) {
+    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    final activeProfiles = box.values.where((broker) => !broker.isDeleted).toList();
+
+    if (query.isEmpty) {
+      return activeProfiles;
+    }
+
+    final lowerQuery = query.toLowerCase();
+    return activeProfiles.where((broker) {
+      final nameMatch = broker.name.toLowerCase().contains(lowerQuery);
+      final phoneMatch = broker.phone.contains(lowerQuery);
+      return nameMatch || phoneMatch;
+    }).toList();
+  }

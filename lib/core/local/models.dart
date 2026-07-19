@@ -1670,3 +1670,93 @@ class BusinessProfileAdapter extends TypeAdapter<BusinessProfile> {
       ..write(obj.updatedAt);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Broker Profile
+// ---------------------------------------------------------------------------
+class BrokerProfile {
+  String id;
+  String name; // ပွဲစားအမည်
+  String? nationalId; // အမှတ်တံဆိပ်နံပါတ်
+  String phone; // ဖုန်းနံပါတ်
+  String? address; // လိပ်စာ
+  String? socialAccount; // ဖェースဘုတ်, Viber, အခြား
+  String? note; // မှတ်ချက်
+  String? profileImagePath; // ပုံရိပ်လမ်းကြောင်း
+  int createdAt; // ဖန်တီးသည့်အချိန်
+  int updatedAt; // နောက်ဆုံးအဆင့်မြှင့်တင်သည့်အချိန်
+  bool isDeleted; // soft delete အဆင့်
+  int? deletedAt; // ဖျက်သည့်အချိန်
+
+  BrokerProfile({
+    required this.id,
+    required this.name,
+    this.nationalId,
+    required this.phone,
+    this.address,
+    this.socialAccount,
+    this.note,
+    this.profileImagePath,
+    required this.createdAt,
+    int? updatedAt,
+    this.isDeleted = false,
+    this.deletedAt,
+  }) : updatedAt = updatedAt ?? createdAt;
+}
+
+class BrokerProfileAdapter extends TypeAdapter<BrokerProfile> {
+  @override
+  final int typeId = 17;
+
+  @override
+  BrokerProfile read(BinaryReader reader) {
+    final count = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < count; i++) reader.readByte(): reader.read(),
+    };
+    return BrokerProfile(
+      id: fields[0] as String,
+      name: fields[1] as String,
+      nationalId: fields[2] as String?,
+      phone: fields[3] as String,
+      address: fields[4] as String?,
+      socialAccount: fields[5] as String?,
+      note: fields[6] as String?,
+      profileImagePath: fields[7] as String?,
+      createdAt: fields[8] as int,
+      updatedAt: (fields[9] as int?) ?? fields[8] as int,
+      isDeleted: (fields[10] as bool?) ?? false,
+      deletedAt: fields[11] as int?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, BrokerProfile obj) {
+    writer
+      ..writeByte(12)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.nationalId)
+      ..writeByte(3)
+      ..write(obj.phone)
+      ..writeByte(4)
+      ..write(obj.address)
+      ..writeByte(5)
+      ..write(obj.socialAccount)
+      ..writeByte(6)
+      ..write(obj.note)
+      ..writeByte(7)
+      ..write(obj.profileImagePath)
+      ..writeByte(8)
+      ..write(obj.createdAt)
+      ..writeByte(9)
+      ..write(obj.updatedAt)
+      ..writeByte(10)
+      ..write(obj.isDeleted)
+      ..writeByte(11)
+      ..write(obj.deletedAt);
+  }
+}
