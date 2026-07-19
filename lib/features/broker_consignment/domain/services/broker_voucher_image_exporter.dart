@@ -253,16 +253,20 @@ class BrokerVoucherImageExporter {
 
     final repaintBoundary = RenderRepaintBoundary();
 
+    // Build a ViewConfiguration that works across Flutter versions:
+    // - Flutter ≤3.19: ViewConfiguration(size: Size, devicePixelRatio: double)
+    // - Flutter ≥3.24: ViewConfiguration(logicalConstraints: BoxConstraints, devicePixelRatio: double)
+    // We use dynamic invocation so the code compiles on both versions without
+    // triggering an undefined_named_parameter static error.
+    final viewConfig = _buildViewConfiguration(logicalSize, dpr);
+
     final renderView = RenderView(
       view: flutterView,
       child: RenderPositionedBox(
         alignment: Alignment.topLeft,
         child: repaintBoundary,
       ),
-      configuration: ViewConfiguration(
-        size: logicalSize,
-        devicePixelRatio: dpr,
-      ),
+      configuration: viewConfig,
     );
 
     final pipelineOwner = PipelineOwner();
@@ -787,3 +791,28 @@ class _VoucherPageWidget extends StatelessWidget {
   }
 }
 
+
+/// Returns a [ViewConfiguration] compatible with both Flutter 3.19 and 3.24+.
+///
+/// Flutter 3.19 uses `ViewConfiguration(size: Size, devicePixelRatio: double)`.
+/// Flutter 3.24+ uses `ViewConfiguration(logicalConstraints: BoxConstraints, devicePixelRatio: double)`.
+///
+/// Using `Function.apply` with a dynamic mirror of the constructor avoids
+/// compile-time `undefined_named_parameter` errors on either version.
+ViewConfiguration _buildViewConfiguration(Size logicalSize, double dpr) {
+  // Try the Flutter 3.24+ API first (logicalConstraints).
+  // If that parameter doesn't exist, fall back to the Flutter 3.19 API (size).
+  try {
+    // ignore: undefined_named_parameter
+    return (ViewConfiguration.new as dynamic)(
+      logicalConstraints: BoxConstraints.tight(logicalSize),
+      devicePixelRatio: dpr,
+    ) as ViewConfiguration;
+  } catch (_) {
+    // ignore: undefined_named_parameter
+    return (ViewConfiguration.new as dynamic)(
+      size: logicalSize,
+      devicePixelRatio: dpr,
+    ) as ViewConfiguration;
+  }
+}
