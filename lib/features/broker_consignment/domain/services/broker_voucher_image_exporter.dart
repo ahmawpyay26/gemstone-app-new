@@ -260,7 +260,7 @@ class BrokerVoucherImageExporter {
         child: repaintBoundary,
       ),
       configuration: ViewConfiguration(
-        size: logicalSize,
+        logicalConstraints: BoxConstraints.tight(logicalSize),
         devicePixelRatio: dpr,
       ),
     );
