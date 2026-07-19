@@ -20,6 +20,7 @@ import '../../features/customers/presentation/pages/customers_page.dart';
 import '../../features/settings/presentation/pages/business_profile_page.dart';
 import '../../features/broker_profile/presentation/pages/broker_list_page.dart' as profile;
 import '../../features/broker_profile/presentation/pages/add_broker_page.dart';
+import '../../features/broker_profile/presentation/pages/broker_detail_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -138,6 +139,14 @@ final GoRouter appRouter = GoRouter(
           path: 'add',
           name: 'add-broker',
           builder: (context, state) => const AddBrokerPage(),
+        ),
+        GoRoute(
+          path: ':id',
+          name: 'broker-detail',
+          builder: (context, state) {
+            final id = state.pathParameters['id'];
+            return BrokerDetailPage(brokerId: id ?? '');
+          },
         ),
       ],
     ),

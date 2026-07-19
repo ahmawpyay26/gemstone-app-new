@@ -156,12 +156,7 @@ class _BrokerListPageState extends State<BrokerListPage> {
           ],
         ),
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('ပွဲစားအသေးစိတ်စာမျက်နှာကို နောက် Phase တွင် ထည့်သွင်းပါမည်။'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          context.push('/brokers/${broker.id}');
         },
       ),
     );
