@@ -892,7 +892,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         
         // Get existing brokerProfileId from first item in this voucher
         String? brokerProfileId;
-        final existingBrokerConsignments = LocalDb.getBrokerConsignmentsByVoucherId(_editVoucherId);
+        final editVoucherId = _editVoucherId;
+        final existingBrokerConsignments = editVoucherId == null
+            ? <BrokerConsignment>[]
+            : LocalDb.getBrokerConsignmentsByVoucherId(editVoucherId);
         if (existingBrokerConsignments.isNotEmpty) {
           brokerProfileId = existingBrokerConsignments.first.brokerProfileId;
         }
