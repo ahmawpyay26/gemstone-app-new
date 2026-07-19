@@ -722,7 +722,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     
     // Search for existing broker profile by name or phone
     final existingProfile = LocalDb.searchBrokerProfiles(
-      searchTerm: brokerName.isNotEmpty ? brokerName : brokerPhone,
+      brokerName.isNotEmpty ? brokerName : brokerPhone,
     ).firstWhereOrNull((profile) {
       final nameMatch = brokerName.isNotEmpty && profile.name.toLowerCase() == brokerName.toLowerCase();
       final phoneMatch = brokerPhone.isNotEmpty && profile.phone == brokerPhone;
@@ -741,8 +741,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         phone: brokerPhone,
         address: _brokerAddressCtrl.text.trim(),
         socialAccount: _brokerSocialCtrl.text.trim().isEmpty ? null : _brokerSocialCtrl.text.trim(),
-        imagePath: null,
-        notes: '',
+        profileImagePath: null,
+        note: '',
         createdAt: DateTime.now().millisecondsSinceEpoch,
         updatedAt: DateTime.now().millisecondsSinceEpoch,
       );
