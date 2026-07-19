@@ -277,13 +277,7 @@ class BrokerVoucherPdfGenerator {
     BrokerVoucherDocumentTotals totals,
     pw.Font padaukFont,
   ) {
-    // DIAGNOSTIC LOG START
-    print('[BrokerVoucherPdfGenerator] _buildItemsTable called');
-    print('[BrokerVoucherPdfGenerator] totals.totalWeightKg: ${totals.totalWeightKg}');
-    print('[BrokerVoucherPdfGenerator] totals.totalWeightUnit: ${totals.totalWeightUnit}');
-    print('[BrokerVoucherPdfGenerator] Condition (totals.totalWeightKg > 0): ${totals.totalWeightKg > 0}');
-    print('[BrokerVoucherPdfGenerator] Will render Total Weight row: ${totals.totalWeightKg > 0}');
-    // DIAGNOSTIC LOG END
+
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey400),
       columnWidths: {

@@ -12,7 +12,6 @@ class BrokerVoucherDocumentData {
   final List<BrokerVoucherDocumentItem> items;
   final BrokerVoucherDocumentTotals totals;
   final List<String> photoPaths; // All unique photos from all items
-  final Map<String, dynamic>? debugInfo; // TEMPORARY DEBUG: For UI display
 
   BrokerVoucherDocumentData({
     required this.voucherNumber,
@@ -24,7 +23,6 @@ class BrokerVoucherDocumentData {
     required this.items,
     required this.totals,
     required this.photoPaths,
-    this.debugInfo, // TEMPORARY DEBUG
   });
 
   /// Calculate total number of pages needed for this voucher
