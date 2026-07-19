@@ -56,6 +56,7 @@ class BrokerVoucherDocumentItem {
   final double remainingQuantity;
   final String? notes;
   final List<String> photoPaths;
+  final bool hasMixedUnits; // true if voucher has mixed weight units
 
   BrokerVoucherDocumentItem({
     required this.itemNumber,
@@ -69,13 +70,38 @@ class BrokerVoucherDocumentItem {
     required this.remainingQuantity,
     this.notes,
     required this.photoPaths,
+    this.hasMixedUnits = false,
   });
 
   /// Formatted weight string: '-' when no weight, otherwise 'value unit'
+  /// If voucher has mixed units, convert to kg
   String get weightDisplay {
     if (weight == null || weight == 0) return '-';
+    
+    // If mixed units, convert to kg
+    if (hasMixedUnits && weightUnit != null && weightUnit!.isNotEmpty) {
+      final weightKg = _convertToKg(weight!, weightUnit!);
+      return '${weightKg.toStringAsFixed(2)} kg';
+    }
+    
+    // Same unit - show original
     final unit = weightUnit ?? '';
-    return unit.isNotEmpty ? '$weight $unit' : '$weight';
+    return unit.isNotEmpty ? '${weight!.toStringAsFixed(2)} $unit' : '${weight!.toStringAsFixed(2)}';
+  }
+  
+  /// Helper to convert weight to kg
+  static double _convertToKg(double weight, String unit) {
+    const factors = {
+      'kg': 1.0,
+      'g': 0.001,
+      'lb': 0.453592,
+      'oz': 0.0283495,
+      'ပိသာ': 1.63293,
+      'ကျပ်သား': 0.408233,
+      'ကာရက်': 0.0002,
+    };
+    final factor = factors[unit] ?? 1.0;
+    return weight * factor;
   }
 
   /// Check if this item has any photos

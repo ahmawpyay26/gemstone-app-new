@@ -1007,6 +1007,36 @@ class _ItemCard extends StatefulWidget {
 }
 
 class _ItemCardState extends State<_ItemCard> {
+  /// Build weight display for individual item
+  /// If voucher has mixed units, convert to kg
+  /// If all same unit, show original unit
+  Widget _buildItemWeightDisplay(BrokerConsignment item) {
+    // Get all units from items in this voucher
+    final units = widget.items
+        .where((i) => i.weight != null && i.weight! > 0 && i.weightUnit != null && i.weightUnit!.isNotEmpty)
+        .map((i) => i.weightUnit!)
+        .toList();
+
+    String displayWeight = item.weight.toString();
+    String displayUnit = item.weightUnit ?? '';
+
+    // Check if all units are the same
+    if (units.isNotEmpty && !WeightConverter.areAllUnitsSame(units)) {
+      // Mixed units - convert to kg
+      final weightKg = WeightConverter.convertToKg(item.weight, item.weightUnit);
+      displayWeight = weightKg.toStringAsFixed(2);
+      displayUnit = 'kg';
+    }
+
+    return Text(
+      'အလေးချိန်: $displayWeight $displayUnit',
+      style: const TextStyle(
+        fontSize: 12,
+        color: Colors.grey,
+      ),
+    );
+  }
+
   void _showItemEditDialog(BuildContext context) {
     final consignedController = TextEditingController(
       text: widget.item.consignedQuantity.toString(),
@@ -1355,13 +1385,7 @@ class _ItemCardState extends State<_ItemCard> {
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             if (widget.item.weight != null && widget.item.weight! > 0 && widget.item.weightUnit != null && widget.item.weightUnit!.isNotEmpty)
-                              Text(
-                                'အလေးချိန်: ${widget.item.weight} ${widget.item.weightUnit}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
+                              _buildItemWeightDisplay(widget.item),
                           ],
                         ),
                       ),

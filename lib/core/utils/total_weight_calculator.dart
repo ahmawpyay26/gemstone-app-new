@@ -28,10 +28,11 @@ class TotalWeightCalculator {
 
     // Check if all units are the same
     if (WeightConverter.areAllUnitsSame(units)) {
-      // All same unit - sum directly in original unit
+      // All same unit - sum directly in original unit (no conversion needed)
       final commonUnit = WeightConverter.normalizeUnit(units.first);
       double totalWeight = 0.0;
       for (final item in validItems) {
+        // Sum original values since all units are the same
         totalWeight += item.displayWeight;
       }
       return {'weight': totalWeight, 'unit': commonUnit, 'hasWeight': true};
@@ -39,6 +40,7 @@ class TotalWeightCalculator {
       // Mixed units - convert all to kg
       double totalWeightKg = 0.0;
       for (final item in validItems) {
+        // Convert each item to kg and sum
         totalWeightKg += item.totalWeightKg;
       }
       return {'weight': totalWeightKg, 'unit': 'kg', 'hasWeight': true};

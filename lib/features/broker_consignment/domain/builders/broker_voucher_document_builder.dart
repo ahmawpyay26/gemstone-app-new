@@ -19,6 +19,13 @@ class BrokerVoucherDocumentBuilder {
     // Use first item for broker information (all items in voucher have same broker)
     final firstItem = voucherItems.first;
 
+    // Check if voucher has mixed weight units
+    final units = voucherItems
+        .where((i) => i.weight != null && i.weight! > 0 && i.weightUnit != null && i.weightUnit!.isNotEmpty)
+        .map((i) => i.weightUnit!)
+        .toList();
+    final hasMixedUnits = units.isNotEmpty && !WeightConverter.areAllUnitsSame(units);
+
     // Build document items with calculated quantities
     final documentItems = <BrokerVoucherDocumentItem>[];
     for (int i = 0; i < voucherItems.length; i++) {
@@ -36,6 +43,7 @@ class BrokerVoucherDocumentBuilder {
           remainingQuantity: item.remainingQuantity,
           notes: item.notes.isEmpty ? null : item.notes,
           photoPaths: item.photoPaths,
+          hasMixedUnits: hasMixedUnits,
         ),
       );
     }
