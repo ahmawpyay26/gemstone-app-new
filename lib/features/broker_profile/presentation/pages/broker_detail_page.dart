@@ -6,19 +6,19 @@ import 'package:gemstone_management/core/local/models.dart';
 import 'package:gemstone_management/core/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 
-class BrokerDetailPage extends StatefulWidget {
+class BrokerProfileDetailPage extends StatefulWidget {
   final String brokerId;
 
-  const BrokerDetailPage({
+  const BrokerProfileDetailPage({
     Key? key,
     required this.brokerId,
   }) : super(key: key);
 
   @override
-  State<BrokerDetailPage> createState() => _BrokerDetailPageState();
+  State<BrokerProfileDetailPage> createState() => _BrokerProfileDetailPageState();
 }
 
-class _BrokerDetailPageState extends State<BrokerDetailPage> {
+class _BrokerProfileDetailPageState extends State<BrokerProfileDetailPage> {
   late BrokerProfile? _broker;
   late List<BrokerConsignment> _brokerVouchers;
   late final DateFormat _dateFormat;

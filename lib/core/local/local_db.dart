@@ -537,6 +537,7 @@ class LocalDb {
   static Box<Payment> payments() => Hive.box<Payment>(paymentsBox);
   static Box<BrokerSaleRecord> brokerSaleRecords() => Hive.box<BrokerSaleRecord>(brokerSaleRecordsBox);
   static Box<BusinessProfile> businessProfiles() => Hive.box<BusinessProfile>(businessProfileBox);
+  static Box<BrokerConsignment> brokerConsignments() => Hive.box<BrokerConsignment>(brokerConsignmentsBox);
 
   // ---------------------------------------------------------------------------
   // BusinessProfile helpers
