@@ -724,7 +724,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           }
           
           if (matchedBroker != null) {
-            // Phone match found - show confirmation dialog
+            // Phone match found - use local non-null variable
+            final confirmedBroker = matchedBroker;
             debugPrint('[BROKER_DUPLICATE] showing dialog');
             
             if (mounted) {
@@ -735,8 +736,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   title: const Text('ပွဲစားအချက်အလက် တွေ့ရှိပါသည်'),
                   content: Text(
                     'ဤဖုန်းနံပါတ်ဖြင့် ပွဲစားမှတ်တမ်းရှိပြီးသားဖြစ်ပါသည်။\n'
-                    'အမည်: ${matchedBroker.name}\n'
-                    'ဖုန်းနံပါတ်: ${matchedBroker.phone}\n\n'
+                    'အမည်: ${confirmedBroker.name}\n'
+                    'ဖုန်းနံပါတ်: ${confirmedBroker.phone}\n\n'
                     'ရှိပြီးသားပွဲစားကို အသုံးပြုမလား?',
                   ),
                   actions: [
@@ -763,7 +764,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             
             // User accepted - use existing broker, skip _saveCreateMode duplicate check
             // Pass matched broker ID to _saveCreateMode via a flag
-            _forcedBrokerProfileId = matchedBroker.id;
+            _forcedBrokerProfileId = confirmedBroker.id;
           }
         }
         
