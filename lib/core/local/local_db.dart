@@ -2660,37 +2660,37 @@ class LocalDb {
 
   /// Get all broker profiles (active and deleted)
   static List<BrokerProfile> brokerProfiles() {
-    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    final box = Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox);
     return box.values.toList();
   }
 
   /// Get only active (non-deleted) broker profiles
   static List<BrokerProfile> activeBrokerProfiles() {
-    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    final box = Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox);
     return box.values.where((broker) => !broker.isDeleted).toList();
   }
 
   /// Get broker profile by ID
   static BrokerProfile? brokerProfileById(String id) {
-    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    final box = Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox);
     return box.values.firstWhereOrNull((broker) => broker.id == id);
   }
 
   /// Save a new broker profile
   static Future<void> saveBrokerProfile(BrokerProfile broker) async {
-    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    final box = Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox);
     await box.put(broker.id, broker);
   }
 
   /// Update an existing broker profile
   static Future<void> updateBrokerProfile(BrokerProfile broker) async {
-    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    final box = Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox);
     await box.put(broker.id, broker);
   }
 
   /// Soft delete a broker profile (mark as deleted, don't remove)
   static Future<void> softDeleteBrokerProfile(String id) async {
-    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    final box = Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox);
     final broker = box.get(id);
     if (broker != null) {
       broker.isDeleted = true;
@@ -2702,7 +2702,7 @@ class LocalDb {
   /// Search broker profiles by name or phone (case-insensitive)
   /// Empty query returns all active brokers
   static List<BrokerProfile> searchBrokerProfiles(String query) {
-    final box = Hive.box<BrokerProfile>(brokerProfilesBox);
+    final box = Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox);
     final activeProfiles = box.values.where((broker) => !broker.isDeleted).toList();
 
     if (query.isEmpty) {
