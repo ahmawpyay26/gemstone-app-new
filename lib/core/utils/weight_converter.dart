@@ -63,7 +63,6 @@ class WeightConverter {
   static List<String> getSupportedUnits() {
     return _conversionFactors.keys.toList();
   }
-}
 
   /// Normalize unit name to standard form
   /// Treats similar units as identical
