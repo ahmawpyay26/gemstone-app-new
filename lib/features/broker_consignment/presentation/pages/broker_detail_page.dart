@@ -1017,11 +1017,11 @@ class _ItemCardState extends State<_ItemCard> {
         .map((i) => i.weightUnit!)
         .toList();
 
-    String displayWeight = item.weight.toString();
+    String displayWeight = (item.weight ?? 0).toStringAsFixed(2);
     String displayUnit = item.weightUnit ?? '';
 
     // Check if all units are the same
-    if (units.isNotEmpty && !WeightConverter.areAllUnitsSame(units)) {
+    if (units.isNotEmpty && !WeightConverter.areAllUnitsSame(units) && item.weight != null && item.weight! > 0) {
       // Mixed units - convert to kg
       final weightKg = WeightConverter.convertToKg(item.weight, item.weightUnit);
       displayWeight = weightKg.toStringAsFixed(2);
