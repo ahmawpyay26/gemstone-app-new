@@ -218,42 +218,23 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   }
 
   /// Auto-search for matching BrokerProfile by name or phone
-  void _autoSearchBrokerProfile() {
-    final nameQuery = _brokerNameCtrl.text.trim();
-    final phoneQuery = _brokerPhoneCtrl.text.trim();
-
-    // Skip if both fields are empty
-    if (nameQuery.isEmpty && phoneQuery.isEmpty) {
-      return;
+  /// Get broker suggestions based on name query
+  List<BrokerProfile> _getBrokerSuggestions(String query) {
+    if (query.isEmpty) {
+      return [];
     }
-
+    
     try {
-      // Get all active broker profiles
       final brokers = LocalDb.activeBrokerProfiles();
-
-      // Search by name first (case-insensitive)
-      if (nameQuery.isNotEmpty) {
-        final matchedByName = brokers.firstWhereOrNull(
-          (broker) => broker.name.toLowerCase().contains(nameQuery.toLowerCase()),
-        );
-        if (matchedByName != null) {
-          _fillBrokerProfile(matchedByName);
-          return;
-        }
-      }
-
-      // Search by phone (exact match)
-      if (phoneQuery.isNotEmpty) {
-        final matchedByPhone = brokers.firstWhereOrNull(
-          (broker) => broker.phone == phoneQuery,
-        );
-        if (matchedByPhone != null) {
-          _fillBrokerProfile(matchedByPhone);
-          return;
-        }
-      }
+      final lowerQuery = query.toLowerCase();
+      
+      // Filter brokers by name (case-insensitive partial match)
+      return brokers
+          .where((broker) => broker.name.toLowerCase().contains(lowerQuery))
+          .toList();
     } catch (e) {
-      print('Error searching broker profile: $e');
+      print('Error getting broker suggestions: $e');
+      return [];
     }
   }
 
@@ -1339,32 +1320,79 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             ),
             const SizedBox(height: 12),
             
-            // Broker name
-            TextField(
-              controller: _brokerNameCtrl,
-              style: const TextStyle(color: Colors.white),
-              onChanged: (_) {
-                _autoSearchBrokerProfile();
-                setState(() {});
+            // Broker name with autocomplete
+            Autocomplete<BrokerProfile>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                return _getBrokerSuggestions(textEditingValue.text);
               },
-              decoration: InputDecoration(
-                labelText: 'ပွဲစားအမည် *',
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[700]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[700]!),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppTheme.primaryAccent),
-                ),
-                filled: true,
-                fillColor: Colors.grey[900],
-              ),
+              onSelected: (BrokerProfile selectedBroker) {
+                _fillBrokerProfile(selectedBroker);
+              },
+              fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                // Sync the autocomplete controller with _brokerNameCtrl
+                _brokerNameCtrl.text = textEditingController.text;
+                
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  style: const TextStyle(color: Colors.white),
+                  onChanged: (_) {
+                    setState(() {});
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'ပွဲစားအမည် *',
+                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[700]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[700]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[900],
+                  ),
+                );
+              },
+              optionsViewBuilder: (context, onSelected, options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 300,
+                      color: Colors.grey[850],
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        shrinkWrap: true,
+                        itemCount: options.length,
+                        itemBuilder: (context, index) {
+                          final broker = options.elementAt(index);
+                          return ListTile(
+                            title: Text(
+                              broker.name,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            subtitle: Text(
+                              broker.phone,
+                              style: TextStyle(color: Colors.grey[400]),
+                            ),
+                            onTap: () {
+                              onSelected(broker);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 12),
             
