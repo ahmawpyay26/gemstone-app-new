@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:printing/printing.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
+import '../../../../core/utils/weight_converter.dart';
 import '../../../broker_consignment/domain/builders/broker_voucher_document_builder.dart';
 import '../../../broker_consignment/domain/services/broker_voucher_export_service.dart';
 import '../../../broker_consignment/domain/services/broker_voucher_image_exporter.dart';

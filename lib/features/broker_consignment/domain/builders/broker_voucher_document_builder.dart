@@ -1,5 +1,6 @@
 import 'package:gemstone_management/core/local/models.dart';
 import '../models/broker_voucher_document.dart';
+import '../../../../core/utils/weight_converter.dart';
 
 /// Builds BrokerVoucherDocumentData from a list of grouped BrokerConsignment items
 /// Ensures single source of truth for all export formats
