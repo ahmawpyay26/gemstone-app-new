@@ -172,10 +172,94 @@ class _BrokerVoucherListPageState extends State<BrokerVoucherListPage> {
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _voucherGroups.length,
+      itemCount: _voucherGroups.length + 1,
       itemBuilder: (context, index) {
-        return _buildVoucherCard(_voucherGroups[index]);
+        if (index == 0) {
+          return _buildSummaryBox();
+        }
+        return _buildVoucherCard(_voucherGroups[index - 1]);
       },
+    );
+  }
+
+  Widget _buildSummaryBox() {
+    double totalConsigned = 0;
+    double totalSold = 0;
+    double totalReturned = 0;
+    double totalRemaining = 0;
+
+    for (final group in _voucherGroups) {
+      totalConsigned += group.totalConsigned;
+      totalSold += group.totalSold;
+      totalReturned += group.totalReturned;
+      totalRemaining += group.totalRemaining;
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      elevation: 2,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          gradient: LinearGradient(
+            colors: [
+              AppTheme.primaryAccent.withOpacity(0.1),
+              AppTheme.primaryAccent.withOpacity(0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'စုစုပေါင်းအကျဉ်းချုပ်',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryAccent,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _summaryItem('ယူဘူးသော', totalConsigned),
+                _summaryItem('ရောင်းချပေးဘူးသော', totalSold),
+                _summaryItem('ပြန်အပ်ပေးထားသော', totalReturned),
+                _summaryItem('လက်ကျန်', totalRemaining),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _summaryItem(String label, double value) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.grey[600],
+                  fontSize: 11,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value.toStringAsFixed(2),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryAccent,
+                ),
+          ),
+        ],
+      ),
     );
   }
 
