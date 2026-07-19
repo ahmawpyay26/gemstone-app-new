@@ -4,14 +4,22 @@ class WeightConverter {
   static const Map<String, double> _conversionFactors = {
     'kg': 1.0,
     'g': 0.001,
-    'lb': 0.453592,
-    'oz': 0.0283495,
-    'ပိသာ': 1.63293, // viss (ပိဿာ) - Burmese unit
-    'ကျပ်သား': 0.408233, // kyattha (ကျပ်သား) - Burmese unit
-    'ကာရက်': 0.0002, // carat (ကာရက်)
+    'lb': 0.4536,
+    'oz': 0.02835,
+    'ပိသာ': 1.63293, // viss (ပိဿာ) - Burmese unit: 1 viss = 1.63293 kg
+    'ကျပ်သား': 0.01633, // kyattha (ကျပ်သား) - Burmese unit: 1 kyattha = 0.01633 kg
+    'ကာရက်': 0.0002, // carat (ကာရက်): 1 carat = 0.0002 kg
   };
 
   /// Convert weight from any supported unit to kilograms
+  /// 
+  /// Conversion formulas:
+  /// - 1 viss (ပိသာ) = 1.63293 kg
+  /// - 1 kyattha (ကျပ်သား) = 0.01633 kg
+  /// - 1 carat (ကာရက်) = 0.0002 kg
+  /// - 1 gram (g) = 0.001 kg
+  /// - 1 pound (lb) = 0.4536 kg
+  /// - 1 ounce (oz) = 0.02835 kg
   /// 
   /// Parameters:
   /// - [weight]: The weight value to convert
