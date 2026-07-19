@@ -64,3 +64,70 @@ class WeightConverter {
     return _conversionFactors.keys.toList();
   }
 }
+
+  /// Normalize unit name to standard form
+  /// Treats similar units as identical
+  static String normalizeUnit(String? unit) {
+    if (unit == null || unit.isEmpty) return '';
+    
+    final normalized = unit.toLowerCase().trim();
+    
+    // kg variants
+    if (normalized == 'kg' || normalized == 'kilogram') {
+      return 'kg';
+    }
+    
+    // g variants
+    if (normalized == 'g' || normalized == 'gram') {
+      return 'g';
+    }
+    
+    // viss variants
+    if (normalized == 'viss' || normalized == 'ပိဿာ' || normalized == 'ပိသာ') {
+      return 'ပိသာ';
+    }
+    
+    // kyattha variants
+    if (normalized == 'kyattha' || normalized == 'ကျပ်သား') {
+      return 'ကျပ်သား';
+    }
+    
+    // carat variants
+    if (normalized == 'carat' || normalized == 'ကာရက်') {
+      return 'ကာရက်';
+    }
+    
+    // lb variants
+    if (normalized == 'lb' || normalized == 'pound') {
+      return 'lb';
+    }
+    
+    // oz variants
+    if (normalized == 'oz' || normalized == 'ounce') {
+      return 'oz';
+    }
+    
+    return unit; // Return original if not recognized
+  }
+
+  /// Check if all units in list are the same (after normalization)
+  static bool areAllUnitsSame(List<String> units) {
+    if (units.isEmpty) return true;
+    
+    final normalized = units.map((u) => normalizeUnit(u)).toList();
+    final first = normalized.first;
+    
+    return normalized.every((unit) => unit == first);
+  }
+
+  /// Get the common unit if all are the same, otherwise return null
+  static String? getCommonUnit(List<String> units) {
+    if (units.isEmpty) return null;
+    
+    if (areAllUnitsSame(units)) {
+      return normalizeUnit(units.first);
+    }
+    
+    return null;
+  }
+}

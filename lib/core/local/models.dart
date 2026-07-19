@@ -1077,6 +1077,22 @@ class BrokerConsignment {
   bool get isCompleted => remainingQuantity <= 0;
 
   /// Calculate total weight in kilograms
+  /// Returns weight in its original unit
+  double get displayWeight {
+    if (weight == null || weight! <= 0 || weightUnit == null || weightUnit!.isEmpty) {
+      return 0.0;
+    }
+    return weight!;
+  }
+
+  /// Returns the unit to display (original unit)
+  String get displayUnit {
+    if (weight == null || weight! <= 0 || weightUnit == null || weightUnit!.isEmpty) {
+      return '';
+    }
+    return weightUnit!;
+  }
+
   /// Converts weight from any unit to kg using WeightConverter
   double get totalWeightKg {
     if (weight == null || weight! <= 0 || weightUnit == null || weightUnit!.isEmpty) {

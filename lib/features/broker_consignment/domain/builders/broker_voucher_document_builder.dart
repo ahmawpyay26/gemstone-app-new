@@ -39,10 +39,31 @@ class BrokerVoucherDocumentBuilder {
     }
 
     // Calculate totals
-    double totalWeightKg = 0.0;
-    for (final item in voucherItems) {
-      if (item.weight != null && item.weight! > 0 && item.weightUnit != null && item.weightUnit!.isNotEmpty) {
-        totalWeightKg += item.totalWeightKg;
+    double totalWeight = 0.0;
+    String totalWeightUnit = '';
+    
+    // Collect all valid items with weight
+    final validItems = voucherItems.where((item) {
+      return item.weight != null && item.weight! > 0 && item.weightUnit != null && item.weightUnit!.isNotEmpty;
+    }).toList();
+
+    if (validItems.isNotEmpty) {
+      // Get all units from valid items
+      final units = validItems.map((item) => item.weightUnit!).toList();
+      
+      // Check if all units are the same
+      if (WeightConverter.areAllUnitsSame(units)) {
+        // All same unit - sum directly in original unit
+        totalWeightUnit = WeightConverter.normalizeUnit(units.first);
+        for (final item in validItems) {
+          totalWeight += item.displayWeight;
+        }
+      } else {
+        // Mixed units - convert all to kg
+        totalWeightUnit = 'kg';
+        for (final item in validItems) {
+          totalWeight += item.totalWeightKg;
+        }
       }
     }
 
@@ -64,7 +85,8 @@ class BrokerVoucherDocumentBuilder {
         0.0,
         (sum, item) => sum + item.remainingQuantity,
       ),
-      totalWeightKg: totalWeightKg,
+      totalWeightKg: totalWeight,
+      totalWeightUnit: totalWeightUnit,
     );
 
     // Collect all unique photos from all items

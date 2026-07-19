@@ -340,7 +340,7 @@ class BrokerVoucherPdfGenerator {
             decoration: pw.BoxDecoration(color: PdfColors.grey100),
             children: [
               _buildTableCell('စုစုပေါင်းအလေးချိန်', padaukFont, isHeader: true),
-              _buildTableCell('${totals.totalWeightKg.toStringAsFixed(2)} kg', padaukFont, isHeader: true),
+              _buildTableCell('${totals.totalWeightKg.toStringAsFixed(2)} ${totals.totalWeightUnit}', padaukFont, isHeader: true),
               _buildTableCell('', padaukFont, isHeader: true),
               _buildTableCell('', padaukFont, isHeader: true),
               _buildTableCell('', padaukFont, isHeader: true),

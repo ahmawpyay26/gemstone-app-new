@@ -549,14 +549,49 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
     }
   }
 
-  double _calculateTotalWeightKg() {
-    double totalWeightKg = 0.0;
-    for (final item in widget.items) {
-      if (item.weight != null && item.weight! > 0 && item.weightUnit != null && item.weightUnit!.isNotEmpty) {
+  /// Calculate total weight with smart unit handling
+  /// Returns total weight in original unit if all items use same unit
+  /// Returns total weight in kg if mixed units are detected
+  Map<String, dynamic> _calculateTotalWeight() {
+    // Collect all valid items with weight
+    final validItems = widget.items.where((item) {
+      return item.weight != null && item.weight! > 0 && item.weightUnit != null && item.weightUnit!.isNotEmpty;
+    }).toList();
+
+    if (validItems.isEmpty) {
+      return {'weight': 0.0, 'unit': '', 'hasWeight': false};
+    }
+
+    // Get all units from valid items
+    final units = validItems.map((item) => item.weightUnit!).toList();
+
+    // Check if all units are the same
+    if (WeightConverter.areAllUnitsSame(units)) {
+      // All same unit - sum directly in original unit
+      final commonUnit = WeightConverter.normalizeUnit(units.first);
+      double totalWeight = 0.0;
+      for (final item in validItems) {
+        totalWeight += item.displayWeight;
+      }
+      return {'weight': totalWeight, 'unit': commonUnit, 'hasWeight': true};
+    } else {
+      // Mixed units - convert all to kg
+      double totalWeightKg = 0.0;
+      for (final item in validItems) {
         totalWeightKg += item.totalWeightKg;
       }
+      return {'weight': totalWeightKg, 'unit': 'kg', 'hasWeight': true};
     }
-    return totalWeightKg;
+  }
+
+  double _calculateTotalWeightKg() {
+    final result = _calculateTotalWeight();
+    return result['weight'] as double? ?? 0.0;
+  }
+
+  String _calculateTotalWeightUnit() {
+    final result = _calculateTotalWeight();
+    return result['unit'] as String? ?? '';
   }
 
   @override
@@ -705,7 +740,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
                   _SummaryRow('စုစုပေါင်းရောင်းချ', totalSold.toStringAsFixed(2)),
                   _SummaryRow('စုစုပေါင်းပြန်လည်ရယူ', totalReturned.toStringAsFixed(2)),
                   _SummaryRow('ကျန်ရှိ', totalRemaining.toStringAsFixed(2)),
-                  if (_calculateTotalWeightKg() > 0) ...[const SizedBox(height: 4), _SummaryRow('စုစုပေါင်းအလေးချိန်', '${_calculateTotalWeightKg().toStringAsFixed(2)} kg')],
+                  if (_calculateTotalWeightKg() > 0) ...[const SizedBox(height: 4), _SummaryRow('စုစုပေါင်းအလေးချိန်', '${_calculateTotalWeightKg().toStringAsFixed(2)} ${_calculateTotalWeightUnit()}')],
                   const Divider(),
                   const SizedBox(height: 8),
                   const Text(

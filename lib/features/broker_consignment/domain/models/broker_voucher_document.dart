@@ -88,7 +88,8 @@ class BrokerVoucherDocumentTotals {
   final double totalSoldQuantity;
   final double totalReturnedQuantity;
   final double totalRemainingQuantity;
-  final double totalWeightKg; // Total weight in kilograms
+  final double totalWeightKg; // Total weight in kilograms or original unit
+  final String totalWeightUnit; // Unit of total weight (kg or original unit)
 
   BrokerVoucherDocumentTotals({
     required this.distinctItemCount,
@@ -97,6 +98,7 @@ class BrokerVoucherDocumentTotals {
     required this.totalReturnedQuantity,
     required this.totalRemainingQuantity,
     this.totalWeightKg = 0.0,
+    this.totalWeightUnit = '',
   });
 
   /// Check if voucher is fully completed (no remaining items)
