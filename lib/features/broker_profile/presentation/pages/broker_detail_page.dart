@@ -19,9 +19,11 @@ class BrokerProfileDetailPage extends StatefulWidget {
 }
 
 class _BrokerProfileDetailPageState extends State<BrokerProfileDetailPage> {
-  late BrokerProfile? _broker;
-  late List<BrokerConsignment> _brokerVouchers;
+  BrokerProfile? _broker;
+  List<BrokerConsignment> _brokerVouchers = [];
   late final DateFormat _dateFormat;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -31,19 +33,63 @@ class _BrokerProfileDetailPageState extends State<BrokerProfileDetailPage> {
   }
 
   void _loadBrokerData() {
-    _broker = LocalDb.brokerProfileById(widget.brokerId);
-    if (_broker != null) {
-      // Get all vouchers for this broker by matching brokerName
-      final box = LocalDb.brokerConsignments();
-      final allConsignments = box.values.toList();
-      _brokerVouchers = allConsignments
-          .where((consignment) =>
-              consignment.brokerName == _broker!.name && consignment.isActive)
-          .toList();
-      // Sort by createdAt descending (newest first)
-      _brokerVouchers.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    } else {
-      _brokerVouchers = [];
+    try {
+      // Validate broker ID
+      if (widget.brokerId.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'ပွဲစားအချက်အလက် မတွေ့ပါ။';
+          });
+        }
+        return;
+      }
+
+      // Load broker profile
+      _broker = LocalDb.brokerProfileById(widget.brokerId);
+      if (_broker == null) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'ပွဲစားအချက်အလက် မတွေ့ပါ။';
+          });
+        }
+        return;
+      }
+
+      // Load broker vouchers
+      try {
+        final box = LocalDb.brokerConsignments();
+        final allConsignments = box.values.toList();
+        _brokerVouchers = allConsignments
+            .where((consignment) =>
+                consignment.brokerName == _broker!.name &&
+                consignment.isActive)
+            .toList();
+
+        // Sort by createdAt descending (newest first)
+        if (_brokerVouchers.isNotEmpty) {
+          _brokerVouchers.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        }
+      } catch (e) {
+        // If voucher loading fails, continue with empty list
+        _brokerVouchers = [];
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e, stackTrace) {
+      print('Error loading broker detail: $e');
+      print('Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'ပွဲစားအချက်အလက် ဖွင့်၍မရပါ။\n$e';
+        });
+      }
     }
   }
 
@@ -70,57 +116,84 @@ class _BrokerProfileDetailPageState extends State<BrokerProfileDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_broker == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('ပွဲစားအချက်အလက်'),
-          backgroundColor: AppTheme.primaryAccent,
-        ),
-        body: const Center(
-          child: Text('ပွဲစားအချက်အလက် မတွေ့ရှိပါ။'),
-        ),
-      );
-    }
-
-    final summary = _calculateSummary();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('ပွဲစားအချက်အလက်'),
         backgroundColor: AppTheme.primaryAccent,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Broker Profile Section
-            _buildBrokerProfileSection(),
-            const SizedBox(height: 24),
-            // Summary Box
-            _buildSummaryBox(summary),
-            const SizedBox(height: 24),
-            // Voucher History
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'ဘောင်ချာမှတ်တမ်း',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildVoucherHistory(),
-            const SizedBox(height: 24),
-          ],
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    // Show loading state
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    // Show error state
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            _errorMessage!,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
         ),
+      );
+    }
+
+    // Show broker not found
+    if (_broker == null) {
+      return Center(
+        child: Text(
+          'ပွဲစားအချက်အလက် မတွေ့ပါ။',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
+    }
+
+    final summary = _calculateSummary();
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Broker Profile Section
+          _buildBrokerProfileSection(),
+          const SizedBox(height: 24),
+          // Summary Box
+          _buildSummaryBox(summary),
+          const SizedBox(height: 24),
+          // Voucher History
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'ဘောင်ချာမှတ်တမ်း',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildVoucherHistory(),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
 
   Widget _buildBrokerProfileSection() {
+    if (_broker == null) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       color: Colors.grey[100],
@@ -130,23 +203,7 @@ class _BrokerProfileDetailPageState extends State<BrokerProfileDetailPage> {
           // Profile Photo and Name
           Row(
             children: [
-              _broker!.profileImagePath != null &&
-                      _broker!.profileImagePath!.isNotEmpty
-                  ? CircleAvatar(
-                      radius: 40,
-                      backgroundImage: FileImage(
-                        File(_broker!.profileImagePath!),
-                      ),
-                    )
-                  : CircleAvatar(
-                      radius: 40,
-                      backgroundColor: AppTheme.primaryAccent,
-                      child: Icon(
-                        Icons.person,
-                        size: 40,
-                        color: Colors.white,
-                      ),
-                    ),
+              _buildProfileAvatar(),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -181,6 +238,34 @@ class _BrokerProfileDetailPageState extends State<BrokerProfileDetailPage> {
           if (_broker!.note != null && _broker!.note!.isNotEmpty)
             _buildInfoRow('မှတ်ချက်', _broker!.note!),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfileAvatar() {
+    try {
+      if (_broker?.profileImagePath != null &&
+          _broker!.profileImagePath!.isNotEmpty) {
+        final file = File(_broker!.profileImagePath!);
+        if (file.existsSync()) {
+          return CircleAvatar(
+            radius: 40,
+            backgroundImage: FileImage(file),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error loading profile image: $e');
+    }
+
+    // Default icon if image not available or error
+    return CircleAvatar(
+      radius: 40,
+      backgroundColor: AppTheme.primaryAccent,
+      child: Icon(
+        Icons.person,
+        size: 40,
+        color: Colors.white,
       ),
     );
   }
@@ -304,7 +389,8 @@ class _BrokerProfileDetailPageState extends State<BrokerProfileDetailPage> {
     // Group vouchers by voucherId to get unique vouchers
     final voucherMap = <String, BrokerConsignment>{};
     for (final consignment in _brokerVouchers) {
-      if (consignment.voucherId != null) {
+      if (consignment.voucherId != null &&
+          consignment.voucherId!.isNotEmpty) {
         if (!voucherMap.containsKey(consignment.voucherId)) {
           voucherMap[consignment.voucherId!] = consignment;
         }
@@ -346,7 +432,9 @@ class _BrokerProfileDetailPageState extends State<BrokerProfileDetailPage> {
 
         return GestureDetector(
           onTap: () {
-            context.push('/broker-consignment/${voucher.id}');
+            if (voucher.id.isNotEmpty) {
+              context.push('/broker-consignment/${voucher.id}');
+            }
           },
           child: Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
