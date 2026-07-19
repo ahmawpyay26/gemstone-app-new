@@ -7,7 +7,9 @@ import 'package:gemstone_management/core/local/models.dart';
 import 'package:gemstone_management/core/theme/app_theme.dart';
 
 class AddBrokerPage extends StatefulWidget {
-  const AddBrokerPage({Key? key}) : super(key: key);
+  final BrokerProfile? existingBroker; // null = add mode, non-null = edit mode
+
+  const AddBrokerPage({Key? key, this.existingBroker}) : super(key: key);
 
   @override
   State<AddBrokerPage> createState() => _AddBrokerPageState();
@@ -24,15 +26,26 @@ class _AddBrokerPageState extends State<AddBrokerPage> {
   File? _selectedImage;
   bool _isSaving = false;
 
+  bool get _isEditMode => widget.existingBroker != null;
+
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
-    _nationalIdController = TextEditingController();
-    _phoneController = TextEditingController();
-    _addressController = TextEditingController();
-    _socialAccountController = TextEditingController();
-    _noteController = TextEditingController();
+    final broker = widget.existingBroker;
+    _nameController = TextEditingController(text: broker?.name ?? '');
+    _nationalIdController = TextEditingController(text: broker?.nationalId ?? '');
+    _phoneController = TextEditingController(text: broker?.phone ?? '');
+    _addressController = TextEditingController(text: broker?.address ?? '');
+    _socialAccountController = TextEditingController(text: broker?.socialAccount ?? '');
+    _noteController = TextEditingController(text: broker?.note ?? '');
+
+    // Load existing image if in edit mode
+    if (broker?.profileImagePath != null && broker!.profileImagePath!.isNotEmpty) {
+      final file = File(broker.profileImagePath!);
+      if (file.existsSync()) {
+        _selectedImage = file;
+      }
+    }
   }
 
   @override
@@ -109,30 +122,61 @@ class _AddBrokerPageState extends State<AddBrokerPage> {
 
     try {
       final now = DateTime.now().millisecondsSinceEpoch;
-      final broker = BrokerProfile(
-        id: const Uuid().v4(),
-        name: _nameController.text,
-        nationalId: _nationalIdController.text.isEmpty ? null : _nationalIdController.text,
-        phone: _phoneController.text,
-        address: _addressController.text.isEmpty ? null : _addressController.text,
-        socialAccount: _socialAccountController.text.isEmpty ? null : _socialAccountController.text,
-        note: _noteController.text.isEmpty ? null : _noteController.text,
-        profileImagePath: _selectedImage?.path,
-        createdAt: now,
-        updatedAt: now,
-        isDeleted: false,
-      );
 
-      await LocalDb.saveBrokerProfile(broker);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ပွဲစားအချက်အလက် သိမ်းဆည်းပြီးပါပြီ။'),
-            duration: Duration(seconds: 2),
-          ),
+      if (_isEditMode) {
+        // Edit mode: update existing broker
+        final existing = widget.existingBroker!;
+        final updatedBroker = BrokerProfile(
+          id: existing.id,
+          name: _nameController.text,
+          nationalId: _nationalIdController.text.isEmpty ? null : _nationalIdController.text,
+          phone: _phoneController.text,
+          address: _addressController.text.isEmpty ? null : _addressController.text,
+          socialAccount: _socialAccountController.text.isEmpty ? null : _socialAccountController.text,
+          note: _noteController.text.isEmpty ? null : _noteController.text,
+          profileImagePath: _selectedImage?.path ?? existing.profileImagePath,
+          createdAt: existing.createdAt,
+          updatedAt: now,
+          isDeleted: false,
         );
-        Navigator.pop(context, true);
+        await LocalDb.saveBrokerProfile(updatedBroker);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ပွဲစားအချက်အလက် ပြုပြင်ပြီးပါပြီ။'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+          Navigator.pop(context, true);
+        }
+      } else {
+        // Add mode: create new broker
+        final broker = BrokerProfile(
+          id: const Uuid().v4(),
+          name: _nameController.text,
+          nationalId: _nationalIdController.text.isEmpty ? null : _nationalIdController.text,
+          phone: _phoneController.text,
+          address: _addressController.text.isEmpty ? null : _addressController.text,
+          socialAccount: _socialAccountController.text.isEmpty ? null : _socialAccountController.text,
+          note: _noteController.text.isEmpty ? null : _noteController.text,
+          profileImagePath: _selectedImage?.path,
+          createdAt: now,
+          updatedAt: now,
+          isDeleted: false,
+        );
+
+        await LocalDb.saveBrokerProfile(broker);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ပွဲစားအချက်အလက် သိမ်းဆည်းပြီးပါပြီ။'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+          Navigator.pop(context, true);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -151,7 +195,7 @@ class _AddBrokerPageState extends State<AddBrokerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ပွဲစားအသစ် ထည့်သွင်းခြင်း'),
+        title: Text(_isEditMode ? 'ပွဲစားအချက်အလက် ပြုပြင်ခြင်း' : 'ပွဲစားအသစ် ထည့်သွင်းခြင်း'),
         backgroundColor: AppTheme.primaryAccent,
         elevation: 0,
       ),
@@ -229,7 +273,7 @@ class _AddBrokerPageState extends State<AddBrokerPage> {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text('သိမ်းမည်'),
+                    : Text(_isEditMode ? 'ပြုပြင်မည်' : 'သိမ်းမည်'),
               ),
             ),
           ],

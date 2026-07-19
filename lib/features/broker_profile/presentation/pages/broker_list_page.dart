@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gemstone_management/core/local/local_db.dart';
 import 'package:gemstone_management/core/local/models.dart';
 import 'package:gemstone_management/core/theme/app_theme.dart';
+import 'package:gemstone_management/features/broker_profile/presentation/pages/add_broker_page.dart';
 
 class BrokerListPage extends StatefulWidget {
   const BrokerListPage({Key? key}) : super(key: key);
@@ -39,6 +40,54 @@ class _BrokerListPageState extends State<BrokerListPage> {
     setState(() {
       _filteredBrokers = LocalDb.searchBrokerProfiles(query);
     });
+  }
+
+  Future<void> _editBroker(BrokerProfile broker) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddBrokerPage(existingBroker: broker),
+      ),
+    );
+    if (result == true) {
+      _loadBrokers();
+    }
+  }
+
+  Future<void> _deleteBroker(BrokerProfile broker) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ပွဲစားဖျက်ရန်'),
+        content: Text(
+          '"${broker.name}" ကို ဖျက်မည်မှာ သေချာပါသလား?\n\nဖျက်ပြီးနောက် ပြန်မရနိုင်ပါ။',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('မဖျက်ပါ'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('ဖျက်မည်'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await LocalDb.softDeleteBrokerProfile(broker.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('"${broker.name}" ကို ဖျက်ပြီးပါပြီ။'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        _loadBrokers();
+      }
+    }
   }
 
   @override
@@ -136,7 +185,7 @@ class _BrokerListPageState extends State<BrokerListPage> {
               )
             : CircleAvatar(
                 backgroundColor: AppTheme.primaryAccent,
-                child: Icon(
+                child: const Icon(
                   Icons.person,
                   color: Colors.white,
                 ),
@@ -153,6 +202,38 @@ class _BrokerListPageState extends State<BrokerListPage> {
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert),
+          onSelected: (value) {
+            if (value == 'edit') {
+              _editBroker(broker);
+            } else if (value == 'delete') {
+              _deleteBroker(broker);
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'edit',
+              child: Row(
+                children: [
+                  Icon(Icons.edit, size: 18),
+                  SizedBox(width: 8),
+                  Text('ပြုပြင်ရန်'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  Icon(Icons.delete, size: 18, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('ဖျက်ရန်', style: TextStyle(color: Colors.red)),
+                ],
+              ),
+            ),
           ],
         ),
         onTap: () {
