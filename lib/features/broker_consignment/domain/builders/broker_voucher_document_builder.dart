@@ -49,9 +49,25 @@ class BrokerVoucherDocumentBuilder {
     }
 
     // Calculate totals using shared calculator
+    // DIAGNOSTIC LOG START
+    print('[BrokerVoucherDocumentBuilder] Voucher: $voucherNumber');
+    print('[BrokerVoucherDocumentBuilder] voucherItems.length: ${voucherItems.length}');
+    for (int i = 0; i < voucherItems.length; i++) {
+      final item = voucherItems[i];
+      print('[BrokerVoucherDocumentBuilder] Item $i: ${item.historicalData.gemstoneType}, weight=${item.weight}, unit=${item.weightUnit}');
+    }
+    // DIAGNOSTIC LOG END
+    
     final weightResult = TotalWeightCalculator.calculateTotalWeight(voucherItems);
     final totalWeight = TotalWeightCalculator.getTotalWeightValue(weightResult);
     final totalWeightUnit = TotalWeightCalculator.getTotalWeightUnit(weightResult);
+    
+    // DIAGNOSTIC LOG START
+    print('[BrokerVoucherDocumentBuilder] After calculation:');
+    print('[BrokerVoucherDocumentBuilder] weightResult: $weightResult');
+    print('[BrokerVoucherDocumentBuilder] totalWeight: $totalWeight');
+    print('[BrokerVoucherDocumentBuilder] totalWeightUnit: $totalWeightUnit');
+    // DIAGNOSTIC LOG END
 
     final totals = BrokerVoucherDocumentTotals(
       distinctItemCount: voucherItems.length,
@@ -74,6 +90,12 @@ class BrokerVoucherDocumentBuilder {
       totalWeightKg: totalWeight,
       totalWeightUnit: totalWeightUnit,
     );
+    
+    // DIAGNOSTIC LOG START
+    print('[BrokerVoucherDocumentBuilder] BrokerVoucherDocumentTotals created:');
+    print('[BrokerVoucherDocumentBuilder] totals.totalWeightKg: ${totals.totalWeightKg}');
+    print('[BrokerVoucherDocumentBuilder] totals.totalWeightUnit: ${totals.totalWeightUnit}');
+    // DIAGNOSTIC LOG END
 
     // Collect all unique photos from all items
     final allPhotos = <String>{};
