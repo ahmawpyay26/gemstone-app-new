@@ -97,6 +97,16 @@ class _BrokerListPageState extends State<BrokerListPage> {
         title: const Text('ပွဲစားများအချက်အလက်'),
         backgroundColor: AppTheme.primaryAccent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/');
+            }
+          },
+        ),
       ),
       body: Column(
         children: [
