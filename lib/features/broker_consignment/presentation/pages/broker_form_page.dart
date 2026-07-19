@@ -129,6 +129,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   List<ConsignmentItemTemp> _originalItems = []; // Original preloaded items (read-only reference)
   List<ConsignmentItemTemp> _currentDraftItems = []; // Editable draft items (user can modify)
   
+  // Duplicate broker check result
+  String? _forcedBrokerProfileId; // Set by duplicate check in _saveBrokerConsignment
+  
   final _date = DateFormat('dd/MM/yyyy');
   final _dateNum = DateFormat('yyyyMMdd');
 
@@ -688,6 +691,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   Future<void> _saveBrokerConsignment() async {
     if (!_isFormValid()) return;
 
+    debugPrint('[BROKER_DUPLICATE] final save entered');
     developer.log('ENTRY: _saveBrokerConsignment() called, isEditMode=$_isEditMode');
 
     try {
@@ -697,6 +701,72 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         _currentDraftItems = List<ConsignmentItemTemp>.from(_confirmedItems);
         await _saveEditMode();
       } else {
+        // PHASE 0: Duplicate broker check (CREATE MODE ONLY)
+        final brokerPhone = _brokerPhoneCtrl.text.trim();
+        final normalizedPhone = _normalizePhone(brokerPhone);
+        
+        debugPrint('[BROKER_DUPLICATE] normalized phone=$normalizedPhone');
+        
+        if (normalizedPhone.isNotEmpty) {
+          // Get all active broker profiles
+          final allBrokers = LocalDb.activeBrokerProfiles();
+          debugPrint('[BROKER_DUPLICATE] broker count=${allBrokers.length}');
+          
+          // Search for phone match
+          BrokerProfile? matchedBroker;
+          for (final broker in allBrokers) {
+            final normalizedExistingPhone = _normalizePhone(broker.phone);
+            if (normalizedExistingPhone == normalizedPhone) {
+              matchedBroker = broker;
+              debugPrint('[BROKER_DUPLICATE] matched broker id=${broker.id}, name=${broker.name}');
+              break;
+            }
+          }
+          
+          if (matchedBroker != null) {
+            // Phone match found - show confirmation dialog
+            debugPrint('[BROKER_DUPLICATE] showing dialog');
+            
+            if (mounted) {
+              final shouldUseExisting = await showDialog<bool>(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  title: const Text('ပွဲစားအချက်အလက် တွေ့ရှိပါသည်'),
+                  content: Text(
+                    'ဤဖုန်းနံပါတ်ဖြင့် ပွဲစားမှတ်တမ်းရှိပြီးသားဖြစ်ပါသည်။\n'
+                    'အမည်: ${matchedBroker.name}\n'
+                    'ဖုန်းနံပါတ်: ${matchedBroker.phone}\n\n'
+                    'ရှိပြီးသားပွဲစားကို အသုံးပြုမလား?',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('မသုံးတော့ပါ'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('အသုံးပြုမည်'),
+                    ),
+                  ],
+                ),
+              ) ?? false;
+              
+              if (!shouldUseExisting) {
+                debugPrint('[BROKER_DUPLICATE] user rejected, cancelling save');
+                developer.log('DUPLICATE CHECK: User rejected existing broker');
+                return;
+              }
+              
+              debugPrint('[BROKER_DUPLICATE] user accepted, using existing broker');
+            }
+            
+            // User accepted - use existing broker, skip _saveCreateMode duplicate check
+            // Pass matched broker ID to _saveCreateMode via a flag
+            _forcedBrokerProfileId = matchedBroker.id;
+          }
+        }
+        
         await _saveCreateMode();
       }
     } catch (e, stackTrace) {
@@ -724,63 +794,20 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     
     developer.log('CREATE MODE: Generated voucherId=$voucherId, voucherNumber=$voucherNumber');
     
-    // PHASE 1: Broker Profile Resolution with Phone Normalization
+    // PHASE 1: Broker Profile Resolution
     String? brokerProfileId;
-    final brokerName = _brokerNameCtrl.text.trim();
-    final brokerPhone = _brokerPhoneCtrl.text.trim();
-    final normalizedPhone = _normalizePhone(brokerPhone);
     
-    developer.log('CREATE MODE: Searching for broker - name=$brokerName, phone=$brokerPhone, normalized=$normalizedPhone');
-    
-    // Search for existing broker profile by normalized phone (exact match)
-    BrokerProfile? existingProfileByPhone;
-    if (normalizedPhone.isNotEmpty) {
-      existingProfileByPhone = LocalDb.searchBrokerProfiles('').firstWhereOrNull((profile) {
-        final normalizedExistingPhone = _normalizePhone(profile.phone);
-        return normalizedExistingPhone == normalizedPhone;
-      });
-    }
-    
-    if (existingProfileByPhone != null) {
-      // Phone match found - use local non-null variable
-      final matchedProfile = existingProfileByPhone;
-      developer.log('CREATE MODE: Found existing broker by phone: id=${matchedProfile.id}, name=${matchedProfile.name}');
-      
-      if (mounted) {
-        final shouldUseExisting = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Text('ပွဲစားအချက်အလက် တွေ့ရှိပါသည်'),
-            content: Text(
-              'ဤဖုန်းနံပါတ်ဖြင့် ပွဲစားမှတ်တမ်းရှိပြီးသားဖြစ်ပါသည်။\n'
-              'အမည်: ${matchedProfile.name}\n'
-              'ဖုန်းနံပါတ်: ${matchedProfile.phone}\n\n'
-              'ရှိပြီးသားပွဲစားကို အသုံးပြုမလား?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('မသုံးတော့ပါ'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('အသုံးပြုမည်'),
-              ),
-            ],
-          ),
-        ) ?? false;
-        
-        if (!shouldUseExisting) {
-          developer.log('CREATE MODE: User rejected existing broker, cancelling save');
-          return;
-        }
-      }
-      
-      brokerProfileId = matchedProfile.id;
-      developer.log('CREATE MODE: Using existing broker profile: id=${matchedProfile.id}');
+    // Check if duplicate check already resolved this in _saveBrokerConsignment
+    if (_forcedBrokerProfileId != null) {
+      brokerProfileId = _forcedBrokerProfileId;
+      debugPrint('[BROKER_DUPLICATE] _saveCreateMode using forced broker id=$brokerProfileId');
+      developer.log('CREATE MODE: Using forced broker profile from duplicate check: id=$brokerProfileId');
+      _forcedBrokerProfileId = null; // Reset for next save
     } else {
-      // No phone match - create new broker profile
+      // No forced broker - create new one
+      final brokerName = _brokerNameCtrl.text.trim();
+      final brokerPhone = _brokerPhoneCtrl.text.trim();
+      
       final newProfile = BrokerProfile(
         id: const Uuid().v4(),
         name: brokerName,
@@ -795,6 +822,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       
       await LocalDb.saveBrokerProfile(newProfile);
       brokerProfileId = newProfile.id;
+      debugPrint('[BROKER_DUPLICATE] _saveCreateMode created new broker id=$brokerProfileId');
       developer.log('CREATE MODE: Created new broker profile: id=${newProfile.id}, name=${newProfile.name}');
     }
     
