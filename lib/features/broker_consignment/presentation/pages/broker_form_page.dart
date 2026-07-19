@@ -742,8 +742,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     }
     
     if (existingProfileByPhone != null) {
-      // Phone match found - show confirmation dialog
-      developer.log('CREATE MODE: Found existing broker by phone: id=${existingProfileByPhone.id}, name=${existingProfileByPhone.name}');
+      // Phone match found - use local non-null variable
+      final matchedProfile = existingProfileByPhone;
+      developer.log('CREATE MODE: Found existing broker by phone: id=${matchedProfile.id}, name=${matchedProfile.name}');
       
       if (mounted) {
         final shouldUseExisting = await showDialog<bool>(
@@ -753,8 +754,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             title: const Text('ပွဲစားအချက်အလက် တွေ့ရှိပါသည်'),
             content: Text(
               'ဤဖုန်းနံပါတ်ဖြင့် ပွဲစားမှတ်တမ်းရှိပြီးသားဖြစ်ပါသည်။\n'
-              'အမည်: ${existingProfileByPhone.name}\n'
-              'ဖုန်းနံပါတ်: ${existingProfileByPhone.phone}\n\n'
+              'အမည်: ${matchedProfile.name}\n'
+              'ဖုန်းနံပါတ်: ${matchedProfile.phone}\n\n'
               'ရှိပြီးသားပွဲစားကို အသုံးပြုမလား?',
             ),
             actions: [
@@ -776,8 +777,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         }
       }
       
-      brokerProfileId = existingProfileByPhone.id;
-      developer.log('CREATE MODE: Using existing broker profile: id=${existingProfileByPhone.id}');
+      brokerProfileId = matchedProfile.id;
+      developer.log('CREATE MODE: Using existing broker profile: id=${matchedProfile.id}');
     } else {
       // No phone match - create new broker profile
       final newProfile = BrokerProfile(
