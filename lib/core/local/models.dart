@@ -1104,14 +1104,15 @@ class BrokerConsignment {
   }
 
   /// Helper to get conversion factor for weight unit
+  /// Uses same factors as WeightConverter for consistency
   static double _getConversionFactor(String unit) {
     const factors = {
       'kg': 1.0,
       'g': 0.001,
-      'lb': 0.453592,
-      'oz': 0.0283495,
+      'lb': 0.4536,
+      'oz': 0.02835,
       'ပိသာ': 1.63293,
-      'ကျပ်သား': 0.408233,
+      'ကျပ်သား': 0.01633,
       'ကာရက်': 0.0002,
     };
     return factors[unit] ?? 1.0;

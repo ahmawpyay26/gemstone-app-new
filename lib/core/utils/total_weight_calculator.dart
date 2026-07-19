@@ -33,15 +33,16 @@ class TotalWeightCalculator {
       double totalWeight = 0.0;
       for (final item in validItems) {
         // Sum original values since all units are the same
-        totalWeight += item.displayWeight;
+        totalWeight += item.weight ?? 0.0;
       }
       return {'weight': totalWeight, 'unit': commonUnit, 'hasWeight': true};
     } else {
-      // Mixed units - convert all to kg
+      // Mixed units - convert all to kg using WeightConverter
       double totalWeightKg = 0.0;
       for (final item in validItems) {
-        // Convert each item to kg and sum
-        totalWeightKg += item.totalWeightKg;
+        // Convert each item to kg using WeightConverter and sum
+        final itemWeightKg = WeightConverter.convertToKg(item.weight, item.weightUnit);
+        totalWeightKg += itemWeightKg;
       }
       return {'weight': totalWeightKg, 'unit': 'kg', 'hasWeight': true};
     }
