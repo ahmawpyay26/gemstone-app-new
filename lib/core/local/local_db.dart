@@ -1798,6 +1798,7 @@ class LocalDb {
     required String brokerPhone,
     required String brokerAddress,
     String? brokerSocialAccount,
+    String? brokerProfileId, // Link to BrokerProfile (NEW)
     String notes = '',
     List<String> photoPaths = const [],
     String? voucherId, // Shared UUID for grouped submission
@@ -1920,6 +1921,7 @@ class LocalDb {
       brokerPhone: brokerPhone,
       brokerAddress: brokerAddress,
       brokerSocialAccount: brokerSocialAccount,
+      brokerProfileId: brokerProfileId, // Link to BrokerProfile
       notes: notes,
       photoPaths: photoPaths,
       createdAt: now,
@@ -2045,6 +2047,14 @@ class LocalDb {
   static BrokerConsignment? getBrokerConsignment(String id) {
     final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
     return brokers.get(id);
+  }
+
+  /// Get all broker consignments for a specific voucher
+  static List<BrokerConsignment> getBrokerConsignmentsByVoucherId(String voucherId) {
+    final brokers = Hive.box<BrokerConsignment>(brokerConsignmentsBox);
+    return brokers.values
+        .where((b) => b.voucherId == voucherId && b.deletedAt == null)
+        .toList();
   }
 
   /// Get all active broker consignments

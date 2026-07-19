@@ -1029,6 +1029,7 @@ class BrokerConsignment {
   String brokerPhone;
   String brokerAddress;
   String? brokerSocialAccount;
+  String? brokerProfileId; // Link to BrokerProfile (NEW)
   
   // Additional Information
   String notes;
@@ -1056,6 +1057,7 @@ class BrokerConsignment {
     required this.brokerPhone,
     required this.brokerAddress,
     this.brokerSocialAccount,
+    this.brokerProfileId,
     this.notes = '',
     this.photoPaths = const [],
     required this.createdAt,
@@ -1142,6 +1144,7 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
       brokerPhone: fields[7] as String,
       brokerAddress: fields[8] as String,
       brokerSocialAccount: fields[9] as String?,
+      brokerProfileId: fields[21] as String?,
       notes: (fields[10] as String?) ?? '',
       photoPaths: (fields[11] as List?)?.cast<String>() ?? [],
       createdAt: fields[12] as int,
@@ -1157,7 +1160,7 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
   @override
   void write(BinaryWriter writer, BrokerConsignment obj) {
     writer
-      ..writeByte(21)
+      ..writeByte(22)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -1182,6 +1185,8 @@ class BrokerConsignmentAdapter extends TypeAdapter<BrokerConsignment> {
       ..write(obj.brokerAddress)
       ..writeByte(9)
       ..write(obj.brokerSocialAccount)
+      ..writeByte(21)
+      ..write(obj.brokerProfileId)
       ..writeByte(10)
       ..write(obj.notes)
       ..writeByte(11)

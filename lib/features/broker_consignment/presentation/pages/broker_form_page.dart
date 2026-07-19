@@ -15,6 +15,17 @@ import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/services/diagnostic_log_service.dart';
 
+/// Extension method to add firstWhereOrNull to List
+extension FirstWhereOrNullExtension<T> on List<T> {
+  T? firstWhereOrNull(bool Function(T) test) {
+    try {
+      return firstWhere(test);
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
 /// Temporary model for consignment items during form editing
 class ConsignmentItemTemp {
   String id;
@@ -203,6 +214,59 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     return _confirmedItems.fold<double>(0, (sum, item) => sum + item.consignedQuantity);
   }
 
+  /// Auto-search for matching BrokerProfile by name or phone
+  void _autoSearchBrokerProfile() {
+    final nameQuery = _brokerNameCtrl.text.trim();
+    final phoneQuery = _brokerPhoneCtrl.text.trim();
+
+    // Skip if both fields are empty
+    if (nameQuery.isEmpty && phoneQuery.isEmpty) {
+      return;
+    }
+
+    try {
+      // Get all active broker profiles
+      final brokers = LocalDb.activeBrokerProfiles();
+
+      // Search by name first (case-insensitive)
+      if (nameQuery.isNotEmpty) {
+        final matchedByName = brokers.firstWhereOrNull(
+          (broker) => broker.name.toLowerCase().contains(nameQuery.toLowerCase()),
+        );
+        if (matchedByName != null) {
+          _fillBrokerProfile(matchedByName);
+          return;
+        }
+      }
+
+      // Search by phone (exact match)
+      if (phoneQuery.isNotEmpty) {
+        final matchedByPhone = brokers.firstWhereOrNull(
+          (broker) => broker.phone == phoneQuery,
+        );
+        if (matchedByPhone != null) {
+          _fillBrokerProfile(matchedByPhone);
+          return;
+        }
+      }
+    } catch (e) {
+      print('Error searching broker profile: $e');
+    }
+  }
+
+  /// Fill broker form fields from BrokerProfile
+  void _fillBrokerProfile(BrokerProfile broker) {
+    setState(() {
+      _brokerNameCtrl.text = broker.name;
+      _brokerPhoneCtrl.text = broker.phone;
+      _brokerAddressCtrl.text = broker.address ?? '';
+      _brokerSocialCtrl.text = broker.socialAccount ?? '';
+    });
+  }
+
+  /// Extension method to find first element or null
+  /// (Dart doesn't have firstWhereOrNull in older versions)
+  /// 
   /// Get purchases that have breakdown items with quantity > 0
   List<Gemstone> _getPurchasesWithBreakdownItems() {
     return _availableGemstones.where((gemstone) {
@@ -786,6 +850,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           record.brokerPhone = _brokerPhoneCtrl.text;
           record.brokerAddress = _brokerAddressCtrl.text;
           record.brokerSocialAccount = _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text;
+          // Note: brokerProfileId should not change during edit, keep original value
           record.notes = _notesCtrl.text;
           record.photoPaths = item.photoPaths;
           record.weight = item.weight; // Update weight
@@ -825,6 +890,13 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         DiagnosticLogService.addLog('  [NEW-$newItemCountCreated] BEFORE createBrokerConsignment | sourceType=${item.sourceType} | purchaseId=$purchaseId | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
         developer.log('  [NEW-$newItemCountCreated] BEFORE createBrokerConsignment | sourceType=${item.sourceType} | purchaseId=$purchaseId | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
         
+        // Get existing brokerProfileId from first item in this voucher
+        String? brokerProfileId;
+        final existingBrokerConsignments = LocalDb.getBrokerConsignmentsByVoucherId(_editVoucherId);
+        if (existingBrokerConsignments.isNotEmpty) {
+          brokerProfileId = existingBrokerConsignments.first.brokerProfileId;
+        }
+        
         await LocalDb.createBrokerConsignment(
           purchaseId: purchaseId,
           consignedQuantity: item.consignedQuantity,
@@ -834,6 +906,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           brokerPhone: _brokerPhoneCtrl.text,
           brokerAddress: _brokerAddressCtrl.text,
           brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
+          brokerProfileId: brokerProfileId, // Use same profile as existing items
           photoPaths: item.photoPaths,
           voucherId: _editVoucherId,
           voucherNumber: _editVoucherNumber,
@@ -1153,7 +1226,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
             TextField(
               controller: _brokerNameCtrl,
               style: const TextStyle(color: Colors.white),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) {
+                _autoSearchBrokerProfile();
+                setState(() {});
+              },
               decoration: InputDecoration(
                 labelText: 'ပွဲစားအမည် *',
                 labelStyle: TextStyle(color: Colors.grey[400]),
@@ -1183,7 +1259,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                 FilteringTextInputFormatter.digitsOnly,
               ],
               style: const TextStyle(color: Colors.white),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) {
+                _autoSearchBrokerProfile();
+                setState(() {});
+              },
               decoration: InputDecoration(
                 labelText: 'ဖုန်းနံပါတ် *',
                 labelStyle: TextStyle(color: Colors.grey[400]),

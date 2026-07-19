@@ -61,9 +61,11 @@ class _BrokerProfileDetailPageState extends State<BrokerProfileDetailPage> {
       try {
         final box = LocalDb.brokerConsignments();
         final allConsignments = box.values.toList();
+        // Filter by brokerProfileId for better reliability
         _brokerVouchers = allConsignments
             .where((consignment) =>
-                consignment.brokerName == _broker!.name &&
+                (consignment.brokerProfileId == _broker!.id || 
+                 (consignment.brokerProfileId == null && consignment.brokerName == _broker!.name)) &&
                 consignment.isActive)
             .toList();
 
