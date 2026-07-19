@@ -34,7 +34,8 @@ class _BrokerProfileDetailPageState extends State<BrokerProfileDetailPage> {
     _broker = LocalDb.brokerProfileById(widget.brokerId);
     if (_broker != null) {
       // Get all vouchers for this broker by matching brokerName
-      final allConsignments = LocalDb.brokerConsignments();
+      final box = LocalDb.brokerConsignments();
+      final allConsignments = box.values.toList();
       _brokerVouchers = allConsignments
           .where((consignment) =>
               consignment.brokerName == _broker!.name && consignment.isActive)
