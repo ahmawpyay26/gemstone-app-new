@@ -715,6 +715,44 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     
     developer.log('CREATE MODE: Generated voucherId=$voucherId, voucherNumber=$voucherNumber');
     
+    // PHASE 1: Broker Profile Resolution
+    String? brokerProfileId;
+    final brokerName = _brokerNameCtrl.text.trim();
+    final brokerPhone = _brokerPhoneCtrl.text.trim();
+    
+    // Search for existing broker profile by name or phone
+    final existingProfile = LocalDb.searchBrokerProfiles(
+      searchTerm: brokerName.isNotEmpty ? brokerName : brokerPhone,
+    ).firstWhereOrNull((profile) {
+      final nameMatch = brokerName.isNotEmpty && profile.name.toLowerCase() == brokerName.toLowerCase();
+      final phoneMatch = brokerPhone.isNotEmpty && profile.phone == brokerPhone;
+      return nameMatch || phoneMatch;
+    });
+    
+    if (existingProfile != null) {
+      // Use existing profile
+      brokerProfileId = existingProfile.id;
+      developer.log('CREATE MODE: Found existing broker profile: id=${existingProfile.id}, name=${existingProfile.name}');
+    } else {
+      // Create new broker profile
+      final newProfile = BrokerProfile(
+        id: const Uuid().v4(),
+        name: brokerName,
+        phone: brokerPhone,
+        address: _brokerAddressCtrl.text.trim(),
+        socialAccount: _brokerSocialCtrl.text.trim().isEmpty ? null : _brokerSocialCtrl.text.trim(),
+        imagePath: null,
+        notes: '',
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+      
+      await LocalDb.createBrokerProfile(newProfile);
+      brokerProfileId = newProfile.id;
+      developer.log('CREATE MODE: Created new broker profile: id=${newProfile.id}, name=${newProfile.name}');
+    }
+    
+    // PHASE 2: Save voucher items with broker profile link
     int itemCount = 0;
     for (final item in _confirmedItems) {
       itemCount++;
@@ -737,6 +775,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         brokerPhone: _brokerPhoneCtrl.text,
         brokerAddress: _brokerAddressCtrl.text,
         brokerSocialAccount: _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text,
+        brokerProfileId: brokerProfileId, // Link to broker profile
         photoPaths: item.photoPaths,
         voucherId: voucherId,
         voucherNumber: voucherNumber,
@@ -745,7 +784,7 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
       );
     }
     
-    developer.log('CREATE MODE: All $itemCount items saved successfully');
+    developer.log('CREATE MODE: All $itemCount items saved successfully with brokerProfileId=$brokerProfileId');
     
     if (mounted) {
       context.pop(true);
