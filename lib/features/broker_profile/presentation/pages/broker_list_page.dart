@@ -95,7 +95,7 @@ class _BrokerListPageState extends State<BrokerListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('ပွဲစားများအချက်အလက်'),
-        backgroundColor: AppTheme.primaryAccent,
+        backgroundColor: AppTheme.surfaceDark,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
