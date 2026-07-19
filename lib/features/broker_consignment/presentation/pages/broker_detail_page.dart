@@ -725,6 +725,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
                     return _ItemCard(
                       itemIndex: idx,
                       item: item,
+                      items: widget.items,
                     );
                   }).toList(),
                 ],
@@ -996,10 +997,12 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
 class _ItemCard extends StatefulWidget {
   final int itemIndex;
   final BrokerConsignment item;
+  final List<BrokerConsignment> items;
 
   const _ItemCard({
     required this.itemIndex,
     required this.item,
+    required this.items,
   });
 
   @override
