@@ -748,7 +748,11 @@ class _VoucherPageWidget extends StatelessWidget {
             _buildTableCell('${data.totals.distinctItemCount}',
                 isHeader: true),
             _buildTableCell('', isHeader: true),
-            _buildTableCell('', isHeader: true),
+            _buildTableCell(
+                data.totals.totalWeightKg > 0
+                    ? '${data.totals.totalWeightKg.toStringAsFixed(2)} ${data.totals.totalWeightUnit}'
+                    : '',
+                isHeader: true),
             _buildTableCell(
                 '${data.totals.totalConsignedQuantity.toStringAsFixed(2)}',
                 isHeader: true),
