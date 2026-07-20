@@ -362,7 +362,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
             ValueListenableBuilder(
               valueListenable: Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox).listenable(),
               builder: (context, box, _) {
-                final brokers = box.values.where((b) => b.isActive).toList();
+                final brokers = box.values.where((b) => !b.isDeleted).toList();
                 return DropdownButtonFormField<BrokerProfile>(
                   value: _selectedBroker,
                   isExpanded: true,
