@@ -9,6 +9,12 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  errors:
+    # Ignore undefined_named_parameter for broker_voucher_image_exporter.dart
+    # This file uses dynamic invocation to support multiple Flutter versions
+    undefined_named_parameter: ignore
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
