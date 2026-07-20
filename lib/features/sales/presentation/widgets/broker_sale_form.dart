@@ -25,6 +25,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
 
   // State Variables
   DateTime _selectedSaleDate = DateTime.now();
+  BrokerProfile? _selectedBroker;
   BrokerConsignment? _selectedConsignment;
   String _selectedSourceType = 'whole_stone';
   List<String> _selectedPhotos = [];
@@ -74,6 +75,20 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
       _priceError = null;
       _commissionError = null;
     });
+  }
+
+  /// Get broker consignments for selected broker
+  List<BrokerConsignment> _getBrokerConsignments() {
+    if (_selectedBroker == null) return [];
+    
+    final box = LocalDb.brokerConsignments();
+    final allConsignments = box.values.toList();
+    
+    return allConsignments.where((c) {
+      final matchById = c.brokerProfileId == _selectedBroker!.id;
+      final matchByName = c.brokerProfileId == null && c.brokerName == _selectedBroker!.name;
+      return (matchById || matchByName) && c.isActive && c.remainingQuantity > 0;
+    }).toList();
   }
 
   /// Validate and add item to draft
@@ -250,6 +265,12 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     final brokerConsignments = brokerConsignmentsBox.values
         .where((c) => c.remainingQuantity > 0)
         .where((c) => c.historicalData.sourceType == _selectedSourceType)
+        .where((c) {
+          if (_selectedBroker == null) return false;
+          final matchById = c.brokerProfileId == _selectedBroker!.id;
+          final matchByName = c.brokerProfileId == null && c.brokerName == _selectedBroker!.name;
+          return matchById || matchByName;
+        })
         .toList();
 
     final draftSummary = DraftSummary.fromItems(_draftItems);
@@ -329,6 +350,57 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                 labelText: 'ဝယ်ယူသူအမည် (ရွေးချယ်ခွင့်)',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
+            ),
+            const SizedBox(height: 16),
+
+            // Section 2.5: Broker Selection
+            Text(
+              'ပွဲစားအမည်',
+              style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+            ),
+            const SizedBox(height: 8),
+            ValueListenableBuilder(
+              valueListenable: LocalDb.brokerProfiles().listenable(),
+              builder: (context, box, _) {
+                final brokers = box.values.where((b) => b.isActive).toList();
+                return DropdownButtonFormField<BrokerProfile>(
+                  value: _selectedBroker,
+                  isExpanded: true,
+                  dropdownColor: AppTheme.surfaceDark,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'ပွဲစားရွေးချယ်ပါ',
+                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[700]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[700]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[900],
+                  ),
+                  items: brokers
+                      .map((broker) => DropdownMenuItem(
+                            value: broker,
+                            child: Text(broker.name),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedBroker = value;
+                      _selectedConsignment = null;
+                      _selectedSourceType = 'whole_stone';
+                    });
+                  },
+                );
+              },
             ),
             const SizedBox(height: 16),
 
