@@ -360,7 +360,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
             ),
             const SizedBox(height: 8),
             ValueListenableBuilder(
-              valueListenable: LocalDb.brokerProfiles().listenable(),
+              valueListenable: Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox).listenable(),
               builder: (context, box, _) {
                 final brokers = box.values.where((b) => b.isActive).toList();
                 return DropdownButtonFormField<BrokerProfile>(
