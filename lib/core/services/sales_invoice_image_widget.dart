@@ -159,7 +159,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ကျောက်အမျိုးအစား: ${sales.map((s) => s.gemstoneName).toSet().join(", ")},'
+          'ကျောက်အမျိုးအစား: ${sales.map((s) => s.gemstoneName).toSet().join(", ")}',
           style: TextStyle(fontSize: 11, fontFamily: 'Padauk'),
         ),
         Text(

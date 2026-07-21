@@ -693,7 +693,7 @@ class VoucherExportService {
                             ),
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text('${sale.weight} kg', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                              child: pw.Text('${sale.weightCarat} ${sale.weightUnit ?? 'kg'}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                             ),
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(4),
@@ -701,7 +701,7 @@ class VoucherExportService {
                             ),
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text('${moneyFormat.format(sale.unitPrice)}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                              child: pw.Text('${moneyFormat.format(sale.quantity > 0 ? sale.amount / sale.quantity : 0)}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                             ),
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(4),
