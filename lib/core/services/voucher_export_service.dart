@@ -506,7 +506,7 @@ class VoucherExportService {
   }
 
   /// Generate PDF invoice for multiple sales (matching Broker Voucher design 1:1)
-  static Future<File?> generatePdfInvoice(List<Sale> sales) async {
+  Future<File?> generatePdfInvoice(List<Sale> sales) async {
     if (sales.isEmpty) return null;
     
     try {
