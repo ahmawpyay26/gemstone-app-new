@@ -250,7 +250,15 @@ class _SalesPageState extends State<SalesPage> {
                   ),
                 ],
               ),
-              body: widget,
+              body: SingleChildScrollView(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: 800,
+                    child: widget,
+                  ),
+                ),
+              ),
             ),
           );
         },
