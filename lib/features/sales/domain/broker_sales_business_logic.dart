@@ -296,6 +296,7 @@ class BrokerSalesBusinessLogic {
           weightCarat: draftItem.soldQuantity,
           isFragmentSource: draftItem.brokerConsignment.historicalData.sourceType == 'breakdown_item',
           fragmentName: draftItem.brokerConsignment.historicalData.breakdownItemName,
+          photoPaths: draftItem.photoUrls, // Include photos from draft
         );
 
         // Validate sale record has required fields
