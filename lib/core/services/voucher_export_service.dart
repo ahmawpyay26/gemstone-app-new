@@ -677,14 +677,14 @@ class VoucherExportService {
                 pw.Table(
                   border: pw.TableBorder.all(color: PdfColors.grey400),
                   columnWidths: {
-                    0: pw.FixedColumnWidth(25),
-                    1: pw.FixedColumnWidth(80),
-                    2: pw.FixedColumnWidth(50),
-                    3: pw.FixedColumnWidth(40),
-                    4: pw.FixedColumnWidth(45),
-                    5: pw.FixedColumnWidth(40),
-                    6: pw.FixedColumnWidth(40),
-                    7: pw.FixedColumnWidth(40),
+                    0: pw.FixedColumnWidth(40),
+                    1: pw.FixedColumnWidth(100),
+                    2: pw.FixedColumnWidth(60),
+                    3: pw.FixedColumnWidth(50),
+                    4: pw.FixedColumnWidth(50),
+                    5: pw.FixedColumnWidth(50),
+                    6: pw.FixedColumnWidth(50),
+                    7: pw.FixedColumnWidth(50),
                   },
                   children: [
                     // Header row
@@ -710,7 +710,7 @@ class VoucherExportService {
                           children: [
                             _buildInvoiceTableCell('${index + 1}', padaukRegular),
                             _buildInvoiceTableCell(sale.gemstoneName, padaukRegular),
-                            _buildInvoiceTableCell('whole_stone', padaukRegular),
+                            _buildInvoiceTableCell('ကျောက်လုံး', padaukRegular),
                             _buildInvoiceTableCell('${sale.weightCarat} ${sale.weightUnit ?? 'kg'}', padaukRegular),
                             _buildInvoiceTableCell('${sale.quantity}', padaukRegular),
                             _buildInvoiceTableCell('${moneyFormat.format(sale.quantity > 0 ? sale.amount / sale.quantity : 0)}', padaukRegular),

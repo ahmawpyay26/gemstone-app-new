@@ -344,14 +344,14 @@ class SalesInvoiceImageWidget extends StatelessWidget {
     return Table(
       border: TableBorder.all(color: Colors.grey),
       columnWidths: const {
-        0: FixedColumnWidth(25),
-        1: FixedColumnWidth(80),
-        2: FixedColumnWidth(50),
-        3: FixedColumnWidth(40),
-        4: FixedColumnWidth(45),
-        5: FixedColumnWidth(40),
-        6: FixedColumnWidth(40),
-        7: FixedColumnWidth(40),
+        0: FixedColumnWidth(40),
+        1: FixedColumnWidth(100),
+        2: FixedColumnWidth(60),
+        3: FixedColumnWidth(50),
+        4: FixedColumnWidth(50),
+        5: FixedColumnWidth(50),
+        6: FixedColumnWidth(50),
+        7: FixedColumnWidth(50),
       },
       children: [
         // Header row
@@ -377,7 +377,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
               children: [
                 _buildTableCell('${index + 1}'),
                 _buildTableCell(sale.gemstoneName),
-                _buildTableCell('whole_stone'),
+                _buildTableCell('ကျောက်လုံး'),
                 _buildTableCell('${sale.weightCarat} ${sale.weightUnit ?? 'kg'}'),
                 _buildTableCell('${sale.quantity}'),
                 _buildTableCell('${moneyFormat.format(sale.quantity > 0 ? sale.amount / sale.quantity : 0)}'),
