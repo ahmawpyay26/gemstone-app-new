@@ -159,7 +159,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ကျောက်အမျိုးအစား: ${sales.map((s) => s.gemstoneType).toSet().join(", ")}',
+          'ကျောက်အမျိုးအစား: ${sales.map((s) => s.gemstoneName).toSet().join(", ")},'
           style: TextStyle(fontSize: 11, fontFamily: 'Padauk'),
         ),
         Text(
@@ -260,11 +260,11 @@ class SalesInvoiceImageWidget extends StatelessWidget {
               final sale = sales[index];
               return DataRow(cells: [
                 DataCell(Text('${index + 1}', style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
-                DataCell(Text(sale.gemstoneType, style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
-                DataCell(Text(sale.stoneType, style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
-                DataCell(Text('${sale.weight} kg', style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
+                DataCell(Text(sale.gemstoneName, style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
+                DataCell(Text('whole_stone', style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
+                DataCell(Text('${sale.weightCarat} ${sale.weightUnit ?? 'kg'}', style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
                 DataCell(Text('${sale.quantity}', style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
-                DataCell(Text('${moneyFormat.format(sale.unitPrice)}', style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
+                DataCell(Text('${moneyFormat.format(sale.quantity > 0 ? sale.amount / sale.quantity : 0)}', style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
                 DataCell(Text('${moneyFormat.format(sale.commissionFee)}', style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
                 DataCell(Text('${moneyFormat.format(sale.amount)}', style: TextStyle(fontFamily: 'Padauk', fontSize: 10))),
               ]);
