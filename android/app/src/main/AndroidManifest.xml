@@ -11,7 +11,7 @@
     <!-- For printing -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <application
-        android:label="KST Jade"
+        android:label="ကျောက်မျက်စာရင်း"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
