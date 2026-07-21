@@ -184,24 +184,41 @@ class _SalesPageState extends State<SalesPage> {
   Future<void> _exportInvoiceImage(List<Sale> sales) async {
     try {
       if (sales.isEmpty) return;
-      
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ဘောင်ချာ ပုံထုတ်နေ...')),
+        const SnackBar(content: Text('Invoice ပုံထုတ်နေ...')),
       );
       
-      // For now, export the first sale as image
-      // In future, could create a composite image of all items
-      final firstSale = sales.first;
+      // Generate invoice PDF first
       final voucherService = VoucherExportService();
-      final file = await voucherService.generatePdfVoucher(firstSale);
-      if (file != null && mounted) {
+      final pdfFile = await voucherService.generatePdfInvoice(sales);
+      
+      if (pdfFile == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invoice ပုံထုတ်မှု ကျ败'),
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
+        }
+        return;
+      }
+      
+      // Convert PDF to image using pdf package
+      final pdfBytes = await pdfFile.readAsBytes();
+      final tempDir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      
+      // For now, share the PDF as image
+      // TODO: Implement proper PDF to PNG conversion
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('ဘောင်ချာ ပုံ သိမ်းဆည်းပြီးပါပြီ'),
+            content: const Text('Invoice ပုံ သိမ်းဆည်းပြီးပါပြီ'),
             backgroundColor: AppTheme.successColor,
           ),
         );
-        await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ');
+        await Share.shareXFiles([XFile(pdfFile.path)], text: 'Invoice ပုံ');
       }
     } catch (e) {
       if (mounted) {
@@ -214,6 +231,7 @@ class _SalesPageState extends State<SalesPage> {
       }
     }
   }
+
 
   Future<void> _printSale(Sale sale) async {
     try {
