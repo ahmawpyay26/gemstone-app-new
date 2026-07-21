@@ -17,6 +17,8 @@ class VoucherExportService {
     return _instance;
   }
 
+  static const double _margin = 20;
+
   /// Generate PDF voucher for a sale record
   Future<File?> generatePdfVoucher(Sale sale) async {
     try {
@@ -304,6 +306,7 @@ class VoucherExportService {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
+                // Header
                 pw.Center(
                   child: pw.Text(
                     'ရောင်းချခြင်းလက်ခြင်း',
@@ -314,9 +317,12 @@ class VoucherExportService {
                   ),
                 ),
                 pw.SizedBox(height: 20),
+
+                // Sale details table
                 pw.Table(
                   border: pw.TableBorder.all(),
                   children: [
+                    // Header row
                     pw.TableRow(
                       decoration: const pw.BoxDecoration(
                         color: PdfColors.grey300,
@@ -334,6 +340,7 @@ class VoucherExportService {
                         ),
                       ],
                     ),
+                    // Data rows
                     pw.TableRow(
                       children: [
                         pw.Padding(
@@ -382,6 +389,20 @@ class VoucherExportService {
                         ),
                       ],
                     ),
+                    if (sale.weightCarat > 0)
+                      pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text('အလေးချိန်'),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(
+                                '${_trim(sale.weightCarat)} ${_getWeightUnit(sale)}'),
+                          ),
+                        ],
+                      ),
                     pw.TableRow(
                       children: [
                         pw.Padding(
@@ -392,6 +413,19 @@ class VoucherExportService {
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Text(
                               '${moneyFormat.format(sale.amount)} ကျပ်'),
+                        ),
+                      ],
+                    ),
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('ပွဲခ'),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                              '${moneyFormat.format(sale.commissionFee)} ကျပ်'),
                         ),
                       ],
                     ),
@@ -412,6 +446,18 @@ class VoucherExportService {
                       children: [
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('ငွေပေးချေမှုနည်း'),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(_paymentMethodLabel(sale.paymentMethod)),
+                        ),
+                      ],
+                    ),
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
                           child: pw.Text('ရက်စွဲ'),
                         ),
                         pw.Padding(
@@ -421,6 +467,28 @@ class VoucherExportService {
                       ],
                     ),
                   ],
+                ),
+
+                pw.SizedBox(height: 20),
+
+                // Notes
+                if (sale.note.isNotEmpty) ...[
+                  pw.Text(
+                    'မှတ်ချက်:',
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                  ),
+                  pw.Text(sale.note),
+                  pw.SizedBox(height: 20),
+                ],
+
+                // Footer
+                pw.Divider(),
+                pw.SizedBox(height: 10),
+                pw.Center(
+                  child: pw.Text(
+                    'ဤလက်ခြင်းသည် အရောင်းအဆိုင်ကွန်ပျူတာစနစ်မှ ထုတ်ပြန်သည်။',
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
                 ),
               ],
             );
@@ -436,26 +504,8 @@ class VoucherExportService {
     }
   }
 
-  String _paymentMethodLabel(String method) {
-    switch (method) {
-      case 'cash':
-        return 'ငွေသည်း';
-      case 'bank':
-        return 'ဘဏ်';
-      case 'credit':
-        return 'အကြေးခံ';
-      default:
-        return method;
-    }
-  }
-
-  String _trim(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
-
-  /// Generate PDF invoice for multiple sales (grouped by invoice number)
-  /// Generate PDF invoice for multiple sales (grouped by invoice number)
-  /// Generate invoice as PDF (matching Broker Voucher design)
-  Future<File?> generatePdfInvoice(List<Sale> sales) async {
+  /// Generate PDF invoice for multiple sales (matching Broker Voucher design 1:1)
+  static Future<File?> generatePdfInvoice(List<Sale> sales) async {
     if (sales.isEmpty) return null;
     
     try {
@@ -491,36 +541,38 @@ class VoucherExportService {
         totalQty += sale.quantity;
       }
       
+      // Load business profile for logo
+      final profile = LocalDb.getBusinessProfile();
+      Uint8List? logoBytes;
+      try {
+        final rawPath = profile.logoPath;
+        if (rawPath != null && rawPath.trim().isNotEmpty) {
+          final logoFile = File(rawPath.trim());
+          if (logoFile.existsSync()) {
+            final bytes = await logoFile.readAsBytes();
+            if (bytes.isNotEmpty) {
+              logoBytes = bytes;
+            }
+          }
+        }
+      } catch (_) {
+        logoBytes = null;
+      }
+      
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(20),
+          margin: pw.EdgeInsets.all(_margin),
           build: (pw.Context context) {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 // Header - matching Broker Voucher design
-                pw.Center(
-                  child: pw.Column(
-                    children: [
-                      pw.Text(
-                        'ပွဲစားထံမှ ရောင်းချမှု',
-                        style: pw.TextStyle(
-                          font: padaukBold,
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                      pw.Text(
-                        'ပွဲစားထံမှ ရောင်းချမှု',
-                        style: pw.TextStyle(
-                          font: padaukBold,
-                          fontSize: 14,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+                _buildInvoiceHeader(
+                  profile,
+                  logoBytes,
+                  padaukRegular,
+                  padaukBold,
                 ),
                 pw.SizedBox(height: 12),
                 
@@ -529,11 +581,11 @@ class VoucherExportService {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text(
-                      'ဘောင်ချာ အုပ်စုံ: ${firstSale.invoiceNumber}',
+                      'ဘောင်ချာ နံပါတ်: ${firstSale.invoiceNumber}',
                       style: pw.TextStyle(font: padaukRegular, fontSize: 11),
                     ),
                     pw.Text(
-                      'မပ်စွဲ: $createdDate',
+                      'ရက်စွဲ: $createdDate',
                       style: pw.TextStyle(font: padaukRegular, fontSize: 11),
                     ),
                   ],
@@ -542,7 +594,7 @@ class VoucherExportService {
                 
                 // Customer details box - matching Broker Info Box style
                 pw.Container(
-                  padding: const pw.EdgeInsets.all(8),
+                  padding: pw.EdgeInsets.all(8),
                   decoration: pw.BoxDecoration(
                     border: pw.Border.all(color: PdfColors.grey400),
                   ),
@@ -638,38 +690,14 @@ class VoucherExportService {
                     pw.TableRow(
                       decoration: pw.BoxDecoration(color: PdfColors.grey300),
                       children: [
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('ល.ដ', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('ပစ္စည်းအမည်', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('အမျိုးအစား', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('အလေးချိန်', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('အရေအတွက်', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('ယူနစ်ဈေး', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('ကော်မရှင်', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('စုစုပေါင်း', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
+                        _buildInvoiceTableCell('ល.ដ', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('ပစ္စည်းအမည်', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('အမျိုးအစား', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('အလေးချိန်', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('အရေအတွက်', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('ယူနစ်ဈေး', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('ကော်မရှင်', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('စုစုပေါင်း', padaukBold, isHeader: true),
                       ],
                     ),
                     // Data rows
@@ -679,38 +707,14 @@ class VoucherExportService {
                         final sale = sales[index];
                         return pw.TableRow(
                           children: [
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text('${index + 1}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text(sale.gemstoneName, style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text('whole_stone', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text('${sale.weightCarat} ${sale.weightUnit ?? 'kg'}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text('${sale.quantity}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text('${moneyFormat.format(sale.quantity > 0 ? sale.amount / sale.quantity : 0)}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text('${moneyFormat.format(sale.commissionFee)}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text('${moneyFormat.format(sale.amount)}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                            ),
+                            _buildInvoiceTableCell('${index + 1}', padaukRegular),
+                            _buildInvoiceTableCell(sale.gemstoneName, padaukRegular),
+                            _buildInvoiceTableCell('whole_stone', padaukRegular),
+                            _buildInvoiceTableCell('${sale.weightCarat} ${sale.weightUnit ?? 'kg'}', padaukRegular),
+                            _buildInvoiceTableCell('${sale.quantity}', padaukRegular),
+                            _buildInvoiceTableCell('${moneyFormat.format(sale.quantity > 0 ? sale.amount / sale.quantity : 0)}', padaukRegular),
+                            _buildInvoiceTableCell('${moneyFormat.format(sale.commissionFee)}', padaukRegular),
+                            _buildInvoiceTableCell('${moneyFormat.format(sale.amount)}', padaukRegular),
                           ],
                         );
                       },
@@ -719,38 +723,14 @@ class VoucherExportService {
                     pw.TableRow(
                       decoration: pw.BoxDecoration(color: PdfColors.grey200),
                       children: [
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('', style: pw.TextStyle(font: padaukBold, fontSize: 9)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('စုစုပေါင်း', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('$totalQty', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('${moneyFormat.format(totalCommission)}', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('${moneyFormat.format(totalAmount)}', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                        ),
+                        _buildInvoiceTableCell('', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('စုစုပေါင်း', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('$totalQty', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('${moneyFormat.format(totalCommission)}', padaukBold, isHeader: true),
+                        _buildInvoiceTableCell('${moneyFormat.format(totalAmount)}', padaukBold, isHeader: true),
                       ],
                     ),
                   ],
@@ -763,12 +743,9 @@ class VoucherExportService {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text('ရေးထိုးသူ: __________', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
-                    pw.Text('နေ့စွဲ: __________', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                    pw.Text('စာမျက်နှာ 1 / 1', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                    pw.Text('ကုန်သည် လက်မှတ်: __________', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                   ],
-                ),
-                pw.SizedBox(height: 5),
-                pw.Center(
-                  child: pw.Text('စာမျက်နှာ 1 / 1', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                 ),
               ],
             );
@@ -787,48 +764,121 @@ class VoucherExportService {
     }
   }
 
+  /// Build invoice header section (matching Broker Voucher)
+  static pw.Widget _buildInvoiceHeader(
+    dynamic profile,
+    Uint8List? logoBytes,
+    pw.Font padaukRegular,
+    pw.Font padaukBold,
+  ) {
+    final shopName = profile.shopName.isNotEmpty
+        ? profile.shopName
+        : 'ပွဲစားအပ်နှံဘောင်ချာ';
 
-  /// Generate invoice as PNG image
-  Future<File?> generateInvoiceImage(List<Sale> sales) async {
-    if (sales.isEmpty) return null;
-    
-    try {
-      // First generate the PDF
-      final pdfFile = await generatePdfInvoice(sales);
-      if (pdfFile == null) return null;
-      
-      // Convert PDF to image using printing package
-      final pdfBytes = await pdfFile.readAsBytes();
-      final firstSale = sales.first;
-      
-      // Use printing package to render PDF to image
-      // Printing.raster() returns a Stream<PdfRaster>
-      final rasterPages = await Printing.raster(
-        pdfBytes,
-        pages: const [0], // First page only
-        dpi: 200,
-      ).toList();
-      
-      if (rasterPages.isEmpty) {
-        throw Exception('Invoice image generation failed');
+    // Build logo widget from pre-loaded bytes
+    pw.Widget? logoWidget;
+    if (logoBytes != null && logoBytes.isNotEmpty) {
+      try {
+        final pdfImage = pw.MemoryImage(logoBytes);
+        logoWidget = pw.Container(
+          width: 60,
+          height: 60,
+          child: pw.Image(pdfImage, fit: pw.BoxFit.contain),
+        );
+      } catch (_) {
+        logoWidget = null;
       }
-      
-      // Get the first page and convert to PNG bytes
-      final pngBytes = await rasterPages.first.toPng();
-      
-      // Create safe filename (replace special characters)
-      final safeInvoiceNo = firstSale.invoiceNumber
-          .replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
-      
-      // Save as PNG
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/invoice_$safeInvoiceNo.png');
-      await file.writeAsBytes(pngBytes, flush: true);
-      
-      return file;
-    } catch (e) {
-      print('Error generating invoice image: $e');
-      return null;
+    }
+
+    // Build the info column
+    final infoColumn = pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // Shop name — large bold title
+        pw.Text(
+          shopName,
+          style: pw.TextStyle(
+            font: padaukBold,
+            fontSize: 18,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+        pw.SizedBox(height: 2),
+
+        // Voucher subtitle
+        pw.Text(
+          'ရောင်းချမှုဘောင်ချာ',
+          style: pw.TextStyle(
+            font: padaukBold,
+            fontSize: 14,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+        pw.SizedBox(height: 4),
+
+        // Business contact info — only show non-empty fields
+        if (profile.phone?.isNotEmpty == true)
+          pw.Text(
+            'ဖုန်း: ${profile.phone}',
+            style: pw.TextStyle(font: padaukRegular, fontSize: 10),
+          ),
+        if (profile.address?.isNotEmpty == true)
+          pw.Text(
+            'လိပ်စာ: ${profile.address}',
+            style: pw.TextStyle(font: padaukRegular, fontSize: 10),
+          ),
+        if (profile.email?.isNotEmpty == true)
+          pw.Text(
+            'Email: ${profile.email}',
+            style: pw.TextStyle(font: padaukRegular, fontSize: 10),
+          ),
+      ],
+    );
+
+    return pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        if (logoWidget != null) ...[logoWidget, pw.SizedBox(width: 10)],
+        pw.Expanded(child: infoColumn),
+      ],
+    );
+  }
+
+  /// Build a single invoice table cell (matching Broker Voucher)
+  static pw.Widget _buildInvoiceTableCell(
+    String text,
+    pw.Font font, {
+    bool isHeader = false,
+  }) {
+    return pw.Padding(
+      padding: pw.EdgeInsets.all(4),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          font: font,
+          fontSize: isHeader ? 9 : 8,
+          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+        ),
+        textAlign: pw.TextAlign.center,
+      ),
+    );
+  }
+
+  String _trim(double value) {
+    final trimmed = value.toStringAsFixed(2);
+    return trimmed.replaceAll(RegExp(r'\.?0+$'), '');
+  }
+
+  String _paymentMethodLabel(String method) {
+    switch (method) {
+      case 'cash':
+        return 'ငွေသည်း';
+      case 'bank_transfer':
+        return 'ဘဏ်လွှဲပြောင်း';
+      case 'check':
+        return 'ချက်';
+      default:
+        return method;
     }
   }
 }
