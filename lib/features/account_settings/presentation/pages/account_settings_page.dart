@@ -216,8 +216,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               context.canPop() ? context.pop() : context.go('/dashboard'),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
+        bottom: true,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -484,6 +486,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             ),
             const SizedBox(height: 16),
           ],
+        ),
         ),
       ),
     );
