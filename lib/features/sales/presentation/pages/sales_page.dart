@@ -188,11 +188,11 @@ class _SalesPageState extends State<SalesPage> {
         const SnackBar(content: Text('Invoice ပုံထုတ်နေ...')),
       );
       
-      // Generate invoice PDF first
+      // Generate invoice as PNG image
       final voucherService = VoucherExportService();
-      final pdfFile = await voucherService.generatePdfInvoice(sales);
+      final imageFile = await voucherService.generateInvoiceImage(sales);
       
-      if (pdfFile == null) {
+      if (imageFile == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -204,13 +204,6 @@ class _SalesPageState extends State<SalesPage> {
         return;
       }
       
-      // Convert PDF to image using pdf package
-      final pdfBytes = await pdfFile.readAsBytes();
-      final tempDir = await getTemporaryDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      
-      // For now, share the PDF as image
-      // TODO: Implement proper PDF to PNG conversion
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -218,7 +211,7 @@ class _SalesPageState extends State<SalesPage> {
             backgroundColor: AppTheme.successColor,
           ),
         );
-        await Share.shareXFiles([XFile(pdfFile.path)], text: 'Invoice ပုံ');
+        await Share.shareXFiles([XFile(imageFile.path)], text: 'Invoice ပုံ');
       }
     } catch (e) {
       if (mounted) {

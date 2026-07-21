@@ -755,4 +755,42 @@ class VoucherExportService {
       return null;
     }
   }
+
+  /// Generate invoice as PNG image
+  Future<File?> generateInvoiceImage(List<Sale> sales) async {
+    if (sales.isEmpty) return null;
+    
+    try {
+      // First generate the PDF
+      final pdfFile = await generatePdfInvoice(sales);
+      if (pdfFile == null) return null;
+      
+      // Convert PDF to image using printing package
+      final pdfBytes = await pdfFile.readAsBytes();
+      final firstSale = sales.first;
+      
+      // Use printing package to render PDF to image
+      final images = await Printing.rasterPdf(
+        onPage: (format) async {
+          return pdfBytes;
+        },
+      );
+      
+      if (images == null || images.isEmpty) return null;
+      
+      // Get the first page image
+      final image = images.first;
+      
+      // Save as PNG
+      final tempDir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final file = File('${tempDir.path}/invoice_${firstSale.invoiceNumber}.png');
+      await file.writeAsBytes(image);
+      
+      return file;
+    } catch (e) {
+      print('Error generating invoice image: $e');
+      return null;
+    }
+  }
 }
