@@ -536,15 +536,27 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                           final gemstoneName = gemstone?.name ?? 'Unknown';
                           final sourceTypeLabel =
                               consignment.historicalData.sourceType == 'whole_stone'
-                                  ? 'အပြည့်အစုံ'
-                                  : 'အခွဲ';
-                          final displayLabel = '$gemstoneName • $sourceTypeLabel';
+                                  ? 'အပ်စာရင်း'
+                                  : 'အတွက်';
+                          final remainingQty = consignment.remainingQuantity;
 
                           return DropdownMenuItem(
                             value: consignment,
-                            child: Text(
-                              displayLabel,
-                              overflow: TextOverflow.ellipsis,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  gemstoneName,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                ),
+                                Text(
+                                  'အရေအတွက်: $remainingQty',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                                ),
+                              ],
                             ),
                           );
                         }).toList(),
