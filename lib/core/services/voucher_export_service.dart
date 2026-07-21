@@ -770,22 +770,28 @@ class VoucherExportService {
       final firstSale = sales.first;
       
       // Use printing package to render PDF to image
-      final images = await Printing.rasterPdf(
-        onPage: (format) async {
-          return pdfBytes;
-        },
-      );
+      // Printing.raster() returns a Stream<PdfRaster>
+      final rasterPages = await Printing.raster(
+        pdfBytes,
+        pages: const [0], // First page only
+        dpi: 200,
+      ).toList();
       
-      if (images == null || images.isEmpty) return null;
+      if (rasterPages.isEmpty) {
+        throw Exception('Invoice image generation failed');
+      }
       
-      // Get the first page image
-      final image = images.first;
+      // Get the first page and convert to PNG bytes
+      final pngBytes = await rasterPages.first.toPng();
+      
+      // Create safe filename (replace special characters)
+      final safeInvoiceNo = firstSale.invoiceNumber
+          .replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
       
       // Save as PNG
       final tempDir = await getTemporaryDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final file = File('${tempDir.path}/invoice_${firstSale.invoiceNumber}.png');
-      await file.writeAsBytes(image);
+      final file = File('${tempDir.path}/invoice_$safeInvoiceNo.png');
+      await file.writeAsBytes(pngBytes, flush: true);
       
       return file;
     } catch (e) {
