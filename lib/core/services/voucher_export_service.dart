@@ -451,7 +451,6 @@ class VoucherExportService {
 
   String _trim(double v) =>
       v == v.roundToDouble() ? v.toInt().toString() : v.toString();
-}
 
   /// Generate PDF invoice for multiple sales (grouped by invoice number)
   Future<File?> generatePdfInvoice(List<Sale> sales) async {
@@ -608,3 +607,4 @@ class VoucherExportService {
       return null;
     }
   }
+}
