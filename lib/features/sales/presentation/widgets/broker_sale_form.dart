@@ -640,6 +640,56 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                   ),
                   const SizedBox(height: 12),
 
+                  // Photo Gallery Section
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[700]!, width: 1),
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey[900],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ဓါတ်ပုံမှတ်တမ်း',
+                          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {},
+                                icon: const Icon(Icons.camera_alt),
+                                label: const Text('ကင်မရာ'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[800],
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {},
+                                icon: const Icon(Icons.image),
+                                label: const Text('ပြခန်း'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[800],
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
                   // Add Button
                   SizedBox(
                     width: double.infinity,
