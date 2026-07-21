@@ -25,7 +25,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('အဒောကစါတင်'),
+        title: const Text('စတင်'),
         backgroundColor: AppTheme.primaryAccent,
         elevation: 0,
         bottom: PreferredSize(
