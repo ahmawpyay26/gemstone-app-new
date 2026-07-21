@@ -559,7 +559,8 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                     controller: _quantityController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
-                      labelText: 'အပ်စာရင်းအရေအတွက်',
+                      labelText: 'ရောင်းချမည့် အရေအတွက်',
+                      hintText: 'အပ်စာရင်းမှ ရောင်းချမည့် အရေအတွက် ထည့်သွင်းပါ',
                       errorText: _quantityError,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       filled: true,
