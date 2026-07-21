@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:gemstone_management/core/local/local_db.dart';
 import 'package:gemstone_management/core/local/models.dart';
 import 'package:gemstone_management/features/sales/domain/broker_sales_business_logic.dart';
 import 'package:gemstone_management/core/theme/app_theme.dart';
+import 'dart:io';
 
 /// Refactored Broker Sales Form with Draft → Final Save Architecture
 class BrokerSaleForm extends StatefulWidget {
@@ -85,6 +87,53 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
       _commissionError = null;
       _selectedUnit = 'ပိသာ';
     });
+  }
+
+  /// Pick image from camera
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedPhotos.add(image.path);
+        });
+        _showSuccess('ဓါတ်ပုံ ကင်မရာမှ ထည့်သွင်းပြီးပါပြီ။');
+      }
+    } catch (e) {
+      _showError('ကင်မရာ အမှားအယွင်း: $e');
+    }
+  }
+
+  /// Pick image from gallery
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final List<XFile> images = await picker.pickMultiImage(
+        imageQuality: 85,
+      );
+
+      if (images.isNotEmpty) {
+        setState(() {
+          _selectedPhotos.addAll(images.map((img) => img.path).toList());
+        });
+        _showSuccess('ဓါတ်ပုံ ${images.length} ခု ပြခန်းမှ ထည့်သွင်းပြီးပါပြီ။');
+      }
+    } catch (e) {
+      _showError('ပြခန်း အမှားအယွင်း: $e');
+    }
+  }
+
+  /// Remove photo from selected photos
+  void _removePhoto(int index) {
+    setState(() {
+      _selectedPhotos.removeAt(index);
+    });
+    _showSuccess('ဓါတ်ပုံ ဖျက်ပြီးပါပြီ။');
   }
 
   /// Get broker consignments for selected broker
@@ -660,7 +709,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                           children: [
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: () {},
+                                onPressed: _pickImageFromCamera,
                                 icon: const Icon(Icons.camera_alt),
                                 label: const Text('ကင်မရာ'),
                                 style: ElevatedButton.styleFrom(
@@ -673,7 +722,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: () {},
+                                onPressed: _pickImageFromGallery,
                                 icon: const Icon(Icons.image),
                                 label: const Text('ပြခန်း'),
                                 style: ElevatedButton.styleFrom(
@@ -685,6 +734,66 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                             ),
                           ],
                         ),
+                        if (_selectedPhotos.isNotEmpty) ...
+                          [
+                            const SizedBox(height: 12),
+                            Text(
+                              'မြတေဒဓုတေတေဒ်တြတက် ဓါတ်ပုံမှတ် (${_selectedPhotos.length})',
+                              style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                            ),
+                            const SizedBox(height: 8),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                              ),
+                              itemCount: _selectedPhotos.length,
+                              itemBuilder: (context, index) {
+                                return Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.file(
+                                        File(_selectedPhotos[index]),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 4,
+                                      right: 4,
+                                      child: GestureDetector(
+                                        onTap: () => _removePhoto(index),
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          padding: const EdgeInsets.all(4),
+                                          child: const Icon(
+                                            Icons.close,
+                                            color: Colors.white,
+                                            size: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ]
+                        else
+                          ...
+                            [
+                              const SizedBox(height: 8),
+                              Text(
+                                'ဓါတ်ပုံမှတ်မြတေဒ်တြတက်တေတေဒ်း',
+                                style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                              ),
+                            ],
                       ],
                     ),
                   ),
