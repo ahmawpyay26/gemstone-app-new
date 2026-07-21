@@ -631,10 +631,10 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                             DropdownMenuItem(value: 'ပိသာ', child: Text('ပိသာ')),
                             DropdownMenuItem(value: 'ကျပ်သား', child: Text('ကျပ်သား')),
                             DropdownMenuItem(value: 'ကာရက်', child: Text('ကာရက်')),
-                            DropdownMenuItem(value: 'kg', child: Text('kg')),
-                            DropdownMenuItem(value: 'g', child: Text('g')),
-                            DropdownMenuItem(value: 'lb', child: Text('lb')),
-                            DropdownMenuItem(value: 'oz', child: Text('oz')),
+                            DropdownMenuItem(value: 'kg', child: Text('ကီလို (kg)')),
+                            DropdownMenuItem(value: 'g', child: Text('ဂရမ် (g)')),
+                            DropdownMenuItem(value: 'lb', child: Text('ပေါင် (lb)')),
+                            DropdownMenuItem(value: 'oz', child: Text('အောင်စ (oz)')),
                           ],
                           onChanged: (value) {
                             if (value != null) {
