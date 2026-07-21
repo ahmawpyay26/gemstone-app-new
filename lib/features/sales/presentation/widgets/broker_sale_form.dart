@@ -7,6 +7,7 @@ import 'package:gemstone_management/core/local/models.dart';
 import 'package:gemstone_management/features/sales/domain/broker_sales_business_logic.dart';
 import 'package:gemstone_management/core/theme/app_theme.dart';
 import 'dart:io';
+import 'package:gemstone_management/shared/widgets/photo_viewer.dart';
 
 /// Refactored Broker Sales Form with Draft → Final Save Architecture
 class BrokerSaleForm extends StatefulWidget {
@@ -313,6 +314,18 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
         backgroundColor: Colors.green[700],
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+
+  void _showPhotosForItem(DraftBrokerSaleItem item) {
+    if (item.photoUrls.isEmpty) {
+      _showError('ဓါတ်ပုံမရှိပါ');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => _PhotoViewerDialog(photoPaths: item.photoUrls),
     );
   }
 
@@ -887,6 +900,12 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                             ),
                             Column(
                               children: [
+                                if (item.photoUrls.isNotEmpty)
+                                  IconButton(
+                                    icon: const Icon(Icons.image, size: 18, color: Colors.blue),
+                                    onPressed: () => _showPhotosForItem(item),
+                                    tooltip: 'ဓါတ်ပုံများကြည့်ရန်',
+                                  ),
                                 IconButton(
                                   icon: const Icon(Icons.edit, size: 18),
                                   onPressed: () => _editItemInDraft(index),
@@ -966,6 +985,116 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+/// Photo Viewer Dialog for displaying photos from draft items
+class _PhotoViewerDialog extends StatefulWidget {
+  final List<dynamic> photoPaths;
+
+  const _PhotoViewerDialog({Key? key, required this.photoPaths})
+      : super(key: key);
+
+  @override
+  State<_PhotoViewerDialog> createState() => _PhotoViewerDialogState();
+}
+
+class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
+  late PageController _pageController;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.black,
+      insetPadding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          // Photo viewer
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() => _currentIndex = index);
+            },
+            itemCount: widget.photoPaths.length,
+            itemBuilder: (context, index) {
+              final path = widget.photoPaths[index];
+              return GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Image.file(
+                  File(path.toString()),
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.image_not_supported,
+                              color: Colors.white54, size: 48),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'ပုံမဖွင့်နိုင်ပါ',
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+          // Close button
+          Positioned(
+            top: 16,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white),
+              ),
+            ),
+          ),
+          // Photo counter
+          Positioned(
+            bottom: 16,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_currentIndex + 1} / ${widget.photoPaths.length}',
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
