@@ -45,6 +45,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                     style: const TextStyle(
                       fontFamily: 'Padauk',
                       fontSize: 11,
+                      color: Colors.black,
                     ),
                   ),
                   Text(
@@ -52,6 +53,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                     style: const TextStyle(
                       fontFamily: 'Padauk',
                       fontSize: 11,
+                      color: Colors.black,
                     ),
                   ),
                 ],
@@ -73,6 +75,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                         fontFamily: 'Padauk',
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -163,17 +166,19 @@ class SalesInvoiceImageWidget extends StatelessWidget {
             fontFamily: 'Padauk',
             fontSize: 18,
             fontWeight: FontWeight.bold,
+            color: Colors.black,
           ),
         ),
         const SizedBox(height: 2),
 
         // Voucher subtitle
         const Text(
-          'ရောင်းချမှုဘောင်ချာ',
+          'ရောင်းချခြင်းဖောင်သည်အ',
           style: TextStyle(
             fontFamily: 'Padauk',
             fontSize: 14,
             fontWeight: FontWeight.bold,
+            color: Colors.black,
           ),
         ),
         const SizedBox(height: 4),
@@ -185,6 +190,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'Padauk',
               fontSize: 10,
+              color: Colors.black,
             ),
           ),
         if (profile.address?.isNotEmpty == true)
@@ -193,6 +199,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'Padauk',
               fontSize: 10,
+              color: Colors.black,
             ),
           ),
         if (profile.email?.isNotEmpty == true)
@@ -201,6 +208,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'Padauk',
               fontSize: 10,
+              color: Colors.black,
             ),
           ),
       ],
@@ -242,6 +250,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
           style: const TextStyle(
             fontFamily: 'Padauk',
             fontSize: 10,
+            color: Colors.black,
           ),
         ),
         Text(
@@ -249,6 +258,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
           style: const TextStyle(
             fontFamily: 'Padauk',
             fontSize: 10,
+            color: Colors.black,
           ),
         ),
         Text(
@@ -256,6 +266,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
           style: const TextStyle(
             fontFamily: 'Padauk',
             fontSize: 10,
+            color: Colors.black,
           ),
         ),
         const SizedBox(height: 4),
@@ -270,6 +281,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
+                    color: Colors.black,
                   ),
                 ),
                 Text(
@@ -278,6 +290,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                     fontFamily: 'Padauk',
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -290,6 +303,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
+                    color: Colors.black,
                   ),
                 ),
                 Text(
@@ -309,6 +323,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
+                    color: Colors.black,
                   ),
                 ),
                 Text(
@@ -317,6 +332,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                     fontFamily: 'Padauk',
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -415,6 +431,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
           fontFamily: 'Padauk',
           fontSize: isHeader ? 9 : 8,
           fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+          color: Colors.black,
         ),
         textAlign: TextAlign.center,
       ),

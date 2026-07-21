@@ -54,6 +54,7 @@ class VoucherExportService {
                     style: pw.TextStyle(
                       fontSize: 24,
                       fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.black,
                     ),
                   ),
                 ),
@@ -72,12 +73,12 @@ class VoucherExportService {
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Text('အချက်အလက်',
-                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Text('တန်ဖိုး',
-                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                         ),
                       ],
                     ),
@@ -314,6 +315,7 @@ class VoucherExportService {
                     style: pw.TextStyle(
                       fontSize: 24,
                       fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.black,
                     ),
                   ),
                 ),
@@ -332,12 +334,12 @@ class VoucherExportService {
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Text('အချက်အလက်',
-                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(8),
                           child: pw.Text('တန်ဖိုး',
-                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                         ),
                       ],
                     ),
@@ -608,20 +610,21 @@ class VoucherExportService {
                           font: padaukBold,
                           fontSize: 11,
                           fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.black,
                         ),
                       ),
                       pw.SizedBox(height: 4),
                       pw.Text(
                         'ကျောက်အမျိုးအစား: ${sales.map((s) => s.gemstoneName).toSet().join(", ")}',
-                        style: pw.TextStyle(font: padaukRegular, fontSize: 10),
+                        style: pw.TextStyle(font: padaukRegular, fontSize: 10, color: PdfColors.black),
                       ),
                       pw.Text(
                         'အရေအတွက်: $totalQty',
-                        style: pw.TextStyle(font: padaukRegular, fontSize: 10),
+                        style: pw.TextStyle(font: padaukRegular, fontSize: 10, color: PdfColors.black),
                       ),
                       pw.Text(
                         'ယူနစ်: kg',
-                        style: pw.TextStyle(font: padaukRegular, fontSize: 10),
+                        style: pw.TextStyle(font: padaukRegular, fontSize: 10, color: PdfColors.black),
                       ),
                       pw.SizedBox(height: 4),
                       pw.Row(
@@ -632,11 +635,11 @@ class VoucherExportService {
                             children: [
                               pw.Text(
                                 'စုစုပေါင်းရောင်းချမှု',
-                                style: pw.TextStyle(font: padaukRegular, fontSize: 9),
+                                style: pw.TextStyle(font: padaukRegular, fontSize: 9, color: PdfColors.black),
                               ),
                               pw.Text(
                                 '${moneyFormat.format(totalAmount)} ကျပ်',
-                                style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold),
+                                style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
                               ),
                             ],
                           ),
@@ -645,11 +648,11 @@ class VoucherExportService {
                             children: [
                               pw.Text(
                                 'စုစုပေါင်းကော်မရှင်',
-                                style: pw.TextStyle(font: padaukRegular, fontSize: 9),
+                                style: pw.TextStyle(font: padaukRegular, fontSize: 9, color: PdfColors.black),
                               ),
                               pw.Text(
                                 '${moneyFormat.format(totalCommission)} ကျပ်',
-                                style: pw.TextStyle(font: padaukRegular, fontSize: 9),
+                                style: pw.TextStyle(font: padaukRegular, fontSize: 9, color: PdfColors.black),
                               ),
                             ],
                           ),
@@ -658,11 +661,11 @@ class VoucherExportService {
                             children: [
                               pw.Text(
                                 'စုစုပေါင်းကျန်ရှိ',
-                                style: pw.TextStyle(font: padaukRegular, fontSize: 9),
+                                style: pw.TextStyle(font: padaukRegular, fontSize: 9, color: PdfColors.black),
                               ),
                               pw.Text(
                                 '${moneyFormat.format(totalNet)} ကျပ်',
-                                style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold),
+                                style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
                               ),
                             ],
                           ),
@@ -859,6 +862,7 @@ class VoucherExportService {
           font: font,
           fontSize: isHeader ? 9 : 8,
           fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+          color: PdfColors.black,
         ),
         textAlign: pw.TextAlign.center,
       ),
