@@ -250,9 +250,7 @@ class _SalesPageState extends State<SalesPage> {
                   ),
                 ],
               ),
-              body: SingleChildScrollView(
-                child: widget,
-              ),
+              body: widget,
             ),
           );
         },
