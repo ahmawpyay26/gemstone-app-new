@@ -360,14 +360,14 @@ class SalesInvoiceImageWidget extends StatelessWidget {
     return Table(
       border: TableBorder.all(color: Colors.grey),
       columnWidths: const {
-        0: FixedColumnWidth(40),
-        1: FixedColumnWidth(100),
-        2: FixedColumnWidth(60),
-        3: FixedColumnWidth(50),
-        4: FixedColumnWidth(50),
-        5: FixedColumnWidth(50),
-        6: FixedColumnWidth(50),
-        7: FixedColumnWidth(50),
+        0: FlexColumnWidth(5),
+        1: FlexColumnWidth(24),
+        2: FlexColumnWidth(12),
+        3: FlexColumnWidth(10),
+        4: FlexColumnWidth(8),
+        5: FlexColumnWidth(15),
+        6: FlexColumnWidth(10),
+        7: FlexColumnWidth(16),
       },
       children: [
         // Header row
