@@ -566,26 +566,63 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Quantity (Auto-populated with gray background)
-                  TextField(
-                    controller: _quantityController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: 'ရောင်းချမည့် အရေအတွက်',
-                      hintText: 'အပ်စာရင်းမှ ရောင်းချမည့် အရေအတွက် ထည့်သွင်းပါ',
-                      errorText: _quantityError,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      filled: true,
-                      fillColor: Colors.grey[800],
-                    ),
-                    onChanged: (value) {
-                      final validation = BrokerSalesBusinessLogic.validateSoldQuantity(
-                        value,
-                        _selectedConsignment,
-                      );
-                      setState(() =>
-                          _quantityError = validation.isValid ? null : validation.errorMessage);
-                    },
+                  // Quantity with Remaining Quantity Display
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Remaining Quantity Display (Read-only)
+                      if (_selectedConsignment != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[600]!),
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.grey[900],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'ကျန်ရှိ အရေအတွက်:',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Text(
+                                '${_selectedConsignment!.remainingQuantity}',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      // Quantity Input Field
+                      TextField(
+                        controller: _quantityController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          labelText: 'ရောင်းချမည့် အရေအတွက်',
+                          hintText: 'အပ်စာရင်းမှ ရောင်းချမည့် အရေအတွက် ထည့်သွင်းပါ',
+                          errorText: _quantityError,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          filled: true,
+                          fillColor: Colors.grey[800],
+                        ),
+                        onChanged: (value) {
+                          final validation = BrokerSalesBusinessLogic.validateSoldQuantity(
+                            value,
+                            _selectedConsignment,
+                          );
+                          setState(() =>
+                              _quantityError = validation.isValid ? null : validation.errorMessage);
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
 
