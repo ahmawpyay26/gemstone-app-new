@@ -27,8 +27,8 @@ class DraftBrokerSaleItem {
     required this.photoUrls,
   });
 
-  /// Calculate total sale amount
-  double get totalSaleAmount => soldQuantity * unitPrice;
+  /// Calculate total sale amount (selling price only, not multiplied by quantity)
+  double get totalSaleAmount => unitPrice;
 
   /// Calculate net amount after commission
   double get netAmount => totalSaleAmount - commission;
