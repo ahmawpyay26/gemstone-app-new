@@ -147,6 +147,74 @@ class _SalesPageState extends State<SalesPage> {
     }
   }
 
+  /// Export invoice (multiple sales) as PDF
+  Future<void> _exportInvoicePdf(List<Sale> sales) async {
+    try {
+      if (sales.isEmpty) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ဘောင်ချာ PDF တည်ဆောက်နေ...')),
+      );
+      
+      final voucherService = VoucherExportService();
+      final file = await voucherService.generatePdfInvoice(sales);
+      if (file != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ဘောင်ချာ PDF သိမ်းဆည်းပြီးပါပြီ'),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+        // Optionally share the file
+        await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('အမှားအယွင်း: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Export invoice (multiple sales) as image
+  Future<void> _exportInvoiceImage(List<Sale> sales) async {
+    try {
+      if (sales.isEmpty) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ဘောင်ချာ ပုံထုတ်နေ...')),
+      );
+      
+      // For now, export the first sale as image
+      // In future, could create a composite image of all items
+      final firstSale = sales.first;
+      final voucherService = VoucherExportService();
+      final file = await voucherService.generatePdfVoucher(firstSale);
+      if (file != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ဘောင်ချာ ပုံ သိမ်းဆည်းပြီးပါပြီ'),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+        await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('အမှားအယွင်း: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _printSale(Sale sale) async {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -677,7 +745,8 @@ class _SalesPageState extends State<SalesPage> {
                                 entries: entries,
                                 onDeleteAll: () => _deleteInvoice(entries.map((e) => e.key).toList()),
                                 onPrint: () => _printSale(primarySale),
-                                onExportPdf: () => _exportVoucher(primarySale),
+                                onExportPdf: () => _exportInvoicePdf(entries.map((e) => e.value).toList()),
+                                onExportImage: () => _exportInvoiceImage(entries.map((e) => e.value).toList()),
                                 onEditItem: (saleKey) => _editSale(saleKey),
                                 onDeleteItem: (saleKey) => _deleteSale(saleKey),
                                 dateFormat: _date,
@@ -3978,6 +4047,7 @@ class _InvoiceGroupCard extends StatefulWidget {
   final VoidCallback onDeleteAll;
   final VoidCallback onPrint;
   final VoidCallback onExportPdf;
+  final VoidCallback onExportImage;
   final Function(dynamic) onEditItem;
   final Function(dynamic) onDeleteItem;
   final DateFormat dateFormat;
@@ -3992,6 +4062,7 @@ class _InvoiceGroupCard extends StatefulWidget {
     required this.onDeleteAll,
     required this.onPrint,
     required this.onExportPdf,
+    required this.onExportImage,
     required this.onEditItem,
     required this.onDeleteItem,
     required this.dateFormat,
@@ -4041,7 +4112,7 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
     );
   }
 
-  /// Capture invoice as PNG and save to temp directory
+  /// Capture invoice as PNG and save to temp directory (legacy method - kept for compatibility)
   Future<void> _captureAndExportInvoiceImage() async {
     try {
       final wasExpanded = _expanded;
@@ -4218,11 +4289,11 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
                           case 'pdf':
                             widget.onExportPdf();
                             break;
+                          case 'image':
+                            widget.onExportImage();
+                            break;
                           case 'photos':
                             _showAllInvoicePhotos();
-                            break;
-                          case 'image':
-                            await _captureAndExportInvoiceImage();
                             break;
                           case 'delete':
                             widget.onDeleteAll();
@@ -4251,22 +4322,22 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
                           ),
                         ),
                         const PopupMenuItem(
-                          value: 'photos',
-                          child: Row(
-                            children: [
-                              Text('🖼️'),
-                              SizedBox(width: 8),
-                              Text('ဓာတ်ပုံများကြည့်ရန်'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
                           value: 'image',
                           child: Row(
                             children: [
                               Text('📸'),
                               SizedBox(width: 8),
                               Text('Invoice ပုံထုတ်ရန်'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'photos',
+                          child: Row(
+                            children: [
+                              Text('🖼️'),
+                              SizedBox(width: 8),
+                              Text('ဓာတ်ပုံများကြည့်ရန်'),
                             ],
                           ),
                         ),

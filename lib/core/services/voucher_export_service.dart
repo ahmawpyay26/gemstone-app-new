@@ -452,3 +452,159 @@ class VoucherExportService {
   String _trim(double v) =>
       v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 }
+
+  /// Generate PDF invoice for multiple sales (grouped by invoice number)
+  Future<File?> generatePdfInvoice(List<Sale> sales) async {
+    if (sales.isEmpty) return null;
+    
+    try {
+      // Load Padauk fonts
+      final padaukRegular = await _loadPadaukFont('Regular');
+      final padaukBold = await _loadPadaukFont('Bold');
+      
+      final pdf = pw.Document(
+        theme: pw.ThemeData.withFont(
+          base: padaukRegular,
+          bold: padaukBold,
+        ),
+      );
+      
+      final moneyFormat = NumberFormat('#,##0', 'en_US');
+      final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
+      
+      // Get invoice details from first sale
+      final firstSale = sales.first;
+      final invoiceDate = DateTime.fromMillisecondsSinceEpoch(firstSale.saleDate);
+      final createdDate = dateFormat.format(invoiceDate);
+      
+      // Calculate totals
+      double totalAmount = 0;
+      double totalCommission = 0;
+      double totalNet = 0;
+      int totalQty = 0;
+      
+      for (final sale in sales) {
+        totalAmount += sale.amount;
+        totalCommission += sale.commissionFee;
+        totalNet += sale.netSale;
+        totalQty += sale.quantity;
+      }
+      
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(20),
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Header
+                pw.Center(
+                  child: pw.Text(
+                    'ဘောင်ချာ',
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Center(
+                  child: pw.Text(
+                    'Invoice: ${firstSale.invoiceNumber}',
+                    style: pw.TextStyle(fontSize: 14),
+                  ),
+                ),
+                pw.SizedBox(height: 20),
+                
+                // Invoice details table
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  children: [
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('အချက်အလက်',
+                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text('တန်ဖိုး',
+                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    pw.TableRow(children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('ကျောက်အမျိုးအစား')),
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(sales.map((s) => s.gemstoneName).toSet().join(', '))),
+                    ]),
+                    pw.TableRow(children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('စုစုပေါင်းအရေအတွက်')),
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('$totalQty')),
+                    ]),
+                    pw.TableRow(children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('စုစုပေါင်းရောင်းချမှု')),
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('${moneyFormat.format(totalAmount)} ကျပ်')),
+                    ]),
+                    pw.TableRow(children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('စုစုပေါင်းကော်မရှင်')),
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('${moneyFormat.format(totalCommission)} ကျပ်')),
+                    ]),
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                      children: [
+                        pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('စုစုပေါင်းကျန်ရှိ',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+                        pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('${moneyFormat.format(totalNet)} ကျပ်',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+                      ],
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 20),
+                
+                // Items detail
+                pw.Text('ပစ္စည်းအသေးစိတ်:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 10),
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  children: [
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                      children: [
+                        pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('ကျောက်', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10))),
+                        pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('အရေအတွက်', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10))),
+                        pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('ရောင်းချမှု', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10))),
+                        pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('ကော်မရှင်', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10))),
+                      ],
+                    ),
+                    ...sales.map((sale) => pw.TableRow(children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(sale.gemstoneName, style: const pw.TextStyle(fontSize: 10))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('${sale.quantity}', style: const pw.TextStyle(fontSize: 10))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('${moneyFormat.format(sale.amount)} ကျပ်', style: const pw.TextStyle(fontSize: 10))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('${moneyFormat.format(sale.commissionFee)} ကျပ်', style: const pw.TextStyle(fontSize: 10))),
+                    ])),
+                  ],
+                ),
+                pw.SizedBox(height: 20),
+                
+                // Footer
+                pw.Text('ရောင်းချသည့်နေ့: $createdDate', style: const pw.TextStyle(fontSize: 10)),
+              ],
+            );
+          },
+        ),
+      );
+      
+      final tempDir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final file = File('${tempDir.path}/invoice_${firstSale.invoiceNumber}_$timestamp.pdf');
+      await file.writeAsBytes(await pdf.save());
+      return file;
+    } catch (e) {
+      print('Error generating PDF invoice: $e');
+      return null;
+    }
+  }
