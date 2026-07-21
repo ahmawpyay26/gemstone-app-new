@@ -559,7 +559,7 @@ class VoucherExportService {
                       ),
                       pw.SizedBox(height: 4),
                       pw.Text(
-                        'ကျောက်အမျိုးအစား: ${sales.map((s) => s.gemstoneType).toSet().join(", ")}',
+                        'ကျောက်အမျိုးအစား: ${sales.map((s) => s.gemstoneName).toSet().join(", ")}',
                         style: pw.TextStyle(font: padaukRegular, fontSize: 10),
                       ),
                       pw.Text(
@@ -685,11 +685,11 @@ class VoucherExportService {
                             ),
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text(sale.gemstoneType, style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                              child: pw.Text(sale.gemstoneName, style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                             ),
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(4),
-                              child: pw.Text(sale.stoneType, style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                              child: pw.Text('whole_stone', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                             ),
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(4),
