@@ -684,23 +684,6 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Unit Price
-                  TextField(
-                    controller: _unitPriceController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: 'ယူနစ်စျေးနှုန်း',
-                      errorText: _priceError,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onChanged: (value) {
-                      final validation = BrokerSalesBusinessLogic.validateUnitPrice(value);
-                      setState(() =>
-                          _priceError = validation.isValid ? null : validation.errorMessage);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-
                   // Commission
                   TextField(
                     controller: _commissionController,
@@ -718,15 +701,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Buyer Name
-                  TextField(
-                    controller: _buyerNameController,
-                    decoration: InputDecoration(
-                      labelText: 'ဝယ်ယူသူအမည် (ရွေးချယ်ခွင့်)',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+
 
                   // Remark
                   TextField(
