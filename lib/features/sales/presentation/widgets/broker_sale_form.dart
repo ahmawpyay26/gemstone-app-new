@@ -30,6 +30,9 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
   String _selectedSourceType = 'whole_stone';
   List<String> _selectedPhotos = [];
   List<DraftBrokerSaleItem> _draftItems = []; // Using DraftBrokerSaleItem from business logic
+  String _selectedUnit = 'ပိသာ'; // Default unit
+  late TextEditingController _weightController;
+  late TextEditingController _sellingPriceController;
 
   // Validation Errors
   String? _quantityError;
@@ -48,6 +51,8 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     _buyerNameController = TextEditingController();
     _remarkController = TextEditingController();
     _customerNameController = TextEditingController();
+    _weightController = TextEditingController();
+    _sellingPriceController = TextEditingController();
   }
 
   @override
@@ -58,6 +63,8 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     _buyerNameController.dispose();
     _remarkController.dispose();
     _customerNameController.dispose();
+    _weightController.dispose();
+    _sellingPriceController.dispose();
     super.dispose();
   }
 
@@ -69,11 +76,14 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
       _commissionController.clear();
       _buyerNameController.clear();
       _remarkController.clear();
+      _weightController.clear();
+      _sellingPriceController.clear();
       _selectedPhotos = [];
       _selectedConsignment = null;
       _quantityError = null;
       _priceError = null;
       _commissionError = null;
+      _selectedUnit = 'ပိသာ';
     });
   }
 
@@ -495,14 +505,16 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Quantity
+                  // Quantity (Auto-populated with gray background)
                   TextField(
                     controller: _quantityController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
-                      labelText: 'အရေအတွက်',
+                      labelText: 'အပ်စာရင်းအရေအတွက်',
                       errorText: _quantityError,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      filled: true,
+                      fillColor: Colors.grey[800],
                     ),
                     onChanged: (value) {
                       final validation = BrokerSalesBusinessLogic.validateSoldQuantity(
@@ -512,6 +524,64 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                       setState(() =>
                           _quantityError = validation.isValid ? null : validation.errorMessage);
                     },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Selling Price
+                  TextField(
+                    controller: _sellingPriceController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'ရောင်းချမည့်ဈေး',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Weight and Unit Row
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          controller: _weightController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: InputDecoration(
+                            labelText: 'အလေးချိန်',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 1,
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedUnit,
+                          decoration: InputDecoration(
+                            labelText: 'ယူနစ်',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            filled: true,
+                            fillColor: Colors.grey[900],
+                          ),
+                          dropdownColor: AppTheme.surfaceDark,
+                          style: const TextStyle(color: Colors.white),
+                          items: const [
+                            DropdownMenuItem(value: 'ပိသာ', child: Text('ပိသာ')),
+                            DropdownMenuItem(value: 'ကျပ်သား', child: Text('ကျပ်သား')),
+                            DropdownMenuItem(value: 'ကာရက်', child: Text('ကာရက်')),
+                            DropdownMenuItem(value: 'kg', child: Text('kg')),
+                            DropdownMenuItem(value: 'g', child: Text('g')),
+                            DropdownMenuItem(value: 'lb', child: Text('lb')),
+                            DropdownMenuItem(value: 'oz', child: Text('oz')),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => _selectedUnit = value);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
 
