@@ -874,12 +874,12 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'အရေအတွက်: ${item.soldQuantity} | စျေးနှုန်း: ${item.unitPrice}',
+                                    '${item.soldQuantity} = ${item.unitPrice}',
                                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'စုစုပေါင်း: ${item.totalSaleAmount} | ကော်မရှင်: ${item.commission}',
+                                    'ကော်မရှင်: ${item.commission}',
                                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                                   ),
                                 ],
