@@ -170,9 +170,9 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
       return;
     }
 
-    // Validate unit price
+    // Validate selling price
     final priceValidation =
-        BrokerSalesBusinessLogic.validateUnitPrice(_unitPriceController.text);
+        BrokerSalesBusinessLogic.validateUnitPrice(_sellingPriceController.text);
     if (!priceValidation.isValid) {
       _showError(priceValidation.errorMessage!);
       return;
@@ -209,11 +209,9 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     final draftItem = BrokerSalesBusinessLogic.createDraftItem(
       consignment: _selectedConsignment!,
       quantity: quantity,
-      unitPrice: double.parse(_unitPriceController.text),
+      unitPrice: double.parse(_sellingPriceController.text),
       commission: double.tryParse(_commissionController.text) ?? 0,
-      buyerName: _buyerNameController.text.trim().isNotEmpty
-          ? _buyerNameController.text.trim()
-          : null,
+      buyerName: null,
       remark: _remarkController.text.trim(),
       saleDate: _selectedSaleDate,
       photoUrls: _selectedPhotos,
