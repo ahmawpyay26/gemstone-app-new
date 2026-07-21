@@ -454,6 +454,7 @@ class VoucherExportService {
 
   /// Generate PDF invoice for multiple sales (grouped by invoice number)
   /// Generate PDF invoice for multiple sales (grouped by invoice number)
+  /// Generate invoice as PDF (matching Broker Voucher design)
   Future<File?> generatePdfInvoice(List<Sale> sales) async {
     if (sales.isEmpty) return null;
     
@@ -498,13 +499,14 @@ class VoucherExportService {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Header - Title (dual line)
+                // Header - matching Broker Voucher design
                 pw.Center(
                   child: pw.Column(
                     children: [
                       pw.Text(
                         'ပွဲစားထံမှ ရောင်းချမှု',
                         style: pw.TextStyle(
+                          font: padaukBold,
                           fontSize: 18,
                           fontWeight: pw.FontWeight.bold,
                         ),
@@ -512,77 +514,103 @@ class VoucherExportService {
                       pw.Text(
                         'ပွဲစားထံမှ ရောင်းချမှု',
                         style: pw.TextStyle(
+                          font: padaukBold,
                           fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                 ),
-                pw.SizedBox(height: 15),
+                pw.SizedBox(height: 12),
                 
-                // Invoice number and date row
+                // Invoice number and date row - matching Broker Voucher
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('ဘောင်ချာ အုပ်စုံ: ${firstSale.invoiceNumber}',
-                        style: pw.TextStyle(fontSize: 10)),
-                    pw.Text('နေ့စွဲ: $createdDate',
-                        style: pw.TextStyle(fontSize: 10)),
+                    pw.Text(
+                      'ဘောင်ချာ အုပ်စုံ: ${firstSale.invoiceNumber}',
+                      style: pw.TextStyle(font: padaukRegular, fontSize: 11),
+                    ),
+                    pw.Text(
+                      'မပ်စွဲ: $createdDate',
+                      style: pw.TextStyle(font: padaukRegular, fontSize: 11),
+                    ),
                   ],
                 ),
-                pw.SizedBox(height: 15),
+                pw.SizedBox(height: 12),
                 
-                // Customer details box
+                // Customer details box - matching Broker Info Box style
                 pw.Container(
+                  padding: const pw.EdgeInsets.all(8),
                   decoration: pw.BoxDecoration(
-                    border: pw.Border.all(width: 1),
+                    border: pw.Border.all(color: PdfColors.grey400),
                   ),
-                  padding: const pw.EdgeInsets.all(10),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('ဖောက်သည်အချက်အလက်',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                      pw.SizedBox(height: 8),
+                      pw.Text(
+                        'ဖောက်သည်အချက်အလက်',
+                        style: pw.TextStyle(
+                          font: padaukBold,
+                          fontSize: 11,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'ကျောက်အမျိုးအစား: ${sales.map((s) => s.gemstoneType).toSet().join(", ")}',
+                        style: pw.TextStyle(font: padaukRegular, fontSize: 10),
+                      ),
+                      pw.Text(
+                        'အရေအတွက်: $totalQty',
+                        style: pw.TextStyle(font: padaukRegular, fontSize: 10),
+                      ),
+                      pw.Text(
+                        'ယူနစ်: kg',
+                        style: pw.TextStyle(font: padaukRegular, fontSize: 10),
+                      ),
+                      pw.SizedBox(height: 4),
                       pw.Row(
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
                           pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
-                              pw.Text('ကျောက်အမျိုးအစား',
-                                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                              pw.Text(sales.map((s) => s.gemstoneName).toSet().join(', '),
-                                  style: pw.TextStyle(fontSize: 9)),
-                              pw.SizedBox(height: 5),
-                              pw.Text('အရေအတွက်',
-                                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                              pw.Text('$totalQty',
-                                  style: pw.TextStyle(fontSize: 9)),
-                              pw.SizedBox(height: 5),
-                              pw.Text('ယူနစ်',
-                                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                              pw.Text('${sales.isNotEmpty ? _getWeightUnit(sales.first) : "kg"}',
-                                  style: pw.TextStyle(fontSize: 9)),
+                              pw.Text(
+                                'စုစုပေါင်းရောင်းချမှု',
+                                style: pw.TextStyle(font: padaukRegular, fontSize: 9),
+                              ),
+                              pw.Text(
+                                '${moneyFormat.format(totalAmount)} ကျပ်',
+                                style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold),
+                              ),
                             ],
                           ),
                           pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
-                              pw.Text('စုစုပေါင်းရောင်းချမှု',
-                                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                              pw.Text('${moneyFormat.format(totalAmount)} ကျပ်',
-                                  style: pw.TextStyle(fontSize: 9)),
-                              pw.SizedBox(height: 5),
-                              pw.Text('စုစုပေါင်းကော်မရှင်',
-                                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                              pw.Text('${moneyFormat.format(totalCommission)} ကျပ်',
-                                  style: pw.TextStyle(fontSize: 9)),
-                              pw.SizedBox(height: 5),
-                              pw.Text('စုစုပေါင်းကျန်ရှိ',
-                                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                              pw.Text('${moneyFormat.format(totalNet)} ကျပ်',
-                                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                              pw.Text(
+                                'စုစုပေါင်းကော်မရှင်',
+                                style: pw.TextStyle(font: padaukRegular, fontSize: 9),
+                              ),
+                              pw.Text(
+                                '${moneyFormat.format(totalCommission)} ကျပ်',
+                                style: pw.TextStyle(font: padaukRegular, fontSize: 9),
+                              ),
+                            ],
+                          ),
+                          pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(
+                                'စုစုပေါင်းကျန်ရှိ',
+                                style: pw.TextStyle(font: padaukRegular, fontSize: 9),
+                              ),
+                              pw.Text(
+                                '${moneyFormat.format(totalNet)} ကျပ်',
+                                style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold),
+                              ),
                             ],
                           ),
                         ],
@@ -592,152 +620,155 @@ class VoucherExportService {
                 ),
                 pw.SizedBox(height: 15),
                 
-                // Items table
+                // Items table - matching Broker Voucher table design
                 pw.Table(
-                  border: pw.TableBorder.all(),
+                  border: pw.TableBorder.all(color: PdfColors.grey400),
                   columnWidths: {
-                    0: const pw.FlexColumnWidth(0.5),
-                    1: const pw.FlexColumnWidth(2),
-                    2: const pw.FlexColumnWidth(1.5),
-                    3: const pw.FlexColumnWidth(1.5),
-                    4: const pw.FlexColumnWidth(1.5),
-                    5: const pw.FlexColumnWidth(1),
-                    6: const pw.FlexColumnWidth(1),
-                    7: const pw.FlexColumnWidth(1),
+                    0: pw.FixedColumnWidth(25),
+                    1: pw.FixedColumnWidth(80),
+                    2: pw.FixedColumnWidth(50),
+                    3: pw.FixedColumnWidth(40),
+                    4: pw.FixedColumnWidth(45),
+                    5: pw.FixedColumnWidth(40),
+                    6: pw.FixedColumnWidth(40),
+                    7: pw.FixedColumnWidth(40),
                   },
                   children: [
                     // Header row
                     pw.TableRow(
-                      decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                      decoration: pw.BoxDecoration(color: PdfColors.grey300),
                       children: [
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('ល.ដ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('ល.ដ', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('ပစ္စည်းအမည်', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('ပစ္စည်းအမည်', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('အမျိုးအစား', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('အမျိုးအစား', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('အလေးချိန်', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('အလေးချိန်', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('အရေအတွက်', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('အရေအတွက်', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('ယူနစ်ဈေး', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('ယူနစ်ဈေး', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('ကော်မ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('ကော်မရှင်', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('စုစုပေါင်း', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('စုစုပေါင်း', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                       ],
                     ),
                     // Data rows
-                    ...sales.asMap().entries.map((entry) {
-                      final idx = entry.key + 1;
-                      final sale = entry.value;
-                      return pw.TableRow(
-                        children: [
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(5),
-                            child: pw.Text('$idx', style: pw.TextStyle(fontSize: 8)),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(5),
-                            child: pw.Text(sale.gemstoneName, style: pw.TextStyle(fontSize: 8)),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(5),
-                            child: pw.Text('whole_stone', style: pw.TextStyle(fontSize: 8)),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(5),
-                            child: pw.Text('${sale.quantity} ${_getWeightUnit(sale)}', style: pw.TextStyle(fontSize: 8)),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(5),
-                            child: pw.Text('${sale.quantity}', style: pw.TextStyle(fontSize: 8)),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(5),
-                            child: pw.Text('${moneyFormat.format(sale.amount)}', style: pw.TextStyle(fontSize: 8)),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(5),
-                            child: pw.Text('${moneyFormat.format(sale.commissionFee)}', style: pw.TextStyle(fontSize: 8)),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(5),
-                            child: pw.Text('${moneyFormat.format(sale.netSale)}', style: pw.TextStyle(fontSize: 8)),
-                          ),
-                        ],
-                      );
-                    }).toList(),
+                    ...List<pw.TableRow>.generate(
+                      sales.length,
+                      (index) {
+                        final sale = sales[index];
+                        return pw.TableRow(
+                          children: [
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(4),
+                              child: pw.Text('${index + 1}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(4),
+                              child: pw.Text(sale.gemstoneType, style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(4),
+                              child: pw.Text(sale.stoneType, style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(4),
+                              child: pw.Text('${sale.weight} kg', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(4),
+                              child: pw.Text('${sale.quantity}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(4),
+                              child: pw.Text('${moneyFormat.format(sale.unitPrice)}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(4),
+                              child: pw.Text('${moneyFormat.format(sale.commissionFee)}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(4),
+                              child: pw.Text('${moneyFormat.format(sale.amount)}', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                     // Totals row
                     pw.TableRow(
-                      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                      decoration: pw.BoxDecoration(color: PdfColors.grey200),
                       children: [
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('', style: pw.TextStyle(fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('', style: pw.TextStyle(font: padaukBold, fontSize: 9)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('စုစုပေါင်း', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('စုစုပေါင်း', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('', style: pw.TextStyle(fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('${totalQty} kg', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('$totalQty', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('$totalQty', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('', style: pw.TextStyle(fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('${moneyFormat.format(totalCommission)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('${moneyFormat.format(totalCommission)}', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: const pw.EdgeInsets.all(5),
-                          child: pw.Text('${moneyFormat.format(totalNet)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('${moneyFormat.format(totalAmount)}', style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ),
                       ],
                     ),
                   ],
                 ),
-                pw.SizedBox(height: 20),
+                
+                pw.SizedBox(height: 15),
                 
                 // Footer
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('ရေးထိုးသူ ________________', style: pw.TextStyle(fontSize: 9)),
-                    pw.Text('နေ့စွဲ ________________', style: pw.TextStyle(fontSize: 9)),
+                    pw.Text('ရေးထိုးသူ: __________', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
+                    pw.Text('နေ့စွဲ: __________', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                   ],
                 ),
-                pw.SizedBox(height: 10),
+                pw.SizedBox(height: 5),
                 pw.Center(
-                  child: pw.Text('စာမျက်နှာ 1 / 1', style: pw.TextStyle(fontSize: 9)),
+                  child: pw.Text('စာမျက်နှာ 1 / 1', style: pw.TextStyle(font: padaukRegular, fontSize: 9)),
                 ),
               ],
             );
@@ -755,6 +786,7 @@ class VoucherExportService {
       return null;
     }
   }
+
 
   /// Generate invoice as PNG image
   Future<File?> generateInvoiceImage(List<Sale> sales) async {
