@@ -599,8 +599,39 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                             ],
                           ),
                         ),
-
+                      // Quantity Input Field
+                      TextField(
+                        controller: _quantityController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          labelText: 'ရောင်းချမည့် အရေအတွက်',
+                          hintText: 'အပ်စာရင်းမှ ရောင်းချမည့် အရေအတွက် ထည့်သွင်းပါ',
+                          errorText: _quantityError,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          filled: true,
+                          fillColor: Colors.grey[800],
+                        ),
+                        onChanged: (value) {
+                          final validation = BrokerSalesBusinessLogic.validateSoldQuantity(
+                            value,
+                            _selectedConsignment,
+                          );
+                          setState(() =>
+                              _quantityError = validation.isValid ? null : validation.errorMessage);
+                        },
+                      ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Selling Price
+                  TextField(
+                    controller: _sellingPriceController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'ရောင်းချမည့်ဈေး',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
                   ),
                   const SizedBox(height: 12),
 
