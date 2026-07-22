@@ -436,8 +436,11 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                   const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
-                    height: 48,
+                    height: 72,
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                       onPressed: _isLoadingPassword ? null : _changePassword,
                       child: _isLoadingPassword
                           ? const SizedBox(
@@ -452,6 +455,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                             )
                           : const Text(
                               'ပြောင်းမည်',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
