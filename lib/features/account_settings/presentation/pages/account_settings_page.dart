@@ -450,7 +450,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                               style: TextStyle(
                                 fontFamily: 'Padauk',
                                 fontSize: 16,
-                                height: 1.2,
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
                               ),
