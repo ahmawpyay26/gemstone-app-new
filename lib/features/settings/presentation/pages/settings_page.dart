@@ -352,16 +352,24 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                       ),
                       const SizedBox(height: 24),
 
-                      // Submit Button
+                      // Change Password Button
+                      Text(
+                        'Password ပြောင်းလဲမည်',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryAccent,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
+                        height: 72,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _changePassword,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryAccent,
-                            disabledBackgroundColor: Colors.grey,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
+                          onPressed: _isLoading ? null : _changePassword,
                           child: _isLoading
                               ? const SizedBox(
                                   height: 20,
@@ -372,10 +380,14 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                                         Colors.black),
                                   ),
                                 )
-                              : const Text('Password ပြောင်းလဲမည်',
+                              : const Text(
+                                  'ပြောင်းမည်',
+                                  textAlign: TextAlign.center,
                                   style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold)),
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
