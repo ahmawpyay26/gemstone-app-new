@@ -430,7 +430,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                     height: 60,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
                       onPressed: _isLoadingPassword ? null : _changePassword,
                       child: _isLoadingPassword
@@ -446,7 +446,11 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                             )
                           : const Text(
                               'Password ပြောင်းလဲမည်',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
+                                fontFamily: 'Padauk',
+                                fontSize: 16,
+                                height: 1.2,
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
                               ),
