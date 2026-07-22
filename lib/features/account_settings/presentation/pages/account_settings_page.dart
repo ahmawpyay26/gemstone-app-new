@@ -427,8 +427,11 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                   // Change Password Button
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 60,
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
                       onPressed: _isLoadingPassword ? null : _changePassword,
                       child: _isLoadingPassword
                           ? const SizedBox(
