@@ -219,7 +219,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       body: SafeArea(
         bottom: true,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
