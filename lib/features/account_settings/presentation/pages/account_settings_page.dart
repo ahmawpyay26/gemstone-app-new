@@ -448,7 +448,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                               'Password ပြောင်းလဲမည်',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontFamily: 'Padauk',
                                 fontSize: 16,
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
