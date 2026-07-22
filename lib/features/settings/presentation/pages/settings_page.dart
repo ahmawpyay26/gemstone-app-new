@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/password_service.dart';
 import '../../pages/rca_debug_logs_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -66,7 +67,9 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
       for (final key in users.keys) {
         final u = users.get(key);
         if (u != null && u.email.toLowerCase() == email.toLowerCase()) {
-          u.password = _newPassword.text.trim();
+          final newPassword = _newPassword.text.trim();
+          u.password = newPassword;
+          u.passwordHash = PasswordService.hashPassword(newPassword);
           await users.put(key, u);
           break;
         }
