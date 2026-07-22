@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../pages/rca_debug_logs_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -100,6 +101,41 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  Future<void> _logout() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('အကောင့်မှ ထွက်မည်'),
+        content: const Text('ဤအကောင့်မှ ထွက်လိုသည်မှာ သေချာပါသလား။'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('မထွက်တော့ပါ'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('ထွက်မည်'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // Clear session
+      AuthService.logout();
+
+      if (mounted) {
+        // Navigate to login
+        context.go('/login');
+      }
+    } catch (e) {
+      _showError('ထွက်ခွာမှု ပျက်ကွက်ခဲ့ပါတယ်');
+    }
   }
 
   String _formatDate(int timestamp) {
@@ -388,6 +424,27 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 72,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            disabledBackgroundColor: Colors.grey,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: _logout,
+                          child: const Text(
+                            'တွေတ်မည်',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                     ],
