@@ -76,6 +76,21 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
       _currentPassword.clear();
       _newPassword.clear();
       _confirmPassword.clear();
+
+      // Logout after successful password change and navigate to login
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        try {
+          // Clear session
+          AuthService.logout();
+          if (mounted) {
+            // Navigate to login
+            context.go('/login');
+          }
+        } catch (e) {
+          _showError('ထွက်ခွာမှု ပျက်ကွက်ခဲ့ပါတယ်');
+        }
+      }
     } catch (e) {
       _showError('အမှားအယွင်းတစ်ခု ကျေးဇူးပြု၍ ထပ်မံကြိုးစားပါ');
     } finally {
