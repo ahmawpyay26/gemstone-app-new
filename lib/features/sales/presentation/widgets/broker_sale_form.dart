@@ -25,6 +25,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
   late TextEditingController _buyerNameController;
   late TextEditingController _remarkController;
   late TextEditingController _customerNameController;
+  late TextEditingController _brokerSearchController;
 
   // State Variables
   DateTime _selectedSaleDate = DateTime.now();
@@ -56,6 +57,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     _customerNameController = TextEditingController();
     _weightController = TextEditingController();
     _sellingPriceController = TextEditingController();
+    _brokerSearchController = TextEditingController();
   }
 
   @override
@@ -68,6 +70,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     _customerNameController.dispose();
     _weightController.dispose();
     _sellingPriceController.dispose();
+    _brokerSearchController.dispose();
     super.dispose();
   }
 
