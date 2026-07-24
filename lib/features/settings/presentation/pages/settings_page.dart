@@ -306,6 +306,25 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                   ),
                 ),
 
+                const SizedBox(height: 12),
+
+                // License Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.push('/license'),
+                    icon: const Icon(Icons.verified_user, color: AppTheme.primaryDark),
+                    label: const Text(
+                      'License စီမံခန့်ခွဲမှု',
+                      style: TextStyle(color: AppTheme.primaryDark, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 24),
 
                 // Password Change Form
