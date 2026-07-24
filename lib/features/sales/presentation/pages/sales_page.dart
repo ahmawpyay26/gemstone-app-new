@@ -2142,9 +2142,7 @@ class _SaleFormState extends State<_SaleForm> {
     final selectedGem =
         _selectedGemId != null ? LocalDb.gemstoneById(_selectedGemId!) : null;
 
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Padding(
+    return Padding(
         padding: EdgeInsets.zero,
         child: Container(
           decoration: const BoxDecoration(
@@ -2901,7 +2899,6 @@ class _SaleFormState extends State<_SaleForm> {
             ),
           ),
         ),
-      ),
       ),
     );
   }
