@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/installation_identity_service.dart';
 import '../services/activation_service.dart';
+import '../services/license_verification_service.dart';
 import '../data/hive_activation_repository.dart';
 
 /// License System diagnostic page displaying real locally stored values.
@@ -32,9 +33,11 @@ class LicensePlaceholderPage extends StatefulWidget {
 class _LicensePlaceholderPageState extends State<LicensePlaceholderPage> {
   late Future<Map<String, String>> _diagnosticDataFuture;
   late ActivationService _activationService;
+  late LicenseVerificationService _verificationService;
   final TextEditingController _activationKeyController = TextEditingController();
   bool _isActivating = false;
   String _activationMessage = '';
+  String _verificationStatus = ''; // Phase 1E: Verification result
 
   @override
   void initState() {
@@ -43,12 +46,13 @@ class _LicensePlaceholderPageState extends State<LicensePlaceholderPage> {
     _initializeActivationService();
   }
 
-  /// Initialize activation service
+  /// Initialize activation and verification services
   void _initializeActivationService() {
     final repository = HiveActivationRepository();
     _activationService = ActivationService(
       repository: repository,
     );
+    _verificationService = LicenseVerificationService();
     repository.init();
   }
 
@@ -106,12 +110,35 @@ class _LicensePlaceholderPageState extends State<LicensePlaceholderPage> {
 
     setState(() {
       _isActivating = true;
-      _activationMessage = 'Activating...';
+      _activationMessage = 'Verifying activation key...';
     });
 
     try {
-      // TODO(License Phase 2): Implement real activation verification
-      // For now, this is a placeholder that stores the activation locally
+      // Phase 1E: Verify activation key format first
+      final verificationResult = await _verificationService.verifyActivationKey(activationKey);
+
+      setState(() {
+        _verificationStatus = verificationResult.message;
+      });
+
+      if (!verificationResult.isValid) {
+        // Format validation failed
+        setState(() {
+          _isActivating = false;
+          _activationMessage = verificationResult.message;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(verificationResult.message),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Format is valid, proceed with activation storage
+      // TODO(License Phase 2): Implement real online verification
       final result = await _activationService.activateLicense(activationKey);
 
       setState(() {
