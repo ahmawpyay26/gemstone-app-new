@@ -1142,6 +1142,8 @@ class _SaleFormState extends State<_SaleForm> {
 
   String? _selectedGemId; // null => manual entry
   bool _autoDeduct = true;
+  late final TextEditingController _gemstoneSearchController;
+  late final FocusNode _gemstoneSearchFocusNode;
   
   // Sale source selector (Step 5B)
   String _saleSource = 'whole_stone'; // 'whole_stone' or 'breakdown_item'
@@ -1645,6 +1647,8 @@ class _SaleFormState extends State<_SaleForm> {
     for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission]) {
       c.dispose();
     }
+    _gemstoneSearchController.dispose();
+    _gemstoneSearchFocusNode.dispose();
     // Note: _fragmentWeight is removed - use _weight for both types
     super.dispose();
   }
@@ -2238,33 +2242,95 @@ class _SaleFormState extends State<_SaleForm> {
 
                 // --- Gemstone picker from inventory (Whole Stone) ---
                 if (_saleSource == 'whole_stone')
-                Padding(
+                                Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: DropdownButtonFormField<String?>(
-                    key: ValueKey('gem_dropdown_${_items.length}'),
-                    value: _selectedGemId,
-                    isExpanded: true,
-                    dropdownColor: AppTheme.surfaceLight,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                        labelText: 'ပစ္စည်းစာရင်းမှ ကျောက်မျက်ရွေးပါ'),
-                    items: [
-                      const DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text('— လက်ဖြင့်ရိုက်ထည့်မည် —'),
-                      ),
-                      ...gems
-                          .where((g) => LocalDb.gemstoneRemainingQuantity(g) > 0)
-                          .map((g) => DropdownMenuItem<String?>(
-                            value: g.id,
-                            child: Text(
-                              '${g.name} (ကျန် ${LocalDb.gemstoneRemainingQuantity(g)}'
-                              '${g.weightCarat > 0 ? ' • ${_trim(g.weightCarat)} ${LocalDb.unitLabel(g.weightUnit)}' : ''})',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          )).toList(),
-                    ],
-                    onChanged: _onSelectGem,
+                  child: Autocomplete<String>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text.isEmpty) {
+                        return gems
+                            .where((g) => LocalDb.gemstoneRemainingQuantity(g) > 0)
+                            .map((g) => g.id)
+                            .toList();
+                      }
+                      final input = textEditingValue.text.toLowerCase();
+                      return gems
+                          .where((g) => LocalDb.gemstoneRemainingQuantity(g) > 0 &&
+                              g.name.toLowerCase().contains(input))
+                          .map((g) => g.id)
+                          .toList();
+                    },
+                    onSelected: (String selection) {
+                      _gemstoneSearchController.clear();
+                      _onSelectGem(selection);
+                    },
+                    fieldViewBuilder: (BuildContext context,
+                        TextEditingController textEditingController,
+                        FocusNode focusNode,
+                        VoidCallback onFieldSubmitted) {
+                      _gemstoneSearchController = textEditingController;
+                      _gemstoneSearchFocusNode = focusNode;
+                      return TextFormField(
+                        controller: textEditingController,
+                        focusNode: focusNode,
+                        decoration: InputDecoration(
+                          labelText: 'ပစ္စည်းစာရင်းမှ ကျောက်မျက်ရွေးပါ',
+                          hintText: _selectedGemId == null ? '— လက်ဖြင့်ရိုက်ထည့်မည် —' : null,
+                          suffixIcon: _selectedGemId != null
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    textEditingController.clear();
+                                    _onSelectGem(null);
+                                  },
+                                )
+                              : null,
+                        ),
+                        onTap: () {
+                          textEditingController.selection = TextSelection(
+                            baseOffset: 0,
+                            extentOffset: textEditingController.text.length,
+                          );
+                        },
+                      );
+                    },
+                    optionsViewBuilder: (BuildContext context,
+                        AutocompleteOnSelected<String> onSelected,
+                        Iterable<String> options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 4.0,
+                          child: Container(
+                            color: AppTheme.surfaceLight,
+                            child: options.isEmpty
+                                ? Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      'ကျောက်မျက်မတွေ့ပါ',
+                                      style: const TextStyle(color: Colors.grey),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: options.length,
+                                    itemBuilder: (BuildContext context, int index) {
+                                      final gemId = options.elementAt(index);
+                                      final gem = LocalDb.gemstoneById(gemId);
+                                      if (gem == null) return const SizedBox.shrink();
+                                      return ListTile(
+                                        title: Text(
+                                          '${gem.name} (ကျန် ${LocalDb.gemstoneRemainingQuantity(gem)}'
+                                          '${gem.weightCarat > 0 ? ' • ${_trim(gem.weightCarat)} ${LocalDb.unitLabel(gem.weightUnit)}' : ''})',
+                                          style: const TextStyle(color: Colors.white),
+                                        ),
+                                        onTap: () => onSelected(gemId),
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
 
