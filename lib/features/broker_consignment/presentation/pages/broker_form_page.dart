@@ -1730,7 +1730,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                 value: null,
                 child: Text('— ကျောက်မျက်ရွေးချယ်ပါ —'),
               ),
-              ..._availableGemstones.map((g) => DropdownMenuItem<String?>(
+              ..._availableGemstones
+                  .where((g) => _currentEditingItem.sourceType == 'breakdown_item' || LocalDb.gemstoneRemainingQuantity(g) > 0)
+                  .map((g) => DropdownMenuItem<String?>(
                 value: g.id,
                 child: Text(
                   '${g.name} (${g.type} • ကျန်: ${LocalDb.gemstoneRemainingQuantity(g)} • ID: ${g.id.substring(0, 8)}...)',
