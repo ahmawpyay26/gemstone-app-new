@@ -2300,33 +2300,39 @@ class _SaleFormState extends State<_SaleForm> {
                         alignment: Alignment.topLeft,
                         child: Material(
                           elevation: 4.0,
-                          child: Container(
-                            color: AppTheme.surfaceLight,
-                            child: options.isEmpty
-                                ? Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      'ကျောက်မျက်မတွေ့ပါ',
-                                      style: const TextStyle(color: Colors.grey),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxHeight: 280,
+                              maxWidth: double.infinity,
+                            ),
+                            child: Container(
+                              color: AppTheme.surfaceLight,
+                              child: options.isEmpty
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        'ကျောက်မျက်မတွေ့ပါ',
+                                        style: const TextStyle(color: Colors.grey),
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: options.length,
+                                      itemBuilder: (BuildContext context, int index) {
+                                        final gemId = options.elementAt(index);
+                                        final gem = LocalDb.gemstoneById(gemId);
+                                        if (gem == null) return const SizedBox.shrink();
+                                        return ListTile(
+                                          title: Text(
+                                            '${gem.name} (ကျန် ${LocalDb.gemstoneRemainingQuantity(gem)}'
+                                            '${gem.weightCarat > 0 ? ' • ${_trim(gem.weightCarat)} ${LocalDb.unitLabel(gem.weightUnit)}' : ''})',
+                                            style: const TextStyle(color: Colors.white),
+                                          ),
+                                          onTap: () => onSelected(gemId),
+                                        );
+                                      },
                                     ),
-                                  )
-                                : ListView.builder(
-                                    shrinkWrap: true,
-                                    itemCount: options.length,
-                                    itemBuilder: (BuildContext context, int index) {
-                                      final gemId = options.elementAt(index);
-                                      final gem = LocalDb.gemstoneById(gemId);
-                                      if (gem == null) return const SizedBox.shrink();
-                                      return ListTile(
-                                        title: Text(
-                                          '${gem.name} (ကျန် ${LocalDb.gemstoneRemainingQuantity(gem)}'
-                                          '${gem.weightCarat > 0 ? ' • ${_trim(gem.weightCarat)} ${LocalDb.unitLabel(gem.weightUnit)}' : ''})',
-                                          style: const TextStyle(color: Colors.white),
-                                        ),
-                                        onTap: () => onSelected(gemId),
-                                      );
-                                    },
-                                  ),
+                            ),
                           ),
                         ),
                       );
