@@ -875,11 +875,17 @@ class LocalDb {
   }
 
   /// ကျန်ရှိသော လက်ကျန်အရင်း:
-  /// မူလစုစုပေါင်းအရင်း ထဲမှ အသားတင် အရောင်းရငွေကို နှုတ်ပြီး ကျန်အရင်းပမာဏ
-  /// အရင်းကျေသွားပါက 0 (သုည) ဖြစ်သည်။ ဘယ်တော့မှ အနှုတ် မဖြစ်ပါ။
+  /// IF totalSales >= mainDashboardTotalCapital: remainingCapital = 0
+  /// ELSE: remainingCapital = mainDashboardTotalCapital - totalSales
   static double remainingCapital() {
-    final r = totalOriginalCapital() - netRevenue();
-    return r > 0 ? r : 0;
+    final totalSalesAmount = totalSales();
+    final totalCapital = mainDashboardTotalCapital();
+    
+    if (totalSalesAmount >= totalCapital) {
+      return 0;
+    } else {
+      return totalCapital - totalSalesAmount;
+    }
   }
 
   /// ကုန်သည်အမြတ် (capital recoupment logic):
@@ -890,13 +896,18 @@ class LocalDb {
     return p > 0 ? p : 0;
   }
 
-  /// အဆုံးသတ် အမြတ်စစ် (အမြတ် - အသုံးစရိတ်)
-  /// အရင်းမကျေသေးပါက (grossProfit == 0) အသားတင်အမြတ်ကို 0 အဖြစ်ထားသည်။
+  /// အဆုံးသတ် အမြတ်စစ်:
+  /// IF totalSales >= mainDashboardTotalCapital: netProfit = totalSales - mainDashboardTotalCapital
+  /// ELSE: netProfit = 0
   static double netProfit() {
-    final gp = grossProfit();
-    if (gp <= 0) return 0;
-    final np = gp - totalExpenses();
-    return np > 0 ? np : 0;
+    final totalSalesAmount = totalSales();
+    final totalCapital = mainDashboardTotalCapital();
+    
+    if (totalSalesAmount >= totalCapital) {
+      return totalSalesAmount - totalCapital;
+    } else {
+      return 0;
+    }
   }
 
   static double profit() =>
