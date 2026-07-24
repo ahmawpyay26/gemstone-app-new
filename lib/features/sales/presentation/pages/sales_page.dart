@@ -1142,8 +1142,7 @@ class _SaleFormState extends State<_SaleForm> {
 
   String? _selectedGemId; // null => manual entry
   bool _autoDeduct = true;
-  late final TextEditingController _gemstoneSearchController;
-  late final FocusNode _gemstoneSearchFocusNode;
+  TextEditingController? _gemstoneSearchController;
   
   // Sale source selector (Step 5B)
   String _saleSource = 'whole_stone'; // 'whole_stone' or 'breakdown_item'
@@ -1647,9 +1646,8 @@ class _SaleFormState extends State<_SaleForm> {
     for (final c in [_customer, _amount, _qty, _weight, _note, _manualName, _cost, _commission]) {
       c.dispose();
     }
-    _gemstoneSearchController.dispose();
-    _gemstoneSearchFocusNode.dispose();
     // Note: _fragmentWeight is removed - use _weight for both types
+    // Note: _gemstoneSearchController and _gemstoneSearchFocusNode are owned by Autocomplete - do not dispose manually
     super.dispose();
   }
   
@@ -2260,15 +2258,14 @@ class _SaleFormState extends State<_SaleForm> {
                           .toList();
                     },
                     onSelected: (String selection) {
-                      _gemstoneSearchController.clear();
+                      _gemstoneSearchController?.clear();
                       _onSelectGem(selection);
                     },
                     fieldViewBuilder: (BuildContext context,
                         TextEditingController textEditingController,
                         FocusNode focusNode,
                         VoidCallback onFieldSubmitted) {
-                      _gemstoneSearchController = textEditingController;
-                      _gemstoneSearchFocusNode = focusNode;
+      _gemstoneSearchController = textEditingController;
                       return TextFormField(
                         controller: textEditingController,
                         focusNode: focusNode,
@@ -2303,7 +2300,6 @@ class _SaleFormState extends State<_SaleForm> {
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(
                               maxHeight: 280,
-                              maxWidth: double.infinity,
                             ),
                             child: Container(
                               color: AppTheme.surfaceLight,
