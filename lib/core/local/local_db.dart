@@ -1,3 +1,4 @@
+// Diagnostic run for fresh analyzer output
 import 'dart:math';
 import 'dart:developer' as developer;
 import 'package:collection/collection.dart';
