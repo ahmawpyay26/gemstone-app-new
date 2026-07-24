@@ -1707,6 +1707,9 @@ class BrokerProfile {
     this.isDeleted = false,
     this.deletedAt,
   }) : updatedAt = updatedAt ?? createdAt;
+
+  @override
+  String toString() => name;
 }
 
 class BrokerProfileAdapter extends TypeAdapter<BrokerProfile> {
