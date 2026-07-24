@@ -1799,44 +1799,6 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
                   ),
                 );
               },
-            )
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[700]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppTheme.primaryAccent),
-              ),
-              filled: true,
-              fillColor: Colors.grey[900],
-            ),
-            items: [
-              const DropdownMenuItem<String?>(
-                value: null,
-                child: Text('— ကျောက်မျက်ရွေးချယ်ပါ —'),
-              ),
-              ..._availableGemstones
-                  .where((g) => _currentEditingItem.sourceType == 'breakdown_item' || LocalDb.gemstoneRemainingQuantity(g) > 0)
-                  .map((g) => DropdownMenuItem<String?>(
-                value: g.id,
-                child: Text(
-                  '${g.name} (${g.type} • ကျန်: ${LocalDb.gemstoneRemainingQuantity(g)} • ID: ${g.id.substring(0, 8)}...)',
-                  overflow: TextOverflow.ellipsis,
-                ),
-              )).toList(),
-            ],
-            onChanged: (String? gemstoneId) {
-              if (gemstoneId != null) {
-                final gemstone = _availableGemstones.firstWhere(
-                  (g) => g.id == gemstoneId,
-                  orElse: () => _availableGemstones.first,
-                );
-                _updateCurrentItemGemstone(gemstone);
-              } else {
-                _updateCurrentItemGemstone(null);
-              }
-            },
             ),
             const SizedBox(height: 8),
 
