@@ -2253,7 +2253,9 @@ class _SaleFormState extends State<_SaleForm> {
                         value: null,
                         child: Text('— လက်ဖြင့်ရိုက်ထည့်မည် —'),
                       ),
-                      ...gems.map((g) => DropdownMenuItem<String?>(
+                      ...gems
+                          .where((g) => LocalDb.gemstoneRemainingQuantity(g) > 0)
+                          .map((g) => DropdownMenuItem<String?>(
                             value: g.id,
                             child: Text(
                               '${g.name} (ကျန် ${LocalDb.gemstoneRemainingQuantity(g)}'
