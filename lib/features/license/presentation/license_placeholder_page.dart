@@ -59,9 +59,12 @@ class _LicensePlaceholderPageState extends State<LicensePlaceholderPage> {
   /// Load diagnostic data from storage.
   Future<Map<String, String>> _loadDiagnosticData() async {
     try {
-      final installationId = await InstallationIdentityService.getInstallationId();
-      final firstInstallTime = await InstallationIdentityService.getFirstInstallTime();
-      final lastOpenedTime = await InstallationIdentityService.getLastOpenedTime();
+      // Use getOrCreateIdentity() to ensure the ID is generated on first launch
+      // and persisted for all subsequent launches.
+      final identity = await InstallationIdentityService.getOrCreateIdentity();
+      final installationId = identity.installationId;
+      final firstInstallTime = identity.firstInstallTime;
+      final lastOpenedTime = identity.lastOpenedTime;
       final appVersion = InstallationIdentityService.getCurrentVersion();
       final buildNumber = InstallationIdentityService.getBuildNumber();
       final activationStatus = await _activationService.getActivationStatus();
