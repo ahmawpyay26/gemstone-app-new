@@ -6,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:collection/collection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
@@ -18,6 +17,7 @@ import '../../../../core/services/voucher_export_service.dart';
 import '../../../../core/services/sales_invoice_image_widget.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
+import 'package:collection/collection.dart';
 import '../widgets/broker_sale_form.dart';
 
 class SalesPage extends StatefulWidget {
@@ -2249,11 +2249,27 @@ class _SaleFormState extends State<_SaleForm> {
                             .toList();
                       }
                       final input = textEditingValue.text.toLowerCase();
-                      return gems
-                          .where((g) => LocalDb.gemstoneRemainingQuantity(g) > 0 &&
-                              g.name.toLowerCase().contains(input))
+                      final available = gems
+                          .where((g) => LocalDb.gemstoneRemainingQuantity(g) > 0)
+                          .toList();
+                      
+                      // Sort: exact → startsWith → contains
+                      final exact = available
+                          .where((g) => g.name.toLowerCase() == input)
                           .map((g) => g.id)
                           .toList();
+                      final startsWith = available
+                          .where((g) => g.name.toLowerCase().startsWith(input) &&
+                              g.name.toLowerCase() != input)
+                          .map((g) => g.id)
+                          .toList();
+                      final contains = available
+                          .where((g) => g.name.toLowerCase().contains(input) &&
+                              !g.name.toLowerCase().startsWith(input))
+                          .map((g) => g.id)
+                          .toList();
+                      
+                      return [...exact, ...startsWith, ...contains];
                     },
                     onSelected: (String selection) {
                       _gemstoneSearchController?.clear();
@@ -2286,6 +2302,19 @@ class _SaleFormState extends State<_SaleForm> {
                             extentOffset: textEditingController.text.length,
                           );
                         },
+                        onEditingComplete: () {
+                          // When user finishes typing, try to bind exact match
+                          final typedText = textEditingController.text.trim();
+                          if (typedText.isNotEmpty && _selectedGemId == null) {
+                            final matchedGem = gems.firstWhereOrNull(
+                              (g) => g.name.toLowerCase() == typedText.toLowerCase() &&
+                                  LocalDb.gemstoneRemainingQuantity(g) > 0,
+                            );
+                            if (matchedGem != null) {
+                              _onSelectGem(matchedGem.id);
+                            }
+                          }
+                        },
                       );
                     },
                     optionsViewBuilder: (BuildContext context,
@@ -2316,13 +2345,18 @@ class _SaleFormState extends State<_SaleForm> {
                                         final gemId = options.elementAt(index);
                                         final gem = LocalDb.gemstoneById(gemId);
                                         if (gem == null) return const SizedBox.shrink();
-                                        return ListTile(
-                                          title: Text(
-                                            '${gem.name} (ကျန် ${LocalDb.gemstoneRemainingQuantity(gem)}'
-                                            '${gem.weightCarat > 0 ? ' • ${_trim(gem.weightCarat)} ${LocalDb.unitLabel(gem.weightUnit)}' : ''})',
-                                            style: const TextStyle(color: Colors.white),
+                                        return Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () => onSelected(gemId),
+                                            child: ListTile(
+                                              title: Text(
+                                                '${gem.name} (ကျန် ${LocalDb.gemstoneRemainingQuantity(gem)}'
+                                                '${gem.weightCarat > 0 ? ' • ${_trim(gem.weightCarat)} ${LocalDb.unitLabel(gem.weightUnit)}' : ''})',
+                                                style: const TextStyle(color: Colors.white),
+                                              ),
+                                            ),
                                           ),
-                                          onTap: () => onSelected(gemId),
                                         );
                                       },
                                     ),
