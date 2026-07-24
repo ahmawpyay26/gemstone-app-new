@@ -28,7 +28,9 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    // Do not pre-fill credentials for security/privacy reasons
+    // Pre-fill demo credentials for testing
+    _usernameController.text = 'admin';
+    _passwordController.text = 'admin123';
   }
 
   @override
