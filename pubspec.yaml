@@ -3,7 +3,7 @@ description: Professional Gemstone Trading and Processing Management Mobile Appl
 
 publish_to: 'none'
 
-version: 1.2.0+73
+version: 1.2.1+74
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
