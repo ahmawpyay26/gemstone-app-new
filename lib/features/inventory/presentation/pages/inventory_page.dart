@@ -27,6 +27,25 @@ class _InventoryPageState extends State<InventoryPage> {
   final _date = DateFormat('dd/MM/yyyy');
   String _selectedPeriod = 'all'; // all, daily, weekly, monthly, yearly
   final Set<String> _expandedBreakdowns = {}; // Track which breakdown sections are expanded
+  late TextEditingController _searchController;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   static String _trim(double v) =>
       v == v.roundToDouble() ? v.toInt().toString() : v.toString();
@@ -408,6 +427,43 @@ class _InventoryPageState extends State<InventoryPage> {
               },
             ),
           ),
+          // Search Box
+          Container(
+            color: AppTheme.surfaceDark,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'အမျိုးအမည်ဖြင့် ရှာဖွေပါ...',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                prefixIcon: const Icon(Icons.search, color: AppTheme.primaryAccent),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: AppTheme.primaryAccent),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                ),
+              ),
+            ),
+          ),
           // Gemstone List
           Expanded(
             child: ValueListenableBuilder(
@@ -443,11 +499,31 @@ class _InventoryPageState extends State<InventoryPage> {
                       .toList()
                       .reversed
                       .toList();
+                  
+                  final filteredKeys = _searchQuery.isEmpty
+                      ? keys
+                      : keys.where((key) {
+                          final g = box.get(key)!;
+                          return g.name.toLowerCase().contains(_searchQuery);
+                        }).toList();
+                  
+                  if (filteredKeys.isEmpty && _searchQuery.isNotEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Text(
+                          'ရှာဖွေထားသော အမျိုးအမည် မတွေ့ပါ',
+                          style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                        ),
+                      ),
+                    );
+                  }
+                  
                   return ListView.builder(
                     padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
-                    itemCount: keys.length,
+                    itemCount: filteredKeys.length,
                     itemBuilder: (context, i) {
-                      final key = keys[i];
+                      final key = filteredKeys[i];
                       final g = box.get(key)!;
                       return Card(
                         color: AppTheme.surfaceDark,
