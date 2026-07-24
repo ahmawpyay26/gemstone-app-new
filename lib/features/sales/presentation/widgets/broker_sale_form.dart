@@ -433,41 +433,111 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
               valueListenable: Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox).listenable(),
               builder: (context, box, _) {
                 final brokers = box.values.where((b) => !b.isDeleted).toList();
-                return DropdownButtonFormField<BrokerProfile>(
-                  value: _selectedBroker,
-                  isExpanded: true,
-                  dropdownColor: AppTheme.surfaceDark,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'ပွဲစားရွေးချယ်ပါ',
-                    labelStyle: TextStyle(color: Colors.grey[400]),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppTheme.primaryAccent),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[900],
-                  ),
-                  items: brokers
-                      .map((broker) => DropdownMenuItem(
-                            value: broker,
-                            child: Text(broker.name),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
+                return Autocomplete<BrokerProfile>(
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text.isEmpty) {
+                      return brokers;
+                    }
+                    final searchText = textEditingValue.text.toLowerCase();
+                    return brokers.where((broker) {
+                      return broker.name.toLowerCase().contains(searchText);
+                    }).toList();
+                  },
+                  onSelected: (BrokerProfile selection) {
                     setState(() {
-                      _selectedBroker = value;
+                      _selectedBroker = selection;
+                      _brokerSearchController.text = selection.name;
                       _selectedConsignment = null;
                       _selectedSourceType = 'whole_stone';
                     });
+                  },
+                  fieldViewBuilder: (BuildContext context,
+                      TextEditingController textEditingController,
+                      FocusNode focusNode,
+                      VoidCallback onFieldSubmitted) {
+                    // Sync the search controller with the text field
+                    if (_selectedBroker != null &&
+                        textEditingController.text != _selectedBroker!.name) {
+                      textEditingController.text = _selectedBroker!.name;
+                    }
+                    return TextField(
+                      controller: textEditingController,
+                      focusNode: focusNode,
+                      autofocus: true,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'ပွဲစားရွေးချယ်ပါ',
+                        labelStyle: TextStyle(color: Colors.grey[400]),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[700]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[700]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              const BorderSide(color: AppTheme.primaryAccent),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[900],
+                      ),
+                      onChanged: (String value) {
+                        // Clear selection when user modifies text
+                        if (value.isEmpty) {
+                          setState(() {
+                            _selectedBroker = null;
+                          });
+                        }
+                      },
+                    );
+                  },
+                  optionsViewBuilder: (BuildContext context,
+                      AutocompleteOnSelected<BrokerProfile> onSelected,
+                      Iterable<BrokerProfile> options) {
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 4.0,
+                        child: Container(
+                          width: 300,
+                          color: AppTheme.surfaceDark,
+                          child: options.isEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text(
+                                    'ပွဲစားမတွေ့ပါ',
+                                    style: TextStyle(color: Colors.grey[400]),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: EdgeInsets.zero,
+                                  shrinkWrap: true,
+                                  itemCount: options.length,
+                                  itemBuilder: (BuildContext context, int index) {
+                                    final BrokerProfile option =
+                                        options.elementAt(index);
+                                    return InkWell(
+                                      onTap: () {
+                                        onSelected(option);
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12.0, vertical: 8.0),
+                                        child: Text(
+                                          option.name,
+                                          style: const TextStyle(
+                                              color: Colors.white),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ),
+                    );
                   },
                 );
               },
