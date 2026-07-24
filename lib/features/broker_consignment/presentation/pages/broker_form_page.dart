@@ -103,6 +103,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   late TextEditingController _brokerAddressCtrl;
   late TextEditingController _brokerSocialCtrl;
   late TextEditingController _notesCtrl;
+  late TextEditingController _gemstoneSearchCtrl;
+  late FocusNode _gemstoneSearchFocus;
   
   DateTime _consignmentDate = DateTime.now();
   
@@ -143,6 +145,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     _brokerAddressCtrl = TextEditingController();
     _brokerSocialCtrl = TextEditingController();
     _notesCtrl = TextEditingController();
+    _gemstoneSearchCtrl = TextEditingController();
+    _gemstoneSearchFocus = FocusNode();
     
     _availableGemstones = LocalDb.gemstones().values.toList();
     
@@ -272,6 +276,8 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     _brokerAddressCtrl.dispose();
     _brokerSocialCtrl.dispose();
     _notesCtrl.dispose();
+    _gemstoneSearchCtrl.dispose();
+    _gemstoneSearchFocus.dispose();
     super.dispose();
   }
 
@@ -1700,20 +1706,100 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           ),
           const SizedBox(height: 12),
           
-          // Gemstone selection dropdown - only for whole stone mode
+          // Gemstone selection - searchable for whole stone mode
           if (_currentEditingItem.sourceType == 'whole_stone')
-            DropdownButtonFormField<String?>(
-              value: _currentEditingItem.gemstone?.id,
-              isExpanded: true,
-              dropdownColor: AppTheme.surfaceDark,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'ကျောက်ရွေးချယ်ပါ',
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[700]!),
-              ),
+            Autocomplete<Gemstone>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text.isEmpty) {
+                  return _availableGemstones
+                      .where((g) => LocalDb.gemstoneRemainingQuantity(g) > 0)
+                      .toList();
+                }
+                final query = textEditingValue.text.toLowerCase();
+                return _availableGemstones
+                    .where((g) => LocalDb.gemstoneRemainingQuantity(g) > 0 &&
+                        g.name.toLowerCase().contains(query))
+                    .toList();
+              },
+              onSelected: (Gemstone gemstone) {
+                _gemstoneSearchCtrl.text = gemstone.name;
+                _updateCurrentItemGemstone(gemstone);
+              },
+              fieldViewBuilder: (BuildContext context,
+                  TextEditingController textEditingController,
+                  FocusNode focusNode,
+                  VoidCallback onFieldSubmitted) {
+                // Sync the controller with the selected gemstone name
+                if (_currentEditingItem.gemstone != null &&
+                    textEditingController.text != _currentEditingItem.gemstone!.name) {
+                  textEditingController.text = _currentEditingItem.gemstone!.name;
+                }
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'ကျောက်ရွေးချယ်ပါ',
+                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[700]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[700]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[900],
+                  ),
+                );
+              },
+              optionsViewBuilder: (BuildContext context,
+                  AutocompleteOnSelected<Gemstone> onSelected,
+                  Iterable<Gemstone> options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    child: Container(
+                      width: 300,
+                      color: AppTheme.surfaceDark,
+                      child: options.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Text(
+                                'ကျောက်မျက်မတွေ့ပါ',
+                                style: TextStyle(color: Colors.grey[400]),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final Gemstone option = options.elementAt(index);
+                                return InkWell(
+                                  onTap: () => onSelected(option),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12.0, vertical: 8.0),
+                                    child: Text(
+                                      '${option.name} (${option.type} • ကျန်: ${LocalDb.gemstoneRemainingQuantity(option)})',
+                                      style: const TextStyle(color: Colors.white),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ),
+                );
+              },
+            )
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey[700]!),
