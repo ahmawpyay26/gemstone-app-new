@@ -48,7 +48,6 @@ class _LicensePlaceholderPageState extends State<LicensePlaceholderPage> {
     final repository = HiveActivationRepository();
     _activationService = ActivationService(
       repository: repository,
-      identityService: InstallationIdentityService(),
     );
     repository.init();
   }

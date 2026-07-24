@@ -14,13 +14,10 @@ import 'installation_identity_service.dart';
 /// - No application locking
 class ActivationService {
   final HiveActivationRepository _repository;
-  final InstallationIdentityService _identityService;
 
   ActivationService({
     required HiveActivationRepository repository,
-    required InstallationIdentityService identityService,
-  })  : _repository = repository,
-        _identityService = identityService;
+  }) : _repository = repository;
 
   /// Initialize the activation service
   Future<void> init() async {
@@ -53,8 +50,8 @@ class ActivationService {
         );
       }
 
-      // Get installation ID
-      final installationId = await _identityService.getInstallationId();
+      // Get installation ID using static API
+      final installationId = await InstallationIdentityService.getInstallationId();
       if (installationId == null || installationId.isEmpty) {
         return ActivationResult.failure(
           message: 'Installation ID not found',
