@@ -37,6 +37,8 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
   String _selectedUnit = 'ပိသာ'; // Default unit
   late TextEditingController _weightController;
   late TextEditingController _sellingPriceController;
+  late TextEditingController _gemstoneSearchController;
+  late FocusNode _gemstoneFocusNode;
 
   // Validation Errors
   String? _quantityError;
@@ -58,6 +60,8 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     _weightController = TextEditingController();
     _sellingPriceController = TextEditingController();
     _brokerSearchController = TextEditingController();
+    _gemstoneSearchController = TextEditingController();
+    _gemstoneFocusNode = FocusNode();
   }
 
   @override
@@ -71,6 +75,8 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     _weightController.dispose();
     _sellingPriceController.dispose();
     _brokerSearchController.dispose();
+    _gemstoneSearchController.dispose();
+    _gemstoneFocusNode.dispose();
     super.dispose();
   }
 
@@ -90,6 +96,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
       _priceError = null;
       _commissionError = null;
       _selectedUnit = 'ပိသာ';
+      _gemstoneSearchController.clear();
     });
   }
 
@@ -590,62 +597,99 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Gemstone Selection
-                  DropdownButtonFormField<BrokerConsignment>(
-                    value: _selectedConsignment,
-                    isExpanded: true,
-                    dropdownColor: AppTheme.surfaceDark,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'ကျောက်ရွေးချယ်ပါ',
-                      labelStyle: TextStyle(color: Colors.grey[400]),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[700]!),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey[700]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppTheme.primaryAccent),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[900],
-                    ),
-                    items: brokerConsignments
-                        .map((consignment) {
-                          final gemstone = LocalDb.gemstoneById(consignment.purchaseId);
-                          final gemstoneName = gemstone?.name ?? 'Unknown';
-                          final sourceTypeLabel =
-                              consignment.historicalData.sourceType == 'whole_stone'
-                                  ? 'အပ်စာရင်း'
-                                  : 'အတွက်';
-                          final remainingQty = consignment.remainingQuantity;
-
-                          return DropdownMenuItem(
-                            value: consignment,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  gemstoneName,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                                ),
-                                Text(
-                                  'အရေအတွက်: $remainingQty',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                    onChanged: (value) {
-                      setState(() => _selectedConsignment = value);
+                  // Gemstone Selection - Searchable Autocomplete
+                  Autocomplete<BrokerConsignment>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text.isEmpty) {
+                        return brokerConsignments;
+                      }
+                      final query = textEditingValue.text.toLowerCase();
+                      return brokerConsignments.where((consignment) {
+                        final gemstone = LocalDb.gemstoneById(consignment.purchaseId);
+                        final gemstoneName = gemstone?.name ?? '';
+                        return gemstoneName.toLowerCase().contains(query);
+                      }).toList();
+                    },
+                    onSelected: (BrokerConsignment consignment) {
+                      final gemstone = LocalDb.gemstoneById(consignment.purchaseId);
+                      _gemstoneSearchController.text = gemstone?.name ?? '';
+                      setState(() => _selectedConsignment = consignment);
+                    },
+                    fieldViewBuilder: (BuildContext context,
+                        TextEditingController textEditingController,
+                        FocusNode focusNode,
+                        VoidCallback onFieldSubmitted) {
+                      // Sync the controller with the selected consignment name
+                      if (_selectedConsignment != null &&
+                          textEditingController.text != (LocalDb.gemstoneById(_selectedConsignment!.purchaseId)?.name ?? '')) {
+                        textEditingController.text = LocalDb.gemstoneById(_selectedConsignment!.purchaseId)?.name ?? '';
+                      }
+                      return TextField(
+                        controller: textEditingController,
+                        focusNode: focusNode,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'ကျောက်ရွေးချယ်ပါ',
+                          labelStyle: TextStyle(color: Colors.grey[400]),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppTheme.primaryAccent),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[900],
+                        ),
+                      );
+                    },
+                    optionsViewBuilder: (BuildContext context,
+                        AutocompleteOnSelected<BrokerConsignment> onSelected,
+                        Iterable<BrokerConsignment> options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          child: Container(
+                            width: 300,
+                            color: AppTheme.surfaceDark,
+                            child: options.isEmpty
+                                ? Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Text(
+                                      'ကျောက်မျက်မတွေ့ပါ',
+                                      style: TextStyle(color: Colors.grey[400]),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length,
+                                    itemBuilder: (BuildContext context, int index) {
+                                      final BrokerConsignment option = options.elementAt(index);
+                                      final gemstone = LocalDb.gemstoneById(option.purchaseId);
+                                      final gemstoneName = gemstone?.name ?? 'Unknown';
+                                      return InkWell(
+                                        onTap: () => onSelected(option),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12.0, vertical: 8.0),
+                                          child: Text(
+                                            '$gemstoneName (အရေအတွက်: ${option.remainingQuantity})',
+                                            style: const TextStyle(color: Colors.white),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 12),
