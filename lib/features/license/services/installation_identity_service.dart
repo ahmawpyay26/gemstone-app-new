@@ -11,14 +11,14 @@ import '../data/license_storage.dart';
 /// - Update last opened time
 /// - Read current app version
 ///
-/// This implementation uses Hive for persistent local storage.
+/// This implementation uses file-based JSON storage for persistence.
 /// Installation ID is stored once and never changed.
 /// Last opened time and version are updated on every launch.
 class InstallationIdentityService {
-  /// Current app version (read from package_info).
+  /// Current app version (read from pubspec.yaml).
   static String? _cachedAppVersion;
 
-  /// Current build number (read from package_info).
+  /// Current build number (read from pubspec.yaml).
   static int? _cachedBuildNumber;
 
   /// Private constructor to prevent instantiation.
@@ -49,7 +49,7 @@ class InstallationIdentityService {
   static Future<LicenseIdentity> getOrCreateIdentity() async {
     try {
       // Try to read existing identity
-      var identity = LicenseStorage.read();
+      var identity = await LicenseStorage.readAsync();
 
       if (identity == null) {
         // First launch: create new identity
@@ -94,7 +94,7 @@ class InstallationIdentityService {
   /// Returns null if no installation identity has been created yet.
   static Future<LicenseIdentity?> getIdentity() async {
     try {
-      final identity = LicenseStorage.read();
+      final identity = await LicenseStorage.readAsync();
       if (identity == null) return null;
 
       return LicenseIdentity(
@@ -112,10 +112,10 @@ class InstallationIdentityService {
   /// Update the last opened time.
   ///
   /// Called on every app launch to track the most recent app open time.
-  /// Persists to Hive storage.
+  /// Persists to file storage.
   static Future<void> updateLastOpenedTime() async {
     try {
-      var identity = LicenseStorage.read();
+      var identity = await LicenseStorage.readAsync();
       if (identity != null) {
         final now = DateTime.now().millisecondsSinceEpoch;
         identity = identity.copyWith(lastOpenedTime: now);
@@ -139,7 +139,7 @@ class InstallationIdentityService {
   /// Returns 0 if no identity has been created yet.
   static Future<int> getFirstInstallTime() async {
     try {
-      final identity = LicenseStorage.read();
+      final identity = await LicenseStorage.readAsync();
       return identity?.firstInstallTime ?? 0;
     } catch (e) {
       return 0;
@@ -152,7 +152,7 @@ class InstallationIdentityService {
   /// Returns 0 if no identity has been created yet.
   static Future<int> getLastOpenedTime() async {
     try {
-      final identity = LicenseStorage.read();
+      final identity = await LicenseStorage.readAsync();
       return identity?.lastOpenedTime ?? 0;
     } catch (e) {
       return 0;
@@ -166,7 +166,7 @@ class InstallationIdentityService {
   /// Returns 'NOT_AVAILABLE' if no identity has been created yet.
   static Future<String> getInstallationId() async {
     try {
-      final identity = LicenseStorage.read();
+      final identity = await LicenseStorage.readAsync();
       return identity?.installationId ?? 'NOT_AVAILABLE';
     } catch (e) {
       return 'NOT_AVAILABLE';
