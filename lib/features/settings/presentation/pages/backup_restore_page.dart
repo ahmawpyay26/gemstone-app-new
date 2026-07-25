@@ -1,14 +1,17 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:intl/intl.dart';
 import 'package:hive/hive.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
+import '../data/backup_restore_service.dart';
+import '../data/restore_validation_result.dart';
 
 class BackupRestorePage extends StatefulWidget {
   const BackupRestorePage({Key? key}) : super(key: key);
@@ -19,6 +22,7 @@ class BackupRestorePage extends StatefulWidget {
 
 class _BackupRestorePageState extends State<BackupRestorePage> {
   bool _isBackingUp = false;
+  bool _isValidatingRestore = false;
   static const platform = MethodChannel('com.gemstone.management/backup');
 
   Future<void> _createBackup() async {
@@ -398,6 +402,160 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     );
   }
 
+  /// Phase 1: Initiate restore by selecting a .gmbak file
+  Future<void> _initiateRestore() async {
+    setState(() => _isValidatingRestore = true);
+
+    try {
+      // Use file_picker to select .gmbak file
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['gmbak'],
+        lockParentWindow: true,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        setState(() => _isValidatingRestore = false);
+        return;
+      }
+
+      final filePath = result.files.first.path;
+      if (filePath == null) {
+        setState(() => _isValidatingRestore = false);
+        return;
+      }
+
+      // Validate the backup file (Phase 1)
+      final validation = await BackupRestoreService.validateBackupFile(filePath);
+
+      if (!mounted) return;
+      setState(() => _isValidatingRestore = false);
+
+      if (!validation.isValid) {
+        _showErrorDialog('Backup အမှားအယွင်း', validation.errorMessage ?? 'အမည်မသိအမှားအယွင်း');
+        return;
+      }
+
+      // Generate preview
+      final preview = BackupRestoreService.generatePreview(validation);
+
+      // Show preview dialog
+      if (mounted) {
+        _showRestorePreviewDialog(preview);
+      }
+    } catch (e) {
+      setState(() => _isValidatingRestore = false);
+      developer.log('Restore error: $e');
+      if (mounted) {
+        _showErrorDialog('Restore အမှားအယွင်း', 'Backup ဖိုင်ခွင့်ပြုချက်မရှိပါ။');
+      }
+    }
+  }
+
+  /// Show restore preview dialog (Phase 1 only - no actual restore)
+  void _showRestorePreviewDialog(RestorePreview preview) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Restore အစီအစဉ်'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Warning: No data changed yet
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  border: Border.all(color: Colors.amber),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '⚠️ အရေးကြီးသတ်မှတ်ချက်',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text('✓ ယခုအခါ ဒေတာမည်သည့်အရာမျှ ပြောင်းလဲမည်မဟုတ်ပါ။'),
+                    const SizedBox(height: 4),
+                    const Text('✓ Restore အကျင့်သုံးမည်မဟုတ်သေးပါ။'),
+                    const SizedBox(height: 4),
+                    const Text('✓ ဤသည်မှာ အစီအစဉ်ကြည့်ရှုမှုသာဖြစ်ပါသည်။'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Filename
+              Text(
+                'ဖိုင်အမည်: ${preview.validation.filename}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+
+              // Record counts
+              const Text(
+                'မှတ်တမ်းအရေအတွက်:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text('စုစုပေါင်း: ${preview.validation.totalRecords} မှတ်တမ်း'),
+              const SizedBox(height: 8),
+
+              // Supported boxes with data
+              if (preview.boxesToRestore.isNotEmpty) ...[const SizedBox(height: 8),
+                const Text(
+                  'Restore ပြုလုပ်ရမည့် အချက်အလက်များ:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                ...preview.boxesToRestore.map((box) {
+                  final count = preview.validation.getBoxCount(box);
+                  return Text('  • $box: $count မှတ်တမ်း', style: const TextStyle(fontSize: 12));
+                }).toList(),
+              ],
+
+              // Unsupported boxes with data
+              if (preview.boxesNotRestored.isNotEmpty) ...[const SizedBox(height: 12),
+                const Text(
+                  'Phase 1 တွင် Restore မပြုလုပ်သည့် အချက်အလက်များ:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.orange),
+                ),
+                const SizedBox(height: 4),
+                ...preview.boxesNotRestored.map((box) {
+                  final count = preview.validation.getBoxCount(box);
+                  return Text('  • $box: $count မှတ်တမ်း (ကြောင့်ခွင့်ပြုချက်မရှိ)', style: const TextStyle(fontSize: 12));
+                }).toList(),
+              ],
+
+              // Warnings
+              if (preview.userWarnings.isNotEmpty) ...[const SizedBox(height: 12),
+                const Text(
+                  'သတ်မှတ်ချက်များ:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.red),
+                ),
+                const SizedBox(height: 4),
+                ...preview.userWarnings.map((warning) {
+                  return Text('  ⚠️ $warning', style: const TextStyle(fontSize: 11));
+                }).toList(),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ပိတ်မည်'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -469,9 +627,11 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: null,
+                        onPressed: _isValidatingRestore ? null : _initiateRestore,
                         icon: const Icon(Icons.restore),
-                        label: const Text('Coming Soon'),
+                        label: _isValidatingRestore
+                            ? const Text('ဆင်ဆာပြုလုပ်နေသည်...')
+                            : const Text('ပြန်လည်ရယူမည်'),
                       ),
                     ),
                   ],
