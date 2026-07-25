@@ -690,15 +690,6 @@ class _InventoryPageState extends State<InventoryPage> {
                             },
                             itemBuilder: (_) => [
                               PopupMenuItem(
-                                  value: 'view',
-                                  child: const Row(
-                                    children: [
-                                      Text('👁️'),
-                                      SizedBox(width: 8),
-                                      Text('အသေးစိတ်ကြည့်ရန်'),
-                                    ],
-                                  )),
-                              PopupMenuItem(
                                   value: 'edit',
                                   enabled: LocalDb.canEditPurchase(),
                                   child: const Row(
