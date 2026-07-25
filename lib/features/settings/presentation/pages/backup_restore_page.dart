@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io' as io;
 import 'package:hive/hive.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 
@@ -67,32 +68,35 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final now = DateTime.now();
       final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(now);
       final backupFileName = 'Gemstone_Backup_${timestamp}.gmbak';
-
-      // Get Internal Storage Download directory
-      // On Android: /storage/emulated/0/Download/Gemstone Backup
-      final downloadsDir = await getDownloadsDirectory();
-      if (downloadsDir == null) {
-        throw Exception('Download directory မရှိပါ');
-      }
-      
-      // Use the actual Download directory path
-      final backupDir = Directory('${downloadsDir.path}/Gemstone Backup');
-
-      // Create Gemstone Backup directory if it doesn't exist
-      if (!await backupDir.exists()) {
-        await backupDir.create(recursive: true);
-      }
-
-      // Write backup file
-      final backupFile = File('${backupDir.path}/$backupFileName');
       final backupJson = jsonEncode(backupData);
+
+      // Open system file picker to let user choose save location
+      final String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Backup ဖန်တီး ပါတယ်',
+        fileName: backupFileName,
+        type: FileType.custom,
+        allowedExtensions: ['gmbak'],
+        lockParentWindow: true,
+      );
+
+      // If user cancelled, show info and return
+      if (outputFile == null) {
+        setState(() => _isBackingUp = false);
+        if (mounted) {
+          _showInfoDialog('Backup အောင်မြင် ဖြန်လည်ရယူ', 'Backup ဖန်တီး ပါတယ် တိုကေမှတေးပါ။');
+        }
+        return;
+      }
+
+      // Write backup file to the selected location
+      final backupFile = File(outputFile);
       await backupFile.writeAsString(backupJson);
 
       setState(() => _isBackingUp = false);
 
       // Show success message
       if (mounted) {
-        _showSuccessDialog(backupFileName, backupDir.path);
+        _showSuccessDialog(backupFileName, outputFile);
       }
     } catch (e) {
       setState(() => _isBackingUp = false);
@@ -152,6 +156,22 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
   }
 
   void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('အိုကေ'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showInfoDialog(String title, String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

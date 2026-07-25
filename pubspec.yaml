@@ -29,6 +29,7 @@ dependencies:
   # Photo & File Management
   image_picker: ^1.0.0
   path_provider: ^2.1.0
+  file_picker: ^6.1.0
   uuid: ^4.0.0
 
   # PDF & Export
