@@ -53,6 +53,8 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
         try {
           final box = boxName == LocalDb.gemstonesBox
               ? LocalDb.gemstones()
+              : boxName == LocalDb.salesBox
+              ? LocalDb.sales()
               : Hive.box(boxName);
           final boxData = <String, dynamic>{};
           
