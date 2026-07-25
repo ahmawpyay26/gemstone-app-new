@@ -77,24 +77,24 @@ class _DashboardPageState extends State<DashboardPage> {
             return ValueListenableBuilder(
               valueListenable: LocalDb.gemstones().listenable(),
               builder: (context, __3, ____) {
-                final sales = LocalDb.netRevenue(); // ပွဲခ နှုတ်ပြီး အသားတင် အရောင်းရငွေ
+                final totalSalesAmount = LocalDb.totalSales(); // စုစုပေါင်း အရောင်း (ပွဲခ တဆင်တဆင်တဆင်တဆင်တဆင်တဆင်)
                 final mainDashboardTotalCapital = LocalDb.mainDashboardTotalCapital();
                 final commissions = LocalDb.totalSalesCommission();
                 final expenses = LocalDb.totalExpenses();
                 
-                // Use EXACT same logic as Sales Page for 100% synchronization
-                // Remaining Capital = Total Original Capital - Net Revenue
-                final mainDashboardRemainingCapital = LocalDb.remainingCapital();
+                // Dashboard-only formulas (commission does not affect these)
+                // Remaining Capital = max(Total Capital - Total Sales, 0)
+                final mainDashboardRemainingCapital = (mainDashboardTotalCapital - totalSalesAmount).clamp(0, double.infinity);
                 
-                // Net Profit = Gross Profit - Total Expenses (but never negative)
-                final displayProfit = LocalDb.netProfit();
+                // Net Profit = max(Total Sales - Total Capital, 0)
+                final displayProfit = (totalSalesAmount - mainDashboardTotalCapital).clamp(0, double.infinity);
                 return Column(
                   children: [
                     Row(
                       children: [
                         Expanded(
                             child: _statCard('စုစုပေါင်း အရောင်း',
-                                _money.format(sales), AppTheme.successColor,
+                                _money.format(totalSalesAmount), AppTheme.successColor,
                                 Icons.trending_up)),
                         const SizedBox(width: 12),
                         Expanded(
