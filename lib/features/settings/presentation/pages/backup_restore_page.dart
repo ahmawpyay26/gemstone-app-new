@@ -55,6 +55,26 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
               ? LocalDb.gemstones()
               : boxName == LocalDb.salesBox
               ? LocalDb.sales()
+              : boxName == LocalDb.customersBox
+              ? LocalDb.customers()
+              : boxName == LocalDb.expensesBox
+              ? LocalDb.expenses()
+              : boxName == LocalDb.workersBox
+              ? LocalDb.workers()
+              : boxName == LocalDb.usersBox
+              ? LocalDb.users()
+              : boxName == LocalDb.auditLogsBox
+              ? LocalDb.auditLogs()
+              : boxName == LocalDb.brokerConsignmentsBox
+              ? LocalDb.brokerConsignments()
+              : boxName == LocalDb.paymentsBox
+              ? LocalDb.payments()
+              : boxName == LocalDb.brokerSaleRecordsBox
+              ? LocalDb.brokerSaleRecords()
+              : boxName == LocalDb.businessProfileBox
+              ? LocalDb.businessProfiles()
+              : boxName == LocalDb.customerLedgerBox
+              ? LocalDb.customerLedger()
               : Hive.box(boxName);
           final boxData = <String, dynamic>{};
           
