@@ -23,6 +23,7 @@ import '../../features/broker_profile/presentation/pages/add_broker_page.dart';
 import '../../features/broker_profile/presentation/pages/broker_detail_page.dart' as profile_detail;
 import '../../features/broker_profile/presentation/pages/broker_voucher_list_page.dart';
 import '../../features/license/presentation/license_placeholder_page.dart';
+import '../../features/settings/presentation/pages/backup_restore_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -136,6 +137,11 @@ final GoRouter appRouter = GoRouter(
       path: '/license',
       name: 'license',
       builder: (context, state) => const LicensePlaceholderPage(),
+    ),
+    GoRoute(
+      path: '/backup-restore',
+      name: 'backup-restore',
+      builder: (context, state) => const BackupRestorePage(),
     ),
     GoRoute(
       path: '/brokers',

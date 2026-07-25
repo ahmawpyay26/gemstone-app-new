@@ -325,6 +325,25 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                   ),
                 ),
 
+                const SizedBox(height: 12),
+
+                // Backup & Restore Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.push('/backup-restore'),
+                    icon: const Icon(Icons.backup, color: AppTheme.primaryDark),
+                    label: const Text(
+                      'Backup & Restore',
+                      style: TextStyle(color: AppTheme.primaryDark, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 24),
 
                 // Password Change Form
