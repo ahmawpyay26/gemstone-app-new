@@ -83,12 +83,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 final commissions = LocalDb.totalSalesCommission();
                 final expenses = LocalDb.totalExpenses();
                 
-                // Dashboard-only formulas (commission does not affect these)
-                // Remaining Capital = max(Total Capital - Total Sales, 0)
-                final mainDashboardRemainingCapital = (mainDashboardTotalCapital - totalSalesAmount).clamp(0, double.infinity);
+                // Dashboard-only formulas (using netRevenueAmount as single source of truth)
+                // Remaining Capital = max(Total Capital - Net Revenue, 0)
+                final mainDashboardRemainingCapital = (mainDashboardTotalCapital - netRevenueAmount).clamp(0, double.infinity);
                 
-                // Net Profit = max(Total Sales - Total Capital, 0)
-                final displayProfit = (totalSalesAmount - mainDashboardTotalCapital).clamp(0, double.infinity);
+                // Net Profit = max(Net Revenue - Total Capital, 0)
+                final displayProfit = (netRevenueAmount - mainDashboardTotalCapital).clamp(0, double.infinity);
                 return Column(
                   children: [
                     Row(
