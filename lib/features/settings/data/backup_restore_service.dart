@@ -4,7 +4,12 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
+import 'package:gemstone_management/core/local/local_db.dart';
+import 'package:gemstone_management/core/local/models.dart';
 import 'restore_validation_result.dart';
+import 'restore_snapshot.dart';
+import 'backup_deserializers.dart';
 
 class BackupRestoreService {
   /// All 17 expected box names in the backup file.
@@ -245,6 +250,136 @@ class BackupRestoreService {
   /// Shows what WILL be restored (supported boxes) and what WON'T (unsupported boxes).
   static RestorePreview generatePreview(RestoreValidationResult validation) {
     return RestorePreview.fromValidation(validation);
+  }
+
+  /// Phase 2: Restore Gemstones box only.
+  /// Returns {success, restoredCount, failedCount, errorMessage}.
+  /// Rolls back on any failure.
+  static Future<Map<String, dynamic>> restoreGemstonesOnly(
+    String backupContent,
+  ) async {
+    RestoreSnapshot? snapshot;
+    try {
+      // Parse backup JSON
+      Map<String, dynamic> backupData;
+      try {
+        final decoded = jsonDecode(backupContent);
+        if (decoded is! Map<String, dynamic>) {
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Backup JSON ဖွဲ့စည်းမှု မှားတွေ့ပါသည်။',
+          };
+        }
+        backupData = decoded;
+      } catch (e) {
+        return {
+          'success': false,
+          'restoredCount': 0,
+          'failedCount': 0,
+          'errorMessage': 'JSON ခွင့်ပြုချက်မရှိပါ။',
+        };
+      }
+
+      // Get gemstones box
+      final gemstonesBox = LocalDb.gemstones();
+
+      // Create snapshot before restore
+      snapshot = RestoreSnapshot.fromBox(gemstonesBox);
+
+      // Get backup gemstones data
+      final backupGemstonesData = backupData['gemstones'] as Map<String, dynamic>?;
+      if (backupGemstonesData == null) {
+        return {
+          'success': false,
+          'restoredCount': 0,
+          'failedCount': 0,
+          'errorMessage': 'Backup တွင် gemstones box ကို ရှာမတွေ့ပါ။',
+        };
+      }
+
+      // Clear gemstones box
+      await gemstonesBox.clear();
+
+      int restoredCount = 0;
+
+      // Restore each gemstone record - FAIL FAST on first error
+      for (final entry in backupGemstonesData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+
+        // Validate record is a map
+        if (recordJson is! Map<String, dynamic>) {
+          // FAIL FAST: Rollback immediately on invalid record
+          await snapshot.restoreToBox(gemstonesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 1,
+            'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။',
+          };
+        }
+
+        // Deserialize gemstone
+        final gemstone = BackupDeserializers.deserializeGemstone(recordJson);
+        if (gemstone == null) {
+          // FAIL FAST: Rollback immediately on deserialization failure
+          await snapshot.restoreToBox(gemstonesBox);
+          return {
+            'success': false,
+            'restoredCount': restoredCount,
+            'failedCount': 1,
+            'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။',
+          };
+        }
+
+        // Restore with original key
+        try {
+          // Try to parse key as int if possible, otherwise use as string
+          dynamic parsedKey = key;
+          try {
+            parsedKey = int.parse(key);
+          } catch (e) {
+            // Keep as string if not parseable as int
+          }
+          await gemstonesBox.put(parsedKey, gemstone);
+          restoredCount++;
+        } catch (e) {
+          // FAIL FAST: Rollback immediately on write failure
+          await snapshot.restoreToBox(gemstonesBox);
+          return {
+            'success': false,
+            'restoredCount': restoredCount,
+            'failedCount': 1,
+            'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။',
+          };
+        }
+      }
+
+      return {
+        'success': true,
+        'restoredCount': restoredCount,
+        'failedCount': 0,
+        'errorMessage': null,
+      };
+    } catch (e) {
+      // Rollback on any exception
+      if (snapshot != null) {
+        try {
+          final gemstonesBox = LocalDb.gemstones();
+          await snapshot.restoreToBox(gemstonesBox);
+        } catch (rollbackError) {
+          // Log but continue
+        }
+      }
+      return {
+        'success': false,
+        'restoredCount': 0,
+        'failedCount': 0,
+        'errorMessage': 'Restore အမှားအယွင်း: ${_sanitizeErrorMessage(e.toString())}',
+      };
+    }
   }
 
   /// Extract filename from file path.
