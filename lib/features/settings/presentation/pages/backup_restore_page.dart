@@ -67,11 +67,15 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(now);
       final backupFileName = 'Gemstone_Backup_${timestamp}.gmbak';
 
-      // Get documents directory
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final backupDir = Directory('${documentsDir.path}/backups');
+      // Get Download directory
+      final downloadsDir = await getDownloadsDirectory();
+      if (downloadsDir == null) {
+        throw Exception('Download directory မရှိပါ');
+      }
+      
+      final backupDir = Directory('${downloadsDir.path}/Gemstone Backup');
 
-      // Create backups directory if it doesn't exist
+      // Create Gemstone Backup directory if it doesn't exist
       if (!await backupDir.exists()) {
         await backupDir.create(recursive: true);
       }
