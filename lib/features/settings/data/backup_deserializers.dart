@@ -218,7 +218,7 @@ class BackupDeserializers {
     try {
       final purchaseName = json['purchaseName'] as String?;
       final purchaseDate = json['purchaseDate'] as int?;
-      final originalSeller = json['originalSeller'] as String?;
+      final originalSeller = json['originalSeller'] as String? ?? '';
       final gemstoneType = json['gemstoneType'] as String?;
       final sourceType = json['sourceType'] as String?;
       final breakdownItemName = json['breakdownItemName'] as String?;
@@ -228,7 +228,6 @@ class BackupDeserializers {
 
       if (purchaseName == null || purchaseName.isEmpty) return null;
       if (purchaseDate == null || purchaseDate < 0) return null;
-      if (originalSeller == null || originalSeller.isEmpty) return null;
       if (gemstoneType == null || gemstoneType.isEmpty) return null;
       if (sourceType == null || sourceType.isEmpty) return null;
       if (originalQuantity == null || originalQuantity < 0) return null;
