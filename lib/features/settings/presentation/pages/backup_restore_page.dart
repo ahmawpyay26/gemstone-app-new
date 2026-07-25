@@ -51,7 +51,9 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
 
       for (final boxName in boxes) {
         try {
-          final box = Hive.box(boxName);
+          final box = boxName == LocalDb.gemstonesBox
+              ? LocalDb.gemstones()
+              : Hive.box(boxName);
           final boxData = <String, dynamic>{};
           
           // Get all keys from the box
