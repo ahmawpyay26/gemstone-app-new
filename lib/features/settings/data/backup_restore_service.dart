@@ -1033,6 +1033,274 @@ class BackupRestoreService {
     }
   }
 
+  /// Restore Gemstones, Sales, Customers, and Expenses atomically.
+  /// Creates snapshots of all four boxes BEFORE any modification.
+  /// If ANY record fails in ANY box, rolls back ALL boxes immediately.
+  /// Returns combined result with breakdown counts.
+  static Future<Map<String, dynamic>> restoreGemstonesAndSalesAndCustomersAndExpensesOnly(
+    String backupContent,
+  ) async {
+    try {
+      // Parse backup JSON
+      final backupData = jsonDecode(backupContent) as Map<String, dynamic>?;
+      if (backupData == null) {
+        return {
+          'success': false,
+          'restoredCount': 0,
+          'failedCount': 0,
+          'errorMessage': 'Backup JSON parse ပျက်ကွက်ခဲ့ပါသည်။',
+        };
+      }
+
+      // Extract box data from backup
+      final backupGemstonesData = backupData['gemstones'] as Map<String, dynamic>? ?? {};
+      final backupSalesData = backupData['sales'] as Map<String, dynamic>? ?? {};
+      final backupCustomersData = backupData['customers'] as Map<String, dynamic>? ?? {};
+      final backupExpensesData = backupData['expenses'] as Map<String, dynamic>? ?? {};
+
+      // Get all four boxes
+      final gemstonesBox = LocalDb.gemstones();
+      final salesBox = LocalDb.sales();
+      final customersBox = LocalDb.customers();
+      final expensesBox = LocalDb.expenses();
+
+      // CREATE SNAPSHOTS OF ALL FOUR BOXES BEFORE ANY MODIFICATION
+      final gemstonesSnapshot = RestoreSnapshot.fromBox(gemstonesBox);
+      final salesSnapshot = RestoreSnapshot.fromBox(salesBox);
+      final customersSnapshot = RestoreSnapshot.fromBox(customersBox);
+      final expensesSnapshot = RestoreSnapshot.fromBox(expensesBox);
+
+      int gemstonesRestoredCount = 0;
+      int salesRestoredCount = 0;
+      int customersRestoredCount = 0;
+      int expensesRestoredCount = 0;
+
+      // RESTORE GEMSTONES - FAIL FAST
+      await gemstonesBox.clear();
+      for (final entry in backupGemstonesData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။',
+          };
+        }
+
+        final gemstone = BackupDeserializers.deserializeGemstone(recordJson);
+        if (gemstone == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။',
+          };
+        }
+
+        try {
+          // Restore with original key (int or string)
+          final originalKey = int.tryParse(key) ?? key;
+          await gemstonesBox.put(originalKey, gemstone);
+          gemstonesRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။',
+          };
+        }
+      }
+
+      // RESTORE SALES - FAIL FAST
+      await salesBox.clear();
+      for (final entry in backupSalesData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Sale restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။',
+          };
+        }
+
+        final sale = BackupDeserializers.deserializeSale(recordJson);
+        if (sale == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Sale restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။',
+          };
+        }
+
+        try {
+          final originalKey = int.tryParse(key) ?? key;
+          await salesBox.put(originalKey, sale);
+          salesRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Sale restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။',
+          };
+        }
+      }
+
+      // RESTORE CUSTOMERS - FAIL FAST
+      await customersBox.clear();
+      for (final entry in backupCustomersData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Customer restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။',
+          };
+        }
+
+        final customer = BackupDeserializers.deserializeCustomer(recordJson);
+        if (customer == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Customer restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။',
+          };
+        }
+
+        try {
+          final originalKey = int.tryParse(key) ?? key;
+          await customersBox.put(originalKey, customer);
+          customersRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Customer restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။',
+          };
+        }
+      }
+
+      // RESTORE EXPENSES - FAIL FAST
+      await expensesBox.clear();
+      for (final entry in backupExpensesData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Expense restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။',
+          };
+        }
+
+        final expense = BackupDeserializers.deserializeExpense(recordJson);
+        if (expense == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Expense restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။',
+          };
+        }
+
+        try {
+          final originalKey = int.tryParse(key) ?? key;
+          await expensesBox.put(originalKey, expense);
+          expensesRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Expense restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။',
+          };
+        }
+      }
+
+      // All boxes restored successfully
+      final totalRestored = gemstonesRestoredCount + salesRestoredCount + customersRestoredCount + expensesRestoredCount;
+      return {
+        'success': true,
+        'restoredCount': totalRestored,
+        'gemstonesCount': gemstonesRestoredCount,
+        'salesCount': salesRestoredCount,
+        'customersCount': customersRestoredCount,
+        'expensesCount': expensesRestoredCount,
+        'failedCount': 0,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'restoredCount': 0,
+        'failedCount': 0,
+        'errorMessage': 'Restore အမှားအယွင်း: ${_sanitizeErrorMessage(e.toString())}',
+      };
+    }
+  }
+
   /// Sanitize error message for display (remove sensitive info).
   static String _sanitizeErrorMessage(String message) {
     // Remove stack traces and sensitive paths

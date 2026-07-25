@@ -212,6 +212,38 @@ class BackupDeserializers {
     }
   }
 
+  /// Deserialize Expense from backup JSON record.
+  /// Returns null if any required field is missing or invalid.
+  static Expense? deserializeExpense(Map<String, dynamic> json) {
+    try {
+      // Required fields
+      final id = json['id'] as String?;
+      final title = json['title'] as String?;
+      final category = json['category'] as String?;
+      final amount = (json['amount'] as num?)?.toDouble();
+      final note = json['note'] as String?;
+      final expenseDate = json['expenseDate'] as int?;
+
+      if (id == null || id.isEmpty) return null;
+      if (title == null || title.isEmpty) return null;
+      if (category == null || category.isEmpty) return null;
+      if (amount == null || amount < 0) return null;
+      if (note == null) return null;
+      if (expenseDate == null || expenseDate < 0) return null;
+
+      return Expense(
+        id: id,
+        title: title,
+        category: category,
+        amount: amount,
+        note: note,
+        expenseDate: expenseDate,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Deserialize Customer from backup JSON record.
   /// Returns null if any required field is missing or invalid.
   static Customer? deserializeCustomer(Map<String, dynamic> json) {

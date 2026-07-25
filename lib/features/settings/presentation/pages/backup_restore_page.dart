@@ -602,9 +602,9 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     setState(() => _isRestoringGemstones = true);
 
     try {
-      // Execute atomic restore for Gemstones, Sales, and Customers
+      // Execute atomic restore for Gemstones, Sales, Customers, and Expenses
       // ATOMIC: All succeed together or all roll back together
-      final result = await BackupRestoreService.restoreGemstonesAndSalesAndCustomersOnly(
+      final result = await BackupRestoreService.restoreGemstonesAndSalesAndCustomersAndExpensesOnly(
         _pendingRestoreContent!,
       );
 
@@ -616,12 +616,13 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final gemstonesCount = result['gemstonesCount'] as int? ?? 0;
       final salesCount = result['salesCount'] as int? ?? 0;
       final customersCount = result['customersCount'] as int? ?? 0;
+      final expensesCount = result['expensesCount'] as int? ?? 0;
       final errorMessage = result['errorMessage'] as String?;
 
       if (success) {
         _showRestoreSuccessDialog(
           'Restore တွင်တ်မြင်ပါသည်',
-          'စုစုပေါ်င်း မှတ်တမ်း $totalRestored restore တွင်တ်မြင်ပါသည်။\n(Gemstones: $gemstonesCount, Sales: $salesCount, Customers: $customersCount)',
+          'စုစုပေါ်င်း မှတ်တမ်း $totalRestored restore တွင်တ်မြင်ပါသည်။\n(Gemstones: $gemstonesCount, Sales: $salesCount, Customers: $customersCount, Expenses: $expensesCount)',
         );
         // Clear pending restore content
         _pendingRestoreContent = null;
