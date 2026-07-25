@@ -13,6 +13,7 @@ class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.gemstone.management/backup"
     private var pendingResult: MethodChannel.Result? = null
     private val CREATE_DOCUMENT_REQUEST_CODE = 1001
+    private val OPEN_DOCUMENT_REQUEST_CODE = 1002
     private var backupContent: String = ""
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -28,6 +29,10 @@ class MainActivity: FlutterActivity() {
                     backupContent = content
                     openSaveDialog(fileName)
                 }
+                "openRestoreFile" -> {
+                    pendingResult = result
+                    openRestoreDialog()
+                }
                 else -> result.notImplemented()
             }
         }
@@ -42,6 +47,17 @@ class MainActivity: FlutterActivity() {
         }
         
         startActivityForResult(intent, CREATE_DOCUMENT_REQUEST_CODE)
+    }
+
+    private fun openRestoreDialog() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/json", "application/octet-stream"))
+            putExtra("android.content.extra.SHOW_ADVANCED", true)
+        }
+        
+        startActivityForResult(intent, OPEN_DOCUMENT_REQUEST_CODE)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -83,6 +99,38 @@ class MainActivity: FlutterActivity() {
             
             pendingResult = null
             backupContent = ""
+        } else if (requestCode == OPEN_DOCUMENT_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                val uri = data.data
+                if (uri != null) {
+                    try {
+                        val inputStream = contentResolver.openInputStream(uri)
+                        if (inputStream != null) {
+                            val content = inputStream.bufferedReader().use { it.readText() }
+                            inputStream.close()
+                            
+                            val fileName = getFileNameFromUri(uri)
+                            pendingResult?.success(mapOf(
+                                "success" to true,
+                                "fileName" to fileName,
+                                "content" to content
+                            ))
+                        } else {
+                            pendingResult?.error("READ_ERROR", "Could not open input stream", null)
+                        }
+                    } catch (e: Exception) {
+                        pendingResult?.error("READ_ERROR", e.message, null)
+                    }
+                } else {
+                    pendingResult?.error("NO_URI", "No URI returned from file picker", null)
+                }
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+                pendingResult?.success(mapOf("success" to false, "cancelled" to true))
+            } else {
+                pendingResult?.error("UNKNOWN_ERROR", "Unknown error occurred", null)
+            }
+            
+            pendingResult = null
         }
     }
 

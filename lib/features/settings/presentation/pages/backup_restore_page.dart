@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:intl/intl.dart';
 import 'package:hive/hive.dart';
-import 'package:file_picker/file_picker.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
@@ -402,34 +402,39 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     );
   }
 
-  /// Phase 1: Initiate restore by selecting a .gmbak file
+  /// Phase 1: Initiate restore by selecting a .gmbak file via Android SAF
   Future<void> _initiateRestore() async {
     setState(() => _isValidatingRestore = true);
 
     try {
-      // Use file_picker to select .gmbak file
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['gmbak'],
-        lockParentWindow: true,
-      );
-
-      if (result == null || result.files.isEmpty) {
-        setState(() => _isValidatingRestore = false);
-        return;
-      }
-
-      final filePath = result.files.first.path;
-      if (filePath == null) {
-        setState(() => _isValidatingRestore = false);
-        return;
-      }
-
-      // Validate the backup file (Phase 1)
-      final validation = await BackupRestoreService.validateBackupFile(filePath);
+      // Call Android SAF to open restore file picker
+      final result = await platform.invokeMethod<Map>('openRestoreFile');
 
       if (!mounted) return;
       setState(() => _isValidatingRestore = false);
+
+      if (result == null) {
+        return;
+      }
+
+      final success = result['success'] as bool? ?? false;
+      final cancelled = result['cancelled'] as bool? ?? false;
+      final fileName = result['fileName'] as String? ?? '';
+      final content = result['content'] as String? ?? '';
+
+      // Handle cancellation silently
+      if (cancelled) {
+        return;
+      }
+
+      // Handle errors from platform channel
+      if (!success) {
+        _showErrorDialog('Restore အမှားအယွင်း', 'Backup ဖိုင်ရွေးချယ်ရန် ပျက်ကွက်ခဲ့ပါသည်။');
+        return;
+      }
+
+      // Validate the backup file content (Phase 1)
+      final validation = await BackupRestoreService.validateBackupFileContent(content, fileName);
 
       if (!validation.isValid) {
         _showErrorDialog('Backup အမှားအယွင်း', validation.errorMessage ?? 'အမည်မသိအမှားအယွင်း');
@@ -443,11 +448,17 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       if (mounted) {
         _showRestorePreviewDialog(preview);
       }
+    } on PlatformException catch (e) {
+      setState(() => _isValidatingRestore = false);
+      developer.log('Platform error: ${e.message}');
+      if (mounted) {
+        _showErrorDialog('Restore အမှားအယွင်း', 'Backup ဖိုင်ရွေးချယ်ရန် ပျက်ကွက်ခဲ့ပါသည်။');
+      }
     } catch (e) {
       setState(() => _isValidatingRestore = false);
       developer.log('Restore error: $e');
       if (mounted) {
-        _showErrorDialog('Restore အမှားအယွင်း', 'Backup ဖိုင်ခွင့်ပြုချက်မရှိပါ။');
+        _showErrorDialog('Restore အမှားအယွင်း', 'Backup ဖိုင်ရွေးချယ်ရန် ပျက်ကွက်ခဲ့ပါသည်။');
       }
     }
   }

@@ -53,7 +53,91 @@ class BackupRestoreService {
     'brokerProfiles',
   ];
 
-  /// Phase 1: Validate backup file.
+  /// Phase 1: Validate backup file from content string (for Android SAF).
+  /// Returns RestoreValidationResult with validation status and record counts.
+  /// Does NOT write any data to Hive.
+  /// Does NOT modify app state.
+  static Future<RestoreValidationResult> validateBackupFileContent(
+    String content,
+    String filename,
+  ) async {
+    try {
+      // Validate content is not empty
+      if (content.isEmpty) {
+        return RestoreValidationResult.failure(
+          filename: filename,
+          errorMessage: 'Backup ဖိုင်တွင်တ် အနေတ်မည်တွင်ကိုပါသည်။',
+        );
+      }
+
+      // Parse JSON
+      Map<String, dynamic> backupData;
+      try {
+        final decoded = jsonDecode(content);
+        if (decoded is! Map<String, dynamic>) {
+          return RestoreValidationResult.failure(
+            filename: filename,
+            errorMessage: 'Backup ဖိုင်တွင် မှတ်တမ်းတွင်ကိုပါသည်။',
+          );
+        }
+        backupData = decoded;
+      } catch (e) {
+        return RestoreValidationResult.failure(
+          filename: filename,
+          errorMessage: 'JSON ဖိုင်ခွင့်ပြုချက်မရှိပါသည်။',
+        );
+      }
+
+      // Validate structure: all 17 boxes should exist
+      final warnings = <String>[];
+      final recordCounts = <String, int>{};
+      int totalRecords = 0;
+
+      for (final boxName in allBoxNames) {
+        if (!backupData.containsKey(boxName)) {
+          warnings.add('Box "$boxName" ကိ ရွေးချယ်မှုပါသည်။');
+          recordCounts[boxName] = 0;
+        } else {
+          final boxData = backupData[boxName];
+          if (boxData is! Map<String, dynamic>) {
+            warnings.add('Box "$boxName" တွင် မှတ်တမ်းတွင်ကိုပါသည်။');
+            recordCounts[boxName] = 0;
+          } else {
+            final count = boxData.length;
+            recordCounts[boxName] = count;
+            totalRecords += count;
+          }
+        }
+      }
+
+      // Security validation: check for plaintext password in users
+      _validateSecurityConstraints(backupData, warnings);
+
+      // Check for unknown boxes
+      for (final key in backupData.keys) {
+        if (!allBoxNames.contains(key)) {
+          warnings.add('အတွင်မှတ်တမ်းမှုတွင် box "$key" ကိရွေးချယ်မှုပါသည်။');
+        }
+      }
+
+      // Create success result
+      return RestoreValidationResult.success(
+        filename: filename,
+        totalRecords: totalRecords,
+        recordCounts: recordCounts,
+        supportedBoxes: supportedBoxes,
+        unsupportedBoxes: unsupportedBoxes,
+        warnings: warnings,
+      );
+    } catch (e) {
+      return RestoreValidationResult.failure(
+        filename: filename,
+        errorMessage: 'Backup ဖိုင်ခွင့်ပြုချက်မရှိပါသည်။',
+      );
+    }
+  }
+
+  /// Phase 1: Validate backup file from file path (legacy support).
   /// Returns RestoreValidationResult with validation status and record counts.
   /// Does NOT write any data to Hive.
   /// Does NOT modify app state.
