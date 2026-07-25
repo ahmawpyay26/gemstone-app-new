@@ -212,6 +212,114 @@ class BackupDeserializers {
     }
   }
 
+  /// Deserialize BrokerHistoricalData from backup JSON record.
+  /// Returns null if any required field is missing or invalid.
+  static BrokerHistoricalData? deserializeBrokerHistoricalData(Map<String, dynamic> json) {
+    try {
+      final purchaseName = json['purchaseName'] as String?;
+      final purchaseDate = json['purchaseDate'] as int?;
+      final originalSeller = json['originalSeller'] as String?;
+      final gemstoneType = json['gemstoneType'] as String?;
+      final sourceType = json['sourceType'] as String?;
+      final breakdownItemName = json['breakdownItemName'] as String?;
+      final originalQuantity = (json['originalQuantity'] as num?)?.toDouble();
+      final originalWeight = (json['originalWeight'] as num?)?.toDouble();
+      final capturedAt = json['capturedAt'] as int?;
+
+      if (purchaseName == null || purchaseName.isEmpty) return null;
+      if (purchaseDate == null || purchaseDate < 0) return null;
+      if (originalSeller == null || originalSeller.isEmpty) return null;
+      if (gemstoneType == null || gemstoneType.isEmpty) return null;
+      if (sourceType == null || sourceType.isEmpty) return null;
+      if (originalQuantity == null || originalQuantity < 0) return null;
+      if (originalWeight == null || originalWeight < 0) return null;
+      if (capturedAt == null || capturedAt < 0) return null;
+
+      return BrokerHistoricalData(
+        purchaseName: purchaseName,
+        purchaseDate: purchaseDate,
+        originalSeller: originalSeller,
+        gemstoneType: gemstoneType,
+        sourceType: sourceType,
+        breakdownItemName: breakdownItemName,
+        originalQuantity: originalQuantity,
+        originalWeight: originalWeight,
+        capturedAt: capturedAt,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Deserialize BrokerConsignment from backup JSON record.
+  /// Returns null if any required field is missing or invalid.
+  static BrokerConsignment? deserializeBrokerConsignment(Map<String, dynamic> json) {
+    try {
+      final id = json['id'] as String?;
+      final purchaseId = json['purchaseId'] as String?;
+      final sourceType = json['sourceType'] as String?;
+      final breakdownItemName = json['breakdownItemName'] as String?;
+      final voucherId = json['voucherId'] as String?;
+      final voucherNumber = json['voucherNumber'] as String?;
+      final consignedQuantity = (json['consignedQuantity'] as num?)?.toDouble();
+      final soldQuantity = (json['soldQuantity'] as num?)?.toDouble() ?? 0.0;
+      final returnedQuantity = (json['returnedQuantity'] as num?)?.toDouble() ?? 0.0;
+      final historicalDataJson = json['historicalData'] as Map<String, dynamic>?;
+      final brokerName = json['brokerName'] as String?;
+      final brokerPhone = json['brokerPhone'] as String?;
+      final brokerAddress = json['brokerAddress'] as String?;
+      final brokerSocialAccount = json['brokerSocialAccount'] as String?;
+      final brokerProfileId = json['brokerProfileId'] as String?;
+      final notes = json['notes'] as String? ?? '';
+      final photoPaths = (json['photoPaths'] as List?)?.cast<String>() ?? [];
+      final weight = (json['weight'] as num?)?.toDouble();
+      final weightUnit = json['weightUnit'] as String?;
+      final createdAt = json['createdAt'] as int?;
+      final updatedAt = json['updatedAt'] as int?;
+      final deletedAt = json['deletedAt'] as int?;
+
+      if (id == null || id.isEmpty) return null;
+      if (purchaseId == null || purchaseId.isEmpty) return null;
+      if (sourceType == null || sourceType.isEmpty) return null;
+      if (consignedQuantity == null || consignedQuantity < 0) return null;
+      if (brokerName == null || brokerName.isEmpty) return null;
+      if (brokerPhone == null || brokerPhone.isEmpty) return null;
+      if (brokerAddress == null || brokerAddress.isEmpty) return null;
+      if (createdAt == null || createdAt < 0) return null;
+
+      if (historicalDataJson == null) return null;
+      final historicalData = deserializeBrokerHistoricalData(historicalDataJson);
+      if (historicalData == null) return null;
+
+      return BrokerConsignment(
+        id: id,
+        purchaseId: purchaseId,
+        sourceType: sourceType,
+        breakdownItemName: breakdownItemName,
+        voucherId: voucherId,
+        voucherNumber: voucherNumber,
+        consignedQuantity: consignedQuantity,
+        soldQuantity: soldQuantity,
+        returnedQuantity: returnedQuantity,
+        historicalData: historicalData,
+        brokerName: brokerName,
+        brokerPhone: brokerPhone,
+        brokerAddress: brokerAddress,
+        brokerSocialAccount: brokerSocialAccount,
+        brokerProfileId: brokerProfileId,
+        notes: notes,
+        photoPaths: photoPaths,
+        weight: weight,
+        weightUnit: weightUnit,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        deletedAt: deletedAt,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Deserialize Worker from backup JSON record.
   /// Returns null if any required field is missing or invalid.
   static Worker? deserializeWorker(Map<String, dynamic> json) {

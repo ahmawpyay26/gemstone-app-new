@@ -185,6 +185,10 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
         return _paymentToMap(value);
       } else if (value is AuditLog) {
         return _auditLogToMap(value);
+      } else if (value is BrokerConsignment) {
+        return _brokerConsignmentToMap(value);
+      } else if (value is BrokerHistoricalData) {
+        return _brokerHistoricalDataToMap(value);
       }
       
       // Fallback for unknown types
@@ -336,6 +340,43 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     'userName': a.userName,
     'timestamp': a.timestamp,
     'details': a.details,
+  };
+
+  Map<String, dynamic> _brokerHistoricalDataToMap(BrokerHistoricalData h) => {
+    'purchaseName': h.purchaseName,
+    'purchaseDate': h.purchaseDate,
+    'originalSeller': h.originalSeller,
+    'gemstoneType': h.gemstoneType,
+    'sourceType': h.sourceType,
+    'breakdownItemName': h.breakdownItemName,
+    'originalQuantity': h.originalQuantity,
+    'originalWeight': h.originalWeight,
+    'capturedAt': h.capturedAt,
+  };
+
+  Map<String, dynamic> _brokerConsignmentToMap(BrokerConsignment bc) => {
+    'id': bc.id,
+    'purchaseId': bc.purchaseId,
+    'sourceType': bc.sourceType,
+    'breakdownItemName': bc.breakdownItemName,
+    'voucherId': bc.voucherId,
+    'voucherNumber': bc.voucherNumber,
+    'consignedQuantity': bc.consignedQuantity,
+    'soldQuantity': bc.soldQuantity,
+    'returnedQuantity': bc.returnedQuantity,
+    'historicalData': _brokerHistoricalDataToMap(bc.historicalData),
+    'brokerName': bc.brokerName,
+    'brokerPhone': bc.brokerPhone,
+    'brokerAddress': bc.brokerAddress,
+    'brokerSocialAccount': bc.brokerSocialAccount,
+    'brokerProfileId': bc.brokerProfileId,
+    'notes': bc.notes,
+    'photoPaths': bc.photoPaths,
+    'weight': bc.weight,
+    'weightUnit': bc.weightUnit,
+    'createdAt': bc.createdAt,
+    'updatedAt': bc.updatedAt,
+    'deletedAt': bc.deletedAt,
   };
 
   void _showSuccessDialog(String fileName, String location) {
@@ -604,7 +645,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     try {
       // Execute atomic restore for Gemstones, Sales, Customers, Expenses, and Workers
       // ATOMIC: All succeed together or all roll back together
-      final result = await BackupRestoreService.restoreGemstonesAndSalesAndCustomersAndExpensesAndWorkersOnly(
+      final result = await BackupRestoreService.restoreGemstonesAndSalesAndCustomersAndExpensesAndWorkersAndBrokerConsignmentsOnly(
         _pendingRestoreContent!,
       );
 
@@ -618,12 +659,13 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final customersCount = result['customersCount'] as int? ?? 0;
       final expensesCount = result['expensesCount'] as int? ?? 0;
       final workersCount = result['workersCount'] as int? ?? 0;
+      final brokerConsignmentsCount = result['brokerConsignmentsCount'] as int? ?? 0;
       final errorMessage = result['errorMessage'] as String?;
 
       if (success) {
         _showRestoreSuccessDialog(
           'Restore တွင်တ်မြင်ပါသည်',
-          'စုစုပေါ်င်း မှတ်တမ်း $totalRestored restore တွင်တ်မြင်ပါသည်။\n(Gemstones: $gemstonesCount, Sales: $salesCount, Customers: $customersCount, Expenses: $expensesCount, Workers: $workersCount)',
+          'စုစုပေါ်င်း မှတ်တမ်း $totalRestored restore တွင်တ်မြင်ပါသည်။\n(Gemstones: $gemstonesCount, Sales: $salesCount, Customers: $customersCount, Expenses: $expensesCount, Workers: $workersCount, Broker Consignments: $brokerConsignmentsCount)',
         );
         // Clear pending restore content
         _pendingRestoreContent = null;

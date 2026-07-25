@@ -1639,6 +1639,306 @@ class BackupRestoreService {
     }
   }
 
+  /// Restore all 6 boxes atomically: Gemstones, Sales, Customers, Expenses, Workers, and Broker Consignments.
+  static Future<Map<String, dynamic>> restoreGemstonesAndSalesAndCustomersAndExpensesAndWorkersAndBrokerConsignmentsOnly(
+    String backupContent,
+  ) async {
+    try {
+      final backupData = jsonDecode(backupContent) as Map<String, dynamic>?;
+      if (backupData == null) {
+        return {
+          'success': false,
+          'restoredCount': 0,
+          'failedCount': 0,
+          'errorMessage': 'Backup JSON parse ပျက်ကွက်ခဲ့ပါသည်။',
+        };
+      }
+
+      final backupGemstonesData = backupData['gemstones'] as Map<String, dynamic>? ?? {};
+      final backupSalesData = backupData['sales'] as Map<String, dynamic>? ?? {};
+      final backupCustomersData = backupData['customers'] as Map<String, dynamic>? ?? {};
+      final backupExpensesData = backupData['expenses'] as Map<String, dynamic>? ?? {};
+      final backupWorkersData = backupData['workers'] as Map<String, dynamic>? ?? {};
+      final backupBrokerConsignmentsData = backupData['brokerConsignments'] as Map<String, dynamic>? ?? {};
+
+      final gemstonesBox = LocalDb.gemstones();
+      final salesBox = LocalDb.sales();
+      final customersBox = LocalDb.customers();
+      final expensesBox = LocalDb.expenses();
+      final workersBox = LocalDb.workers();
+      final brokerConsignmentsBox = LocalDb.brokerConsignments();
+
+      // CREATE SNAPSHOTS OF ALL SIX BOXES
+      final gemstonesSnapshot = RestoreSnapshot.fromBox(gemstonesBox);
+      final salesSnapshot = RestoreSnapshot.fromBox(salesBox);
+      final customersSnapshot = RestoreSnapshot.fromBox(customersBox);
+      final expensesSnapshot = RestoreSnapshot.fromBox(expensesBox);
+      final workersSnapshot = RestoreSnapshot.fromBox(workersBox);
+      final brokerConsignmentsSnapshot = RestoreSnapshot.fromBox(brokerConsignmentsBox);
+
+      int gemstonesRestoredCount = 0;
+      int salesRestoredCount = 0;
+      int customersRestoredCount = 0;
+      int expensesRestoredCount = 0;
+      int workersRestoredCount = 0;
+      int brokerConsignmentsRestoredCount = 0;
+
+      // RESTORE GEMSTONES
+      await gemstonesBox.clear();
+      for (final entry in backupGemstonesData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။'};
+        }
+        final gemstone = BackupDeserializers.deserializeGemstone(recordJson);
+        if (gemstone == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
+        }
+        try {
+          final originalKey = int.tryParse(key) ?? key;
+          await gemstonesBox.put(originalKey, gemstone);
+          gemstonesRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။'};
+        }
+      }
+
+      // RESTORE SALES
+      await salesBox.clear();
+      for (final entry in backupSalesData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Sale restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။'};
+        }
+        final sale = BackupDeserializers.deserializeSale(recordJson);
+        if (sale == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Sale restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
+        }
+        try {
+          final originalKey = int.tryParse(key) ?? key;
+          await salesBox.put(originalKey, sale);
+          salesRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Sale restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။'};
+        }
+      }
+
+      // RESTORE CUSTOMERS
+      await customersBox.clear();
+      for (final entry in backupCustomersData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Customer restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။'};
+        }
+        final customer = BackupDeserializers.deserializeCustomer(recordJson);
+        if (customer == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Customer restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
+        }
+        try {
+          final originalKey = int.tryParse(key) ?? key;
+          await customersBox.put(originalKey, customer);
+          customersRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Customer restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။'};
+        }
+      }
+
+      // RESTORE EXPENSES
+      await expensesBox.clear();
+      for (final entry in backupExpensesData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Expense restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။'};
+        }
+        final expense = BackupDeserializers.deserializeExpense(recordJson);
+        if (expense == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Expense restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
+        }
+        try {
+          final originalKey = int.tryParse(key) ?? key;
+          await expensesBox.put(originalKey, expense);
+          expensesRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Expense restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။'};
+        }
+      }
+
+      // RESTORE WORKERS
+      await workersBox.clear();
+      for (final entry in backupWorkersData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Worker restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။'};
+        }
+        final worker = BackupDeserializers.deserializeWorker(recordJson);
+        if (worker == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Worker restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
+        }
+        try {
+          final originalKey = int.tryParse(key) ?? key;
+          await workersBox.put(originalKey, worker);
+          workersRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Worker restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။'};
+        }
+      }
+
+      // RESTORE BROKER CONSIGNMENTS
+      await brokerConsignmentsBox.clear();
+      for (final entry in backupBrokerConsignmentsData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Consignment restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။'};
+        }
+        final brokerConsignment = BackupDeserializers.deserializeBrokerConsignment(recordJson);
+        if (brokerConsignment == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Consignment restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
+        }
+        try {
+          final originalKey = int.tryParse(key) ?? key;
+          await brokerConsignmentsBox.put(originalKey, brokerConsignment);
+          brokerConsignmentsRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Consignment restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။'};
+        }
+      }
+
+      final totalRestored = gemstonesRestoredCount + salesRestoredCount + customersRestoredCount + expensesRestoredCount + workersRestoredCount + brokerConsignmentsRestoredCount;
+      return {
+        'success': true,
+        'restoredCount': totalRestored,
+        'gemstonesCount': gemstonesRestoredCount,
+        'salesCount': salesRestoredCount,
+        'customersCount': customersRestoredCount,
+        'expensesCount': expensesRestoredCount,
+        'workersCount': workersRestoredCount,
+        'brokerConsignmentsCount': brokerConsignmentsRestoredCount,
+        'failedCount': 0,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'restoredCount': 0,
+        'failedCount': 0,
+        'errorMessage': 'Restore အမှားအယွင်း: ${_sanitizeErrorMessage(e.toString())}',
+      };
+    }
+  }
+
   /// Sanitize error message for display (remove sensitive info).
   static String _sanitizeErrorMessage(String message) {
     // Remove stack traces and sensitive paths
