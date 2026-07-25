@@ -111,4 +111,104 @@ class BackupDeserializers {
       return null;
     }
   }
+
+  /// Deserialize Sale from backup JSON record
+  /// Returns null if deserialization fails (invalid data)
+  static Sale? deserializeSale(Map<String, dynamic> json) {
+    try {
+      // Required fields
+      final id = json['id'] as String?;
+      final gemstoneName = json['gemstoneName'] as String?;
+      final customerName = json['customerName'] as String?;
+      final amount = (json['amount'] as num?)?.toDouble();
+      final quantity = json['quantity'] as int?;
+      final paymentMethod = json['paymentMethod'] as String?;
+      final note = json['note'] as String?;
+      final saleDate = json['saleDate'] as int?;
+
+      // Validate required fields
+      if (id == null ||
+          gemstoneName == null ||
+          customerName == null ||
+          amount == null ||
+          quantity == null ||
+          paymentMethod == null ||
+          note == null ||
+          saleDate == null) {
+        return null;
+      }
+
+      // Optional fields with defaults
+      final gemstoneId = (json['gemstoneId'] as String?) ?? '';
+      final customerId = json['customerId'] as String?;
+      final costPrice = (json['costPrice'] as num?)?.toDouble() ?? 0;
+      final commissionFee = (json['commissionFee'] as num?)?.toDouble() ?? 0;
+      final weightCarat = (json['weightCarat'] as num?)?.toDouble() ?? 0;
+      final netSale = (json['netSale'] as num?)?.toDouble() ?? 0;
+      final costUsed = (json['costUsed'] as num?)?.toDouble() ?? 0;
+      final remainingCostAfterSale = (json['remainingCostAfterSale'] as num?)?.toDouble() ?? 0;
+      final profitGenerated = (json['profitGenerated'] as num?)?.toDouble() ?? 0;
+      final accumulatedProfit = (json['accumulatedProfit'] as num?)?.toDouble() ?? 0;
+      final isDeleted = (json['isDeleted'] as bool?) ?? false;
+      final deletedAt = json['deletedAt'] as int?;
+      final deletedBy = json['deletedBy'] as String?;
+      final deleteReason = json['deleteReason'] as String?;
+      final photoPaths = (json['photoPaths'] as List<dynamic>?)
+              ?.whereType<String>()
+              .toList() ??
+          [];
+      final invoiceNumber = (json['invoiceNumber'] as String?) ?? '';
+      final fragmentName = json['fragmentName'] as String?;
+      final isFragmentSource = (json['isFragmentSource'] as bool?) ?? false;
+      final fragmentWeight = (json['fragmentWeight'] as num?)?.toDouble();
+      final fragmentWeightUnit = json['fragmentWeightUnit'] as String?;
+      final weightUnit = json['weightUnit'] as String?;
+
+      // Deserialize invoiceItems
+      final invoiceItemsJson = json['invoiceItems'] as List<dynamic>?;
+      final invoiceItems = <Map<String, dynamic>>[];
+      if (invoiceItemsJson != null) {
+        for (final item in invoiceItemsJson) {
+          if (item is Map<String, dynamic>) {
+            invoiceItems.add(Map<String, dynamic>.from(item));
+          }
+        }
+      }
+
+      return Sale(
+        id: id,
+        gemstoneId: gemstoneId,
+        gemstoneName: gemstoneName,
+        customerId: customerId,
+        customerName: customerName,
+        amount: amount,
+        costPrice: costPrice,
+        commissionFee: commissionFee,
+        quantity: quantity,
+        weightCarat: weightCarat,
+        paymentMethod: paymentMethod,
+        note: note,
+        saleDate: saleDate,
+        netSale: netSale,
+        costUsed: costUsed,
+        remainingCostAfterSale: remainingCostAfterSale,
+        profitGenerated: profitGenerated,
+        accumulatedProfit: accumulatedProfit,
+        isDeleted: isDeleted,
+        deletedAt: deletedAt,
+        deletedBy: deletedBy,
+        deleteReason: deleteReason,
+        photoPaths: photoPaths,
+        invoiceNumber: invoiceNumber,
+        fragmentName: fragmentName,
+        isFragmentSource: isFragmentSource,
+        fragmentWeight: fragmentWeight,
+        fragmentWeightUnit: fragmentWeightUnit,
+        weightUnit: weightUnit,
+        invoiceItems: invoiceItems,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
 }
