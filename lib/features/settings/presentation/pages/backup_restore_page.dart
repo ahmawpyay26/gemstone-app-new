@@ -1,13 +1,11 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io' as io;
 import 'package:hive/hive.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 
@@ -20,6 +18,7 @@ class BackupRestorePage extends StatefulWidget {
 
 class _BackupRestorePageState extends State<BackupRestorePage> {
   bool _isBackingUp = false;
+  static const platform = MethodChannel('com.gemstone.management/backup');
 
   Future<void> _createBackup() async {
     setState(() => _isBackingUp = true);
@@ -60,7 +59,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
           }
           backupData[boxName] = boxData;
         } catch (e) {
-          developer.log('Error backing up box $boxName: $e');
+              developer.log('Error backing up box $boxName: $e');
         }
       }
 
@@ -70,33 +69,34 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final backupFileName = 'Gemstone_Backup_${timestamp}.gmbak';
       final backupJson = jsonEncode(backupData);
 
-      // Open system file picker to let user choose save location
-      final String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Backup ဖန်တီး ပါတယ်',
-        fileName: backupFileName,
-        type: FileType.custom,
-        allowedExtensions: ['gmbak'],
-        lockParentWindow: true,
-      );
+      // Call native Android SAF to save file
+      try {
+        final result = await platform.invokeMethod<Map>('saveBackupFile', {
+          'fileName': backupFileName,
+          'content': backupJson,
+        });
 
-      // If user cancelled, show info and return
-      if (outputFile == null) {
+        setState(() => _isBackingUp = false);
+
+        if (result != null) {
+          final success = result['success'] as bool? ?? false;
+          final cancelled = result['cancelled'] as bool? ?? false;
+          final fileName = result['fileName'] as String? ?? backupFileName;
+          final uri = result['uri'] as String? ?? '';
+
+          if (mounted) {
+            if (success) {
+              _showSuccessDialog(fileName, uri);
+            } else if (cancelled) {
+              _showInfoDialog('Backup မသိမ်းရသေးပါ', 'Backup ဖန်တီးခြင်း ရပ်တန့်ခဲ့ပါသည်။');
+            }
+          }
+        }
+      } on PlatformException catch (e) {
         setState(() => _isBackingUp = false);
         if (mounted) {
-          _showInfoDialog('Backup အောင်မြင် ဖြန်လည်ရယူ', 'Backup ဖန်တီး ပါတယ် တိုကေမှတေးပါ။');
+          _showErrorDialog('Backup အမှားအယွင်း', 'Error: ${e.message}');
         }
-        return;
-      }
-
-      // Write backup file to the selected location
-      final backupFile = File(outputFile);
-      await backupFile.writeAsString(backupJson);
-
-      setState(() => _isBackingUp = false);
-
-      // Show success message
-      if (mounted) {
-        _showSuccessDialog(backupFileName, outputFile);
       }
     } catch (e) {
       setState(() => _isBackingUp = false);
@@ -130,7 +130,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Backup File အောင်မြင်စွာ ဖန်တီးပြီးပါပြီ။'),
+            const Text('Backup File အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။'),
             const SizedBox(height: 16),
             Text(
               'File Name:',
@@ -142,7 +142,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
               'Location:',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            Text(location),
+            Text('ရွေးချယ်ထားသောနေရာတွင် သိမ်းပြီးပါပြီ'),
           ],
         ),
         actions: [
