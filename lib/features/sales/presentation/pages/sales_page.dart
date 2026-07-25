@@ -2272,7 +2272,10 @@ class _SaleFormState extends State<_SaleForm> {
                       return [...exact, ...startsWith, ...contains];
                     },
                     onSelected: (String selection) {
-                      _gemstoneSearchController?.clear();
+                      final gem = LocalDb.gemstoneById(selection);
+                      if (gem != null) {
+                        _gemstoneSearchController?.text = gem.name;
+                      }
                       _onSelectGem(selection);
                     },
                     fieldViewBuilder: (BuildContext context,
@@ -2284,7 +2287,7 @@ class _SaleFormState extends State<_SaleForm> {
                         controller: textEditingController,
                         focusNode: focusNode,
                         decoration: InputDecoration(
-                          labelText: 'ပစ္စည်းစာရင်းမှ ကျောက်မျက်ရွေးပါ',
+                          labelText: 'ကျောက်မျက်အမည်',
                           hintText: _selectedGemId == null ? '— လက်ဖြင့်ရိုက်ထည့်မည် —' : null,
                           suffixIcon: _selectedGemId != null
                               ? IconButton(
@@ -2489,9 +2492,6 @@ class _SaleFormState extends State<_SaleForm> {
 
                 // Show entire form only for whole stone source
                 if (_saleSource == 'whole_stone') ...[                
-                // Manual name (editable; auto-filled when a gem is selected)
-                _field(_manualName, 'ကျောက်မျက်အမည်', required: true),
-
                 _buildCustomerPicker(),
                 Row(children: [
                   Expanded(
