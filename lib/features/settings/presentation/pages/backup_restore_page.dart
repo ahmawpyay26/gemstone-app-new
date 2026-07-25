@@ -621,8 +621,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       if (success) {
         _showRestoreSuccessDialog(
           'Restore တွင်တ်မြင်ပါသည်',
-          'စုစုပေါ်င်း မှတ်တမ်း $totalRestored restore တွင်တ်မြင်ပါသည်။
-(Gemstones: $gemstonesCount, Sales: $salesCount, Customers: $customersCount)',
+          'စုစုပေါ်င်း မှတ်တမ်း $totalRestored restore တွင်တ်မြင်ပါသည်။\n(Gemstones: $gemstonesCount, Sales: $salesCount, Customers: $customersCount)',
         );
         // Clear pending restore content
         _pendingRestoreContent = null;
