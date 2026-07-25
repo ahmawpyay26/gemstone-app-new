@@ -211,4 +211,54 @@ class BackupDeserializers {
       return null;
     }
   }
+
+  /// Deserialize Customer from backup JSON record.
+  /// Returns null if any required field is missing or invalid.
+  static Customer? deserializeCustomer(Map<String, dynamic> json) {
+    try {
+      // Required fields
+      final id = json['id'] as String?;
+      final name = json['name'] as String?;
+      final createdAt = json['createdAt'] as int?;
+
+      if (id == null || id.isEmpty) return null;
+      if (name == null || name.isEmpty) return null;
+      if (createdAt == null || createdAt < 0) return null;
+
+      // Optional fields with safe defaults
+      final phone = json['phone'] as String?;
+      final address = json['address'] as String?;
+      final notes = json['notes'] as String?;
+      final openingBalance = (json['openingBalance'] as num?)?.toDouble() ?? 0.0;
+      final currentBalance = (json['currentBalance'] as num?)?.toDouble() ?? 0.0;
+      final creditLimit = (json['creditLimit'] as num?)?.toDouble() ?? 0.0;
+      final status = json['status'] as String? ?? 'active';
+      final isDeleted = json['isDeleted'] as bool? ?? false;
+      final deletedAt = json['deletedAt'] as int?;
+      final updatedAt = json['updatedAt'] as int?;
+
+      // Validate status enum
+      if (!['active', 'inactive'].contains(status)) {
+        return null;
+      }
+
+      return Customer(
+        id: id,
+        name: name,
+        phone: phone,
+        address: address,
+        notes: notes,
+        openingBalance: openingBalance,
+        currentBalance: currentBalance,
+        creditLimit: creditLimit,
+        status: status,
+        isDeleted: isDeleted,
+        deletedAt: deletedAt,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
 }

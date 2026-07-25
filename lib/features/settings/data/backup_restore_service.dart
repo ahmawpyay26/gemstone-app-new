@@ -714,6 +714,283 @@ class BackupRestoreService {
     }
   }
 
+  /// Phase 4: Atomic restore for Gemstones, Sales, and Customers boxes.
+  /// ATOMIC: All succeed together or all roll back together.
+  /// Returns {success, restoredCount, failedCount, errorMessage, gemstonesCount, salesCount, customersCount}.
+  /// If ANY failure: rolls back ALL boxes to original state.
+  static Future<Map<String, dynamic>> restoreGemstonesAndSalesAndCustomersOnly(
+    String backupContent,
+  ) async {
+    RestoreSnapshot? gemstonesSnapshot;
+    RestoreSnapshot? salesSnapshot;
+    RestoreSnapshot? customersSnapshot;
+    try {
+      // Parse backup JSON
+      Map<String, dynamic> backupData;
+      try {
+        final decoded = jsonDecode(backupContent);
+        if (decoded is! Map<String, dynamic>) {
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Backup JSON ဖွဲ့စည်းမှု မှားတွေ့ပါသည်။',
+          };
+        }
+        backupData = decoded;
+      } catch (e) {
+        return {
+          'success': false,
+          'restoredCount': 0,
+          'failedCount': 0,
+          'errorMessage': 'JSON ခွင့်ပြုချက်မရှိပါ။',
+        };
+      }
+
+      // Get all three boxes
+      final gemstonesBox = LocalDb.gemstones();
+      final salesBox = LocalDb.sales();
+      final customersBox = LocalDb.customers();
+
+      // ATOMIC: Create snapshots of ALL boxes BEFORE any modification
+      gemstonesSnapshot = RestoreSnapshot.fromBox(gemstonesBox);
+      salesSnapshot = RestoreSnapshot.fromBox(salesBox);
+      customersSnapshot = RestoreSnapshot.fromBox(customersBox);
+
+      // Get backup data for all boxes
+      final backupGemstonesData = backupData['gemstones'] as Map<String, dynamic>?;
+      final backupSalesData = backupData['sales'] as Map<String, dynamic>?;
+      final backupCustomersData = backupData['customers'] as Map<String, dynamic>?;
+
+      if (backupGemstonesData == null || backupSalesData == null || backupCustomersData == null) {
+        return {
+          'success': false,
+          'restoredCount': 0,
+          'failedCount': 0,
+          'errorMessage': 'Backup တွင် gemstones သို့မဟုတ် sales သို့မဟုတ် customers box ကို ရှာမတွေ့ပါ။',
+        };
+      }
+
+      int gemstonesRestoredCount = 0;
+      int salesRestoredCount = 0;
+      int customersRestoredCount = 0;
+
+      // OPTIMIZE: Clear and restore Gemstones first
+      // Clear Gemstones box
+      await gemstonesBox.clear();
+
+      // RESTORE GEMSTONES - FAIL FAST
+      for (final entry in backupGemstonesData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+
+        if (recordJson is! Map<String, dynamic>) {
+          // FAIL FAST: Rollback ALL boxes immediately
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။',
+          };
+        }
+
+        final gemstone = BackupDeserializers.deserializeGemstone(recordJson);
+        if (gemstone == null) {
+          // FAIL FAST: Rollback ALL boxes immediately
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။',
+          };
+        }
+
+        try {
+          dynamic parsedKey = key;
+          try {
+            parsedKey = int.parse(key);
+          } catch (e) {
+            // Keep as string
+          }
+          await gemstonesBox.put(parsedKey, gemstone);
+          gemstonesRestoredCount++;
+        } catch (e) {
+          // FAIL FAST: Rollback ALL boxes immediately
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။',
+          };
+        }
+      }
+
+      // Gemstones restore succeeded, now clear and restore Sales
+      // Clear Sales box
+      await salesBox.clear();
+
+      // RESTORE SALES - FAIL FAST
+      for (final entry in backupSalesData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+
+        if (recordJson is! Map<String, dynamic>) {
+          // FAIL FAST: Rollback ALL boxes immediately
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Sale restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။',
+          };
+        }
+
+        final sale = BackupDeserializers.deserializeSale(recordJson);
+        if (sale == null) {
+          // FAIL FAST: Rollback ALL boxes immediately
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Sale restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။',
+          };
+        }
+
+        try {
+          dynamic parsedKey = key;
+          try {
+            parsedKey = int.parse(key);
+          } catch (e) {
+            // Keep as string
+          }
+          await salesBox.put(parsedKey, sale);
+          salesRestoredCount++;
+        } catch (e) {
+          // FAIL FAST: Rollback ALL boxes immediately
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Sale restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။',
+          };
+        }
+      }
+
+      // Sales restore succeeded, now clear and restore Customers
+      // Clear Customers box
+      await customersBox.clear();
+
+      // RESTORE CUSTOMERS - FAIL FAST
+      for (final entry in backupCustomersData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+
+        if (recordJson is! Map<String, dynamic>) {
+          // FAIL FAST: Rollback ALL boxes immediately
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Customer restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။',
+          };
+        }
+
+        final customer = BackupDeserializers.deserializeCustomer(recordJson);
+        if (customer == null) {
+          // FAIL FAST: Rollback ALL boxes immediately
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Customer restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။',
+          };
+        }
+
+        try {
+          dynamic parsedKey = key;
+          try {
+            parsedKey = int.parse(key);
+          } catch (e) {
+            // Keep as string
+          }
+          await customersBox.put(parsedKey, customer);
+          customersRestoredCount++;
+        } catch (e) {
+          // FAIL FAST: Rollback ALL boxes immediately
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          return {
+            'success': false,
+            'restoredCount': 0,
+            'failedCount': 0,
+            'errorMessage': 'Customer restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။',
+          };
+        }
+      }
+
+      // ATOMIC SUCCESS: All boxes restored successfully
+      return {
+        'success': true,
+        'restoredCount': gemstonesRestoredCount + salesRestoredCount + customersRestoredCount,
+        'failedCount': 0,
+        'errorMessage': null,
+        'gemstonesCount': gemstonesRestoredCount,
+        'salesCount': salesRestoredCount,
+        'customersCount': customersRestoredCount,
+      };
+    } catch (e) {
+      // Rollback ALL boxes on any exception
+      if (gemstonesSnapshot != null || salesSnapshot != null || customersSnapshot != null) {
+        try {
+          if (gemstonesSnapshot != null) {
+            final gemstonesBox = LocalDb.gemstones();
+            await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          }
+          if (salesSnapshot != null) {
+            final salesBox = LocalDb.sales();
+            await salesSnapshot.restoreToBox(salesBox);
+          }
+          if (customersSnapshot != null) {
+            final customersBox = LocalDb.customers();
+            await customersSnapshot.restoreToBox(customersBox);
+          }
+        } catch (rollbackError) {
+          // Log but continue
+        }
+      }
+      return {
+        'success': false,
+        'restoredCount': 0,
+        'failedCount': 0,
+        'errorMessage': 'Restore အမှားအယွင်း: ${_sanitizeErrorMessage(e.toString())}',
+      };
+    }
+  }
+
   /// Extract filename from file path.
   static String _extractFilename(String filePath) {
     try {
