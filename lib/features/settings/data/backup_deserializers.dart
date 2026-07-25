@@ -212,6 +212,44 @@ class BackupDeserializers {
     }
   }
 
+  /// Deserialize Worker from backup JSON record.
+  /// Returns null if any required field is missing or invalid.
+  static Worker? deserializeWorker(Map<String, dynamic> json) {
+    try {
+      // Required fields
+      final id = json['id'] as String?;
+      final name = json['name'] as String?;
+      final role = json['role'] as String?;
+      final phone = json['phone'] as String?;
+      final salary = (json['salary'] as num?)?.toDouble();
+      final status = json['status'] as String?;
+      final note = json['note'] as String?;
+      final createdAt = json['createdAt'] as int?;
+
+      if (id == null || id.isEmpty) return null;
+      if (name == null || name.isEmpty) return null;
+      if (role == null || role.isEmpty) return null;
+      if (phone == null || phone.isEmpty) return null;
+      if (salary == null || salary < 0) return null;
+      if (status == null || status.isEmpty) return null;
+      if (note == null) return null;
+      if (createdAt == null || createdAt < 0) return null;
+
+      return Worker(
+        id: id,
+        name: name,
+        role: role,
+        phone: phone,
+        salary: salary,
+        status: status,
+        note: note,
+        createdAt: createdAt,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Deserialize Expense from backup JSON record.
   /// Returns null if any required field is missing or invalid.
   static Expense? deserializeExpense(Map<String, dynamic> json) {
