@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'dart:io' as io;
 import 'package:hive/hive.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
@@ -67,12 +68,14 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(now);
       final backupFileName = 'Gemstone_Backup_${timestamp}.gmbak';
 
-      // Get Download directory
+      // Get Internal Storage Download directory
+      // On Android: /storage/emulated/0/Download/Gemstone Backup
       final downloadsDir = await getDownloadsDirectory();
       if (downloadsDir == null) {
         throw Exception('Download directory မရှိပါ');
       }
       
+      // Use the actual Download directory path
       final backupDir = Directory('${downloadsDir.path}/Gemstone Backup');
 
       // Create Gemstone Backup directory if it doesn't exist
