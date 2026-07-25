@@ -1,5 +1,4 @@
 import 'dart:developer' as developer;
-import 'dart:mirrors';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:hive/hive.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
+import '../../../../core/local/models.dart';
 
 class BackupRestorePage extends StatefulWidget {
   const BackupRestorePage({Key? key}) : super(key: key);
@@ -136,35 +136,139 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       return value.map((k, v) => MapEntry(k.toString(), _serializeValue(v)));
     }
     
-    // For Hive objects, convert to map by reflecting all public fields
+    // For Hive objects, use explicit type checking and conversion
     try {
-      final result = <String, dynamic>{};
-      final mirror = reflect(value);
-      final classMirror = mirror.type;
-      
-      // Get all instance variables (fields)
-      classMirror.declarations.forEach((symbol, declaration) {
-        if (declaration is VariableMirror && !declaration.isStatic && !declaration.isPrivate) {
-          final fieldName = MirrorSystem.getName(symbol);
-          try {
-            final fieldValue = mirror.getField(symbol).reflectee;
-            result[fieldName] = _serializeValue(fieldValue);
-          } catch (e) {
-            developer.log('Error reflecting field $fieldName: $e');
-          }
-        }
-      });
-      
-      if (result.isNotEmpty) {
-        return result;
+      // Handle specific Hive model types
+      if (value is Gemstone) {
+        return _gemstoneToMap(value);
+      } else if (value is AppUser) {
+        return _appUserToMap(value);
+      } else if (value is Sale) {
+        return _saleToMap(value);
+      } else if (value is Expense) {
+        return _expenseToMap(value);
+      } else if (value is Worker) {
+        return _workerToMap(value);
+      } else if (value is Customer) {
+        return _customerToMap(value);
+      } else if (value is Payment) {
+        return _paymentToMap(value);
+      } else if (value is AuditLog) {
+        return _auditLogToMap(value);
       }
+      
+      // Fallback for unknown types
+      developer.log('Warning: Object of type ${value.runtimeType} has no explicit serialization');
+      return value.toString();
     } catch (e) {
-      developer.log('Error serializing object via reflection: $e');
+      developer.log('Error serializing object of type ${value.runtimeType}: $e');
+      return value.toString();
     }
-    
-    // Fallback: convert to string if reflection fails
-    return value.toString();
   }
+
+  // Explicit serialization methods for each Hive model
+  Map<String, dynamic> _gemstoneToMap(Gemstone g) => {
+    'id': g.id,
+    'name': g.name,
+    'type': g.type,
+    'weightCarat': g.weightCarat,
+    'weightUnit': g.weightUnit,
+    'costPrice': g.costPrice,
+    'commissionFee': g.commissionFee,
+    'processingFee': g.processingFee,
+    'repairFee': g.repairFee,
+    'breakageFee': g.breakageFee,
+    'bloodFee': g.bloodFee,
+    'laborFee': g.laborFee,
+    'miscFee': g.miscFee,
+    'sellPrice': g.sellPrice,
+    'quantity': g.quantity,
+    'color': g.color,
+    'origin': g.origin,
+    'status': g.status,
+    'note': g.note,
+    'createdAt': g.createdAt,
+    'totalCost': g.totalCost,
+    'remainingCost': g.remainingCost,
+    'remainingQuantity': g.remainingQuantity,
+    'soldQuantity': g.soldQuantity,
+    'photoPaths': g.photoPaths,
+    'breakdownItems': g.breakdownItems,
+    'originalPurchaseCost': g.originalPurchaseCost,
+    'remainingCostBalance': g.remainingCostBalance,
+    'recoveredCost': g.recoveredCost,
+    'totalProfit': g.totalProfit,
+    'totalSalesRevenue': g.totalSalesRevenue,
+  };
+
+  Map<String, dynamic> _appUserToMap(AppUser u) => {
+    'id': u.id,
+    'name': u.name,
+    'email': u.email,
+    'username': u.username,
+    'passwordHash': u.passwordHash,
+    'role': u.role,
+    'createdAt': u.createdAt,
+    'updatedAt': u.updatedAt,
+  };
+
+  Map<String, dynamic> _saleToMap(Sale s) => {
+    'id': s.id,
+    'gemstoneid': s.gemstoneid,
+    'quantity': s.quantity,
+    'salePrice': s.salePrice,
+    'totalAmount': s.totalAmount,
+    'soldAt': s.soldAt,
+    'soldBy': s.soldBy,
+    'customerid': s.customerid,
+    'note': s.note,
+  };
+
+  Map<String, dynamic> _expenseToMap(Expense e) => {
+    'id': e.id,
+    'category': e.category,
+    'amount': e.amount,
+    'date': e.date,
+    'note': e.note,
+    'createdBy': e.createdBy,
+  };
+
+  Map<String, dynamic> _workerToMap(Worker w) => {
+    'id': w.id,
+    'name': w.name,
+    'phone': w.phone,
+    'address': w.address,
+    'role': w.role,
+    'salary': w.salary,
+    'startDate': w.startDate,
+    'status': w.status,
+  };
+
+  Map<String, dynamic> _customerToMap(Customer c) => {
+    'id': c.id,
+    'name': c.name,
+    'phone': c.phone,
+    'email': c.email,
+    'address': c.address,
+    'createdAt': c.createdAt,
+  };
+
+  Map<String, dynamic> _paymentToMap(Payment p) => {
+    'id': p.id,
+    'amount': p.amount,
+    'date': p.date,
+    'method': p.method,
+    'reference': p.reference,
+    'note': p.note,
+  };
+
+  Map<String, dynamic> _auditLogToMap(AuditLog a) => {
+    'id': a.id,
+    'action': a.action,
+    'userId': a.userId,
+    'timestamp': a.timestamp,
+    'details': a.details,
+  };
 
   void _showSuccessDialog(String fileName, String location) {
     showDialog(
@@ -200,7 +304,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     );
   }
 
-  void _showErrorDialog(String title, String message) {
+  void _showInfoDialog(String title, String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -216,7 +320,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     );
   }
 
-  void _showInfoDialog(String title, String message) {
+  void _showErrorDialog(String title, String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -235,71 +339,32 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.primaryDark,
       appBar: AppBar(
         title: const Text('Backup & Restore'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/settings'),
+          onPressed: () => context.pop(),
         ),
-        backgroundColor: AppTheme.primaryDark,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon
-              Icon(
-                Icons.backup,
-                size: 80,
-                color: AppTheme.primaryAccent,
-              ),
-              const SizedBox(height: 24),
-
-              // Title
-              Text(
-                'Backup & Restore',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-
-              // Backup Section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceDark,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.primaryAccent.withOpacity(0.3),
-                  ),
-                ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Backup Section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Backup ဖန်တီးမည်',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      '💾 Backup Now',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'သင်၏ အချက်အလက်များကို Local Storage တွင် Backup ဖန်တီးပါ။ အရေးပါသော အချက်အလက်များ ဆုံးရှုံးခြင်းမှ ကာကွယ်ပါ။',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 13,
-                        height: 1.5,
-                      ),
+                    const Text(
+                      'Create a backup of all your data. You can save it to Download, Documents, or any other location.',
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -312,112 +377,46 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppTheme.primaryDark,
-                                  ),
                                 ),
                               )
-                            : const Icon(Icons.cloud_upload, color: AppTheme.primaryDark),
-                        label: Text(
-                          _isBackingUp ? 'Backup လုပ်နေသည်...' : 'Backup Now',
-                          style: const TextStyle(
-                            color: AppTheme.primaryDark,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          disabledBackgroundColor: Colors.grey[600],
-                        ),
+                            : const Icon(Icons.backup),
+                        label: Text(_isBackingUp ? 'Creating Backup...' : 'Backup Now'),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Restore Section (Coming Soon)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceDark,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.grey[700]!,
-                  ),
-                ),
+            ),
+            const SizedBox(height: 16),
+            // Restore Section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Restore ဖြန်လည်ရယူမည်',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      '📂 Restore Backup',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'Backup ဖိုင်မှ အချက်အလက်များကို ပြန်လည်ရယူပါ။',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 13,
-                        height: 1.5,
-                      ),
+                    const Text(
+                      'Restore your data from a backup file.',
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: null,
-                        icon: const Icon(Icons.cloud_download, color: Colors.grey),
-                        label: const Text(
-                          'Coming Soon',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[700],
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          disabledBackgroundColor: Colors.grey[700],
-                        ),
+                        icon: const Icon(Icons.restore),
+                        label: const Text('Coming Soon'),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-
-              // Back button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isBackingUp
-                      ? null
-                      : () => context.canPop()
-                          ? context.pop()
-                          : context.go('/settings'),
-                  icon: const Icon(Icons.arrow_back, color: AppTheme.primaryDark),
-                  label: const Text(
-                    'ပြန်သွားမည်',
-                    style: TextStyle(
-                      color: AppTheme.primaryDark,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryAccent,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    disabledBackgroundColor: Colors.grey[600],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
