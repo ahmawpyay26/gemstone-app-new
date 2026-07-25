@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'dart:mirrors';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -134,7 +135,34 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     if (value is Map) {
       return value.map((k, v) => MapEntry(k.toString(), _serializeValue(v)));
     }
-    // For other types, convert to string
+    
+    // For Hive objects, convert to map by reflecting all public fields
+    try {
+      final result = <String, dynamic>{};
+      final mirror = reflect(value);
+      final classMirror = mirror.type;
+      
+      // Get all instance variables (fields)
+      classMirror.declarations.forEach((symbol, declaration) {
+        if (declaration is VariableMirror && !declaration.isStatic && !declaration.isPrivate) {
+          final fieldName = MirrorSystem.getName(symbol);
+          try {
+            final fieldValue = mirror.getField(symbol).reflectee;
+            result[fieldName] = _serializeValue(fieldValue);
+          } catch (e) {
+            developer.log('Error reflecting field $fieldName: $e');
+          }
+        }
+      });
+      
+      if (result.isNotEmpty) {
+        return result;
+      }
+    } catch (e) {
+      developer.log('Error serializing object via reflection: $e');
+    }
+    
+    // Fallback: convert to string if reflection fails
     return value.toString();
   }
 
