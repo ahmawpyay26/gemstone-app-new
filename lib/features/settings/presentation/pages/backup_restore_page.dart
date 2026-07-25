@@ -615,7 +615,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final errorMessage = result['errorMessage'] as String?;
 
       if (success) {
-        _showSuccessDialog(
+        _showRestoreSuccessDialog(
           'Restore တွင်တ်မြင်ပါသည်',
           'တွင်တ် $restoredCount မှတ်တမ်း restore တွင်တ်မြင်ပါသည်။',
         );
@@ -639,8 +639,8 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     }
   }
 
-  /// Show success dialog
-  void _showSuccessDialog(String title, String message) {
+  /// Show restore success dialog
+  void _showRestoreSuccessDialog(String title, String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
