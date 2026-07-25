@@ -52,16 +52,33 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
         try {
           final box = Hive.box(boxName);
           final boxData = <String, dynamic>{};
-          for (final key in box.keys) {
-            final value = box.get(key);
-            // Convert to JSON-serializable format
-            boxData[key.toString()] = _serializeValue(value);
+          
+          // Get all keys from the box
+          final keys = box.keys.toList();
+          developer.log('Box: $boxName, Keys count: ${keys.length}');
+          
+          for (final key in keys) {
+            try {
+              final value = box.get(key);
+              // Convert to JSON-serializable format
+              boxData[key.toString()] = _serializeValue(value);
+            } catch (e) {
+              developer.log('Error serializing key $key in box $boxName: $e');
+            }
           }
+          
+          // Always add the box to backup, even if empty
           backupData[boxName] = boxData;
+          developer.log('Backed up box: $boxName with ${boxData.length} records');
         } catch (e) {
-              developer.log('Error backing up box $boxName: $e');
+          developer.log('Error backing up box $boxName: $e');
+          // Add empty box to prevent data loss
+          backupData[boxName] = {};
         }
       }
+      
+      developer.log('Total boxes backed up: ${backupData.length}');
+      developer.log('Backup data keys: ${backupData.keys.toList()}');
 
       // Generate backup filename with timestamp
       final now = DateTime.now();
