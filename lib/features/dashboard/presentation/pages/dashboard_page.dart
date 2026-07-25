@@ -77,7 +77,8 @@ class _DashboardPageState extends State<DashboardPage> {
             return ValueListenableBuilder(
               valueListenable: LocalDb.gemstones().listenable(),
               builder: (context, __3, ____) {
-                final totalSalesAmount = LocalDb.totalSales(); // စုစုပေါင်း အရောင်း (ပွဲခ တဆင်တဆင်တဆင်တဆင်တဆင်တဆင်)
+                final totalSalesAmount = LocalDb.totalSales(); // Gross sales (for remaining capital and profit calculation)
+                final netRevenueAmount = LocalDb.netRevenue(); // စုစုပေါင်း အရောင်း (ပွဲခ နှုတ်ပြီး)
                 final mainDashboardTotalCapital = LocalDb.mainDashboardTotalCapital();
                 final commissions = LocalDb.totalSalesCommission();
                 final expenses = LocalDb.totalExpenses();
@@ -94,7 +95,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       children: [
                         Expanded(
                             child: _statCard('စုစုပေါင်း အရောင်း',
-                                _money.format(totalSalesAmount), AppTheme.successColor,
+                                _money.format(netRevenueAmount), AppTheme.successColor,
                                 Icons.trending_up)),
                         const SizedBox(width: 12),
                         Expanded(
