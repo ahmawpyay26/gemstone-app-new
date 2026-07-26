@@ -57,17 +57,17 @@ jobs:
         run: |
           mkdir -p android/app
           python3 << 'PYSCRIPT'
-import base64
-import sys
-
-keystore_b64 = """${{ secrets.ANDROID_KEYSTORE_BASE64 }}"""
-keystore_bytes = base64.b64decode(keystore_b64)
-
-with open('android/app/release.keystore', 'wb') as f:
-    f.write(keystore_bytes)
-
-print(f"✅ Keystore reconstructed (size: {len(keystore_bytes)} bytes)")
-PYSCRIPT
+          import base64
+          import sys
+          
+          keystore_b64 = """${{ secrets.ANDROID_KEYSTORE_BASE64 }}"""
+          keystore_bytes = base64.b64decode(keystore_b64)
+          
+          with open('android/app/release.keystore', 'wb') as f:
+              f.write(keystore_bytes)
+          
+          print(f"✅ Keystore reconstructed (size: {len(keystore_bytes)} bytes)")
+          PYSCRIPT
           if [ ! -s android/app/release.keystore ]; then
             echo "::error::Failed to decode keystore - file is empty"
             exit 1
