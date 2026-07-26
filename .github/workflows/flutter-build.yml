@@ -125,6 +125,40 @@ jobs:
           fi
           echo "=== END KEY.PROPERTIES INSPECTION ==="
 
+      - name: Diagnostic - key.properties Integrity
+        run: |
+          echo "=== KEY.PROPERTIES INTEGRITY CHECK ==="
+          echo "SHA-256: $(sha256sum android/key.properties | cut -d' ' -f1)"
+          echo "Line count: $(wc -l < android/key.properties)"
+          echo "File size: $(stat -c%s android/key.properties) bytes"
+          echo "Password lengths (without values):"
+          STORE_PASS=$(grep "^storePassword=" android/key.properties | cut -d'=' -f2)
+          KEY_PASS=$(grep "^keyPassword=" android/key.properties | cut -d'=' -f2)
+          ALIAS=$(grep "^keyAlias=" android/key.properties | cut -d'=' -f2)
+          echo "  storePassword length: ${#STORE_PASS}"
+          echo "  keyPassword length: ${#KEY_PASS}"
+          echo "  keyAlias length: ${#ALIAS}"
+          echo "=== END KEY.PROPERTIES INTEGRITY CHECK ==="
+
+      - name: Diagnostic - Pre-Gradle keytool Validation
+        run: |
+          echo "=== PRE-GRADLE KEYTOOL VALIDATION ==="
+          KEYSTORE_PATH="android/app/release.keystore"
+          STORE_PASS=$(grep "^storePassword=" android/key.properties | cut -d'=' -f2)
+          KEY_PASS=$(grep "^keyPassword=" android/key.properties | cut -d'=' -f2)
+          ALIAS=$(grep "^keyAlias=" android/key.properties | cut -d'=' -f2)
+          
+          if keytool -list -v -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASS" -alias "$ALIAS" > /tmp/keytool_pre_gradle.txt 2>&1; then
+            echo "✅ PRE-GRADLE KEYTOOL VALIDATION SUCCESSFUL"
+            echo "Using credentials from key.properties file"
+            grep -E "Alias name|Entry type|SHA256:" /tmp/keytool_pre_gradle.txt || true
+          else
+            echo "❌ PRE-GRADLE KEYTOOL VALIDATION FAILED"
+            cat /tmp/keytool_pre_gradle.txt
+            exit 1
+          fi
+          echo "=== END PRE-GRADLE KEYTOOL VALIDATION ==="
+
       - name: Diagnostic - Direct keytool Validation
         run: |
           echo "=== DIRECT KEYTOOL VALIDATION ==="
