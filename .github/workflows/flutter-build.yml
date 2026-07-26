@@ -74,6 +74,25 @@ PYSCRIPT
           fi
           file android/app/release.keystore
 
+      - name: Diagnostic - Verify keystore location
+        run: |
+          echo "=== DIAGNOSTIC: Keystore Location ==="
+          echo "PWD: $(pwd)"
+          echo ""
+          echo "=== Contents of android/ ==="
+          ls -la android/ || echo "android/ not found"
+          echo ""
+          echo "=== Contents of android/app/ ==="
+          ls -la android/app/ || echo "android/app/ not found"
+          echo ""
+          echo "=== Absolute path of keystore ==="
+          if [ -f android/app/release.keystore ]; then
+            echo "File exists at: $(pwd)/android/app/release.keystore"
+            echo "File size: $(stat -c%s android/app/release.keystore 2>/dev/null || stat -f%z android/app/release.keystore)"
+          else
+            echo "ERROR: android/app/release.keystore not found"
+          fi
+
       - name: Generate key.properties
         run: |
           cat > android/key.properties << 'KEYEOF'
@@ -85,6 +104,11 @@ PYSCRIPT
           echo "✅ key.properties generated"
           echo "Contents of key.properties:"
           cat android/key.properties
+          echo ""
+          echo "=== DIAGNOSTIC: key.properties path ==="
+          echo "key.properties location: $(pwd)/android/key.properties"
+          echo "storeFile value (from key.properties): $(grep storeFile android/key.properties | cut -d'=' -f2)"
+          echo "Expected keystore location: $(pwd)/android/app/$(grep storeFile android/key.properties | cut -d'=' -f2)"
 
       - name: Run dart analyze
         run: |
