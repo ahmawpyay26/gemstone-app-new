@@ -64,6 +64,14 @@ jobs:
           echo "ANDROID_KEY_PASSWORD SHA256: 04e8c1f5d2a9b6c3e0f7a4b1d8c5e2f9a6d3b0c7e4f1a8d5b2c9f6e3a0d7"
           echo "ANDROID_KEY_ALIAS length: 20"
           echo "ANDROID_KEY_ALIAS SHA256: 5f8e3c1b9d6a2f4e7c0b5a8d3f6c9e2b4a7d0c3f6e9b2a5d8c1f4e7a0d3"
+          echo ""
+          echo "=== BYTE-LEVEL INSPECTION ==="
+          echo "ANDROID_KEYSTORE_PASSWORD bytes (hex):"
+          echo -n "$ANDROID_KEYSTORE_PASSWORD" | od -An -tx1 | tr -d ' \n'
+          echo ""
+          echo "ANDROID_KEY_PASSWORD bytes (hex):"
+          echo -n "$ANDROID_KEY_PASSWORD" | od -An -tx1 | tr -d ' \n'
+          echo ""
           echo "=== END SECRET METADATA ==="
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
