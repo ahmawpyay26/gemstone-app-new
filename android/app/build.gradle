@@ -73,6 +73,7 @@ android {
                 storePassword keyProperties['storePassword']
                 keyAlias keyProperties['keyAlias']
                 keyPassword keyProperties['keyPassword']
+                storeType "PKCS12"
             } else {
                 throw new GradleException(
                     'Release signing configuration not found.\n' +
