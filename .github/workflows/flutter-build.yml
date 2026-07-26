@@ -56,13 +56,14 @@ jobs:
       - name: Reconstruct Android release keystore
         run: |
           mkdir -p android/app
-          echo -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          printf '%s' "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | tr -d '\n' | base64 -d > android/app/release.keystore
           if [ ! -s android/app/release.keystore ]; then
             echo "::error::Failed to decode keystore - file is empty"
             exit 1
           fi
           FILE_SIZE=$(stat -f%z android/app/release.keystore 2>/dev/null || stat -c%s android/app/release.keystore 2>/dev/null)
           echo "✅ Keystore reconstructed (size: $FILE_SIZE bytes)"
+          file android/app/release.keystore
 
       - name: Generate key.properties
         run: |
