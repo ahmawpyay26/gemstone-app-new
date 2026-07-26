@@ -1667,7 +1667,7 @@ class BackupRestoreService {
       final customersBox = LocalDb.customers();
       final expensesBox = LocalDb.expenses();
       final workersBox = LocalDb.workers();
-      final brokerProfilesBox = LocalDb.brokerProfiles();
+      final brokerProfilesBox = Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox);
       final brokerConsignmentsBox = LocalDb.brokerConsignments();
 
       // CREATE SNAPSHOTS OF ALL SEVEN BOXES
