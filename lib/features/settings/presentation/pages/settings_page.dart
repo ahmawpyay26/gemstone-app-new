@@ -494,7 +494,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                           ),
                           onPressed: _logout,
                           child: const Text(
-                            'တွေတ်မည်',
+                            'ထွက်မည်',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Colors.white,
