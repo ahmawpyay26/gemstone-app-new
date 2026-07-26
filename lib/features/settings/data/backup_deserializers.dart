@@ -438,4 +438,50 @@ class BackupDeserializers {
       return null;
     }
   }
+
+  /// Deserialize BrokerProfile from backup JSON record
+  /// Returns null if deserialization fails (invalid data)
+  static BrokerProfile? deserializeBrokerProfile(Map<String, dynamic> json) {
+    try {
+      // Required fields
+      final id = json['id'] as String?;
+      final name = json['name'] as String?;
+      final phone = json['phone'] as String?;
+      final createdAt = json['createdAt'] as int?;
+      final updatedAt = json['updatedAt'] as int?;
+
+      // Validate required fields
+      if (id == null || id.isEmpty) return null;
+      if (name == null || name.isEmpty) return null;
+      if (phone == null || phone.isEmpty) return null;
+      if (createdAt == null || createdAt < 0) return null;
+      if (updatedAt == null || updatedAt < 0) return null;
+
+      // Optional fields (preserve as-is, allow null/empty)
+      final nationalId = json['nationalId'] as String?;
+      final address = json['address'] as String?;
+      final socialAccount = json['socialAccount'] as String?;
+      final note = json['note'] as String?;
+      final profileImagePath = json['profileImagePath'] as String?;
+      final isDeleted = (json['isDeleted'] as bool?) ?? false;
+      final deletedAt = json['deletedAt'] as int?;
+
+      return BrokerProfile(
+        id: id,
+        name: name,
+        nationalId: nationalId,
+        phone: phone,
+        address: address,
+        socialAccount: socialAccount,
+        note: note,
+        profileImagePath: profileImagePath,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        isDeleted: isDeleted,
+        deletedAt: deletedAt,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
 }

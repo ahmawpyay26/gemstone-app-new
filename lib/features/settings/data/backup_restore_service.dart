@@ -1659,6 +1659,7 @@ class BackupRestoreService {
       final backupCustomersData = backupData['customers'] as Map<String, dynamic>? ?? {};
       final backupExpensesData = backupData['expenses'] as Map<String, dynamic>? ?? {};
       final backupWorkersData = backupData['workers'] as Map<String, dynamic>? ?? {};
+      final backupBrokerProfilesData = backupData['brokerProfiles'] as Map<String, dynamic>? ?? {};
       final backupBrokerConsignmentsData = backupData['brokerConsignments'] as Map<String, dynamic>? ?? {};
 
       final gemstonesBox = LocalDb.gemstones();
@@ -1666,14 +1667,16 @@ class BackupRestoreService {
       final customersBox = LocalDb.customers();
       final expensesBox = LocalDb.expenses();
       final workersBox = LocalDb.workers();
+      final brokerProfilesBox = LocalDb.brokerProfiles();
       final brokerConsignmentsBox = LocalDb.brokerConsignments();
 
-      // CREATE SNAPSHOTS OF ALL SIX BOXES
+      // CREATE SNAPSHOTS OF ALL SEVEN BOXES
       final gemstonesSnapshot = RestoreSnapshot.fromBox(gemstonesBox);
       final salesSnapshot = RestoreSnapshot.fromBox(salesBox);
       final customersSnapshot = RestoreSnapshot.fromBox(customersBox);
       final expensesSnapshot = RestoreSnapshot.fromBox(expensesBox);
       final workersSnapshot = RestoreSnapshot.fromBox(workersBox);
+      final brokerProfilesSnapshot = RestoreSnapshot.fromBox(brokerProfilesBox);
       final brokerConsignmentsSnapshot = RestoreSnapshot.fromBox(brokerConsignmentsBox);
 
       int gemstonesRestoredCount = 0;
@@ -1681,6 +1684,7 @@ class BackupRestoreService {
       int customersRestoredCount = 0;
       int expensesRestoredCount = 0;
       int workersRestoredCount = 0;
+      int brokerProfilesRestoredCount = 0;
       int brokerConsignmentsRestoredCount = 0;
 
       // RESTORE GEMSTONES
@@ -1878,6 +1882,73 @@ class BackupRestoreService {
         }
       }
 
+      // RESTORE BROKER PROFILES (before broker consignments)
+      await brokerProfilesBox.clear();
+      for (final entry in backupBrokerProfilesData.entries) {
+        final key = entry.key;
+        final recordJson = entry.value;
+        if (recordJson is! Map<String, dynamic>) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerProfilesSnapshot.restoreToBox(brokerProfilesBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Profile restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။'};
+        }
+        final brokerProfile = BackupDeserializers.deserializeBrokerProfile(recordJson);
+        if (brokerProfile == null) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerProfilesSnapshot.restoreToBox(brokerProfilesBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Profile restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
+        }
+        try {
+          final originalKey = int.tryParse(key) ?? key;
+          await brokerProfilesBox.put(originalKey, brokerProfile);
+          brokerProfilesRestoredCount++;
+        } catch (e) {
+          await gemstonesSnapshot.restoreToBox(gemstonesBox);
+          await salesSnapshot.restoreToBox(salesBox);
+          await customersSnapshot.restoreToBox(customersBox);
+          await expensesSnapshot.restoreToBox(expensesBox);
+          await workersSnapshot.restoreToBox(workersBox);
+          await brokerProfilesSnapshot.restoreToBox(brokerProfilesBox);
+          await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+          return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Profile restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။'};
+        }
+      }
+
+      // VERIFY BROKER PROFILE ID REFERENCES BEFORE RESTORING BROKER CONSIGNMENTS
+      final restoredBrokerProfileIds = brokerProfilesBox.values
+          .map((bp) => bp.id)
+          .toSet();
+      
+      for (final entry in backupBrokerConsignmentsData.entries) {
+        final recordJson = entry.value;
+        if (recordJson is Map<String, dynamic>) {
+          final brokerProfileId = recordJson['brokerProfileId'] as String?;
+          if (brokerProfileId != null && brokerProfileId.isNotEmpty) {
+            if (!restoredBrokerProfileIds.contains(brokerProfileId)) {
+              // Missing broker profile - fail restore with full rollback
+              await gemstonesSnapshot.restoreToBox(gemstonesBox);
+              await salesSnapshot.restoreToBox(salesBox);
+              await customersSnapshot.restoreToBox(customersBox);
+              await expensesSnapshot.restoreToBox(expensesBox);
+              await workersSnapshot.restoreToBox(workersBox);
+              await brokerProfilesSnapshot.restoreToBox(brokerProfilesBox);
+              await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
+              return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Consignment restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "${entry.key}" သည် ပွဲစား Profile ID "$brokerProfileId" ကို ရည်ညွှန်းထားသည်။ သို့သော် ယင်းပွဲစား Profile မတွေ့ရှိပါ။'};
+            }
+          }
+        }
+      }
+
       // RESTORE BROKER CONSIGNMENTS
       await brokerConsignmentsBox.clear();
       for (final entry in backupBrokerConsignmentsData.entries) {
@@ -1889,6 +1960,7 @@ class BackupRestoreService {
           await customersSnapshot.restoreToBox(customersBox);
           await expensesSnapshot.restoreToBox(expensesBox);
           await workersSnapshot.restoreToBox(workersBox);
+          await brokerProfilesSnapshot.restoreToBox(brokerProfilesBox);
           await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
           return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Consignment restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" တွင် မှတ်တမ်းတွင်ကိုပါသည်။'};
         }
@@ -1899,6 +1971,7 @@ class BackupRestoreService {
           await customersSnapshot.restoreToBox(customersBox);
           await expensesSnapshot.restoreToBox(expensesBox);
           await workersSnapshot.restoreToBox(workersBox);
+          await brokerProfilesSnapshot.restoreToBox(brokerProfilesBox);
           await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
           return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Consignment restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
         }
@@ -1912,12 +1985,13 @@ class BackupRestoreService {
           await customersSnapshot.restoreToBox(customersBox);
           await expensesSnapshot.restoreToBox(expensesBox);
           await workersSnapshot.restoreToBox(workersBox);
+          await brokerProfilesSnapshot.restoreToBox(brokerProfilesBox);
           await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
           return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Consignment restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ restore မအောင်မြင်ပါသည်။'};
         }
       }
 
-      final totalRestored = gemstonesRestoredCount + salesRestoredCount + customersRestoredCount + expensesRestoredCount + workersRestoredCount + brokerConsignmentsRestoredCount;
+      final totalRestored = gemstonesRestoredCount + salesRestoredCount + customersRestoredCount + expensesRestoredCount + workersRestoredCount + brokerProfilesRestoredCount + brokerConsignmentsRestoredCount;
       return {
         'success': true,
         'restoredCount': totalRestored,
@@ -1926,6 +2000,7 @@ class BackupRestoreService {
         'customersCount': customersRestoredCount,
         'expensesCount': expensesRestoredCount,
         'workersCount': workersRestoredCount,
+        'brokerProfilesCount': brokerProfilesRestoredCount,
         'brokerConsignmentsCount': brokerConsignmentsRestoredCount,
         'failedCount': 0,
       };

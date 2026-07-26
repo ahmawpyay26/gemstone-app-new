@@ -81,6 +81,8 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
               ? LocalDb.businessProfiles()
               : boxName == LocalDb.customerLedgerBox
               ? LocalDb.customerLedger()
+              : boxName == LocalDb.brokerProfilesBox
+              ? LocalDb.brokerProfiles()
               : Hive.box(boxName);
           final boxData = <String, dynamic>{};
           
@@ -185,6 +187,8 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
         return _paymentToMap(value);
       } else if (value is AuditLog) {
         return _auditLogToMap(value);
+      } else if (value is BrokerProfile) {
+        return _brokerProfileToMap(value);
       } else if (value is BrokerConsignment) {
         return _brokerConsignmentToMap(value);
       } else if (value is BrokerHistoricalData) {
@@ -352,6 +356,21 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     'originalQuantity': h.originalQuantity,
     'originalWeight': h.originalWeight,
     'capturedAt': h.capturedAt,
+  };
+
+  Map<String, dynamic> _brokerProfileToMap(BrokerProfile bp) => {
+    'id': bp.id,
+    'name': bp.name,
+    'nationalId': bp.nationalId,
+    'phone': bp.phone,
+    'address': bp.address,
+    'socialAccount': bp.socialAccount,
+    'note': bp.note,
+    'profileImagePath': bp.profileImagePath,
+    'createdAt': bp.createdAt,
+    'updatedAt': bp.updatedAt,
+    'isDeleted': bp.isDeleted,
+    'deletedAt': bp.deletedAt,
   };
 
   Map<String, dynamic> _brokerConsignmentToMap(BrokerConsignment bc) => {
@@ -659,13 +678,14 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final customersCount = result['customersCount'] as int? ?? 0;
       final expensesCount = result['expensesCount'] as int? ?? 0;
       final workersCount = result['workersCount'] as int? ?? 0;
+      final brokerProfilesCount = result['brokerProfilesCount'] as int? ?? 0;
       final brokerConsignmentsCount = result['brokerConsignmentsCount'] as int? ?? 0;
       final errorMessage = result['errorMessage'] as String?;
 
       if (success) {
         _showRestoreSuccessDialog(
           'Restore တွင်တ်မြင်ပါသည်',
-          'စုစုပေါ်င်း မှတ်တမ်း $totalRestored restore တွင်တ်မြင်ပါသည်။\n(Gemstones: $gemstonesCount, Sales: $salesCount, Customers: $customersCount, Expenses: $expensesCount, Workers: $workersCount, Broker Consignments: $brokerConsignmentsCount)',
+          'စုစုပေါ်င်း မှတ်တမ်း $totalRestored restore တွင်တ်မြင်ပါသည်။\n(Gemstones: $gemstonesCount, Sales: $salesCount, Customers: $customersCount, Expenses: $expensesCount, Workers: $workersCount, Broker Profiles: $brokerProfilesCount, Broker Consignments: $brokerConsignmentsCount)',
         );
         // Clear pending restore content
         _pendingRestoreContent = null;
