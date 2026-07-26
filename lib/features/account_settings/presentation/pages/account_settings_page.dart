@@ -156,7 +156,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout'),
+            child: const Text('ထွက်မည်'),
           ),
         ],
       ),
@@ -489,7 +489,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                         ),
                       )
                     : const Text(
-                        'Logout',
+                        'ထွက်မည်',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
