@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gemstone_app/features/settings/data/backup_deserializers.dart';
+import 'package:gemstone_management/features/settings/data/backup_deserializers.dart';
 
 void main() {
   group('BrokerProfile Deserialization Tests', () {

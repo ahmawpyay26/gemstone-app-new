@@ -82,7 +82,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
               : boxName == LocalDb.customerLedgerBox
               ? LocalDb.customerLedger()
               : boxName == LocalDb.brokerProfilesBox
-              ? LocalDb.brokerProfiles()
+              ? Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox)
               : Hive.box(boxName);
           final boxData = <String, dynamic>{};
           
