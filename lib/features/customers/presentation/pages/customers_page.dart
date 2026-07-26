@@ -39,8 +39,12 @@ class _CustomersPageState extends State<CustomersPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('ဖောက်သည်စာရင်း'),
-        backgroundColor: AppTheme.primaryAccent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/dashboard'),
+        ),
       ),
       body: Column(
         children: [
