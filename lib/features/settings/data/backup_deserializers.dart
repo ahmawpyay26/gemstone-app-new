@@ -219,7 +219,7 @@ class BackupDeserializers {
       final purchaseName = json['purchaseName'] as String?;
       final purchaseDate = json['purchaseDate'] as int?;
       final originalSeller = json['originalSeller'] as String? ?? '';
-      final gemstoneType = json['gemstoneType'] as String?;
+      final gemstoneType = json['gemstoneType'] as String? ?? '';
       final sourceType = json['sourceType'] as String?;
       final breakdownItemName = json['breakdownItemName'] as String?;
       final originalQuantity = (json['originalQuantity'] as num?)?.toDouble();
@@ -228,7 +228,6 @@ class BackupDeserializers {
 
       if (purchaseName == null || purchaseName.isEmpty) return null;
       if (purchaseDate == null || purchaseDate < 0) return null;
-      if (gemstoneType == null || gemstoneType.isEmpty) return null;
       if (sourceType == null || sourceType.isEmpty) return null;
       if (originalQuantity == null || originalQuantity < 0) return null;
       if (originalWeight == null || originalWeight < 0) return null;
@@ -255,7 +254,7 @@ class BackupDeserializers {
   static BrokerConsignment? deserializeBrokerConsignment(Map<String, dynamic> json) {
     try {
       final id = json['id'] as String?;
-      final purchaseId = json['purchaseId'] as String?;
+      final purchaseId = json['purchaseId'] as String? ?? '';
       final sourceType = json['sourceType'] as String?;
       final breakdownItemName = json['breakdownItemName'] as String?;
       final voucherId = json['voucherId'] as String?;
@@ -278,7 +277,6 @@ class BackupDeserializers {
       final deletedAt = json['deletedAt'] as int?;
 
       if (id == null || id.isEmpty) return null;
-      if (purchaseId == null || purchaseId.isEmpty) return null;
       if (sourceType == null || sourceType.isEmpty) return null;
       if (consignedQuantity == null || consignedQuantity < 0) return null;
       if (brokerName == null || brokerName.isEmpty) return null;
