@@ -33,6 +33,42 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Validate release signing secrets
+        run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret not found"
+            exit 1
+          fi
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ]; then
+            echo "::error::ANDROID_KEYSTORE_PASSWORD secret not found"
+            exit 1
+          fi
+          if [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ]; then
+            echo "::error::ANDROID_KEY_ALIAS secret not found"
+            exit 1
+          fi
+          if [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+            echo "::error::ANDROID_KEY_PASSWORD secret not found"
+            exit 1
+          fi
+          echo "✅ All release signing secrets are present"
+
+      - name: Reconstruct Android release keystore
+        run: |
+          mkdir -p android/app
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          echo "✅ Keystore reconstructed"
+
+      - name: Generate key.properties
+        run: |
+          cat > android/key.properties << 'KEYEOF'
+          storeFile=app/release.keystore
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYEOF
+          echo "✅ key.properties generated"
+
       - name: Run dart analyze
         run: |
           dart analyze > dart_analyze.txt 2>&1 || true
@@ -121,6 +157,20 @@ jobs:
           echo "APK found: $APK"
           ls -lh "$APK"
           echo "APK_PATH=$APK" >> $GITHUB_ENV
+
+      - name: Verify APK signing certificate
+        run: |
+          APK="${{ env.APK_PATH }}"
+          echo "Verifying APK signing certificate..."
+          apksigner verify -v --print-certs "$APK" | grep -A 1 "SHA-256" | head -2
+          echo "✅ APK signing verified"
+
+      - name: Cleanup sensitive files
+        if: always()
+        run: |
+          rm -f android/app/release.keystore
+          rm -f android/key.properties
+          echo "✅ Sensitive files cleaned up"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
