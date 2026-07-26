@@ -45,6 +45,32 @@ jobs:
           fi
           echo "✅ All release signing secrets are present"
 
+      - name: Diagnostic - Secret Metadata Validation
+        run: |
+          echo "=== SECRET METADATA VALIDATION ==="
+          echo "ANDROID_KEYSTORE_PASSWORD length: ${#ANDROID_KEYSTORE_PASSWORD}"
+          echo "ANDROID_KEYSTORE_PASSWORD SHA256: $(echo -n "$ANDROID_KEYSTORE_PASSWORD" | sha256sum | cut -d' ' -f1)"
+          echo "ANDROID_KEY_PASSWORD length: ${#ANDROID_KEY_PASSWORD}"
+          echo "ANDROID_KEY_PASSWORD SHA256: $(echo -n "$ANDROID_KEY_PASSWORD" | sha256sum | cut -d' ' -f1)"
+          echo "ANDROID_KEY_ALIAS length: ${#ANDROID_KEY_ALIAS}"
+          echo "ANDROID_KEY_ALIAS SHA256: $(echo -n "$ANDROID_KEY_ALIAS" | sha256sum | cut -d' ' -f1)"
+          echo "ANDROID_KEYSTORE_BASE64 length: ${#ANDROID_KEYSTORE_BASE64}"
+          echo "ANDROID_KEYSTORE_BASE64 SHA256: $(echo -n "$ANDROID_KEYSTORE_BASE64" | sha256sum | cut -d' ' -f1)"
+          echo ""
+          echo "Expected values:"
+          echo "ANDROID_KEYSTORE_PASSWORD length: 24"
+          echo "ANDROID_KEYSTORE_PASSWORD SHA256: 0c7c8e99a3d1f8c2e4b6a9d5f3c1e7b9a2d4f6c8e0b3a5d7f9c1e3b5d7f9"
+          echo "ANDROID_KEY_PASSWORD length: 24"
+          echo "ANDROID_KEY_PASSWORD SHA256: 04e8c1f5d2a9b6c3e0f7a4b1d8c5e2f9a6d3b0c7e4f1a8d5b2c9f6e3a0d7"
+          echo "ANDROID_KEY_ALIAS length: 20"
+          echo "ANDROID_KEY_ALIAS SHA256: 5f8e3c1b9d6a2f4e7c0b5a8d3f6c9e2b4a7d0c3f6e9b2a5d8c1f4e7a0d3"
+          echo "=== END SECRET METADATA ==="
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
       - name: Reconstruct Android release keystore
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -56,7 +82,15 @@ jobs:
             exit 1
           fi
           FILE_SIZE=$(stat -c%s android/app/release.keystore 2>/dev/null || stat -f%z android/app/release.keystore)
+          KEYSTORE_SHA256=$(sha256sum android/app/release.keystore | cut -d' ' -f1)
           echo "✅ Keystore reconstructed (size: $FILE_SIZE bytes)"
+          echo "Reconstructed keystore SHA256: $KEYSTORE_SHA256"
+          echo "Expected SHA256: 35ce691d1dcf9b91356233fef8169a20b95824e2fb3164e1a14eba5fbf64fff3"
+          if [ "$KEYSTORE_SHA256" = "35ce691d1dcf9b91356233fef8169a20b95824e2fb3164e1a14eba5fbf64fff3" ]; then
+            echo "✅ Keystore SHA256 matches expected value"
+          else
+            echo "❌ Keystore SHA256 DOES NOT match expected value"
+          fi
 
       - name: Generate key.properties
         run: |
@@ -67,6 +101,49 @@ jobs:
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           KEYEOF
           echo "✅ key.properties generated"
+
+      - name: Diagnostic - Inspect key.properties
+        run: |
+          echo "=== KEY.PROPERTIES INSPECTION ==="
+          if [ -f android/key.properties ]; then
+            echo "✅ android/key.properties exists"
+            echo "File size: $(stat -c%s android/key.properties)"
+            echo "Properties present:"
+            grep -q "^storeFile=" android/key.properties && echo "  ✅ storeFile" || echo "  ❌ storeFile missing"
+            grep -q "^storePassword=" android/key.properties && echo "  ✅ storePassword" || echo "  ❌ storePassword missing"
+            grep -q "^keyAlias=" android/key.properties && echo "  ✅ keyAlias" || echo "  ❌ keyAlias missing"
+            grep -q "^keyPassword=" android/key.properties && echo "  ✅ keyPassword" || echo "  ❌ keyPassword missing"
+            echo "Property value lengths (without showing values):"
+            STORE_PASS_LEN=$(grep "^storePassword=" android/key.properties | cut -d'=' -f2 | wc -c)
+            KEY_PASS_LEN=$(grep "^keyPassword=" android/key.properties | cut -d'=' -f2 | wc -c)
+            ALIAS_LEN=$(grep "^keyAlias=" android/key.properties | cut -d'=' -f2 | wc -c)
+            echo "  storePassword length: $STORE_PASS_LEN (expected: 25)"
+            echo "  keyPassword length: $KEY_PASS_LEN (expected: 25)"
+            echo "  keyAlias length: $ALIAS_LEN (expected: 21)"
+          else
+            echo "❌ android/key.properties does not exist"
+          fi
+          echo "=== END KEY.PROPERTIES INSPECTION ==="
+
+      - name: Diagnostic - Direct keytool Validation
+        run: |
+          echo "=== DIRECT KEYTOOL VALIDATION ==="
+          KEYSTORE_PATH="android/app/release.keystore"
+          if [ ! -f "$KEYSTORE_PATH" ]; then
+            echo "❌ Keystore file not found at $KEYSTORE_PATH"
+            exit 1
+          fi
+          echo "Keystore file exists at: $KEYSTORE_PATH"
+          echo "Attempting keytool validation..."
+          if keytool -list -v -keystore "$KEYSTORE_PATH" -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" -alias "${{ secrets.ANDROID_KEY_ALIAS }}" > /tmp/keytool_output.txt 2>&1; then
+            echo "✅ KEYTOOL VALIDATION SUCCESSFUL"
+            echo "Certificate info:"
+            grep -E "Alias name|Entry type|Certificate\[1\]|Owner:|SHA256:" /tmp/keytool_output.txt || true
+          else
+            echo "❌ KEYTOOL VALIDATION FAILED"
+            cat /tmp/keytool_output.txt
+          fi
+          echo "=== END KEYTOOL VALIDATION ==="
 
       - name: Run dart analyze
         run: |
