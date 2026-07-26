@@ -2,21 +2,13 @@ name: Flutter Build & Analyze
 
 on:
   push:
-    branches:
-      - main
-      - refactor/**
-  pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -36,19 +28,19 @@ jobs:
       - name: Validate release signing secrets
         run: |
           if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
-            echo "::error::ANDROID_KEYSTORE_BASE64 secret not found"
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret is not set"
             exit 1
           fi
           if [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ]; then
-            echo "::error::ANDROID_KEYSTORE_PASSWORD secret not found"
+            echo "::error::ANDROID_KEYSTORE_PASSWORD secret is not set"
             exit 1
           fi
           if [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ]; then
-            echo "::error::ANDROID_KEY_ALIAS secret not found"
+            echo "::error::ANDROID_KEY_ALIAS secret is not set"
             exit 1
           fi
           if [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
-            echo "::error::ANDROID_KEY_PASSWORD secret not found"
+            echo "::error::ANDROID_KEY_PASSWORD secret is not set"
             exit 1
           fi
           echo "✅ All release signing secrets are present"
@@ -56,42 +48,13 @@ jobs:
       - name: Reconstruct Android release keystore
         run: |
           mkdir -p android/app
-          python3 << 'PYSCRIPT'
-          import base64
-          import sys
-          
-          keystore_b64 = """${{ secrets.ANDROID_KEYSTORE_BASE64 }}"""
-          keystore_bytes = base64.b64decode(keystore_b64)
-          
-          with open('android/app/release.keystore', 'wb') as f:
-              f.write(keystore_bytes)
-          
-          print(f"✅ Keystore reconstructed (size: {len(keystore_bytes)} bytes)")
-          PYSCRIPT
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
           if [ ! -s android/app/release.keystore ]; then
             echo "::error::Failed to decode keystore - file is empty"
             exit 1
           fi
-          file android/app/release.keystore
-
-      - name: Diagnostic - Verify keystore location
-        run: |
-          echo "=== DIAGNOSTIC: Keystore Location ==="
-          echo "PWD: $(pwd)"
-          echo ""
-          echo "=== Contents of android/ ==="
-          ls -la android/ || echo "android/ not found"
-          echo ""
-          echo "=== Contents of android/app/ ==="
-          ls -la android/app/ || echo "android/app/ not found"
-          echo ""
-          echo "=== Absolute path of keystore ==="
-          if [ -f android/app/release.keystore ]; then
-            echo "File exists at: $(pwd)/android/app/release.keystore"
-            echo "File size: $(stat -c%s android/app/release.keystore 2>/dev/null || stat -f%z android/app/release.keystore)"
-          else
-            echo "ERROR: android/app/release.keystore not found"
-          fi
+          FILE_SIZE=$(stat -c%s android/app/release.keystore 2>/dev/null || stat -f%z android/app/release.keystore)
+          echo "✅ Keystore reconstructed (size: $FILE_SIZE bytes)"
 
       - name: Generate key.properties
         run: |
@@ -102,13 +65,6 @@ jobs:
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           KEYEOF
           echo "✅ key.properties generated"
-          echo "Contents of key.properties:"
-          cat android/key.properties
-          echo ""
-          echo "=== DIAGNOSTIC: key.properties path ==="
-          echo "key.properties location: $(pwd)/android/key.properties"
-          echo "storeFile value (from key.properties): $(grep storeFile android/key.properties | cut -d'=' -f2)"
-          echo "Expected keystore location: $(pwd)/android/app/$(grep storeFile android/key.properties | cut -d'=' -f2)"
 
       - name: Run dart analyze
         run: |
@@ -118,105 +74,36 @@ jobs:
       - name: Build APK (Release)
         run: |
           set +e
-          echo "=== BUILD START $(date -u) ===" | tee build_log.txt
-          echo "=== pwd ===" | tee -a build_log.txt
-          pwd | tee -a build_log.txt
-          echo "" | tee -a build_log.txt
-          echo "=== flutter build apk --release --no-shrink ===" | tee -a build_log.txt
-          flutter build apk --release --no-shrink 2>&1 | tee -a build_log.txt
-          BUILD_EXIT=${PIPESTATUS[0]}
-          echo "" | tee -a build_log.txt
-          echo "=== BUILD EXIT CODE: $BUILD_EXIT ===" | tee -a build_log.txt
-          echo "=== BUILD END $(date -u) ===" | tee -a build_log.txt
-          echo "" | tee -a build_log.txt
-          echo "=== build_log.txt size: $(wc -c < build_log.txt) bytes ===" | tee -a build_log.txt
-          echo "=== build_log.txt lines: $(wc -l < build_log.txt) ===" | tee -a build_log.txt
-          echo "" | tee -a build_log.txt
-          if [ $BUILD_EXIT -ne 0 ]; then
-            echo "=== FAILURE DETECTED - Capturing additional diagnostics ===" | tee -a build_log.txt
-            echo "" | tee -a build_log.txt
-            echo "=== find . -name '*.apk' ===" | tee -a build_log.txt
-            find . -name "*.apk" 2>&1 | tee -a build_log.txt
-            echo "" | tee -a build_log.txt
-            echo "=== ls -R build/app 2>&1 || true ===" | tee -a build_log.txt
-            ls -R build/app 2>&1 | tee -a build_log.txt || true
-            echo "" | tee -a build_log.txt
-            echo "::error::Flutter build failed with exit code $BUILD_EXIT"
-            exit $BUILD_EXIT
+          flutter build apk --release --no-shrink
+          BUILD_EXIT_CODE=$?
+          set -e
+          
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "=== BUILD EXIT CODE: $BUILD_EXIT_CODE ==="
+            echo "=== BUILD END $(date) ==="
+            exit $BUILD_EXIT_CODE
           fi
 
-      - name: Upload dart analyze output
-        if: always()
+      - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Upload build log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log
+          path: build/app/outputs/logs/
+          retention-days: 7
+
+      - name: Upload dart analyze output
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: dart-analyze-output
           path: dart_analyze.txt
           retention-days: 7
-
-      - name: Verify build log is not empty
-        if: always()
-        run: |
-          echo "=== build_log.txt verification ==="
-          if [ ! -f build_log.txt ]; then
-            echo "ERROR: build_log.txt does not exist"
-            echo "build_log.txt was not created" > build_log.txt
-          fi
-          FILE_SIZE=$(wc -c < build_log.txt)
-          FILE_LINES=$(wc -l < build_log.txt)
-          echo "File size: $FILE_SIZE bytes"
-          echo "File lines: $FILE_LINES"
-          if [ "$FILE_SIZE" -lt 100 ]; then
-            echo "WARNING: build_log.txt is suspiciously small ($FILE_SIZE bytes)"
-            echo "--- Contents ---"
-            cat build_log.txt
-            echo "--- End ---"
-          fi
-
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build_log.txt
-          retention-days: 7
-
-      - name: Verify APK was built
-        run: |
-          echo "=== pwd before APK verification ==="
-          pwd
-          echo "=== ls -R build/app/outputs || true ==="
-          ls -R build/app/outputs || true
-          echo "=== find . -name '*.apk' ==="
-          find . -name "*.apk"
-          APK=$(find build/app/outputs -type f -name "*.apk" | tail -n 1)
-          if [ -z "$APK" ]; then
-            echo "::error::APK not found in build/app/outputs"
-            echo "Complete build directory tree:"
-            find build -type f 2>/dev/null || echo "No build directory"
-            exit 1
-          fi
-          echo "APK found: $APK"
-          ls -lh "$APK"
-          echo "APK_PATH=$APK" >> $GITHUB_ENV
-
-      - name: Verify APK signing certificate
-        run: |
-          APK="${{ env.APK_PATH }}"
-          echo "Verifying APK signing certificate..."
-          apksigner verify -v --print-certs "$APK" | grep -A 1 "SHA-256" | head -2
-          echo "✅ APK signing verified"
-
-      - name: Cleanup sensitive files
-        if: always()
-        run: |
-          rm -f android/app/release.keystore
-          rm -f android/key.properties
-          echo "✅ Sensitive files cleaned up"
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-apk
-          path: ${{ env.APK_PATH }}
-          retention-days: 30
-          if-no-files-found: error
