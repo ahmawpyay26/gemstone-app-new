@@ -20,7 +20,7 @@ class RestoreSnapshot {
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// Create snapshot from a Hive box (works with any typed box)
-  factory RestoreSnapshot.fromBox<T>(Box<T> box) {
+  factory RestoreSnapshot.fromBox(Box box) {
     final snapshot = <dynamic, dynamic>{};
     for (final key in box.keys) {
       snapshot[key] = box.get(key);
@@ -32,7 +32,7 @@ class RestoreSnapshot {
   }
 
   /// Restore snapshot back to box (works with any typed box)
-  Future<void> restoreToBox<T>(Box<T> box) async {
+  Future<void> restoreToBox(Box box) async {
     // Clear current box
     await box.clear();
 
