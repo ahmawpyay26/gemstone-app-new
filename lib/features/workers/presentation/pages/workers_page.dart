@@ -281,13 +281,15 @@ class _WorkerFormState extends State<_WorkerForm> {
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 60,
                   child: ElevatedButton(
                     onPressed: _save,
                     child: const Text('သိမ်းဆည်းမည်',
                         style: TextStyle(
                             color: Colors.black,
-                            fontWeight: FontWeight.bold)),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            height: 1.3)),
                   ),
                 ),
                 const SizedBox(height: 8),
