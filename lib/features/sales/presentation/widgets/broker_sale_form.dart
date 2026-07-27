@@ -29,7 +29,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
 
   // State Variables
   DateTime _selectedSaleDate = DateTime.now();
-  BrokerProfile? _selectedBroker;
+  String? _selectedBrokerName;
   BrokerConsignment? _selectedConsignment;
   String _selectedSourceType = 'whole_stone';
   List<String> _selectedPhotos = [];
@@ -100,13 +100,6 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     });
   }
 
-  /// Normalize broker name for safe comparison
-  /// RULE 3: Support legacy null-ID records with normalized name matching
-  /// Normalize by: trim leading/trailing spaces, collapse repeated internal whitespace
-  String _normalizeBrokerName(String name) {
-    return name.trim().replaceAll(RegExp(r'\s+'), ' ');
-  }
-
   /// Pick image from camera
   Future<void> _pickImageFromCamera() async {
     try {
@@ -156,23 +149,13 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
 
   /// Get broker consignments for selected broker
   List<BrokerConsignment> _getBrokerConsignments() {
-    if (_selectedBroker == null) return [];
+    if (_selectedBrokerName == null) return [];
     
     final box = LocalDb.brokerConsignments();
     final allConsignments = box.values.toList();
     
     return allConsignments.where((c) {
-      // Primary match: By ID (stable linking)
-      final matchById = c.brokerProfileId == _selectedBroker!.id;
-      
-      // FIX 3: Safe legacy resolution for records with null brokerProfileId
-      bool matchByLegacy = false;
-      if (c.brokerProfileId == null) {
-        // Only match by exact name if brokerProfileId is null
-        matchByLegacy = c.brokerName == _selectedBroker!.name;
-      }
-      
-      return (matchById || matchByLegacy) && c.isActive && c.remainingQuantity > 0;
+      return c.brokerName == _selectedBrokerName && c.isActive && c.remainingQuantity > 0;
     }).toList();
   }
 
@@ -361,15 +344,8 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
         .where((c) => c.remainingQuantity > 0)
         .where((c) => c.historicalData.sourceType == _selectedSourceType)
         .where((c) {
-          if (_selectedBroker == null) return false;
-          // Primary match: By ID (stable linking)
-          final matchById = c.brokerProfileId == _selectedBroker!.id;
-          // FIX 3: Safe legacy resolution for records with null brokerProfileId
-          bool matchByLegacy = false;
-          if (c.brokerProfileId == null) {
-            matchByLegacy = c.brokerName == _selectedBroker!.name;
-          }
-          return matchById || matchByLegacy;
+          if (_selectedBrokerName == null) return false;
+          return c.brokerName == _selectedBrokerName;
         })
         .toList();
 
@@ -460,42 +436,22 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
             ),
             const SizedBox(height: 8),
             ValueListenableBuilder(
-              valueListenable: Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox).listenable(),
-              builder: (context, brokerBox, _) {
-                // FIX: Filter brokers by remaining eligible consignments
-                // RULE 1: Remove sourceType from broker eligibility (keep in stone selector)
-                // RULE 2: Support ID-based records (brokerProfileId != null)
-                // RULE 3: Support legacy null-ID records with normalized name matching
-                final consignmentBox = Hive.box<BrokerConsignment>('brokerConsignments');
-                final eligibleBrokerIds = <String>{};
+              valueListenable: Hive.box<BrokerConsignment>('brokerConsignments').listenable(),
+              builder: (context, consignmentBox, _) {
+                // Collect unique broker names with remaining stock
+                final eligibleBrokerNames = <String>{};
                 
-                // Collect broker IDs that have at least one eligible consignment
                 for (final consignment in consignmentBox.values) {
                   if (consignment.isActive && consignment.remainingQuantity > 0) {
-                    // RULE 2: ID-based records
-                    if (consignment.brokerProfileId != null) {
-                      eligibleBrokerIds.add(consignment.brokerProfileId!);
-                    } else {
-                      // RULE 3: Legacy null-ID records - find matching BrokerProfile by normalized name
-                      final normalizedConsignmentName = _normalizeBrokerName(consignment.brokerName);
-                      for (final broker in brokerBox.values) {
-                        if (!broker.isDeleted && _normalizeBrokerName(broker.name) == normalizedConsignmentName) {
-                          eligibleBrokerIds.add(broker.id);
-                          break; // Found match, stop searching
-                        }
-                      }
-                    }
+                    eligibleBrokerNames.add(consignment.brokerName);
                   }
                 }
                 
-                // RULE 4: Filter BrokerProfile list to show only brokers with eligible consignments
-                // Remove duplicates by BrokerProfile.id
-                final brokers = brokerBox.values
-                    .where((b) => !b.isDeleted && eligibleBrokerIds.contains(b.id))
-                    .toList();
+                // Sort broker names for consistent display
+                final brokerNames = eligibleBrokerNames.toList()..sort();
                 
                 // Show empty state if no eligible brokers
-                if (brokers.isEmpty) {
+                if (brokerNames.isEmpty) {
                   return Column(
                     children: [
                       TextField(
@@ -526,20 +482,20 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                   );
                 }
                 
-                return Autocomplete<BrokerProfile>(
+                return Autocomplete<String>(
                   optionsBuilder: (TextEditingValue textEditingValue) {
                     if (textEditingValue.text.isEmpty) {
-                      return brokers;
+                      return brokerNames;
                     }
                     final searchText = textEditingValue.text.toLowerCase();
-                    return brokers.where((broker) {
-                      return broker.name.toLowerCase().contains(searchText);
+                    return brokerNames.where((name) {
+                      return name.toLowerCase().contains(searchText);
                     }).toList();
                   },
-                  onSelected: (BrokerProfile selection) {
+                  onSelected: (String selection) {
                     setState(() {
-                      _selectedBroker = selection;
-                      _brokerSearchController.text = selection.name;
+                      _selectedBrokerName = selection;
+                      _brokerSearchController.text = selection;
                       _selectedConsignment = null;
                       _selectedSourceType = 'whole_stone';
                     });
@@ -549,9 +505,9 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                       FocusNode focusNode,
                       VoidCallback onFieldSubmitted) {
                     // Sync the search controller with the text field
-                    if (_selectedBroker != null &&
-                        textEditingController.text != _selectedBroker!.name) {
-                      textEditingController.text = _selectedBroker!.name;
+                    if (_selectedBrokerName != null &&
+                        textEditingController.text != _selectedBrokerName) {
+                      textEditingController.text = _selectedBrokerName!;
                     }
                     return TextField(
                       controller: textEditingController,
@@ -581,15 +537,15 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                         // Clear selection when user modifies text
                         if (value.isEmpty) {
                           setState(() {
-                            _selectedBroker = null;
+                            _selectedBrokerName = null;
                           });
                         }
                       },
                     );
                   },
                   optionsViewBuilder: (BuildContext context,
-                      AutocompleteOnSelected<BrokerProfile> onSelected,
-                      Iterable<BrokerProfile> options) {
+                      AutocompleteOnSelected<String> onSelected,
+                      Iterable<String> options) {
                     return Align(
                       alignment: Alignment.topLeft,
                       child: Material(
@@ -610,7 +566,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                                   shrinkWrap: true,
                                   itemCount: options.length,
                                   itemBuilder: (BuildContext context, int index) {
-                                    final BrokerProfile option =
+                                    final String option =
                                         options.elementAt(index);
                                     return InkWell(
                                       onTap: () {
@@ -620,7 +576,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12.0, vertical: 8.0),
                                         child: Text(
-                                          option.name,
+                                          option,
                                           style: const TextStyle(
                                               color: Colors.white),
                                         ),
