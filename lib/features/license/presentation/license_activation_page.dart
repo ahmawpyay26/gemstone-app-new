@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../models/license_activation.dart';
 import '../services/activation_service.dart';
 import '../services/license_key_validator.dart';
+import '../data/hive_activation_repository.dart';
 
 /// License activation page for Phase 1A.
 ///
@@ -62,7 +63,9 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
       );
 
       // Save activation
-      final activationService = ActivationService();
+      final repository = HiveActivationRepository();
+      await repository.init();
+      final activationService = ActivationService(repository: repository);
       await activationService.activateLicense(activation);
 
       // Success - navigate to login

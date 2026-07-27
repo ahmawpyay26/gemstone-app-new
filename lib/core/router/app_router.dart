@@ -43,7 +43,7 @@ final GoRouter appRouter = GoRouter(
     if (!loggedIn && !goingToLogin && goingToLogin) return '/login';
     if (loggedIn && goingToLogin) return '/dashboard';
     return null;
-  }
+  },
   errorBuilder: (context, state) => Scaffold(
     body: Center(
       child: Text('Error: ${state.error}'),
