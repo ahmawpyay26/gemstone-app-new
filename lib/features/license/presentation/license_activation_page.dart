@@ -66,7 +66,16 @@ class _LicenseActivationPageState extends State<LicenseActivationPage> {
       final repository = HiveActivationRepository();
       await repository.init();
       final activationService = ActivationService(repository: repository);
-      await activationService.activateLicense(activation);
+      final result = await activationService.activateLicense(sanitizedKey);
+      
+      if (!result.success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Activation failed: ${result.message}')),
+          );
+        }
+        return;
+      }
 
       // Success - navigate to login
       if (mounted) {
