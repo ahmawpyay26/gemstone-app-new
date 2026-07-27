@@ -179,9 +179,9 @@ jobs:
         run: |
           echo "=== PRE-GRADLE KEYTOOL VALIDATION ==="
           KEYSTORE_PATH="android/app/release.keystore"
-          STORE_PASS=$(grep "^storePassword=" android/key.properties | cut -d'=' -f2)
-          KEY_PASS=$(grep "^keyPassword=" android/key.properties | cut -d'=' -f2)
-          ALIAS=$(grep "^keyAlias=" android/key.properties | cut -d'=' -f2)
+          STORE_PASS=$(grep "^storePassword=" android/key.properties | cut -d'=' -f2 | tr -d '\n')
+          KEY_PASS=$(grep "^keyPassword=" android/key.properties | cut -d'=' -f2 | tr -d '\n')
+          ALIAS=$(grep "^keyAlias=" android/key.properties | cut -d'=' -f2 | tr -d '\n')
           
           if keytool -list -v -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASS" -alias "$ALIAS" > /tmp/keytool_pre_gradle.txt 2>&1; then
             echo "✅ PRE-GRADLE KEYTOOL VALIDATION SUCCESSFUL"
