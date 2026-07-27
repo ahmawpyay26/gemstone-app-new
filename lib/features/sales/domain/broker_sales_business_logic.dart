@@ -229,6 +229,7 @@ class BrokerSalesBusinessLogic {
   /// Returns true on success
   static Future<bool> commitDraftItems({
     required List<DraftBrokerSaleItem> draftItems,
+    String? customerId,
     required String? customerName,
     required DateTime invoiceDate,
   }) async {
@@ -284,6 +285,7 @@ class BrokerSalesBusinessLogic {
           id: LocalDb.genId(),
           gemstoneName: gemstone.name,
           gemstoneId: gemstone.id,
+          customerId: customerId,
           customerName: customerName ?? draftItem.buyerName ?? 'အမည်မသိ',
           amount: draftItem.totalSaleAmount, // Gross sale amount
           commissionFee: draftItem.commission,

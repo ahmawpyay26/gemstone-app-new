@@ -30,6 +30,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
   // State Variables
   DateTime _selectedSaleDate = DateTime.now();
   String? _selectedBrokerName;
+  String? _selectedCustomerId;
   BrokerConsignment? _selectedConsignment;
   String _selectedSourceType = 'whole_stone';
   List<String> _selectedPhotos = [];
@@ -279,6 +280,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     try {
       await BrokerSalesBusinessLogic.commitDraftItems(
         draftItems: _draftItems,
+        customerId: _selectedCustomerId,
         customerName: _customerNameController.text.trim().isNotEmpty
             ? _customerNameController.text.trim()
             : null,
@@ -414,19 +416,13 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
             ),
             const SizedBox(height: 16),
 
-            // Section 2: Customer Name
+            // Section 2: Customer Name with Autocomplete
             Text(
               'ဝယ်ယူသူအမည်',
               style: TextStyle(fontSize: 12, color: Colors.grey[400]),
             ),
             const SizedBox(height: 8),
-            TextField(
-              controller: _customerNameController,
-              decoration: InputDecoration(
-                labelText: 'ဝယ်ယူသူအမည် (ရွေးချယ်ခွင့်)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
+            _buildCustomerSelector(),
             const SizedBox(height: 16),
 
             // Section 2.5: Broker Selection
@@ -1141,6 +1137,257 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCustomerSelector() {
+    return ValueListenableBuilder<Box<Customer>>(
+      valueListenable: LocalDb.customers().listenable(),
+      builder: (context, box, _) {
+        final activeCustomers = box.values
+            .where((c) => !c.isDeleted && c.status == 'active')
+            .toList();
+
+        return Autocomplete<String>(
+          optionsBuilder: (TextEditingValue textEditingValue) {
+            if (textEditingValue.text.isEmpty) {
+              return activeCustomers.map((c) => c.id).toList();
+            }
+            final searchText = textEditingValue.text.toLowerCase();
+            return activeCustomers
+                .where((c) => c.name.toLowerCase().contains(searchText))
+                .map((c) => c.id)
+                .toList();
+          },
+          onSelected: (String customerId) {
+            final customer = activeCustomers.firstWhereOrNull((c) => c.id == customerId);
+            if (customer != null) {
+              setState(() {
+                _selectedCustomerId = customer.id;
+                _customerNameController.text = customer.name;
+              });
+            }
+          },
+          fieldViewBuilder: (BuildContext context,
+              TextEditingController textEditingController,
+              FocusNode focusNode,
+              VoidCallback onFieldSubmitted) {
+            // Sync the search controller with the text field
+            if (_selectedCustomerId != null &&
+                textEditingController.text != _customerNameController.text) {
+              textEditingController.text = _customerNameController.text;
+            }
+            return TextField(
+              controller: textEditingController,
+              focusNode: focusNode,
+              decoration: InputDecoration(
+                labelText: 'ဝယ်ယူသူအမည် (ရွေးချယ်ခွင့်)',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                suffixIcon: _selectedCustomerId != null
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          textEditingController.clear();
+                          setState(() {
+                            _selectedCustomerId = null;
+                            _customerNameController.clear();
+                          });
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (value) {
+                // Clear selection when user modifies text
+                if (value.isEmpty) {
+                  setState(() {
+                    _selectedCustomerId = null;
+                  });
+                }
+              },
+            );
+          },
+          optionsViewBuilder: (BuildContext context,
+              AutocompleteOnSelected<String> onSelected,
+              Iterable<String> options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4.0,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 280),
+                  child: Container(
+                    color: AppTheme.surfaceLight,
+                    child: options.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: InkWell(
+                              onTap: () => _showCreateCustomerDialog(),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12.0, vertical: 8.0),
+                                child: Row(
+                                  children: [
+                                    Text('➕ '),
+                                    Text('ဖောက်သည်အသစ် ထည့်မည်'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: options.length + 1,
+                            itemBuilder: (BuildContext context, int index) {
+                              if (index == options.length) {
+                                return InkWell(
+                                  onTap: () => _showCreateCustomerDialog(),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        top: BorderSide(color: Colors.white24),
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12.0, vertical: 8.0),
+                                    child: const Row(
+                                      children: [
+                                        Text('➕ '),
+                                        Text('ဖောက်သည်အသစ် ထည့်မည်'),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+                              final customerId = options.elementAt(index);
+                              final customer = activeCustomers
+                                  .firstWhereOrNull((c) => c.id == customerId);
+                              if (customer == null) return const SizedBox.shrink();
+                              return InkWell(
+                                onTap: () {
+                                  onSelected(customerId);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12.0, vertical: 8.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        customer.name,
+                                        style: const TextStyle(color: Colors.white),
+                                      ),
+                                      if (customer.phone != null &&
+                                          customer.phone!.isNotEmpty)
+                                        Text(
+                                          customer.phone!,
+                                          style: const TextStyle(
+                                              fontSize: 11, color: Colors.white70),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showCreateCustomerDialog() {
+    final TextEditingController nameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: const Text('ဖောက်သည်အသစ်ထည့်ရန်'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: nameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'ဖောက်သည်အမည်',
+                hintText: 'ဖောက်သည်အမည်ထည့်သွင်းပါ',
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ပယ်ဖျက်မည်'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final customerName = nameController.text.trim();
+              if (customerName.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('ဖောက်သည်အမည်ထည့်သွင်းပါ')),
+                );
+                return;
+              }
+
+              // Check for duplicate (case-insensitive)
+              final existingCustomer = LocalDb.customers()
+                  .values
+                  .firstWhereOrNull((c) =>
+                      c.name.toLowerCase() == customerName.toLowerCase() &&
+                      !c.isDeleted);
+
+              if (existingCustomer != null) {
+                if (mounted) {
+                  Navigator.pop(context);
+                  setState(() {
+                    _selectedCustomerId = existingCustomer.id;
+                    _customerNameController.text = existingCustomer.name;
+                  });
+                }
+                return;
+              }
+
+              // Create new customer
+              final newCustomer = Customer(
+                id: LocalDb.genId(),
+                name: customerName,
+                phone: '',
+                address: '',
+                notes: '',
+                openingBalance: 0.0,
+                currentBalance: 0.0,
+                creditLimit: 0.0,
+                status: 'active',
+                isDeleted: false,
+                deletedAt: null,
+                createdAt: DateTime.now().millisecondsSinceEpoch,
+                updatedAt: DateTime.now().millisecondsSinceEpoch,
+              );
+
+              await LocalDb.customers().add(newCustomer);
+
+              if (mounted) {
+                Navigator.pop(context);
+                setState(() {
+                  _selectedCustomerId = newCustomer.id;
+                  _customerNameController.text = newCustomer.name;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('ဖောက်သည်အသစ်ထည့်သွင်းပြီးပါပြီ')),
+                );
+              }
+            },
+            child: const Text('သိမ်းဆည်းမည်'),
+          ),
+        ],
       ),
     );
   }
