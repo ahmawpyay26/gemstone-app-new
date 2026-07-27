@@ -169,75 +169,6 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     }).toList();
   }
 
-  /// Get unique list of brokers with eligible remaining consignment items
-  /// This replaces the general Broker Profile list for the broker selector
-  List<BrokerProfile> _getEligibleConsignmentBrokers() {
-    final consignmentBox = LocalDb.brokerConsignments();
-    final brokerProfileBox = Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox);
-    
-    // Get all eligible consignment items (active, not deleted, remaining qty > 0)
-    final eligibleConsignments = consignmentBox.values.where((c) {
-      return c.isActive && c.remainingQuantity > 0;
-    }).toList();
-    
-    // Collect unique brokers by brokerProfileId
-    final brokerIds = <String>{};  // Set to ensure uniqueness (String, not int)
-    final legacyBrokerNames = <String>{};  // For legacy null-ID records
-    
-    for (final consignment in eligibleConsignments) {
-      if (consignment.brokerProfileId != null) {
-        brokerIds.add(consignment.brokerProfileId!);
-      } else if (consignment.brokerName != null && consignment.brokerName!.isNotEmpty) {
-        // Legacy: Store broker name for null-ID records
-        legacyBrokerNames.add(consignment.brokerName!);
-      }
-    }
-    
-    // Build result list
-    final result = <BrokerProfile>[];
-    
-    // Add brokers by ID (primary)
-    for (final brokerId in brokerIds) {
-      final brokerProfile = brokerProfileBox.values.firstWhere(
-        (b) => b.id == brokerId && !b.isDeleted,
-        orElse: () => BrokerProfile(
-          id: brokerId,
-          name: 'Unknown',
-          phone: '',
-          address: '',
-          socialAccount: '',
-          isDeleted: false,
-          createdAt: DateTime.now().millisecondsSinceEpoch,
-          updatedAt: DateTime.now().millisecondsSinceEpoch,
-        ),
-      );
-      result.add(brokerProfile);
-    }
-    
-    // Add legacy brokers (null brokerProfileId but with stored name)
-    // Create synthetic BrokerProfile objects for display
-    for (final brokerName in legacyBrokerNames) {
-      // Check if this name is already in the result
-      final alreadyExists = result.any((b) => b.name == brokerName);
-      if (!alreadyExists) {
-        // Create a synthetic BrokerProfile for legacy display
-        // Use a hashcode-based ID to indicate it's synthetic
-        result.add(BrokerProfile(
-          id: 'legacy_${brokerName.hashCode}',  // Synthetic ID based on name
-          name: brokerName,
-          phone: '',
-          address: '',
-          socialAccount: '',
-          isDeleted: false,
-          createdAt: DateTime.now().millisecondsSinceEpoch,
-          updatedAt: DateTime.now().millisecondsSinceEpoch,
-        ));
-      }
-    }
-    
-    return result;
-  }
-
   /// Validate and add item to draft
   Future<void> _addItemToDraft() async {
     // Validate consignment selection
@@ -522,9 +453,26 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
             ),
             const SizedBox(height: 8),
             ValueListenableBuilder(
-              valueListenable: Hive.box<BrokerConsignment>(LocalDb.brokerConsignmentsBox).listenable(),
-              builder: (context, box, _) {
-                final brokers = _getEligibleConsignmentBrokers();
+              valueListenable: Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox).listenable(),
+              builder: (context, brokerBox, _) {
+                // MINIMAL FIX: Filter brokers by remaining eligible consignments
+                final consignmentBox = Hive.box<BrokerConsignment>('brokerConsignments');
+                final eligibleBrokerIds = <String>{};
+                
+                // Collect broker IDs that have at least one eligible consignment
+                for (final consignment in consignmentBox.values) {
+                  if (consignment.isActive && 
+                      consignment.remainingQuantity > 0 &&
+                      consignment.historicalData.sourceType == _selectedSourceType &&
+                      consignment.brokerProfileId != null) {
+                    eligibleBrokerIds.add(consignment.brokerProfileId!);
+                  }
+                }
+                
+                // Filter BrokerProfile list to show only brokers with eligible consignments
+                final brokers = brokerBox.values
+                    .where((b) => !b.isDeleted && eligibleBrokerIds.contains(b.id))
+                    .toList();
                 
                 // Show empty state if no eligible brokers
                 if (brokers.isEmpty) {
