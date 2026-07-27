@@ -125,12 +125,12 @@ jobs:
 
       - name: Generate key.properties
         run: |
-          cat > android/key.properties << EOF
-storeFile=release.keystore
-storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-EOF
+          (
+            echo "storeFile=release.keystore"
+            echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+            echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}"
+            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}"
+          ) > android/key.properties
           echo "✅ key.properties generated"
 
       - name: Diagnostic - Inspect key.properties
