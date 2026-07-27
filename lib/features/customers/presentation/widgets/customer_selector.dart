@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:gemstone_management/core/local/local_db.dart';
 import 'package:gemstone_management/core/local/models.dart';
 import 'package:gemstone_management/core/theme/app_theme.dart';
+import 'package:collection/collection.dart';
 
 /// Reusable customer selector widget with autocomplete and creation support
 /// Returns Customer object on selection
