@@ -169,6 +169,64 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     }).toList();
   }
 
+  /// Get unique list of brokers with eligible remaining consignment items
+  /// This replaces the general Broker Profile list for the broker selector
+  List<BrokerProfile> _getEligibleConsignmentBrokers() {
+    final consignmentBox = LocalDb.brokerConsignments();
+    final brokerProfileBox = Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox);
+    
+    // Get all eligible consignment items (active, not deleted, remaining qty > 0)
+    final eligibleConsignments = consignmentBox.values.where((c) {
+      return c.isActive && c.remainingQuantity > 0;
+    }).toList();
+    
+    // Collect unique brokers by brokerProfileId
+    final brokerIds = <int>{};  // Set to ensure uniqueness
+    final legacyBrokerNames = <String>{};  // For legacy null-ID records
+    
+    for (final consignment in eligibleConsignments) {
+      if (consignment.brokerProfileId != null) {
+        brokerIds.add(consignment.brokerProfileId!);
+      } else if (consignment.brokerName != null && consignment.brokerName!.isNotEmpty) {
+        // Legacy: Store broker name for null-ID records
+        legacyBrokerNames.add(consignment.brokerName!);
+      }
+    }
+    
+    // Build result list
+    final result = <BrokerProfile>[];
+    
+    // Add brokers by ID (primary)
+    for (final brokerId in brokerIds) {
+      final brokerProfile = brokerProfileBox.values.firstWhere(
+        (b) => b.id == brokerId && !b.isDeleted,
+        orElse: () => BrokerProfile(id: brokerId, name: 'Unknown', phone: '', address: '', social: '', isDeleted: false),
+      );
+      result.add(brokerProfile);
+    }
+    
+    // Add legacy brokers (null brokerProfileId but with stored name)
+    // Create synthetic BrokerProfile objects for display
+    for (final brokerName in legacyBrokerNames) {
+      // Check if this name is already in the result
+      final alreadyExists = result.any((b) => b.name == brokerName);
+      if (!alreadyExists) {
+        // Create a synthetic BrokerProfile for legacy display
+        // Use a negative ID to indicate it's synthetic
+        result.add(BrokerProfile(
+          id: -1,  // Synthetic ID
+          name: brokerName,
+          phone: '',
+          address: '',
+          social: '',
+          isDeleted: false,
+        ));
+      }
+    }
+    
+    return result;
+  }
+
   /// Validate and add item to draft
   Future<void> _addItemToDraft() async {
     // Validate consignment selection
@@ -453,9 +511,42 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
             ),
             const SizedBox(height: 8),
             ValueListenableBuilder(
-              valueListenable: Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox).listenable(),
+              valueListenable: Hive.box<BrokerConsignment>(LocalDb.brokerConsignmentsBox).listenable(),
               builder: (context, box, _) {
-                final brokers = box.values.where((b) => !b.isDeleted).toList();
+                final brokers = _getEligibleConsignmentBrokers();
+                
+                // Show empty state if no eligible brokers
+                if (brokers.isEmpty) {
+                  return Column(
+                    children: [
+                      TextField(
+                        controller: _brokerSearchController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'ပွဲစားရွေးချယ်ပါ',
+                          labelStyle: TextStyle(color: Colors.grey[400]),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[900],
+                        ),
+                        enabled: false,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'ရောင်းချနိုင်သည့် ပွဲစားအပ်ပစ္စည်း မရှိသေးပါ။',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                      ),
+                    ],
+                  );
+                }
+                
                 return Autocomplete<BrokerProfile>(
                   optionsBuilder: (TextEditingValue textEditingValue) {
                     if (textEditingValue.text.isEmpty) {
