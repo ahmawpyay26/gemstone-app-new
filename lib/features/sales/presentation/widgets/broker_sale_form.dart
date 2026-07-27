@@ -181,7 +181,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     }).toList();
     
     // Collect unique brokers by brokerProfileId
-    final brokerIds = <int>{};  // Set to ensure uniqueness
+    final brokerIds = <String>{};  // Set to ensure uniqueness (String, not int)
     final legacyBrokerNames = <String>{};  // For legacy null-ID records
     
     for (final consignment in eligibleConsignments) {
@@ -200,7 +200,16 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     for (final brokerId in brokerIds) {
       final brokerProfile = brokerProfileBox.values.firstWhere(
         (b) => b.id == brokerId && !b.isDeleted,
-        orElse: () => BrokerProfile(id: brokerId, name: 'Unknown', phone: '', address: '', social: '', isDeleted: false),
+        orElse: () => BrokerProfile(
+          id: brokerId,
+          name: 'Unknown',
+          phone: '',
+          address: '',
+          socialAccount: '',
+          isDeleted: false,
+          createdAt: DateTime.now().millisecondsSinceEpoch,
+          updatedAt: DateTime.now().millisecondsSinceEpoch,
+        ),
       );
       result.add(brokerProfile);
     }
@@ -212,14 +221,16 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
       final alreadyExists = result.any((b) => b.name == brokerName);
       if (!alreadyExists) {
         // Create a synthetic BrokerProfile for legacy display
-        // Use a negative ID to indicate it's synthetic
+        // Use a hashcode-based ID to indicate it's synthetic
         result.add(BrokerProfile(
-          id: -1,  // Synthetic ID
+          id: 'legacy_${brokerName.hashCode}',  // Synthetic ID based on name
           name: brokerName,
           phone: '',
           address: '',
-          social: '',
+          socialAccount: '',
           isDeleted: false,
+          createdAt: DateTime.now().millisecondsSinceEpoch,
+          updatedAt: DateTime.now().millisecondsSinceEpoch,
         ));
       }
     }
