@@ -106,6 +106,8 @@ class _CustomerSelectorState extends State<CustomerSelector> {
                     _selectedCustomer = existingCustomer;
                     _textController.text = existingCustomer.name;
                   });
+                  // Dismiss keyboard and close autocomplete dropdown
+                  FocusScope.of(context).unfocus();
                   widget.onCustomerSelected(existingCustomer);
                 }
                 return;
@@ -136,6 +138,8 @@ class _CustomerSelectorState extends State<CustomerSelector> {
                   _selectedCustomer = newCustomer;
                   _textController.text = newCustomer.name;
                 });
+                // Dismiss keyboard and close autocomplete dropdown
+                FocusScope.of(context).unfocus();
                 widget.onCustomerSelected(newCustomer);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('ဖောက်သည်အသစ်ထည့်သွင်းပြီးပါပြီ')),
@@ -173,6 +177,8 @@ class _CustomerSelectorState extends State<CustomerSelector> {
               _selectedCustomer = customer;
               _textController.text = customer.name;
             });
+            // Dismiss keyboard and close autocomplete dropdown
+            FocusScope.of(context).unfocus();
             widget.onCustomerSelected(customer);
           },
           fieldViewBuilder: (BuildContext context,
