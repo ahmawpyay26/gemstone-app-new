@@ -431,6 +431,7 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
                 });
               },
               labelText: 'ဝယ်ယူသူအမည် (ရွေးချယ်ခွင့်)',
+              hintText: 'ဝယ်ယူသူအမည် ရွေးသူရါပါ',
               allowClear: true,
             ),
             const SizedBox(height: 16),

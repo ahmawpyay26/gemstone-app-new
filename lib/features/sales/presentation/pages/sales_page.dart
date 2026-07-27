@@ -3495,8 +3495,8 @@ class _SaleFormState extends State<_SaleForm> {
                 _customer.text = customer.name;
               });
             },
-            labelText: 'ဖောက်သည်အယ်ပဝမည်',
-            hintText: 'ဖောက်သည်အယ်ပဝမည်',
+            labelText: 'ဝယ်ယူသူအမည် (ရွေးချယ်ခွင့်)',
+            hintText: 'ဝယ်ယူသူအမည် ရွေးသူရါပါ',
             allowClear: false,
           ),
         ],
