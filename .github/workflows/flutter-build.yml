@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - refactor/**
+      - release-signing-fix
   pull_request:
     branches:
       - main
