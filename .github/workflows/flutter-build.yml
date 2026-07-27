@@ -93,6 +93,10 @@ jobs:
           echo "key.properties generated"
 
       - name: Build APK (Release)
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set +e
           echo "=== BUILD START $(date -u) ===" | tee build_log.txt
