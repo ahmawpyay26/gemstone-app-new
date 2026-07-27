@@ -2238,6 +2238,10 @@ class _SaleFormState extends State<_SaleForm> {
                 ),
 
                 // --- Gemstone picker from inventory (Whole Stone) ---
+                // Show entire form only for whole stone source
+                if (_saleSource == 'whole_stone') ...[                
+                _buildCustomerPicker(),
+                
                 if (_saleSource == 'whole_stone')
                                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -2491,9 +2495,6 @@ class _SaleFormState extends State<_SaleForm> {
                     ),
                   ],
 
-                // Show entire form only for whole stone source
-                if (_saleSource == 'whole_stone') ...[                
-                _buildCustomerPicker(),
                 Row(children: [
                   Expanded(
                       child: _field(_amount, 'ရောင်းရငွေ (ကျပ်)',
