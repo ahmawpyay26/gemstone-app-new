@@ -125,12 +125,12 @@ jobs:
 
       - name: Generate key.properties
         run: |
-          (
-            echo "storeFile=release.keystore"
-            echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
-            echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}"
-            echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}"
-          ) > android/key.properties
+          {
+            printf '%s\n' "storeFile=release.keystore"
+            printf '%s\n' "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+            printf '%s\n' "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}"
+            printf '%s\n' "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}"
+          } > android/key.properties
           echo "✅ key.properties generated"
 
       - name: Diagnostic - Inspect key.properties
