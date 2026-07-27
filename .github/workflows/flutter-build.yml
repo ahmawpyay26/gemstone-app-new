@@ -125,7 +125,7 @@ jobs:
 
       - name: Generate key.properties
         run: |
-          cat > android/key.properties << 'EOF'
+          cat > android/key.properties << EOF
 storeFile=release.keystore
 storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
 keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
