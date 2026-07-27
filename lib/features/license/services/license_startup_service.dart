@@ -51,9 +51,9 @@ class LicenseStartupService {
 
       // Check if license is activated
       final localLicenseRepo = LocalLicenseRepository();
-      final activation = await localLicenseRepo.getActivation();
+      final isActivated = await localLicenseRepo.isActivated();
 
-      if (activation != null && activation.activationStatus == 'activated') {
+      if (isActivated) {
         // License is activated
         return 'valid';
       }
@@ -145,9 +145,9 @@ class LicenseStartupService {
     try {
       // Check if license is activated
       final localLicenseRepo = LocalLicenseRepository();
-      final activation = await localLicenseRepo.getActivation();
+      final isActivated = await localLicenseRepo.isActivated();
 
-      if (activation != null && activation.activationStatus == 'activated') {
+      if (isActivated) {
         // License is activated
         return -1;
       }
