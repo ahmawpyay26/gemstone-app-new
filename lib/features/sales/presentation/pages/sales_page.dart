@@ -19,6 +19,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'package:collection/collection.dart';
 import '../widgets/broker_sale_form.dart';
+import '../../../../features/customers/presentation/widgets/customer_selector.dart';
 
 class SalesPage extends StatefulWidget {
   const SalesPage({Key? key}) : super(key: key);
@@ -3479,191 +3480,31 @@ class _SaleFormState extends State<_SaleForm> {
   Widget _buildCustomerPicker() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: ValueListenableBuilder<Box<Customer>>(
-        valueListenable: LocalDb.customers().listenable(),
-        builder: (context, box, _) {
-          final activeCustomers = box.values
-              .where((c) => !c.isDeleted && c.status == 'active')
-              .toList();
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'ဖောက်သည် *',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.white24),
-                  ),
-                ),
-                child: DropdownButton<String?>(
-                  isExpanded: true,
-                  value: _selectedCustomerId,
-                  dropdownColor: Colors.grey[900],
-                  style: const TextStyle(color: Colors.white),
-                  underline: const SizedBox(),
-                  hint: const Text('ဖောက်သည်အချက်အလက်'),
-                  onChanged: (customerId) {
-                    if (customerId == '__add_new_customer__') {
-                      _showCreateCustomerDialog();
-                    } else {
-                      setState(() {
-                        _selectedCustomerId = customerId;
-                        if (customerId != null) {
-                          final customer = activeCustomers.firstWhereOrNull(
-                            (c) => c.id == customerId,
-                          );
-                          if (customer != null) {
-                            _customer.text = customer.name;
-                          }
-                        }
-                      });
-                    }
-                  },
-                  items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('ဖောက်သည်အချက်အလက်'),
-                    ),
-                    ...activeCustomers.map((customer) {
-                      return DropdownMenuItem<String>(
-                        value: customer.id,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(customer.name),
-                            if (customer.phone != null && customer.phone!.isNotEmpty)
-                              Text(
-                                customer.phone!,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    DropdownMenuItem<String>(
-                      value: '__add_new_customer__',
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            top: BorderSide(color: Colors.white24),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: const Row(
-                          children: [
-                            Text('➕ '),
-                            Text('ဖောက်သည်အသစ်ထည့်ရန်'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  void _showCreateCustomerDialog() {
-    final TextEditingController nameController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        title: const Text('ဖောက်သည်အသစ်ထည့်ရန်'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: nameController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'ဖောက်သည်အမည်',
-                hintText: 'ဖောက်သည်အမည်ထည့်သွင်းပါ',
-              ),
-              autofocus: true,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ပယ်ဖျက်မည်'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'ဖောက်သည် *',
+            style: TextStyle(color: Colors.white70, fontSize: 12),
           ),
-          TextButton(
-            onPressed: () async {
-              final customerName = nameController.text.trim();
-              if (customerName.isEmpty) {
-                _toast('ဖောက်သည်အမည်ထည့်သွင်းပါ');
-                return;
-              }
-              
-              // Check for duplicate (case-insensitive)
-              final existingCustomer = LocalDb.customers()
-                  .values
-                  .firstWhereOrNull((c) => 
-                    c.name.toLowerCase() == customerName.toLowerCase() && 
-                    !c.isDeleted
-                  );
-              
-              if (existingCustomer != null) {
-                if (mounted) {
-                  Navigator.pop(context);
-                  setState(() {
-                    _selectedCustomerId = existingCustomer.id;
-                    _customer.text = existingCustomer.name;
-                  });
-                }
-                return;
-              }
-              
-              // Create new customer
-              final newCustomer = Customer(
-                id: LocalDb.genId(),
-                name: customerName,
-                phone: '',
-                address: '',
-                notes: '',
-                openingBalance: 0.0,
-                currentBalance: 0.0,
-                creditLimit: 0.0,
-                status: 'active',
-                isDeleted: false,
-                deletedAt: null,
-                createdAt: DateTime.now().millisecondsSinceEpoch,
-                updatedAt: DateTime.now().millisecondsSinceEpoch,
-              );
-              
-              await LocalDb.customers().add(newCustomer);
-              
-              if (mounted) {
-                Navigator.pop(context);
-                setState(() {
-                  _selectedCustomerId = newCustomer.id;
-                  _customer.text = newCustomer.name;
-                });
-                _toast('ဖောက်သည်အသစ်ထည့်သွင်းပြီးပါပြီ');
-              }
+          const SizedBox(height: 4),
+          CustomerSelector(
+            onCustomerSelected: (customer) {
+              setState(() {
+                _selectedCustomerId = customer.id;
+                _customer.text = customer.name;
+              });
             },
-            child: const Text('သိမ်းဆည်းမည်'),
+            labelText: 'ဖောက်သည်အယ်ပဝမည်',
+            hintText: 'ဖောက်သည်အယ်ပဝမည်',
+            allowClear: false,
           ),
         ],
       ),
     );
   }
+
+
 
   /// View photos for a temporary item or saved sale
   void _viewItemPhotos(dynamic item) {
