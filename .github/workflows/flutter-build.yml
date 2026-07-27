@@ -38,6 +38,60 @@ jobs:
           dart analyze > dart_analyze.txt 2>&1 || true
           cat dart_analyze.txt
 
+      - name: Verify Release Keystore
+        run: |
+          echo "=== VERIFYING RELEASE KEYSTORE ==="
+          
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret is not set"
+            exit 1
+          fi
+          
+          printf '%s' "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+          
+          if [ ! -f android/app/release.keystore ]; then
+            echo "::error::Failed to reconstruct keystore file"
+            exit 1
+          fi
+          
+          KEYSTORE_SIZE=$(stat -c%s android/app/release.keystore)
+          echo "Keystore file size: $KEYSTORE_SIZE bytes"
+          
+          KEYSTORE_SHA256=$(sha256sum android/app/release.keystore | cut -d' ' -f1)
+          echo "Keystore SHA-256: $KEYSTORE_SHA256"
+          
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ]; then
+            echo "::error::ANDROID_KEYSTORE_PASSWORD secret is not set"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ]; then
+            echo "::error::ANDROID_KEY_ALIAS secret is not set"
+            exit 1
+          fi
+          
+          if keytool -list -v -keystore android/app/release.keystore -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" -alias "${{ secrets.ANDROID_KEY_ALIAS }}" > /tmp/keystore_info.txt 2>&1; then
+            echo "Keystore verification successful"
+            grep -E "Owner:|Issuer:|Serial|Valid from:|Certificate fingerprints:|SHA256:" /tmp/keystore_info.txt || true
+          else
+            echo "::error::Keystore verification failed"
+            cat /tmp/keystore_info.txt
+            exit 1
+          fi
+          
+          echo "=== END KEYSTORE VERIFICATION ==="
+
+      - name: Generate key.properties
+        run: |
+          echo "=== GENERATING key.properties ==="
+          {
+            printf '%s\n' "storeFile=release.keystore"
+            printf '%s\n' "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+            printf '%s\n' "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}"
+            printf '%s\n' "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}"
+          } > android/key.properties
+          echo "key.properties generated"
+
       - name: Build APK (Release)
         run: |
           set +e
