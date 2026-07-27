@@ -100,6 +100,29 @@ jobs:
             echo "❌ Keystore SHA256 DOES NOT match expected value"
           fi
 
+      - name: Diagnostic - Verify Reconstructed Keystore
+        run: |
+          echo "=== KEYSTORE FILE VERIFICATION ==="
+          KEYSTORE_PATH="android/app/release.keystore"
+          if [ -f "$KEYSTORE_PATH" ]; then
+            echo "✅ Keystore file exists at: $KEYSTORE_PATH"
+            echo "File size: $(stat -c%s "$KEYSTORE_PATH") bytes"
+            echo "File type: $(file "$KEYSTORE_PATH")"
+            echo "SHA256: $(sha256sum "$KEYSTORE_PATH" | cut -d' ' -f1)"
+            echo ""
+            echo "Testing keystore with keytool (direct from secrets)..."
+            if keytool -list -v -keystore "$KEYSTORE_PATH" -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" -alias "${{ secrets.ANDROID_KEY_ALIAS }}" > /tmp/keystore_verify.txt 2>&1; then
+              echo "✅ KEYSTORE VERIFICATION SUCCESSFUL"
+              grep -E "Alias name|Entry type|SHA256:" /tmp/keystore_verify.txt || true
+            else
+              echo "❌ KEYSTORE VERIFICATION FAILED"
+              cat /tmp/keystore_verify.txt
+            fi
+          else
+            echo "❌ Keystore file does NOT exist at: $KEYSTORE_PATH"
+          fi
+          echo "=== END KEYSTORE VERIFICATION ==="
+
       - name: Generate key.properties
         run: |
           printf '%s\n' \
