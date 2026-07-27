@@ -100,6 +100,13 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     });
   }
 
+  /// Normalize broker name for safe comparison
+  /// RULE 3: Support legacy null-ID records with normalized name matching
+  /// Normalize by: trim leading/trailing spaces, collapse repeated internal whitespace
+  String _normalizeBrokerName(String name) {
+    return name.trim().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
   /// Pick image from camera
   Future<void> _pickImageFromCamera() async {
     try {
@@ -455,21 +462,34 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
             ValueListenableBuilder(
               valueListenable: Hive.box<BrokerProfile>(LocalDb.brokerProfilesBox).listenable(),
               builder: (context, brokerBox, _) {
-                // MINIMAL FIX: Filter brokers by remaining eligible consignments
+                // FIX: Filter brokers by remaining eligible consignments
+                // RULE 1: Remove sourceType from broker eligibility (keep in stone selector)
+                // RULE 2: Support ID-based records (brokerProfileId != null)
+                // RULE 3: Support legacy null-ID records with normalized name matching
                 final consignmentBox = Hive.box<BrokerConsignment>('brokerConsignments');
                 final eligibleBrokerIds = <String>{};
                 
                 // Collect broker IDs that have at least one eligible consignment
                 for (final consignment in consignmentBox.values) {
-                  if (consignment.isActive && 
-                      consignment.remainingQuantity > 0 &&
-                      consignment.historicalData.sourceType == _selectedSourceType &&
-                      consignment.brokerProfileId != null) {
-                    eligibleBrokerIds.add(consignment.brokerProfileId!);
+                  if (consignment.isActive && consignment.remainingQuantity > 0) {
+                    // RULE 2: ID-based records
+                    if (consignment.brokerProfileId != null) {
+                      eligibleBrokerIds.add(consignment.brokerProfileId!);
+                    } else {
+                      // RULE 3: Legacy null-ID records - find matching BrokerProfile by normalized name
+                      final normalizedConsignmentName = _normalizeBrokerName(consignment.brokerName);
+                      for (final broker in brokerBox.values) {
+                        if (!broker.isDeleted && _normalizeBrokerName(broker.name) == normalizedConsignmentName) {
+                          eligibleBrokerIds.add(broker.id);
+                          break; // Found match, stop searching
+                        }
+                      }
+                    }
                   }
                 }
                 
-                // Filter BrokerProfile list to show only brokers with eligible consignments
+                // RULE 4: Filter BrokerProfile list to show only brokers with eligible consignments
+                // Remove duplicates by BrokerProfile.id
                 final brokers = brokerBox.values
                     .where((b) => !b.isDeleted && eligibleBrokerIds.contains(b.id))
                     .toList();
