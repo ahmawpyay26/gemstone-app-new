@@ -155,9 +155,17 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
     final allConsignments = box.values.toList();
     
     return allConsignments.where((c) {
+      // Primary match: By ID (stable linking)
       final matchById = c.brokerProfileId == _selectedBroker!.id;
-      final matchByName = c.brokerProfileId == null && c.brokerName == _selectedBroker!.name;
-      return (matchById || matchByName) && c.isActive && c.remainingQuantity > 0;
+      
+      // FIX 3: Safe legacy resolution for records with null brokerProfileId
+      bool matchByLegacy = false;
+      if (c.brokerProfileId == null) {
+        // Only match by exact name if brokerProfileId is null
+        matchByLegacy = c.brokerName == _selectedBroker!.name;
+      }
+      
+      return (matchById || matchByLegacy) && c.isActive && c.remainingQuantity > 0;
     }).toList();
   }
 
@@ -347,9 +355,14 @@ class _BrokerSaleFormState extends State<BrokerSaleForm> {
         .where((c) => c.historicalData.sourceType == _selectedSourceType)
         .where((c) {
           if (_selectedBroker == null) return false;
+          // Primary match: By ID (stable linking)
           final matchById = c.brokerProfileId == _selectedBroker!.id;
-          final matchByName = c.brokerProfileId == null && c.brokerName == _selectedBroker!.name;
-          return matchById || matchByName;
+          // FIX 3: Safe legacy resolution for records with null brokerProfileId
+          bool matchByLegacy = false;
+          if (c.brokerProfileId == null) {
+            matchByLegacy = c.brokerName == _selectedBroker!.name;
+          }
+          return matchById || matchByLegacy;
         })
         .toList();
 

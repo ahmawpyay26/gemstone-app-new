@@ -131,6 +131,9 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
   List<ConsignmentItemTemp> _originalItems = []; // Original preloaded items (read-only reference)
   List<ConsignmentItemTemp> _currentDraftItems = []; // Editable draft items (user can modify)
   
+  // Broker profile selection tracking
+  BrokerProfile? _selectedBrokerProfile; // Store selected BrokerProfile object for stable linking
+  
   // Duplicate broker check result
   String? _forcedBrokerProfileId; // Set by duplicate check in _saveBrokerConsignment
   
@@ -242,9 +245,10 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     }
   }
 
-  /// Fill broker form fields from BrokerProfile
+  /// Fill broker form fields from BrokerProfile and store the selected broker
   void _fillBrokerProfile(BrokerProfile broker) {
     setState(() {
+      _selectedBrokerProfile = broker; // Store the selected broker for stable ID linking
       _brokerNameCtrl.text = broker.name;
       _brokerPhoneCtrl.text = broker.phone;
       _brokerAddressCtrl.text = broker.address ?? '';
@@ -785,16 +789,30 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
     // PHASE 1: Broker Profile Resolution
     String? brokerProfileId;
     
-    // Check if duplicate check already resolved this in _saveBrokerConsignment
-    if (_forcedBrokerProfileId != null) {
+    // FIX 1: Use selected BrokerProfile if available (stable ID linking)
+    if (_selectedBrokerProfile != null) {
+      brokerProfileId = _selectedBrokerProfile!.id;
+      debugPrint('[BROKER_FIX] _saveCreateMode using selected broker id=$brokerProfileId');
+      developer.log('CREATE MODE: Using selected broker profile: id=$brokerProfileId, name=${_selectedBrokerProfile!.name}');
+    } else if (_forcedBrokerProfileId != null) {
+      // Fallback: Check if duplicate check already resolved this in _saveBrokerConsignment
       brokerProfileId = _forcedBrokerProfileId;
       debugPrint('[BROKER_DUPLICATE] _saveCreateMode using forced broker id=$brokerProfileId');
       developer.log('CREATE MODE: Using forced broker profile from duplicate check: id=$brokerProfileId');
       _forcedBrokerProfileId = null; // Reset for next save
     } else {
-      // No forced broker - create new one
+      // Fallback: Create new broker profile (should be rare with FIX 1)
       final brokerName = _brokerNameCtrl.text.trim();
       final brokerPhone = _brokerPhoneCtrl.text.trim();
+      
+      if (brokerName.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ပွဲစားအမည်ကို ရွေးချယ်ပါ')),
+          );
+        }
+        return;
+      }
       
       final newProfile = BrokerProfile(
         id: const Uuid().v4(),
@@ -951,7 +969,11 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
           record.brokerPhone = _brokerPhoneCtrl.text;
           record.brokerAddress = _brokerAddressCtrl.text;
           record.brokerSocialAccount = _brokerSocialCtrl.text.isEmpty ? null : _brokerSocialCtrl.text;
-          // Note: brokerProfileId should not change during edit, keep original value
+          // FIX 2: Update brokerProfileId if a valid broker is selected
+          if (_selectedBrokerProfile != null) {
+            record.brokerProfileId = _selectedBrokerProfile!.id;
+            developer.log('EDIT MODE: Updated brokerProfileId to ${_selectedBrokerProfile!.id} for item ${record.id}');
+          }
           record.notes = _notesCtrl.text;
           record.photoPaths = item.photoPaths;
           record.weight = item.weight; // Update weight
@@ -991,14 +1013,23 @@ class _BrokerFormPageState extends State<BrokerFormPage> {
         DiagnosticLogService.addLog('  [NEW-$newItemCountCreated] BEFORE createBrokerConsignment | sourceType=${item.sourceType} | purchaseId=$purchaseId | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
         developer.log('  [NEW-$newItemCountCreated] BEFORE createBrokerConsignment | sourceType=${item.sourceType} | purchaseId=$purchaseId | breakdownItem=${item.selectedBreakdownItem} | qty=${item.consignedQuantity}');
         
-        // Get existing brokerProfileId from first item in this voucher
+        // FIX 2: Get brokerProfileId from selected broker or existing items
         String? brokerProfileId;
-        final editVoucherId = _editVoucherId;
-        final existingBrokerConsignments = editVoucherId == null
-            ? <BrokerConsignment>[]
-            : LocalDb.getBrokerConsignmentsByVoucherId(editVoucherId);
-        if (existingBrokerConsignments.isNotEmpty) {
-          brokerProfileId = existingBrokerConsignments.first.brokerProfileId;
+        
+        // Priority 1: Use selected broker if available
+        if (_selectedBrokerProfile != null) {
+          brokerProfileId = _selectedBrokerProfile!.id;
+          developer.log('EDIT MODE: New item using selected broker id=$brokerProfileId');
+        } else {
+          // Priority 2: Inherit from existing items in this voucher
+          final editVoucherId = _editVoucherId;
+          final existingBrokerConsignments = editVoucherId == null
+              ? <BrokerConsignment>[]
+              : LocalDb.getBrokerConsignmentsByVoucherId(editVoucherId);
+          if (existingBrokerConsignments.isNotEmpty) {
+            brokerProfileId = existingBrokerConsignments.first.brokerProfileId;
+            developer.log('EDIT MODE: New item inheriting brokerProfileId from existing item: $brokerProfileId');
+          }
         }
         
         await LocalDb.createBrokerConsignment(
