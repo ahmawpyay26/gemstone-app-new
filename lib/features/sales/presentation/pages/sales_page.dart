@@ -2242,8 +2242,7 @@ class _SaleFormState extends State<_SaleForm> {
                 if (_saleSource == 'whole_stone') ...[                
                 _buildCustomerPicker(),
                 
-                if (_saleSource == 'whole_stone')
-                                Padding(
+                Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Autocomplete<String>(
                     optionsBuilder: (TextEditingValue textEditingValue) {
