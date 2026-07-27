@@ -183,6 +183,12 @@ jobs:
           KEY_PASS=$(grep "^keyPassword=" android/key.properties | cut -d'=' -f2- | tr -d '\n')
           ALIAS=$(grep "^keyAlias=" android/key.properties | cut -d'=' -f2- | tr -d '\n')
           
+          echo "Extracted values:"
+          echo "  storePassword length: ${#STORE_PASS}"
+          echo "  keyPassword length: ${#KEY_PASS}"
+          echo "  keyAlias length: ${#ALIAS}"
+          echo ""
+          
           if keytool -list -v -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASS" -alias "$ALIAS" > /tmp/keytool_pre_gradle.txt 2>&1; then
             echo "✅ PRE-GRADLE KEYTOOL VALIDATION SUCCESSFUL"
             echo "Using credentials from key.properties file"
