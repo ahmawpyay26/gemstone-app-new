@@ -169,6 +169,10 @@ jobs:
           echo "  storePassword length: ${#STORE_PASS}"
           echo "  keyPassword length: ${#KEY_PASS}"
           echo "  keyAlias length: ${#ALIAS}"
+          echo ""
+          echo "Actual values (hex):"
+          echo "  storePassword: $(echo -n "$STORE_PASS" | od -An -tx1 | tr -d ' ')"
+          echo "  keyPassword: $(echo -n "$KEY_PASS" | od -An -tx1 | tr -d ' ')"
           echo "=== END KEY.PROPERTIES INTEGRITY CHECK ==="
 
       - name: Diagnostic - Pre-Gradle keytool Validation
