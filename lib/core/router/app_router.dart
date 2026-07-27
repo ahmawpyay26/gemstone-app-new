@@ -23,17 +23,27 @@ import '../../features/broker_profile/presentation/pages/add_broker_page.dart';
 import '../../features/broker_profile/presentation/pages/broker_detail_page.dart' as profile_detail;
 import '../../features/broker_profile/presentation/pages/broker_voucher_list_page.dart';
 import '../../features/license/presentation/license_placeholder_page.dart';
+import '../../features/license/presentation/license_activation_page.dart';
+import '../../features/license/presentation/license_check_page.dart';
 import '../../features/settings/presentation/pages/backup_restore_page.dart';
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/login',
+  initialLocation: '/license-check',
   redirect: (context, state) {
     final loggedIn = LocalDb.isLoggedIn();
     final goingToLogin = state.matchedLocation == '/login';
-    if (!loggedIn && !goingToLogin) return '/login';
+    final goingToLicenseCheck = state.matchedLocation == '/license-check';
+    final goingToActivation = state.matchedLocation == '/license-activation';
+    
+    // License check happens before login
+    if (!loggedIn && !goingToLogin && !goingToLicenseCheck && !goingToActivation) {
+      return '/license-check';
+    }
+    
+    if (!loggedIn && !goingToLogin && goingToLogin) return '/login';
     if (loggedIn && goingToLogin) return '/dashboard';
     return null;
-  },
+  }
   errorBuilder: (context, state) => Scaffold(
     body: Center(
       child: Text('Error: ${state.error}'),
@@ -137,6 +147,16 @@ final GoRouter appRouter = GoRouter(
       path: '/license',
       name: 'license',
       builder: (context, state) => const LicensePlaceholderPage(),
+    ),
+    GoRoute(
+      path: '/license-check',
+      name: 'license-check',
+      builder: (context, state) => const LicenseCheckPage(),
+    ),
+    GoRoute(
+      path: '/license-activation',
+      name: 'license-activation',
+      builder: (context, state) => const LicenseActivationPage(),
     ),
     GoRoute(
       path: '/backup-restore',

@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/local/local_db.dart';
+import 'features/license/services/installation_identity_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await LocalDb.init();
+    await InstallationIdentityService.init();
   } catch (e) {
-    debugPrint('LocalDb init error: $e');
+    debugPrint('Initialization error: $e');
   }
   runApp(const GemstoneManagementApp());
 }
