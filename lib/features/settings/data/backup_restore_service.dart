@@ -10,6 +10,9 @@ import 'package:gemstone_management/core/local/models.dart';
 import 'restore_validation_result.dart';
 import 'restore_snapshot.dart';
 import 'backup_deserializers.dart';
+import 'media_backup_helper.dart';
+import 'package:archive/archive.dart';
+import 'package:developer' as developer;
 
 class BackupRestoreService {
   /// All 17 expected box names in the backup file.
@@ -1991,6 +1994,20 @@ class BackupRestoreService {
         }
       }
 
+      // Extract media files from archive if present
+      int mediaFilesRestored = 0;
+      try {
+        final mediaBackupHelper = MediaBackupHelper();
+        // Check if archive has media files
+        if (backupSnapshot.archive != null) {
+          mediaFilesRestored = await MediaBackupHelper.extractMediaFilesFromArchive(backupSnapshot.archive!);
+          developer.log('Restored $mediaFilesRestored media files from archive');
+        }
+      } catch (e) {
+        developer.log('Warning: Error restoring media files: $e');
+        // Continue - media restoration is non-critical
+      }
+      
       final totalRestored = gemstonesRestoredCount + salesRestoredCount + customersRestoredCount + expensesRestoredCount + workersRestoredCount + brokerProfilesRestoredCount + brokerConsignmentsRestoredCount;
       return {
         'success': true,
@@ -2002,6 +2019,7 @@ class BackupRestoreService {
         'workersCount': workersRestoredCount,
         'brokerProfilesCount': brokerProfilesRestoredCount,
         'brokerConsignmentsCount': brokerConsignmentsRestoredCount,
+        'mediaFilesRestored': mediaFilesRestored,
         'failedCount': 0,
       };
     } catch (e) {

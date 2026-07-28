@@ -12,6 +12,8 @@ import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
 import '../../data/backup_restore_service.dart';
 import '../../data/restore_validation_result.dart';
+import '../../data/media_backup_helper.dart';
+import 'package:archive/archive.dart';
 
 class BackupRestorePage extends StatefulWidget {
   const BackupRestorePage({Key? key}) : super(key: key);
@@ -117,13 +119,42 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final now = DateTime.now();
       final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(now);
       final backupFileName = 'Gemstone_Backup_${timestamp}.gmbak';
+      
+      // Create archive and add JSON data
+      final archive = Archive();
+      
+      // Add JSON data to archive
       final backupJson = jsonEncode(backupData);
+      final jsonBytes = utf8.encode(backupJson);
+      archive.addFile(ArchiveFile('backup_data.json', jsonBytes.length, jsonBytes));
+      developer.log('Added backup_data.json to archive (${jsonBytes.length} bytes)');
+      
+      // Add media files to archive
+      try {
+        final mediaFilesCount = await MediaBackupHelper.addMediaFilesToArchive(archive);
+        developer.log('Added $mediaFilesCount media files to archive');
+      } catch (e) {
+        developer.log('Warning: Error adding media files to backup: $e');
+        // Continue with backup even if media files fail
+      }
+      
+      // Encode archive to bytes
+      final archiveBytes = ZipEncoder().encode(archive);
+      if (archiveBytes == null) {
+        throw Exception('Failed to encode archive');
+      }
+      
+      developer.log('Archive created successfully (${archiveBytes.length} bytes)');
+      
+      // Convert archive bytes to base64 for transmission
+      final archiveBase64 = base64Encode(archiveBytes);
 
       // Call native Android SAF to save file
       try {
         final result = await platform.invokeMethod<Map>('saveBackupFile', {
           'fileName': backupFileName,
-          'content': backupJson,
+          'content': archiveBase64,
+          'isArchive': true,
         });
 
         setState(() => _isBackingUp = false);
