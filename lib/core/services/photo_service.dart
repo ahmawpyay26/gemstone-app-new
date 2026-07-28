@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -21,6 +22,7 @@ class PhotoService {
         imageQuality: 85,
       );
       if (photo != null) {
+        developer.log('[SALES-PHOTO-A] ImagePicker source path (camera): ${photo.path}');
         return await _savePhotoLocally(File(photo.path));
       }
     } catch (e) {
@@ -37,6 +39,7 @@ class PhotoService {
         imageQuality: 85,
       );
       if (photo != null) {
+        developer.log('[SALES-PHOTO-A] ImagePicker source path (gallery): ${photo.path}');
         return await _savePhotoLocally(File(photo.path));
       }
     } catch (e) {
@@ -49,6 +52,7 @@ class PhotoService {
   Future<String> _savePhotoLocally(File photoFile) async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
+      developer.log('[SALES-PHOTO-M] App documents directory at save time: ${appDir.path}');
       final String photoDir = '${appDir.path}/photos';
       final Directory photoDirObj = Directory(photoDir);
 
@@ -64,6 +68,22 @@ class PhotoService {
 
       // Copy photo to app directory
       await photoFile.copy(filePath);
+      developer.log('[SALES-PHOTO-B] Destination path after File.copy(): $filePath');
+      
+      // Check if file exists immediately after copy
+      final exists = File(filePath).existsSync();
+      developer.log('[SALES-PHOTO-C] File exists immediately after copy: $exists');
+      
+      // Get file size
+      if (exists) {
+        try {
+          final size = File(filePath).lengthSync();
+          developer.log('[SALES-PHOTO-D] File size after copy: $size bytes');
+        } catch (e) {
+          developer.log('[SALES-PHOTO-D] Error getting file size: $e');
+        }
+      }
+      
       return filePath;
     } catch (e) {
       print('Error saving photo locally: $e');
@@ -89,7 +109,9 @@ class PhotoService {
     try {
       final File file = File(photoPath);
       if (await file.exists()) {
+        developer.log('[SALES-PHOTO-DELETE] Deleting photo: $photoPath');
         await file.delete();
+        developer.log('[SALES-PHOTO-DELETE-DONE] Photo deleted: $photoPath');
         return true;
       }
     } catch (e) {
@@ -128,14 +150,17 @@ class PhotoService {
 
       if (!await photoDirObj.exists()) return;
 
+      developer.log('[SALES-PHOTO-CLEANUP] Starting orphaned photo cleanup');
       final List<FileSystemEntity> files = photoDirObj.listSync();
       for (final file in files) {
         if (file is File) {
           if (!activePhotoPaths.contains(file.path)) {
+            developer.log('[SALES-PHOTO-CLEANUP-DELETE] Deleting orphaned: ${file.path}');
             await file.delete();
           }
         }
       }
+      developer.log('[SALES-PHOTO-CLEANUP-DONE] Orphaned photo cleanup completed');
     } catch (e) {
       print('Error cleaning up orphaned photos: $e');
     }

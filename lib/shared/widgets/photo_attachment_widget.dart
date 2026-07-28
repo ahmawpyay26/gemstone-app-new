@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import '../../core/services/photo_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -29,6 +30,12 @@ class _PhotoAttachmentWidgetState extends State<PhotoAttachmentWidget> {
     _currentPhotos = List.from(widget.photoPaths);
   }
 
+  @override
+  void dispose() {
+    developer.log('[SALES-PHOTO-DISPOSE] PhotoAttachmentWidget dispose called, _currentPhotos: $_currentPhotos');
+    super.dispose();
+  }
+
   Future<void> _addPhotoFromCamera() async {
     try {
       final String? photoPath = await _photoService.pickPhotoFromCamera();
@@ -36,6 +43,7 @@ class _PhotoAttachmentWidgetState extends State<PhotoAttachmentWidget> {
         setState(() {
           _currentPhotos.add(photoPath);
         });
+        developer.log('[SALES-PHOTO-E] _currentPhotos before callback: $_currentPhotos');
         widget.onPhotosChanged(_currentPhotos);
       }
     } catch (e) {
@@ -50,10 +58,11 @@ class _PhotoAttachmentWidgetState extends State<PhotoAttachmentWidget> {
         setState(() {
           _currentPhotos.add(photoPath);
         });
+        developer.log('[SALES-PHOTO-E] _currentPhotos before callback: $_currentPhotos');
         widget.onPhotosChanged(_currentPhotos);
       }
     } catch (e) {
-      _showError('ဂ్যალারီမှ ဓာတ်ပုံ ရွေးချယ်မှု ပျက်ခဲ့သည်');
+      _showError('ဂ్యალারီမှ ဓာတ်ပုံ ရွေးချယ်မှု ပျက်ခဲ့သည်');
     }
   }
 

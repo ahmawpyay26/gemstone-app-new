@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
@@ -1318,6 +1319,7 @@ class _SaleFormState extends State<_SaleForm> {
     final weightValue = double.tryParse(_weight.text.trim());
     
     // Create item with stored commission and weight unit
+    developer.log('[SALES-PHOTO-F] Draft item photoPaths (whole stone): ${List.from(_photoPaths)}');
     final item = _SaleItem(
       id: const Uuid().v4(),
       gemstoneId: gemstoneId,
@@ -1330,6 +1332,7 @@ class _SaleFormState extends State<_SaleForm> {
       weightUnit: _weightUnitWhole,
       photoPaths: List.from(_photoPaths),
     );
+    developer.log('[SALES-PHOTO-F-CREATED] Draft item created with photoPaths: ${item.photoPaths}');
 
     // Financial values are now calculated via getters (saleAmount, netSale)
 
@@ -1352,7 +1355,9 @@ class _SaleFormState extends State<_SaleForm> {
       _cost.clear();
       _commission.clear();
       _weightUnitWhole = 'kg'; // Reset to default unit
+      developer.log('[SALES-PHOTO-CLEAR-BEFORE] Clearing _photoPaths before: $_photoPaths');
       _photoPaths.clear(); // Clear selected images
+      developer.log('[SALES-PHOTO-CLEAR-AFTER] _photoPaths after clear: $_photoPaths');
     });
 
     _showSuccess('${item.gemstoneName} added');
@@ -1453,6 +1458,7 @@ class _SaleFormState extends State<_SaleForm> {
     print('DEBUG FRAGMENT ထည့်မည်: validation=PASSED');
     print('DEBUG FRAGMENT ထည့်မည်: _items.length BEFORE=${_items.length}');
     
+    developer.log('[SALES-PHOTO-F] Draft item photoPaths (fragment): ${List.from(_photoPaths)}');
     final item = _SaleItem(
       id: const Uuid().v4(),
       gemstoneId: _selectedFragmentGemstoneId,
@@ -1467,6 +1473,7 @@ class _SaleFormState extends State<_SaleForm> {
       weightUnit: _weightUnitFragment,
       photoPaths: List.from(_photoPaths),
     );
+    developer.log('[SALES-PHOTO-F-CREATED] Draft item created with photoPaths: ${item.photoPaths}');
 
     // Financial values are now calculated via getters:
     // item.saleAmount = unitPrice (for fragments, this IS the total sale amount)
@@ -1492,7 +1499,9 @@ class _SaleFormState extends State<_SaleForm> {
       _amount.clear();
       _commission.text = '0';
       _weight.clear();
+      developer.log('[SALES-PHOTO-CLEAR-BEFORE] Clearing _photoPaths before: $_photoPaths');
       _photoPaths.clear(); // Clear selected images for next item
+      developer.log('[SALES-PHOTO-CLEAR-AFTER] _photoPaths after clear: $_photoPaths');
       // NOTE: Do NOT clear _selectedFragmentGemstoneId or _selectedFragmentName
       // Keep them set so the fragment form remains visible for next entry
     });
@@ -1989,6 +1998,7 @@ class _SaleFormState extends State<_SaleForm> {
         final fragmentWeight = item.isFragmentSource ? item.weight : null;
         final fragmentWeightUnit = item.isFragmentSource ? item.weightUnit : null;
         
+        developer.log('[SALES-PHOTO-G] Sale.photoPaths before Hive save: ${item.photoPaths}');
         final newSale = Sale(
           id: LocalDb.genId(),
           gemstoneId: item.gemstoneId ?? '',
@@ -2019,9 +2029,12 @@ class _SaleFormState extends State<_SaleForm> {
           isFragmentSource: item.isFragmentSource,
           fragmentName: item.fragmentName,
         );
+        developer.log('[SALES-PHOTO-G-CREATED] Sale object created with photoPaths: ${newSale.photoPaths}');
         
         // Save to Hive
+        developer.log('[SALES-PHOTO-H] Before Hive box.add(), newSale.photoPaths: ${newSale.photoPaths}');
         await box.add(newSale);
+        developer.log('[SALES-PHOTO-H-SAVED] After Hive box.add(), newSale.photoPaths: ${newSale.photoPaths}');
         
         // Update customer ledger
         await LocalDb.applySaleCustomerLedger(newSale);
@@ -2457,7 +2470,9 @@ class _SaleFormState extends State<_SaleForm> {
                         PhotoAttachmentWidget(
                           photoPaths: _photoPaths,
                           onPhotosChanged: (photos) {
-                            setState(() => _photoPaths = photos);
+                            setState(() {
+                              _photoPaths = photos;
+                            });
                           },
                           recordType: 'sale',
                         ),
@@ -3171,6 +3186,18 @@ class _SaleFormState extends State<_SaleForm> {
             scrollDirection: Axis.horizontal,
             itemCount: _photoPaths.length,
             itemBuilder: (context, index) {
+              final path = widget.photoPaths[index];
+              developer.log('[SALES-PHOTO-J] Viewer input path: $path');
+              final fileExists = File(path.toString()).existsSync();
+              developer.log('[SALES-PHOTO-K] File exists: $fileExists');
+              if (fileExists) {
+                try {
+                  final size = File(path.toString()).lengthSync();
+                  developer.log('[SALES-PHOTO-L] File size: $size bytes');
+                } catch (e) {
+                  developer.log('[SALES-PHOTO-L] Error getting size: $e');
+                }
+              }
               final photoPath = _photoPaths[index];
               return Padding(
                 padding: EdgeInsets.only(right: index < _photoPaths.length - 1 ? 8 : 0),
@@ -3579,6 +3606,19 @@ class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
             itemCount: widget.photoPaths.length,
             itemBuilder: (context, index) {
               final path = widget.photoPaths[index];
+              developer.log('[SALES-PHOTO-J] Viewer input path: $path');
+              final fileExists = File(path.toString()).existsSync();
+              developer.log('[SALES-PHOTO-K] File exists: $fileExists');
+              if (fileExists) {
+                try {
+                  final size = File(path.toString()).lengthSync();
+                  developer.log('[SALES-PHOTO-L] File size: $size bytes');
+                } catch (e) {
+                  developer.log('[SALES-PHOTO-L] Error getting size: $e');
+                }
+              }
+              final path = widget.photoPaths[index];
+              final fileExists = File(path.toString()).existsSync();
               return GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Image.file(
