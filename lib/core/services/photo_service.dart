@@ -3,7 +3,6 @@ import 'dart:developer' as developer;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
-import 'sales_photo_diagnostic_service.dart';
 
 class PhotoService {
   static final PhotoService _instance = PhotoService._internal();
@@ -70,7 +69,6 @@ class PhotoService {
       // Copy photo to app directory
       await photoFile.copy(filePath);
       developer.log('[SALES-PHOTO-B] Destination path after File.copy(): $filePath');
-      SalesPhotoDiagnosticService().log(
         checkpoint: '[SALES-PHOTO-B]',
         message: 'Destination path after File.copy()',
         path: filePath,

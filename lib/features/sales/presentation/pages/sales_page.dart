@@ -1,4 +1,3 @@
-import '../../../core/services/sales_photo_diagnostic_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -3188,18 +3187,6 @@ class _SaleFormState extends State<_SaleForm> {
             scrollDirection: Axis.horizontal,
             itemCount: _photoPaths.length,
             itemBuilder: (context, index) {
-              final path = widget.photoPaths[index];
-              developer.log('[SALES-PHOTO-J] Viewer input path: $path');
-              final fileExists = File(path.toString()).existsSync();
-              developer.log('[SALES-PHOTO-K] File exists: $fileExists');
-              if (fileExists) {
-                try {
-                  final size = File(path.toString()).lengthSync();
-                  developer.log('[SALES-PHOTO-L] File size: $size bytes');
-                } catch (e) {
-                  developer.log('[SALES-PHOTO-L] Error getting size: $e');
-                }
-              }
               final photoPath = _photoPaths[index];
               return Padding(
                 padding: EdgeInsets.only(right: index < _photoPaths.length - 1 ? 8 : 0),
@@ -3619,8 +3606,6 @@ class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
                   developer.log('[SALES-PHOTO-L] Error getting size: $e');
                 }
               }
-              final path = widget.photoPaths[index];
-              final fileExists = File(path.toString()).existsSync();
               return GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Image.file(
