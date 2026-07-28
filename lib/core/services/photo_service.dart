@@ -69,10 +69,6 @@ class PhotoService {
       // Copy photo to app directory
       await photoFile.copy(filePath);
       developer.log('[SALES-PHOTO-B] Destination path after File.copy(): $filePath');
-        checkpoint: '[SALES-PHOTO-B]',
-        message: 'Destination path after File.copy()',
-        path: filePath,
-      );
       
       // Check if file exists immediately after copy
       final exists = File(filePath).existsSync();
