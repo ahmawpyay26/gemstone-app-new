@@ -17,7 +17,9 @@ import '../../../../shared/widgets/photo_count_badge.dart';
 import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
 import '../../../../core/services/voucher_export_service.dart';
 import '../../../../core/services/sales_invoice_image_widget.dart';
+import '../../../../core/services/sales_invoice_image_exporter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'dart:developer' as dev;
 import 'package:uuid/uuid.dart';
 import 'package:collection/collection.dart';
 import '../widgets/broker_sale_form.dart';
@@ -188,89 +190,66 @@ class _SalesPageState extends State<SalesPage> {
   Future<void> _exportInvoiceImage(List<Sale> sales) async {
     if (sales.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ဘောင်ချာ မရှိပါ')),
+        SnackBar(content: Text('ရောင်းချမှုမှတ်တမ်း မရှိပါ')),
       );
       return;
     }
 
     try {
-      final GlobalKey repaintKey = GlobalKey();
-      
-      // Create a temporary widget to render
-      final widget = SalesInvoiceImageWidget(
-        sales: sales,
-        repaintKey: repaintKey,
-      );
-
-      // Show a dialog with the widget
+      // Show loading dialog
       showDialog(
         context: context,
-        builder: (BuildContext context) {
-          return Dialog(
-            child: Scaffold(
-              appBar: AppBar(
-                title: Text('Invoice ပုံ'),
-                actions: [
-                  IconButton(
-                    icon: Icon(Icons.share),
-                    onPressed: () async {
-                      // Capture the image
-                      final pngBytes = await SalesInvoiceImageWidget.captureAsImage(repaintKey);
-                      if (pngBytes == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('ပုံ ထုတ်ယူခြင်း ပျက်ကွက်ခဲ့ပါသည်')),
-                        );
-                        return;
-                      }
-
-                      // Save to file
-                      final directory = await getTemporaryDirectory();
-                      final safeInvoiceNo = sales.first.invoiceNumber
-                          .replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
-                      final timestamp = DateTime.now().millisecondsSinceEpoch;
-                      final imageFile = File(
-                        '${directory.path}/invoice_${safeInvoiceNo}_${timestamp}.png',
-                      );
-
-                      await imageFile.writeAsBytes(pngBytes, flush: true);
-
-                      // Share the file
-                      await Share.shareXFiles(
-                        [
-                          XFile(
-                            imageFile.path,
-                            mimeType: 'image/png',
-                          ),
-                        ],
-                        text: 'Invoice ${sales.first.invoiceNumber}',
-                      );
-
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Invoice ပုံ သိမ်းဆည်းပြီးပါပြီ')),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              body: SingleChildScrollView(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: 800,
-                    child: widget,
-                  ),
-                ),
-              ),
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: Text('ပုံ ထုတ်ယူနေ...'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: 16),
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('ခождြင်းအနည်းငယ် စောင့်ပါ'),
+              ],
             ),
           );
         },
       );
-    } catch (e) {
-      print('Error exporting invoice image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('အမှားအယွင်း: $e')),
+
+      // Export using the new service
+      final success = await SalesInvoiceImageExporter.exportImageAndShare(
+        sales,
+        context,
+        onStep: (step) {
+          dev.log('[ImageExport] step=$step', name: 'SalesPage');
+        },
       );
+
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'ပုံ ထုတ်ယူပြီးပါပြီ',
+              style: TextStyle(fontFamily: 'Padauk'),
+            ),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('အမှားအယွင်း: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+      dev.log('[ImageExport] error=$e stackTrace=$stackTrace', name: 'SalesPage');
     }
   }
 

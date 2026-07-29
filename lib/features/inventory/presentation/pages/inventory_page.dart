@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'dart:developer' as developer;
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/local/local_db.dart';
 import '../../../../core/local/models.dart';
+import '../../../../core/services/purchase_invoice_image_exporter.dart';
 import '../../../../shared/widgets/photo_attachment_widget.dart';
 import '../../../../shared/widgets/photo_viewer.dart';
 import '../../../../shared/widgets/photo_count_badge.dart';
@@ -300,10 +302,48 @@ class _InventoryPageState extends State<InventoryPage> {
 
   Future<void> _exportPurchasePNG(Gemstone gemstone) async {
     try {
-      _showSuccess('PNG တည်ဆောက်နေ...');
-      // PNG export using current purchase voucher layout
-    } catch (e) {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: Text('ပုံ ထုတ်ယူနေ...'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: 16),
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('ခождြင်းအနည်းငယ် စောင့်ပါ'),
+              ],
+            ),
+          );
+        },
+      );
+
+      // Export using the new service
+      final success = await PurchaseInvoiceImageExporter.exportImageAndShare(
+        gemstone,
+        context,
+        onStep: (step) {
+          developer.log('[ImageExport] step=$step', name: 'InventoryPage');
+        },
+      );
+
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      if (success) {
+        _showSuccess('ပုံ ထုတ်ယူပြီးပါပြီ');
+      }
+    } catch (e, stackTrace) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+      }
       _showError('အမှားအယွင်း: $e');
+      developer.log('[ImageExport] error=$e stackTrace=$stackTrace', name: 'InventoryPage');
     }
   }
 

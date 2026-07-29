@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
@@ -15,37 +14,22 @@ class _DecodedLogo {
   const _DecodedLogo({required this.bytes, required this.image});
 }
 
-/// Widget that renders Sales Invoice as a visual layout for image export
-/// Matches Broker Consignment Voucher design 1:1
-class SalesInvoiceImageWidget extends StatelessWidget {
-  final List<Sale> sales;
-  final GlobalKey<State<StatefulWidget>>? repaintKey;
+/// Widget that renders Purchase Invoice as a visual layout for image export
+class PurchaseInvoiceImageWidget extends StatelessWidget {
+  final Gemstone gemstone;
   final _DecodedLogo? decodedLogo;
   final void Function(String step)? onWidgetStep;
 
-  const SalesInvoiceImageWidget({
+  const PurchaseInvoiceImageWidget({
     Key? key,
-    required this.sales,
-    this.repaintKey,
+    required this.gemstone,
     this.decodedLogo,
     this.onWidgetStep,
   }) : super(key: key);
 
-  /// Legacy constructor for in-dialog rendering (backward compatibility)
-  factory SalesInvoiceImageWidget.forDialog({
-    required List<Sale> sales,
-    required GlobalKey<State<StatefulWidget>> repaintKey,
-  }) {
-    return SalesInvoiceImageWidget(
-      sales: sales,
-      repaintKey: repaintKey,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
-      key: repaintKey,
       child: Container(
         width: 800,
         height: 1100,
@@ -64,7 +48,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'ဘောင်ချာ နံပါတ်: ${sales.isNotEmpty ? sales.first.invoiceNumber : ""}',
+                    'ဝယ်ယူမှု နံပါတ်: ${gemstone.purchaseVoucherId ?? ""}',
                     style: const TextStyle(
                       fontFamily: 'Padauk',
                       fontSize: 11,
@@ -72,7 +56,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'ရက်စွဲ: ${DateFormat('yyyy-MM-dd').format(DateTime.fromMillisecondsSinceEpoch(sales.isNotEmpty ? sales.first.saleDate : 0))}',
+                    'ရက်စွဲ: ${DateFormat('yyyy-MM-dd').format(DateTime.fromMillisecondsSinceEpoch(gemstone.purchaseDate ?? 0))}',
                     style: const TextStyle(
                       fontFamily: 'Padauk',
                       fontSize: 11,
@@ -83,7 +67,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // Customer details box - matching Broker Info Box style
+              // Supplier details box
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -93,7 +77,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'ဖောက်သည်အချက်အလက်',
+                      'ရောင်းချသူအချက်အလက်',
                       style: TextStyle(
                         fontFamily: 'Padauk',
                         fontSize: 11,
@@ -102,7 +86,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    _buildCustomerDetails(),
+                    _buildSupplierDetails(),
                   ],
                 ),
               ),
@@ -147,12 +131,12 @@ class SalesInvoiceImageWidget extends StatelessWidget {
     );
   }
 
-  /// Build header section (matching Broker Voucher)
+  /// Build header section (matching Broker Voucher design)
   Widget _buildHeader() {
     final profile = LocalDb.getBusinessProfile();
     final shopName = profile.shopName.isNotEmpty
         ? profile.shopName
-        : 'ပွဲစားအပ်နှံဘောင်ချာ';
+        : 'ကျောက်မျက်ဆိုင်';
 
     // Load logo if available
     Widget? logoWidget;
@@ -160,7 +144,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
       // If decodedLogo is available (off-screen rendering), use it
       if (decodedLogo != null) {
         onWidgetStep?.call('logo_widget_decoded');
-        dev.log('[ImageExport] widget=logo_decoded', name: 'SalesInvoiceImageWidget');
+        dev.log('[ImageExport] widget=logo_decoded', name: 'PurchaseInvoiceImageWidget');
         logoWidget = Container(
           width: 80,
           height: 80,
@@ -172,25 +156,6 @@ class SalesInvoiceImageWidget extends StatelessWidget {
             fit: BoxFit.contain,
           ),
         );
-      } else if (repaintKey != null) {
-        // Fallback for dialog rendering: use Image.file()
-        final rawPath = profile.logoPath;
-        if (rawPath != null && rawPath.trim().isNotEmpty) {
-          final logoFile = File(rawPath.trim());
-          if (logoFile.existsSync()) {
-            logoWidget = Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.transparent),
-              ),
-              child: Image.file(
-                logoFile,
-                fit: BoxFit.contain,
-              ),
-            );
-          }
-        }
       }
     } catch (_) {
       logoWidget = null;
@@ -214,7 +179,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
 
         // Voucher subtitle
         const Text(
-          'ရောင်းချခြင်းဖောင်သည်အ',
+          'ဝယ်ယူမှုဖောင်သည်အ',
           style: TextStyle(
             fontFamily: 'Padauk',
             fontSize: 14,
@@ -267,27 +232,15 @@ class SalesInvoiceImageWidget extends StatelessWidget {
     );
   }
 
-  /// Build customer details section
-  Widget _buildCustomerDetails() {
-    double totalAmount = 0;
-    double totalCommission = 0;
-    double totalNet = 0;
-    int totalQty = 0;
-
-    for (final sale in sales) {
-      totalAmount += sale.amount;
-      totalCommission += sale.commissionFee;
-      totalNet += sale.netSale;
-      totalQty += sale.quantity;
-    }
-
+  /// Build supplier details section
+  Widget _buildSupplierDetails() {
     final moneyFormat = NumberFormat('#,##0', 'en_US');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ကျောက်အမျိုးအစား: ${sales.map((s) => s.gemstoneName).toSet().join(", ")}',
+          'ကျောက်အမျိုးအစား: ${gemstone.name}',
           style: const TextStyle(
             fontFamily: 'Padauk',
             fontSize: 10,
@@ -295,7 +248,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
           ),
         ),
         Text(
-          'အရေအတွက်: $totalQty',
+          'အရေအတွက်: ${gemstone.quantity}',
           style: const TextStyle(
             fontFamily: 'Padauk',
             fontSize: 10,
@@ -303,7 +256,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
           ),
         ),
         Text(
-          'ယူနစ်: kg',
+          'ယူနစ်: ${gemstone.weightUnit ?? 'kg'}',
           style: const TextStyle(
             fontFamily: 'Padauk',
             fontSize: 10,
@@ -318,7 +271,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'စုစုပေါင်းရောင်းချမှု',
+                  'ဝယ်ယူမှုစျေး',
                   style: TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
@@ -326,7 +279,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${moneyFormat.format(totalAmount)} ကျပ်',
+                  '${moneyFormat.format(gemstone.purchasePrice ?? 0)} ကျပ်',
                   style: const TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
@@ -340,7 +293,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'စုစုပေါင်းကော်မရှင်',
+                  'စုစုပေါင်းဝယ်ယူမှု',
                   style: TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
@@ -348,27 +301,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${moneyFormat.format(totalCommission)} ကျပ်',
-                  style: const TextStyle(
-                    fontFamily: 'Padauk',
-                    fontSize: 9,
-                  ),
-                ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'စုစုပေါင်းကျန်ရှိ',
-                  style: TextStyle(
-                    fontFamily: 'Padauk',
-                    fontSize: 9,
-                    color: Colors.black,
-                  ),
-                ),
-                Text(
-                  '${moneyFormat.format(totalNet)} ကျပ်',
+                  '${moneyFormat.format((gemstone.purchasePrice ?? 0) * (gemstone.quantity ?? 0))} ကျပ်',
                   style: const TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
@@ -384,18 +317,8 @@ class SalesInvoiceImageWidget extends StatelessWidget {
     );
   }
 
-  /// Build items table (matching Broker Voucher table design)
+  /// Build items table
   Widget _buildItemsTable() {
-    double totalAmount = 0;
-    double totalCommission = 0;
-    int totalQty = 0;
-
-    for (final sale in sales) {
-      totalAmount += sale.amount;
-      totalCommission += sale.commissionFee;
-      totalQty += sale.quantity;
-    }
-
     final moneyFormat = NumberFormat('#,##0', 'en_US');
 
     return Table(
@@ -407,8 +330,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
         3: FlexColumnWidth(10),
         4: FlexColumnWidth(8),
         5: FlexColumnWidth(15),
-        6: FlexColumnWidth(10),
-        7: FlexColumnWidth(16),
+        6: FlexColumnWidth(16),
       },
       children: [
         // Header row
@@ -421,28 +343,20 @@ class SalesInvoiceImageWidget extends StatelessWidget {
             _buildTableCell('အလေးချိန်', isHeader: true),
             _buildTableCell('အရေအတွက်', isHeader: true),
             _buildTableCell('ယူနစ်ဈေး', isHeader: true),
-            _buildTableCell('ကော်မရှင်', isHeader: true),
             _buildTableCell('စုစုပေါင်း', isHeader: true),
           ],
         ),
-        // Item rows
-        ...List<TableRow>.generate(
-          sales.length,
-          (index) {
-            final sale = sales[index];
-            return TableRow(
-              children: [
-                _buildTableCell('${index + 1}'),
-                _buildTableCell(sale.gemstoneName),
-                _buildTableCell('ကျောက်လုံး'),
-                _buildTableCell('${sale.weightCarat} ${sale.weightUnit ?? 'kg'}'),
-                _buildTableCell('${sale.quantity}'),
-                _buildTableCell('${moneyFormat.format(sale.quantity > 0 ? sale.amount / sale.quantity : 0)}'),
-                _buildTableCell('${moneyFormat.format(sale.commissionFee)}'),
-                _buildTableCell('${moneyFormat.format(sale.amount)}'),
-              ],
-            );
-          },
+        // Single item row
+        TableRow(
+          children: [
+            _buildTableCell('1'),
+            _buildTableCell(gemstone.name),
+            _buildTableCell('ကျောက်လုံး'),
+            _buildTableCell('${gemstone.weight} ${gemstone.weightUnit ?? 'kg'}'),
+            _buildTableCell('${gemstone.quantity}'),
+            _buildTableCell('${moneyFormat.format(gemstone.quantity > 0 ? (gemstone.purchasePrice ?? 0) / (gemstone.quantity ?? 1) : 0)}'),
+            _buildTableCell('${moneyFormat.format((gemstone.purchasePrice ?? 0) * (gemstone.quantity ?? 0))}'),
+          ],
         ),
         // Totals row
         TableRow(
@@ -452,10 +366,9 @@ class SalesInvoiceImageWidget extends StatelessWidget {
             _buildTableCell('စုစုပေါင်း', isHeader: true),
             _buildTableCell('', isHeader: true),
             _buildTableCell('', isHeader: true),
-            _buildTableCell('$totalQty', isHeader: true),
+            _buildTableCell('${gemstone.quantity}', isHeader: true),
             _buildTableCell('', isHeader: true),
-            _buildTableCell('${moneyFormat.format(totalCommission)}', isHeader: true),
-            _buildTableCell('${moneyFormat.format(totalAmount)}', isHeader: true),
+            _buildTableCell('${moneyFormat.format((gemstone.purchasePrice ?? 0) * (gemstone.quantity ?? 0))}', isHeader: true),
           ],
         ),
       ],
@@ -477,19 +390,5 @@ class SalesInvoiceImageWidget extends StatelessWidget {
         textAlign: TextAlign.center,
       ),
     );
-  }
-
-  /// Capture widget as image
-  static Future<Uint8List?> captureAsImage(GlobalKey<State<StatefulWidget>> repaintKey) async {
-    try {
-      final RenderRepaintBoundary boundary = repaintKey.currentContext!
-          .findRenderObject() as RenderRepaintBoundary;
-      final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      return byteData?.buffer.asUint8List();
-    } catch (e) {
-      print('Error capturing image: $e');
-      return null;
-    }
   }
 }
