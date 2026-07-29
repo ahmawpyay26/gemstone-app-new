@@ -128,12 +128,22 @@ class MainActivity: FlutterActivity() {
                     try {
                         val inputStream = contentResolver.openInputStream(uri)
                         if (inputStream != null) {
-                            val content = inputStream.bufferedReader().use { it.readText() }
-                            inputStream.close()
+                            // Read file as raw binary bytes
+                            val fileBytes = inputStream.use { it.readBytes() }
                             
-                            // Detect format: if content starts with base64-like pattern, it's an archive
-                            // Otherwise, it's legacy JSON
-                            val isArchive = content.trim().matches(Regex("^[A-Za-z0-9+/]*={0,2}$")) && content.length > 100
+                            // Detect ZIP using magic signature: PK 03 04
+                            val isArchive = fileBytes.size >= 4 &&
+                                fileBytes[0] == 0x50.toByte() &&
+                                fileBytes[1] == 0x4B.toByte() &&
+                                fileBytes[2] == 0x03.toByte() &&
+                                fileBytes[3] == 0x04.toByte()
+                            
+                            // If ZIP: Base64-encode the bytes; otherwise: decode as UTF-8 text
+                            val content = if (isArchive) {
+                                Base64.encodeToString(fileBytes, Base64.NO_WRAP)
+                            } else {
+                                fileBytes.toString(Charsets.UTF_8)
+                            }
                             
                             val fileName = getFileNameFromUri(uri)
                             pendingResult?.success(mapOf(
