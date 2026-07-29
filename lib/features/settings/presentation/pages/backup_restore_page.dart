@@ -752,6 +752,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       // ATOMIC: All succeed together or all roll back together
       final result = await BackupRestoreService.restoreGemstonesAndSalesAndCustomersAndExpensesAndWorkersAndBrokerConsignmentsOnly(
         _pendingRestoreContent!,
+        archive: _pendingRestoreArchive,
       );
 
       if (!mounted) return;

@@ -1647,8 +1647,9 @@ class BackupRestoreService {
 
   /// Restore all 6 boxes atomically: Gemstones, Sales, Customers, Expenses, Workers, and Broker Consignments.
   static Future<Map<String, dynamic>> restoreGemstonesAndSalesAndCustomersAndExpensesAndWorkersAndBrokerConsignmentsOnly(
-    String backupContent,
-  ) async {
+    String backupContent, {
+    Archive? archive,
+  }) async {
     try {
       final backupData = jsonDecode(backupContent) as Map<String, dynamic>?;
       if (backupData == null) {
@@ -1667,6 +1668,13 @@ class BackupRestoreService {
       final backupWorkersData = backupData['workers'] as Map<String, dynamic>? ?? {};
       final backupBrokerProfilesData = backupData['brokerProfiles'] as Map<String, dynamic>? ?? {};
       final backupBrokerConsignmentsData = backupData['brokerConsignments'] as Map<String, dynamic>? ?? {};
+
+      // Build media path mapping if archive is provided
+      Map<String, String> mediaPathMapping = {};
+      if (archive != null) {
+        mediaPathMapping = await MediaBackupHelper.buildMediaPathMapping(archive);
+        developer.log('[RESTORE] Media path mapping created with ${mediaPathMapping.length} entries');
+      }
 
       final gemstonesBox = LocalDb.gemstones();
       final salesBox = LocalDb.sales();
@@ -1717,6 +1725,22 @@ class BackupRestoreService {
           await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
           return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Gemstone restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
         }
+        
+        // Remap photo paths if media mapping is available
+        if (mediaPathMapping.isNotEmpty && gemstone.photoPaths.isNotEmpty) {
+          final remappedPaths = <String>[];
+          for (final oldPath in gemstone.photoPaths) {
+            final newPath = MediaBackupHelper.remapPhotoPath(oldPath, mediaPathMapping);
+            if (newPath != null) {
+              remappedPaths.add(newPath);
+              developer.log('[RESTORE] Remapped Gemstone photo: $oldPath -> $newPath');
+            } else {
+              developer.log('[RESTORE] Photo path not found in archive (will be removed): $oldPath');
+            }
+          }
+          gemstone.photoPaths = remappedPaths;
+        }
+        
         try {
           final originalKey = int.tryParse(key) ?? key;
           await gemstonesBox.put(originalKey, gemstone);
@@ -1756,6 +1780,22 @@ class BackupRestoreService {
           await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
           return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Sale restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
         }
+        
+        // Remap photo paths if media mapping is available
+        if (mediaPathMapping.isNotEmpty && sale.photoPaths.isNotEmpty) {
+          final remappedPaths = <String>[];
+          for (final oldPath in sale.photoPaths) {
+            final newPath = MediaBackupHelper.remapPhotoPath(oldPath, mediaPathMapping);
+            if (newPath != null) {
+              remappedPaths.add(newPath);
+              developer.log('[RESTORE] Remapped Sale photo: $oldPath -> $newPath');
+            } else {
+              developer.log('[RESTORE] Photo path not found in archive (will be removed): $oldPath');
+            }
+          }
+          sale.photoPaths = remappedPaths;
+        }
+        
         try {
           final originalKey = int.tryParse(key) ?? key;
           await salesBox.put(originalKey, sale);
@@ -1981,6 +2021,22 @@ class BackupRestoreService {
           await brokerConsignmentsSnapshot.restoreToBox(brokerConsignmentsBox);
           return {'success': false, 'restoredCount': 0, 'failedCount': 0, 'errorMessage': 'Broker Consignment restore ပျက်ကွက်ခဲ့ပါသည်။ Record key "$key" ကိ deserialize မအောင်မြင်ပါသည်။'};
         }
+        
+        // Remap photo paths if media mapping is available
+        if (mediaPathMapping.isNotEmpty && brokerConsignment.photoPaths.isNotEmpty) {
+          final remappedPaths = <String>[];
+          for (final oldPath in brokerConsignment.photoPaths) {
+            final newPath = MediaBackupHelper.remapPhotoPath(oldPath, mediaPathMapping);
+            if (newPath != null) {
+              remappedPaths.add(newPath);
+              developer.log('[RESTORE] Remapped BrokerConsignment photo: $oldPath -> $newPath');
+            } else {
+              developer.log('[RESTORE] Photo path not found in archive (will be removed): $oldPath');
+            }
+          }
+          brokerConsignment.photoPaths = remappedPaths;
+        }
+        
         try {
           final originalKey = int.tryParse(key) ?? key;
           await brokerConsignmentsBox.put(originalKey, brokerConsignment);
