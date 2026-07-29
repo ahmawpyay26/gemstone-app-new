@@ -6,18 +6,13 @@ import '../local/models.dart';
 import '../local/local_db.dart';
 import 'package:intl/intl.dart';
 import 'dart:developer' as dev;
+import 'decoded_logo.dart';
 
-/// Holds a pre-decoded [ui.Image] for logo rendering in off-screen context
-class _DecodedLogo {
-  final Uint8List bytes;
-  final ui.Image image;
-  const _DecodedLogo({required this.bytes, required this.image});
-}
-
-/// Widget that renders Purchase Invoice as a visual layout for image export
+/// Widget that renders Purchase Invoice (Gemstone) as a visual layout for image export.
+/// Uses only existing Gemstone fields (no purchaseVoucherId, purchaseDate, etc.)
 class PurchaseInvoiceImageWidget extends StatelessWidget {
   final Gemstone gemstone;
-  final _DecodedLogo? decodedLogo;
+  final DecodedLogo? decodedLogo;
   final void Function(String step)? onWidgetStep;
 
   const PurchaseInvoiceImageWidget({
@@ -43,31 +38,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
               _buildHeader(),
               const SizedBox(height: 12),
 
-              // Invoice number and date row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'ဝယ်ယူမှု နံပါတ်: ${gemstone.purchaseVoucherId ?? ""}',
-                    style: const TextStyle(
-                      fontFamily: 'Padauk',
-                      fontSize: 11,
-                      color: Colors.black,
-                    ),
-                  ),
-                  Text(
-                    'ရက်စွဲ: ${DateFormat('yyyy-MM-dd').format(DateTime.fromMillisecondsSinceEpoch(gemstone.purchaseDate ?? 0))}',
-                    style: const TextStyle(
-                      fontFamily: 'Padauk',
-                      fontSize: 11,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Supplier details box
+              // Gemstone details section
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -77,7 +48,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'ရောင်းချသူအချက်အလက်',
+                      'ကျောက်အချက်အလက်',
                       style: TextStyle(
                         fontFamily: 'Padauk',
                         fontSize: 11,
@@ -86,7 +57,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    _buildSupplierDetails(),
+                    _buildGemstoneDetails(),
                   ],
                 ),
               ),
@@ -179,7 +150,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
 
         // Voucher subtitle
         const Text(
-          'ဝယ်ယူမှုဖောင်သည်အ',
+          'ကျောက်ဝယ်ယူမှုဖောင်သည်အ',
           style: TextStyle(
             fontFamily: 'Padauk',
             fontSize: 14,
@@ -232,15 +203,24 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
     );
   }
 
-  /// Build supplier details section
-  Widget _buildSupplierDetails() {
+  /// Build gemstone details section using only existing fields
+  Widget _buildGemstoneDetails() {
     final moneyFormat = NumberFormat('#,##0', 'en_US');
+    final createdDate = DateTime.fromMillisecondsSinceEpoch(gemstone.createdAt);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ကျောက်အမျိုးအစား: ${gemstone.name}',
+          'ကျောက်အမည်: ${gemstone.name}',
+          style: const TextStyle(
+            fontFamily: 'Padauk',
+            fontSize: 10,
+            color: Colors.black,
+          ),
+        ),
+        Text(
+          'အမျိုးအစား: ${gemstone.type}',
           style: const TextStyle(
             fontFamily: 'Padauk',
             fontSize: 10,
@@ -256,7 +236,31 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
           ),
         ),
         Text(
-          'ယူနစ်: ${gemstone.weightUnit ?? 'kg'}',
+          'အလေးချိန်: ${gemstone.weightCarat} ${gemstone.weightUnit}',
+          style: const TextStyle(
+            fontFamily: 'Padauk',
+            fontSize: 10,
+            color: Colors.black,
+          ),
+        ),
+        Text(
+          'ရောင်း: ${gemstone.color}',
+          style: const TextStyle(
+            fontFamily: 'Padauk',
+            fontSize: 10,
+            color: Colors.black,
+          ),
+        ),
+        Text(
+          'မူရင်း: ${gemstone.origin}',
+          style: const TextStyle(
+            fontFamily: 'Padauk',
+            fontSize: 10,
+            color: Colors.black,
+          ),
+        ),
+        Text(
+          'ရက်စွဲ: ${DateFormat('yyyy-MM-dd').format(createdDate)}',
           style: const TextStyle(
             fontFamily: 'Padauk',
             fontSize: 10,
@@ -279,7 +283,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${moneyFormat.format(gemstone.purchasePrice ?? 0)} ကျပ်',
+                  '${moneyFormat.format(gemstone.costPrice)} ကျပ်',
                   style: const TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
@@ -301,7 +305,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${moneyFormat.format((gemstone.purchasePrice ?? 0) * (gemstone.quantity ?? 0))} ကျပ်',
+                  '${moneyFormat.format(gemstone.costPrice * gemstone.quantity)} ကျပ်',
                   style: const TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
@@ -317,7 +321,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
     );
   }
 
-  /// Build items table
+  /// Build items table using only existing Gemstone fields
   Widget _buildItemsTable() {
     final moneyFormat = NumberFormat('#,##0', 'en_US');
 
@@ -351,11 +355,11 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
           children: [
             _buildTableCell('1'),
             _buildTableCell(gemstone.name),
-            _buildTableCell('ကျောက်လုံး'),
-            _buildTableCell('${gemstone.weight} ${gemstone.weightUnit ?? 'kg'}'),
+            _buildTableCell(gemstone.type),
+            _buildTableCell('${gemstone.weightCarat} ${gemstone.weightUnit}'),
             _buildTableCell('${gemstone.quantity}'),
-            _buildTableCell('${moneyFormat.format(gemstone.quantity > 0 ? (gemstone.purchasePrice ?? 0) / (gemstone.quantity ?? 1) : 0)}'),
-            _buildTableCell('${moneyFormat.format((gemstone.purchasePrice ?? 0) * (gemstone.quantity ?? 0))}'),
+            _buildTableCell('${moneyFormat.format(gemstone.quantity > 0 ? gemstone.costPrice / gemstone.quantity : 0)}'),
+            _buildTableCell('${moneyFormat.format(gemstone.costPrice * gemstone.quantity)}'),
           ],
         ),
         // Totals row
@@ -368,7 +372,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
             _buildTableCell('', isHeader: true),
             _buildTableCell('${gemstone.quantity}', isHeader: true),
             _buildTableCell('', isHeader: true),
-            _buildTableCell('${moneyFormat.format((gemstone.purchasePrice ?? 0) * (gemstone.quantity ?? 0))}', isHeader: true),
+            _buildTableCell('${moneyFormat.format(gemstone.costPrice * gemstone.quantity)}', isHeader: true),
           ],
         ),
       ],

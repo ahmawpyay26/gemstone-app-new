@@ -11,14 +11,7 @@ import '../local/local_db.dart';
 import '../local/models.dart';
 import 'offscreen_widget_image_renderer.dart';
 import 'sales_invoice_image_widget.dart';
-
-/// Holds a pre-decoded [ui.Image] alongside the raw bytes so both are
-/// available to the off-screen render tree without relying on ImageCache.
-class _DecodedLogo {
-  final Uint8List bytes;
-  final ui.Image image;
-  const _DecodedLogo({required this.bytes, required this.image});
-}
+import 'decoded_logo.dart';
 
 /// Generates clean PNG images of sales invoices without app UI chrome
 class SalesInvoiceImageExporter {
@@ -59,7 +52,7 @@ class SalesInvoiceImageExporter {
     // step: load_logo_bytes
     onStep?.call('load_logo_bytes');
     dev.log('[ImageExport] step=load_logo_bytes', name: 'SalesInvoiceImageExporter');
-    final _DecodedLogo? decodedLogo = await _loadDecodedLogo(onStep);
+    final DecodedLogo? decodedLogo = await _loadDecodedLogo(onStep);
 
     // step: create_widget_tree
     onStep?.call('create_widget_tree');
@@ -107,7 +100,7 @@ class SalesInvoiceImageExporter {
 
   /// Load and PRE-DECODE the logo so the off-screen render tree receives a
   /// [ui.Image] directly via [RawImage] — bypassing ImageCache entirely.
-  static Future<_DecodedLogo?> _loadDecodedLogo(
+  static Future<DecodedLogo?> _loadDecodedLogo(
       void Function(String step)? onStep) async {
     try {
       // ── Step 1: profile loaded ──────────────────────────────────────────
@@ -172,7 +165,7 @@ class SalesInvoiceImageExporter {
       dev.log('[ImageExport] logo_render_success',
           name: 'SalesInvoiceImageExporter');
 
-      return _DecodedLogo(bytes: bytes, image: uiImage);
+      return DecodedLogo(bytes: bytes, image: uiImage);
     } catch (e) {
       onStep?.call('logo_decode_failed');
       dev.log('[ImageExport] logo_decode_failed error=$e',

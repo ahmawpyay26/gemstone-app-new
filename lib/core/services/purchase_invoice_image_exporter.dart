@@ -11,14 +11,7 @@ import '../local/local_db.dart';
 import '../local/models.dart';
 import 'offscreen_widget_image_renderer.dart';
 import 'purchase_invoice_image_widget.dart';
-
-/// Holds a pre-decoded [ui.Image] alongside the raw bytes so both are
-/// available to the off-screen render tree without relying on ImageCache.
-class _DecodedLogo {
-  final Uint8List bytes;
-  final ui.Image image;
-  const _DecodedLogo({required this.bytes, required this.image});
-}
+import 'decoded_logo.dart';
 
 /// Generates clean PNG images of purchase invoices without app UI chrome
 class PurchaseInvoiceImageExporter {
@@ -36,7 +29,7 @@ class PurchaseInvoiceImageExporter {
     BuildContext context, {
     void Function(String step)? onStep,
   }) async {
-    final voucherId = gemstone.purchaseVoucherId ?? 'unknown';
+    final voucherId = gemstone.id;
     final itemName = gemstone.name;
 
     dev.log(
@@ -56,7 +49,7 @@ class PurchaseInvoiceImageExporter {
     // step: load_logo_bytes
     onStep?.call('load_logo_bytes');
     dev.log('[ImageExport] step=load_logo_bytes', name: 'PurchaseInvoiceImageExporter');
-    final _DecodedLogo? decodedLogo = await _loadDecodedLogo(onStep);
+    final DecodedLogo? decodedLogo = await _loadDecodedLogo(onStep);
 
     // step: create_widget_tree
     onStep?.call('create_widget_tree');
@@ -104,7 +97,7 @@ class PurchaseInvoiceImageExporter {
 
   /// Load and PRE-DECODE the logo so the off-screen render tree receives a
   /// [ui.Image] directly via [RawImage] — bypassing ImageCache entirely.
-  static Future<_DecodedLogo?> _loadDecodedLogo(
+  static Future<DecodedLogo?> _loadDecodedLogo(
       void Function(String step)? onStep) async {
     try {
       // ── Step 1: profile loaded ──────────────────────────────────────────
@@ -169,7 +162,7 @@ class PurchaseInvoiceImageExporter {
       dev.log('[ImageExport] logo_render_success',
           name: 'PurchaseInvoiceImageExporter');
 
-      return _DecodedLogo(bytes: bytes, image: uiImage);
+      return DecodedLogo(bytes: bytes, image: uiImage);
     } catch (e) {
       onStep?.call('logo_decode_failed');
       dev.log('[ImageExport] logo_decode_failed error=$e',

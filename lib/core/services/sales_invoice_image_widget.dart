@@ -7,20 +7,14 @@ import '../local/models.dart';
 import '../local/local_db.dart';
 import 'package:intl/intl.dart';
 import 'dart:developer' as dev;
-
-/// Holds a pre-decoded [ui.Image] for logo rendering in off-screen context
-class _DecodedLogo {
-  final Uint8List bytes;
-  final ui.Image image;
-  const _DecodedLogo({required this.bytes, required this.image});
-}
+import 'decoded_logo.dart';
 
 /// Widget that renders Sales Invoice as a visual layout for image export
 /// Matches Broker Consignment Voucher design 1:1
 class SalesInvoiceImageWidget extends StatelessWidget {
   final List<Sale> sales;
   final GlobalKey<State<StatefulWidget>>? repaintKey;
-  final _DecodedLogo? decodedLogo;
+  final DecodedLogo? decodedLogo;
   final void Function(String step)? onWidgetStep;
 
   const SalesInvoiceImageWidget({
