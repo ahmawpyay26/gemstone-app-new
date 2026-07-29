@@ -27,6 +27,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
   bool _isValidatingRestore = false;
   bool _isRestoringGemstones = false;
   String? _pendingRestoreContent; // Store backup content for restore confirmation
+  Archive? _pendingRestoreArchive; // Store archive for media restoration
   static const platform = MethodChannel('com.gemstone.management/backup');
 
   Future<void> _createBackup() async {
@@ -525,6 +526,51 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       if (!success) {
         _showErrorDialog('Restore အမှားအယွင်း', 'Backup ဖိုင်ရွေးချယ်ရန် ပျက်ကွက်ခဲ့ပါသည်။');
         return;
+      }
+
+      // Handle archive format (media-enabled backup)
+      if (isArchive) {
+        try {
+          developer.log('[RESTORE] Detected archive backup format');
+          // Decode base64 to bytes
+          final archiveBytes = base64Decode(content);
+          developer.log('[RESTORE] Base64 decoded: ${archiveBytes.length} bytes');
+          
+          // Parse ZIP archive
+          final archive = ZipDecoder().decodeBytes(archiveBytes);
+          developer.log('[RESTORE] ZIP archive parsed: ${archive.length} files');
+          
+          // Validate archive structure and find backup_data.json
+          ArchiveFile? jsonFile;
+          for (final file in archive) {
+            // Security: reject path traversal attempts
+            if (file.name.contains('..')) {
+              throw Exception('Invalid archive: path traversal detected');
+            }
+            if (file.name == 'backup_data.json') {
+              jsonFile = file;
+              break;
+            }
+          }
+          
+          if (jsonFile == null) {
+            _showErrorDialog('Backup အမှားအယွင်း', 'Archive တွင် backup_data.json မတွေ့ရှိပါ။');
+            return;
+          }
+          
+          // Extract JSON content from archive
+          content = utf8.decode(jsonFile.content as List<int>);
+          developer.log('[RESTORE] Extracted backup_data.json: ${content.length} characters');
+          
+          // Store archive reference for media restoration during actual restore
+          // This will be used in the restore phase to extract media files
+          _pendingRestoreArchive = archive;
+          developer.log('[RESTORE] Archive stored for media restoration');
+        } catch (e) {
+          developer.log('[RESTORE] Error processing archive backup: $e');
+          _showErrorDialog('Backup အမှားအယွင်း', 'Archive ဖိုင်ခွင့်ပြုချက်မရှိပါသည်။: $e');
+          return;
+        }
       }
 
       // Validate the backup file content (Phase 1)
