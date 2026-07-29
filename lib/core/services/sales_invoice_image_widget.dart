@@ -305,74 +305,14 @@ class SalesInvoiceImageWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'စုစုပေါင်းရောင်းချမှု',
-                  style: TextStyle(
-                    fontFamily: 'Padauk',
-                    fontSize: 9,
-                    color: Colors.black,
-                  ),
-                ),
-                Text(
-                  '${moneyFormat.format(totalAmount)} ကျပ်',
-                  style: const TextStyle(
-                    fontFamily: 'Padauk',
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'စုစုပေါင်းကော်မရှင်',
-                  style: TextStyle(
-                    fontFamily: 'Padauk',
-                    fontSize: 9,
-                    color: Colors.black,
-                  ),
-                ),
-                Text(
-                  '${moneyFormat.format(totalCommission)} ကျပ်',
-                  style: const TextStyle(
-                    fontFamily: 'Padauk',
-                    fontSize: 9,
-                  ),
-                ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'စုစုပေါင်းကျန်ရှိ',
-                  style: TextStyle(
-                    fontFamily: 'Padauk',
-                    fontSize: 9,
-                    color: Colors.black,
-                  ),
-                ),
-                Text(
-                  '${moneyFormat.format(totalNet)} ကျပ်',
-                  style: const TextStyle(
-                    fontFamily: 'Padauk',
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ],
+        Text(
+          'စုစုပေါင်းရောင်းချမှု: ${moneyFormat.format(totalAmount)} ကျပ်',
+          style: const TextStyle(
+            fontFamily: 'Padauk',
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
         ),
       ],
     );
@@ -415,7 +355,6 @@ class SalesInvoiceImageWidget extends StatelessWidget {
             _buildTableCell('အလေးချိန်', isHeader: true),
             _buildTableCell('အရေအတွက်', isHeader: true),
             _buildTableCell('ယူနစ်ဈေး', isHeader: true),
-            _buildTableCell('ကော်မရှင်', isHeader: true),
             _buildTableCell('စုစုပေါင်း', isHeader: true),
           ],
         ),
@@ -432,7 +371,6 @@ class SalesInvoiceImageWidget extends StatelessWidget {
                 _buildTableCell('${sale.weightCarat} ${sale.weightUnit ?? 'kg'}'),
                 _buildTableCell('${sale.quantity}'),
                 _buildTableCell('${moneyFormat.format(sale.quantity > 0 ? sale.amount / sale.quantity : 0)}'),
-                _buildTableCell('${moneyFormat.format(sale.commissionFee)}'),
                 _buildTableCell('${moneyFormat.format(sale.amount)}'),
               ],
             );
@@ -448,7 +386,6 @@ class SalesInvoiceImageWidget extends StatelessWidget {
             _buildTableCell('', isHeader: true),
             _buildTableCell('$totalQty', isHeader: true),
             _buildTableCell('', isHeader: true),
-            _buildTableCell('${moneyFormat.format(totalCommission)}', isHeader: true),
             _buildTableCell('${moneyFormat.format(totalAmount)}', isHeader: true),
           ],
         ),
