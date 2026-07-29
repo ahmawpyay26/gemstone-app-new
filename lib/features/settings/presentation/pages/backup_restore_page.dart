@@ -31,6 +31,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
   static const platform = MethodChannel('com.gemstone.management/backup');
 
   Future<void> _createBackup() async {
+    developer.log('[DIAG-BACKUP-START] _createBackup() called');
     setState(() => _isBackingUp = true);
 
     try {
@@ -181,6 +182,8 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
         }
       }
     } catch (e) {
+      developer.log('[DIAG-BACKUP-CATCH] Exception in _createBackup: ${e.runtimeType}: $e');
+      developer.log('[DIAG-BACKUP-STACK] ${StackTrace.current}');
       setState(() => _isBackingUp = false);
       if (mounted) {
         _showErrorDialog('Backup အမှားအယွင်း', 'Backup ဖန်တီးခြင်း ပျက်ကွက်ခဲ့ပါတယ်: $e');
@@ -498,6 +501,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
 
   /// Phase 1: Initiate restore by selecting a .gmbak file via Android SAF
   Future<void> _initiateRestore() async {
+    developer.log('[DIAG-RESTORE-START] _initiateRestore() called');
     setState(() => _isValidatingRestore = true);
 
     try {
@@ -574,7 +578,9 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       }
 
       // Validate the backup file content (Phase 1)
+      developer.log('[DIAG-VALIDATE-CALL] Calling validateBackupFileContent with content length: ${content.length}');
       final validation = await BackupRestoreService.validateBackupFileContent(content, fileName);
+      developer.log('[DIAG-VALIDATE-RESULT] Validation result: isValid=${validation.isValid}, errorMessage=${validation.errorMessage}');
 
       if (!validation.isValid) {
         _showErrorDialog('Backup အမှားအယွင်း', validation.errorMessage ?? 'အမည်မသိအမှားအယွင်း');
@@ -592,14 +598,16 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
         _showRestorePreviewDialog(preview);
       }
     } on PlatformException catch (e) {
+      developer.log('[DIAG-RESTORE-PLATFORM-CATCH] PlatformException: ${e.message}');
+      developer.log('[DIAG-RESTORE-PLATFORM-STACK] ${StackTrace.current}');
       setState(() => _isValidatingRestore = false);
-      developer.log('Platform error: ${e.message}');
       if (mounted) {
         _showErrorDialog('Restore အမှားအယွင်း', 'Backup ဖိုင်ရွေးချယ်ရန် ပျက်ကွက်ခဲ့ပါသည်။');
       }
     } catch (e) {
+      developer.log('[DIAG-RESTORE-CATCH] Exception in _initiateRestore: ${e.runtimeType}: $e');
+      developer.log('[DIAG-RESTORE-STACK] ${StackTrace.current}');
       setState(() => _isValidatingRestore = false);
-      developer.log('Restore error: $e');
       if (mounted) {
         _showErrorDialog('Restore အမှားအယွင်း', 'Backup ဖိုင်ရွေးချယ်ရန် ပျက်ကွက်ခဲ့ပါသည်။');
       }

@@ -69,6 +69,7 @@ class BackupRestoreService {
     String content,
     String filename,
   ) async {
+    developer.log('[DIAG-VALIDATE-ENTRY] validateBackupFileContent called: filename=$filename, contentLength=${content.length}');
     try {
       // Validate content is not empty
       if (content.isEmpty) {
@@ -90,6 +91,8 @@ class BackupRestoreService {
         }
         backupData = decoded;
       } catch (e) {
+        developer.log('[DIAG-JSON-DECODE-ERROR] JSON decode failed: ${e.runtimeType}: $e');
+        developer.log('[DIAG-JSON-DECODE-CONTENT-START] Content starts with: ${content.substring(0, (content.length > 100 ? 100 : content.length))}');
         return RestoreValidationResult.failure(
           filename: filename,
           errorMessage: 'JSON ဖိုင်ခွင့်ပြုချက်မရှိပါသည်။',
