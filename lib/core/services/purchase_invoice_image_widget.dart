@@ -297,7 +297,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'စုစုပေါင်းဝယ်ယူမှု',
+                  'စုစုပေါင်းအရင်း',
                   style: TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
@@ -305,7 +305,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${moneyFormat.format(gemstone.costPrice * gemstone.quantity)} ကျပ်',
+                  '${moneyFormat.format(LocalDb.gemstoneTotalCost(gemstone))} ကျပ်',
                   style: const TextStyle(
                     fontFamily: 'Padauk',
                     fontSize: 9,
@@ -358,8 +358,8 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
             _buildTableCell(gemstone.type),
             _buildTableCell('${gemstone.weightCarat} ${gemstone.weightUnit}'),
             _buildTableCell('${gemstone.quantity}'),
-            _buildTableCell('${moneyFormat.format(gemstone.quantity > 0 ? gemstone.costPrice / gemstone.quantity : 0)}'),
-            _buildTableCell('${moneyFormat.format(gemstone.costPrice * gemstone.quantity)}'),
+            _buildTableCell('${moneyFormat.format(gemstone.costPrice)}'),
+            _buildTableCell('${moneyFormat.format(LocalDb.gemstoneTotalCost(gemstone))}'),
           ],
         ),
         // Totals row
@@ -372,7 +372,7 @@ class PurchaseInvoiceImageWidget extends StatelessWidget {
             _buildTableCell('', isHeader: true),
             _buildTableCell('${gemstone.quantity}', isHeader: true),
             _buildTableCell('', isHeader: true),
-            _buildTableCell('${moneyFormat.format(gemstone.costPrice * gemstone.quantity)}', isHeader: true),
+            _buildTableCell('${moneyFormat.format(LocalDb.gemstoneTotalCost(gemstone))}', isHeader: true),
           ],
         ),
       ],
