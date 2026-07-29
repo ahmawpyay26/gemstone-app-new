@@ -8,6 +8,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.app.Activity
 import java.io.OutputStreamWriter
+import android.util.Base64
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.gemstone.management/backup"
@@ -15,6 +16,7 @@ class MainActivity: FlutterActivity() {
     private val CREATE_DOCUMENT_REQUEST_CODE = 1001
     private val OPEN_DOCUMENT_REQUEST_CODE = 1002
     private var backupContent: String = ""
+    private var isArchiveBackup: Boolean = false
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -24,9 +26,11 @@ class MainActivity: FlutterActivity() {
                 "saveBackupFile" -> {
                     val fileName = call.argument<String>("fileName") ?: return@setMethodCallHandler
                     val content = call.argument<String>("content") ?: return@setMethodCallHandler
+                    val isArchive = call.argument<Boolean>("isArchive") ?: false
                     
                     pendingResult = result
                     backupContent = content
+                    isArchiveBackup = isArchive
                     openSaveDialog(fileName)
                 }
                 "openRestoreFile" -> {
@@ -70,9 +74,26 @@ class MainActivity: FlutterActivity() {
                     try {
                         val outputStream = contentResolver.openOutputStream(uri)
                         if (outputStream != null) {
-                            OutputStreamWriter(outputStream).use { writer ->
-                                writer.write(backupContent)
-                                writer.flush()
+                            if (isArchiveBackup) {
+                                // Decode base64 and write binary archive
+                                try {
+                                    val decodedBytes = Base64.decode(backupContent, Base64.DEFAULT)
+                                    outputStream.write(decodedBytes)
+                                    outputStream.flush()
+                                } catch (e: IllegalArgumentException) {
+                                    pendingResult?.error("DECODE_ERROR", "Failed to decode base64 content: ${e.message}", null)
+                                    outputStream.close()
+                                    pendingResult = null
+                                    backupContent = ""
+                                    isArchiveBackup = false
+                                    return
+                                }
+                            } else {
+                                // Write as plain text for legacy JSON backups
+                                OutputStreamWriter(outputStream).use { writer ->
+                                    writer.write(backupContent)
+                                    writer.flush()
+                                }
                             }
                             outputStream.close()
                             
@@ -99,6 +120,7 @@ class MainActivity: FlutterActivity() {
             
             pendingResult = null
             backupContent = ""
+            isArchiveBackup = false
         } else if (requestCode == OPEN_DOCUMENT_REQUEST_CODE) {
             if (resultCode == Activity.RESULT_OK && data != null) {
                 val uri = data.data
@@ -109,11 +131,16 @@ class MainActivity: FlutterActivity() {
                             val content = inputStream.bufferedReader().use { it.readText() }
                             inputStream.close()
                             
+                            // Detect format: if content starts with base64-like pattern, it's an archive
+                            // Otherwise, it's legacy JSON
+                            val isArchive = content.trim().matches(Regex("^[A-Za-z0-9+/]*={0,2}$")) && content.length > 100
+                            
                             val fileName = getFileNameFromUri(uri)
                             pendingResult?.success(mapOf(
                                 "success" to true,
                                 "fileName" to fileName,
-                                "content" to content
+                                "content" to content,
+                                "isArchive" to isArchive
                             ))
                         } else {
                             pendingResult?.error("READ_ERROR", "Could not open input stream", null)

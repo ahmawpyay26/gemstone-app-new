@@ -513,8 +513,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       final success = result['success'] as bool? ?? false;
       final cancelled = result['cancelled'] as bool? ?? false;
       final fileName = result['fileName'] as String? ?? '';
-      var content = result['content'] as String? ?? '';
-      final isArchive = result['isArchive'] as bool? ?? false;
+      final content = result['content'] as String? ?? '';
 
       // Handle cancellation silently
       if (cancelled) {
