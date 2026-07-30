@@ -3,21 +3,16 @@ import 'dart:async';
 import 'dart:developer' as dev;
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../local/local_db.dart';
 import '../local/models.dart';
-import 'offscreen_widget_image_renderer.dart';
-import 'sales_invoice_image_widget.dart';
-import 'decoded_logo.dart';
+import 'voucher_export_service.dart';
+import 'pdf_to_png_converter.dart';
 
-/// Generates clean PNG images of sales invoices without app UI chrome
+/// Generates clean PNG images of sales invoices by converting PDF to PNG
 class SalesInvoiceImageExporter {
-  static const double _pageWidth = 800; // Pixels
-  static const double _pageHeight = 1100; // Pixels
-
   /// Export sales invoice as PNG image and share.
   ///
   /// [onStep] — called before each step starts with the step name.
@@ -49,38 +44,36 @@ class SalesInvoiceImageExporter {
     dev.log('[ImageExport] step=get_temp_dir', name: 'SalesInvoiceImageExporter');
     final tempDir = await getTemporaryDirectory();
 
-    // step: load_logo_bytes
-    onStep?.call('load_logo_bytes');
-    dev.log('[ImageExport] step=load_logo_bytes', name: 'SalesInvoiceImageExporter');
-    final DecodedLogo? decodedLogo = await _loadDecodedLogo(onStep);
+    // step: generate_pdf_bytes
+    onStep?.call('generate_pdf_bytes');
+    dev.log('[ImageExport] step=generate_pdf_bytes', name: 'SalesInvoiceImageExporter');
+    final voucherService = VoucherExportService();
+    final pdfBytes = await voucherService.generatePdfInvoiceBytes(sales);
+    
+    if (pdfBytes == null || pdfBytes.isEmpty) {
+      dev.log('[ImageExport] error: PDF generation failed', name: 'SalesInvoiceImageExporter');
+      throw StateError('PDF ထုတ်ပြန်ခြင်းမှာ ပြဿနာရှိပါသည်။');
+    }
+    dev.log('[ImageExport] pdf_bytes_generated size=${pdfBytes.length}', name: 'SalesInvoiceImageExporter');
 
-    // step: create_widget_tree
-    onStep?.call('create_widget_tree');
-    dev.log('[ImageExport] step=create_widget_tree', name: 'SalesInvoiceImageExporter');
-    final widget = SalesInvoiceImageWidget(
-      sales: sales,
-      decodedLogo: decodedLogo,
-      onWidgetStep: onStep,
-    );
-
-    // step: render_to_image
-    onStep?.call('render_to_image');
-    dev.log('[ImageExport] step=render_to_image', name: 'SalesInvoiceImageExporter');
-    final imageBytes = await OffscreenWidgetImageRenderer.renderWidgetToPNG(
-      widget,
-      pageWidth: _pageWidth,
-      pageHeight: _pageHeight,
-      pixelRatio: 2.0,
-      onStep: onStep,
-      serviceName: 'SalesInvoiceImageExporter',
-    );
+    // step: convert_pdf_to_png
+    onStep?.call('convert_pdf_to_png');
+    dev.log('[ImageExport] step=convert_pdf_to_png', name: 'SalesInvoiceImageExporter');
+    final pngBytes = await PdfToPngConverter.convertPdfToPng(pdfBytes);
+    
+    if (pngBytes == null || pngBytes.isEmpty) {
+      dev.log('[ImageExport] error: PNG conversion failed', name: 'SalesInvoiceImageExporter');
+      throw StateError('ပုံ ပြောင်းလဲခြင်းမှာ ပြဿနာရှိပါသည်။');
+    }
+    dev.log('[ImageExport] png_bytes_generated size=${pngBytes.length}', name: 'SalesInvoiceImageExporter');
 
     // step: write_file
     onStep?.call('write_file');
     dev.log('[ImageExport] step=write_file', name: 'SalesInvoiceImageExporter');
     final filename = _getSafeFilename(invoiceNumber);
     final file = File('${tempDir.path}/$filename');
-    await file.writeAsBytes(imageBytes);
+    await file.writeAsBytes(pngBytes);
+    dev.log('[ImageExport] file_written path=${file.path}', name: 'SalesInvoiceImageExporter');
 
     // step: open_share_sheet
     onStep?.call('open_share_sheet');
@@ -96,82 +89,6 @@ class SalesInvoiceImageExporter {
     onStep?.call('completed');
     dev.log('[ImageExport] success', name: 'SalesInvoiceImageExporter');
     return true;
-  }
-
-  /// Load and PRE-DECODE the logo so the off-screen render tree receives a
-  /// [ui.Image] directly via [RawImage] — bypassing ImageCache entirely.
-  static Future<DecodedLogo?> _loadDecodedLogo(
-      void Function(String step)? onStep) async {
-    try {
-      // ── Step 1: profile loaded ──────────────────────────────────────────
-      final profile = LocalDb.getBusinessProfile();
-      onStep?.call('logo_profile_loaded');
-      dev.log('[ImageExport] logo_profile_loaded logoPath=${profile.logoPath}',
-          name: 'SalesInvoiceImageExporter');
-
-      final rawPath = profile.logoPath;
-      if (rawPath == null || rawPath.trim().isEmpty) {
-        onStep?.call('logo_path_empty');
-        dev.log('[ImageExport] logo_path_empty', name: 'SalesInvoiceImageExporter');
-        return null;
-      }
-
-      // ── Step 2: file exists ─────────────────────────────────────────────
-      final logoFile = File(rawPath.trim());
-      if (!logoFile.existsSync()) {
-        onStep?.call('logo_file_missing');
-        dev.log('[ImageExport] logo_file_missing path=$rawPath',
-            name: 'SalesInvoiceImageExporter');
-        return null;
-      }
-      onStep?.call('logo_file_exists');
-      dev.log('[ImageExport] logo_file_exists path=$rawPath',
-          name: 'SalesInvoiceImageExporter');
-
-      // ── Step 3: read bytes ──────────────────────────────────────────────
-      final bytes = await logoFile.readAsBytes();
-      if (bytes.isEmpty) {
-        onStep?.call('logo_read_failed');
-        dev.log('[ImageExport] logo_read_failed (empty bytes)',
-            name: 'SalesInvoiceImageExporter');
-        return null;
-      }
-      onStep?.call('logo_bytes_loaded');
-      dev.log('[ImageExport] logo_bytes_loaded bytes=${bytes.length}',
-          name: 'SalesInvoiceImageExporter');
-
-      // ── Step 4: decode to ui.Image (bypasses ImageCache) ───────────────
-      // This is the critical fix: Image.memory() relies on the Flutter
-      // ImageCache pipeline which is unavailable in the off-screen render
-      // tree. ui.decodeImageFromList() decodes directly to a ui.Image that
-      // RawImage can paint without any cache lookup.
-      onStep?.call('logo_header_branch_selected');
-      dev.log('[ImageExport] logo_header_branch_selected — decoding ui.Image',
-          name: 'SalesInvoiceImageExporter');
-
-      final completer = Completer<ui.Image>();
-      ui.decodeImageFromList(bytes, (ui.Image img) {
-        completer.complete(img);
-      });
-      final uiImage = await completer.future;
-
-      onStep?.call('logo_widget_inserted');
-      dev.log(
-          '[ImageExport] logo_widget_inserted — ui.Image decoded '
-          '${uiImage.width}x${uiImage.height}',
-          name: 'SalesInvoiceImageExporter');
-
-      onStep?.call('logo_render_success');
-      dev.log('[ImageExport] logo_render_success',
-          name: 'SalesInvoiceImageExporter');
-
-      return DecodedLogo(bytes: bytes, image: uiImage);
-    } catch (e) {
-      onStep?.call('logo_decode_failed');
-      dev.log('[ImageExport] logo_decode_failed error=$e',
-          name: 'SalesInvoiceImageExporter');
-      return null;
-    }
   }
 
   /// Get safe filename for image export

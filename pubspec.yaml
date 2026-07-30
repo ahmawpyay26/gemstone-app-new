@@ -36,6 +36,7 @@ dependencies:
   pdf: ^3.10.0
   printing: ^5.11.0
   share_plus: ^7.2.0
+  image: ^4.1.0
   
   # Archive & Compression
   archive: ^3.4.0
