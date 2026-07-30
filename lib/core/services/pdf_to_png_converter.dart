@@ -28,9 +28,10 @@ class PdfToPngConverter {
 
       // Render page to image at high DPI (approximately 288 DPI)
       // Use 2.0 scale factor for good quality
+      // Pass doubles directly to render() - it expects double, not int
       final image = await page.render(
-        width: (page.width * 2.0).toInt(),
-        height: (page.height * 2.0).toInt(),
+        width: page.width * 2.0,
+        height: page.height * 2.0,
         format: PdfPageImageFormat.png,
       );
       
