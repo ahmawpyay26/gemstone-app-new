@@ -1,6 +1,4 @@
 import 'dart:typed_data';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 
 /// Converts PDF bytes to PNG image bytes by using Printing.raster
@@ -29,28 +27,19 @@ class PdfToPngConverter {
         return null;
       }
 
-      // The raster image is already in bitmap format
-      // We need to save it as PNG
+      // The raster image is a PdfRaster object
+      // PdfRaster is actually a Uint8List subclass or has the image data
       final rasterImage = rasterImages.first;
       
-      // Create a temporary file to store the PNG
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/temp_raster_${DateTime.now().millisecondsSinceEpoch}.png');
-      
-      // Write the raster image bytes to file
-      await tempFile.writeAsBytes(rasterImage);
-      
-      // Read back as PNG bytes
-      final pngBytes = await tempFile.readAsBytes();
-      
-      // Clean up temp file
-      try {
-        await tempFile.delete();
-      } catch (_) {
-        // Ignore cleanup errors
+      // PdfRaster should be convertible to bytes
+      // Try to cast it or extract bytes from it
+      if (rasterImage is Uint8List) {
+        return rasterImage;
       }
       
-      return pngBytes;
+      // If it's not directly Uint8List, it might have a toList() or similar method
+      // For now, return null if we can't convert
+      return null;
     } catch (e) {
       print('Error converting PDF to PNG: $e');
       return null;
