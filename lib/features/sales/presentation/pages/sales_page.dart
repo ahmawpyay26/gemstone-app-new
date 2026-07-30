@@ -188,6 +188,15 @@ class _SalesPageState extends State<SalesPage> {
 
   /// Export invoice (multiple sales) as image
   Future<void> _exportInvoiceImage(List<Sale> sales) async {
+    // DEBUG: Confirm entry point
+    dev.log('[DEBUG] DEBUG EXPORT PATH ENTERED - _exportInvoiceImage called', name: 'SalesPage');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('DEBUG EXPORT PATH ENTERED'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
     if (sales.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('ရောင်းချမှုမှတ်တမ်း မရှိပါ')),
@@ -240,17 +249,87 @@ class _SalesPageState extends State<SalesPage> {
         );
       }
     } catch (e, stackTrace) {
+      dev.log('[ImageExport] OUTER CATCH - error=$e stackTrace=$stackTrace', name: 'SalesPage');
+      
       if (context.mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('အမှားအယွင်း: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+        
+        // Extract stack trace lines
+        final stackLines = stackTrace.toString().split('\n');
+        final truncatedStack = stackLines.take(30).join('\n');
+        
+        // Show detailed error dialog instead of generic SnackBar
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: const Text(
+                'EXPORT ERROR',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildErrorField('METHOD', '_exportInvoiceImage'),
+                    const SizedBox(height: 12),
+                    _buildErrorField('ERROR', e.toString()),
+                    const SizedBox(height: 12),
+                    _buildErrorField('FILE', 'lib/features/sales/presentation/pages/sales_page.dart'),
+                    const SizedBox(height: 12),
+                    _buildErrorField('STACK TRACE', truncatedStack, isCode: true),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('CLOSE'),
+                ),
+              ],
+            );
+          },
         );
       }
-      dev.log('[ImageExport] error=$e stackTrace=$stackTrace', name: 'SalesPage');
     }
+  }
+
+  Widget _buildErrorField(String label, String value, {bool isCode = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            value,
+            style: TextStyle(
+              fontFamily: isCode ? 'monospace' : 'Roboto',
+              fontSize: isCode ? 10 : 12,
+              color: Colors.black87,
+            ),
+            maxLines: isCode ? 35 : 5,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 
 
