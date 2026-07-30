@@ -8,9 +8,9 @@ import 'package:share_plus/share_plus.dart';
 import '../local/local_db.dart';
 import '../local/models.dart';
 import 'voucher_export_service.dart';
+import 'error_dialog_helper.dart';
 
 /// Exports sales invoices as PDF and shares them
-/// (PNG conversion via Printing.raster is complex; PDF export works perfectly)
 class SalesInvoiceImageExporter {
   /// Export sales invoice as PDF and share.
   ///
@@ -25,6 +25,7 @@ class SalesInvoiceImageExporter {
   }) async {
     final invoiceNumber = sales.isNotEmpty ? sales.first.invoiceNumber : 'unknown';
     final itemCount = sales.length;
+    String currentStep = 'initialization';
 
     dev.log(
       '[ImageExport] START — invoice=$invoiceNumber items=$itemCount',
@@ -33,21 +34,24 @@ class SalesInvoiceImageExporter {
 
     try {
       // step: build_document_data
-      onStep?.call('build_document_data');
-      dev.log('[ImageExport] STEP: build_document_data', name: 'SalesInvoiceImageExporter');
+      currentStep = 'build_document_data';
+      onStep?.call(currentStep);
+      dev.log('[ImageExport] STEP: $currentStep', name: 'SalesInvoiceImageExporter');
       if (sales.isEmpty) {
         throw StateError('ရောင်းချမှုမှတ်တမ်း မရှိပါ။');
       }
 
       // step: get_temp_dir
-      onStep?.call('get_temp_dir');
-      dev.log('[ImageExport] STEP: get_temp_dir', name: 'SalesInvoiceImageExporter');
+      currentStep = 'get_temp_dir';
+      onStep?.call(currentStep);
+      dev.log('[ImageExport] STEP: $currentStep', name: 'SalesInvoiceImageExporter');
       final tempDir = await getTemporaryDirectory();
       dev.log('[ImageExport] Temp dir: ${tempDir.path}', name: 'SalesInvoiceImageExporter');
 
       // step: generate_pdf_bytes
-      onStep?.call('generate_pdf_bytes');
-      dev.log('[ImageExport] STEP: generate_pdf_bytes', name: 'SalesInvoiceImageExporter');
+      currentStep = 'generate_pdf_bytes';
+      onStep?.call(currentStep);
+      dev.log('[ImageExport] STEP: $currentStep', name: 'SalesInvoiceImageExporter');
       final voucherService = VoucherExportService();
       
       dev.log('[ImageExport] Calling generatePdfInvoiceBytes()', name: 'SalesInvoiceImageExporter');
@@ -66,8 +70,9 @@ class SalesInvoiceImageExporter {
       dev.log('[ImageExport] PDF bytes generated: ${pdfBytes.length} bytes', name: 'SalesInvoiceImageExporter');
 
       // step: create_file
-      onStep?.call('create_file');
-      dev.log('[ImageExport] STEP: create_file', name: 'SalesInvoiceImageExporter');
+      currentStep = 'create_file';
+      onStep?.call(currentStep);
+      dev.log('[ImageExport] STEP: $currentStep', name: 'SalesInvoiceImageExporter');
       final filename = _getSafeFilename(invoiceNumber);
       final filePath = '${tempDir.path}/$filename.pdf';
       dev.log('[ImageExport] File path: $filePath', name: 'SalesInvoiceImageExporter');
@@ -76,14 +81,16 @@ class SalesInvoiceImageExporter {
       dev.log('[ImageExport] File object created', name: 'SalesInvoiceImageExporter');
 
       // step: write_file
-      onStep?.call('write_file');
-      dev.log('[ImageExport] STEP: write_file', name: 'SalesInvoiceImageExporter');
+      currentStep = 'write_file';
+      onStep?.call(currentStep);
+      dev.log('[ImageExport] STEP: $currentStep', name: 'SalesInvoiceImageExporter');
       await file.writeAsBytes(pdfBytes);
       dev.log('[ImageExport] File written to disk', name: 'SalesInvoiceImageExporter');
 
       // step: verify_file
-      onStep?.call('verify_file');
-      dev.log('[ImageExport] STEP: verify_file', name: 'SalesInvoiceImageExporter');
+      currentStep = 'verify_file';
+      onStep?.call(currentStep);
+      dev.log('[ImageExport] STEP: $currentStep', name: 'SalesInvoiceImageExporter');
       final fileExists = await file.exists();
       dev.log('[ImageExport] File exists: $fileExists', name: 'SalesInvoiceImageExporter');
       
@@ -96,39 +103,46 @@ class SalesInvoiceImageExporter {
       dev.log('[ImageExport] File size: $fileSize bytes', name: 'SalesInvoiceImageExporter');
 
       // step: create_xfile
-      onStep?.call('create_xfile');
-      dev.log('[ImageExport] STEP: create_xfile', name: 'SalesInvoiceImageExporter');
+      currentStep = 'create_xfile';
+      onStep?.call(currentStep);
+      dev.log('[ImageExport] STEP: $currentStep', name: 'SalesInvoiceImageExporter');
       final xFile = XFile(file.path, mimeType: 'application/pdf');
       dev.log('[ImageExport] XFile created: ${xFile.path}', name: 'SalesInvoiceImageExporter');
 
       // step: open_share_sheet
-      onStep?.call('open_share_sheet');
-      dev.log('[ImageExport] STEP: open_share_sheet', name: 'SalesInvoiceImageExporter');
+      currentStep = 'open_share_sheet';
+      onStep?.call(currentStep);
+      dev.log('[ImageExport] STEP: $currentStep', name: 'SalesInvoiceImageExporter');
       dev.log('[ImageExport] Calling Share.shareXFiles()', name: 'SalesInvoiceImageExporter');
       
-      try {
-        await Share.shareXFiles(
-          [xFile],
-          text: 'ရောင်းချခြင်းဖောင်သည် - $invoiceNumber',
-        );
-        dev.log('[ImageExport] Share.shareXFiles() completed successfully', name: 'SalesInvoiceImageExporter');
-      } catch (shareError, shareStackTrace) {
-        dev.log(
-          '[ImageExport] ERROR in Share.shareXFiles(): $shareError\nStackTrace: $shareStackTrace',
-          name: 'SalesInvoiceImageExporter',
-        );
-        rethrow;
-      }
+      await Share.shareXFiles(
+        [xFile],
+        text: 'ရောင်းချခြင်းဖောင်သည် - $invoiceNumber',
+      );
+      dev.log('[ImageExport] Share.shareXFiles() completed successfully', name: 'SalesInvoiceImageExporter');
 
-      onStep?.call('completed');
+      currentStep = 'completed';
+      onStep?.call(currentStep);
       dev.log('[ImageExport] SUCCESS - Export completed', name: 'SalesInvoiceImageExporter');
       return true;
     } catch (error, stackTrace) {
       dev.log(
-        '[ImageExport] FATAL ERROR: $error\nStackTrace: $stackTrace',
+        '[ImageExport] FATAL ERROR at step "$currentStep": $error\nStackTrace: $stackTrace',
         name: 'SalesInvoiceImageExporter',
       );
-      rethrow;
+
+      // Show error dialog on mobile
+      if (context.mounted) {
+        await ErrorDialogHelper.showErrorDialog(
+          context,
+          step: currentStep,
+          error: error,
+          stackTrace: stackTrace,
+          sourceFile: 'lib/core/services/sales_invoice_image_exporter.dart',
+        );
+      }
+
+      return false;
     }
   }
 
