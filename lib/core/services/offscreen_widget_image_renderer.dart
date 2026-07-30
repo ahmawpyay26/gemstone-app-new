@@ -136,6 +136,9 @@ class OffscreenWidgetImageRenderer {
     dev.log('[ImageExport] step=paint', name: serviceName);
     pipelineOwner.flushPaint();
 
+    // Allow render tree to stabilize before capturing image
+    await Future.delayed(const Duration(milliseconds: 10));
+
     // step: convert_to_image
     onStep?.call('convert_to_image');
     dev.log('[ImageExport] step=convert_to_image pixelRatio=$pixelRatio',
