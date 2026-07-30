@@ -12,11 +12,11 @@ class PdfToPngConverter {
   /// Returns PNG bytes, or null if conversion fails
   static Future<Uint8List?> convertPdfToPng(
     Uint8List pdfBytes, {
-    int dpi = 300,
+    double dpi = 300.0,
   }) async {
     try {
       // Rasterize the first page of the PDF to bitmap
-      final List<Uint8List> pages = await Printing.raster(
+      final pages = await Printing.raster(
         pdfBytes,
         dpi: dpi,
         pages: [0], // Only first page
@@ -26,16 +26,22 @@ class PdfToPngConverter {
         return null;
       }
 
-      // The raster output is raw image data (typically RGBA)
-      // We need to decode it as an image and encode as PNG
-      final imageBytes = pages.first;
+      // The raster output is a PdfRaster object with image data
+      final pdfRaster = pages.first;
       
-      // Decode the raster image
-      // The raster output is typically in a specific format that needs decoding
-      // For now, we'll use the image package to handle this
+      // Convert PdfRaster to image bytes
+      // PdfRaster has width, height, and image properties
+      final imageBytes = pdfRaster.image;
+      
+      if (imageBytes == null || imageBytes.isEmpty) {
+        return null;
+      }
+
+      // Decode the raster image from the raw bytes
+      // PdfRaster.image is typically RGBA format
       final image = img.Image.fromBytes(
-        width: 595, // A4 width in pixels at 72 DPI (approx)
-        height: 842, // A4 height in pixels at 72 DPI (approx)
+        width: pdfRaster.width,
+        height: pdfRaster.height,
         bytes: imageBytes.buffer,
         format: img.Format.uint8,
       );
