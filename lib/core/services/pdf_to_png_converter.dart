@@ -38,8 +38,8 @@ class PdfToPngConverter {
         return null;
       }
 
-      // Image is already PNG bytes
-      return image;
+      // Image is a PdfPageImage object, extract the bytes
+      return image.bytes;
     } catch (e) {
       print('Error converting PDF to PNG: $e');
       return null;
