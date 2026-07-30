@@ -549,6 +549,40 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   Future<void> _exportImage(Sale sale) async {
+    // RUNTIME IDENTITY MARKER - PROVE THIS METHOD IS EXECUTING
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: const Text('RUNTIME METHOD ID', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+            content: const SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('FILE: lib/features/sales/presentation/pages/sales_page.dart', style: TextStyle(fontFamily: 'monospace', fontSize: 11)),
+                  SizedBox(height: 8),
+                  Text('METHOD: _exportImage', style: TextStyle(fontFamily: 'monospace', fontSize: 11)),
+                  SizedBox(height: 8),
+                  Text('COMMIT: 4954624', style: TextStyle(fontFamily: 'monospace', fontSize: 11)),
+                  SizedBox(height: 8),
+                  Text('MARKER: SINGLE_EXPORT_V3', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue)),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('CONTINUE'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
     String currentStep = 'initialization';
     try {
       currentStep = 'check_photos';
@@ -563,6 +597,37 @@ class _SalesPageState extends State<SalesPage> {
       }
       
       currentStep = 'exportImageAndShare';
+      
+      // BEFORE EXPORTER CALL MARKER
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: const Text('BEFORE EXPORTER CALL', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+              content: const SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('About to call SalesInvoiceImageExporter.exportImageAndShare()', style: TextStyle(fontFamily: 'monospace', fontSize: 11)),
+                    SizedBox(height: 8),
+                    Text('MARKER: SINGLE_EXPORT_V3', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green)),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('CONTINUE'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+      
       // Call the exporter - will throw exception on failure
       await SalesInvoiceImageExporter.exportImageAndShare(
         [sale],
@@ -582,9 +647,42 @@ class _SalesPageState extends State<SalesPage> {
       dev.log('[ImageExport] SINGLE-ITEM EXPORT ERROR at step "$currentStep": $e\nStackTrace: $stackTrace', name: 'SalesPage');
       
       if (mounted) {
-        // Extract stack trace lines
+        // CALLER CATCH REACHED MARKER
         final stackLines = stackTrace.toString().split('\n');
         final truncatedStack = stackLines.take(30).join('\n');
+        
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext markerDialogContext) {
+            return AlertDialog(
+              title: const Text('CALLER CATCH REACHED', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('ERROR:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text(e.toString(), style: const TextStyle(fontFamily: 'monospace', fontSize: 10)),
+                    const SizedBox(height: 12),
+                    const Text('STACK TRACE (first 30 lines):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text(truncatedStack, style: const TextStyle(fontFamily: 'monospace', fontSize: 9)),
+                    const SizedBox(height: 12),
+                    const Text('MARKER: SINGLE_EXPORT_V3', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red)),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(markerDialogContext).pop(),
+                  child: const Text('CLOSE'),
+                ),
+              ],
+            );
+          },
+        );
         
         // Show detailed error dialog with the REAL exception
         showDialog(
