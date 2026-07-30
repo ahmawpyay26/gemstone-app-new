@@ -1,7 +1,9 @@
 import 'dart:typed_data';
-import 'package:pdfx/pdfx.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
 
-/// Converts PDF bytes to PNG image bytes by rendering the first page
+/// Converts PDF bytes to PNG image bytes by using Printing.raster
 class PdfToPngConverter {
   /// Convert PDF bytes to PNG bytes
   /// 
@@ -12,35 +14,43 @@ class PdfToPngConverter {
     Uint8List pdfBytes,
   ) async {
     try {
-      // Load PDF document from bytes
-      final document = await PdfDocument.openData(pdfBytes);
-      
-      if (document.pagesCount == 0) {
-        return null;
-      }
-
-      // Get the first page
-      final page = await document.getPage(1);
-      
-      if (page == null) {
-        return null;
-      }
-
-      // Render page to image at high DPI (approximately 288 DPI)
-      // Use 2.0 scale factor for good quality
-      // Pass doubles directly to render() - it expects double, not int
-      final image = await page.render(
-        width: page.width * 2.0,
-        height: page.height * 2.0,
-        format: PdfPageImageFormat.png,
+      // Use Printing.raster to convert PDF to image
+      // This returns a stream of PdfRaster objects (one per page)
+      final rasterStream = Printing.raster(
+        pdfBytes,
+        dpi: 300.0,
+        pages: [0], // Only first page
       );
+
+      // Get the first (and only) raster image
+      final rasterImages = await rasterStream.toList();
       
-      if (image == null) {
+      if (rasterImages.isEmpty) {
         return null;
       }
 
-      // Image is a PdfPageImage object, extract the bytes
-      return image.bytes;
+      // The raster image is already in bitmap format
+      // We need to save it as PNG
+      final rasterImage = rasterImages.first;
+      
+      // Create a temporary file to store the PNG
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/temp_raster_${DateTime.now().millisecondsSinceEpoch}.png');
+      
+      // Write the raster image bytes to file
+      await tempFile.writeAsBytes(rasterImage);
+      
+      // Read back as PNG bytes
+      final pngBytes = await tempFile.readAsBytes();
+      
+      // Clean up temp file
+      try {
+        await tempFile.delete();
+      } catch (_) {
+        // Ignore cleanup errors
+      }
+      
+      return pngBytes;
     } catch (e) {
       print('Error converting PDF to PNG: $e');
       return null;

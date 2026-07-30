@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.gemstone.management"
-    compileSdk 35
+    compileSdk flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
     compileOptions {
