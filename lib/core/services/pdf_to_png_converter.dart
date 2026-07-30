@@ -1,6 +1,5 @@
 import 'dart:typed_data';
-import 'package:pdf_render/pdf_render.dart';
-import 'package:image/image.dart' as img;
+import 'package:pdfx/pdfx.dart';
 
 /// Converts PDF bytes to PNG image bytes by rendering the first page
 class PdfToPngConverter {
@@ -16,32 +15,31 @@ class PdfToPngConverter {
       // Load PDF document from bytes
       final document = await PdfDocument.openData(pdfBytes);
       
-      if (document.pageCount == 0) {
+      if (document.pagesCount == 0) {
         return null;
       }
 
       // Get the first page
       final page = await document.getPage(1);
       
-      // Render page to image at high DPI (300 DPI equivalent)
-      // Page size is typically in points (1/72 inch)
-      // For 300 DPI, we need to scale up: 300/72 = 4.167
-      final pageSize = page.pageSize;
-      final scale = 4.0; // Approximately 288 DPI
-      
+      if (page == null) {
+        return null;
+      }
+
+      // Render page to image at high DPI (approximately 288 DPI)
+      // Use 2.0 scale factor for good quality
       final image = await page.render(
-        width: (pageSize.width * scale).toInt(),
-        height: (pageSize.height * scale).toInt(),
+        width: (page.width * 2.0).toInt(),
+        height: (page.height * 2.0).toInt(),
+        format: PdfPageImageFormat.png,
       );
       
       if (image == null) {
         return null;
       }
 
-      // The rendered image is already in the correct format
-      // Convert to PNG bytes
-      final pngBytes = img.encodePng(image);
-      return Uint8List.fromList(pngBytes);
+      // Image is already PNG bytes
+      return image;
     } catch (e) {
       print('Error converting PDF to PNG: $e');
       return null;
