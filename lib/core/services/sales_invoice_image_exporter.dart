@@ -27,56 +27,109 @@ class SalesInvoiceImageExporter {
     final itemCount = sales.length;
 
     dev.log(
-      '[ImageExport] start — invoice=$invoiceNumber items=$itemCount',
+      '[ImageExport] START — invoice=$invoiceNumber items=$itemCount',
       name: 'SalesInvoiceImageExporter',
     );
 
-    // step: build_document_data
-    onStep?.call('build_document_data');
-    dev.log('[ImageExport] step=build_document_data', name: 'SalesInvoiceImageExporter');
-    if (sales.isEmpty) {
-      throw StateError('ရောင်းချမှုမှတ်တမ်း မရှိပါ။');
+    try {
+      // step: build_document_data
+      onStep?.call('build_document_data');
+      dev.log('[ImageExport] STEP: build_document_data', name: 'SalesInvoiceImageExporter');
+      if (sales.isEmpty) {
+        throw StateError('ရောင်းချမှုမှတ်တမ်း မရှိပါ။');
+      }
+
+      // step: get_temp_dir
+      onStep?.call('get_temp_dir');
+      dev.log('[ImageExport] STEP: get_temp_dir', name: 'SalesInvoiceImageExporter');
+      final tempDir = await getTemporaryDirectory();
+      dev.log('[ImageExport] Temp dir: ${tempDir.path}', name: 'SalesInvoiceImageExporter');
+
+      // step: generate_pdf_bytes
+      onStep?.call('generate_pdf_bytes');
+      dev.log('[ImageExport] STEP: generate_pdf_bytes', name: 'SalesInvoiceImageExporter');
+      final voucherService = VoucherExportService();
+      
+      dev.log('[ImageExport] Calling generatePdfInvoiceBytes()', name: 'SalesInvoiceImageExporter');
+      final pdfBytes = await voucherService.generatePdfInvoiceBytes(sales);
+      
+      if (pdfBytes == null) {
+        dev.log('[ImageExport] ERROR: pdfBytes is null', name: 'SalesInvoiceImageExporter');
+        throw StateError('PDF ထုတ်ပြန်ခြင်းမှာ ပြဿနာရှိပါသည်။');
+      }
+      
+      if (pdfBytes.isEmpty) {
+        dev.log('[ImageExport] ERROR: pdfBytes is empty', name: 'SalesInvoiceImageExporter');
+        throw StateError('PDF ထုတ်ပြန်ခြင်းမှာ ပြဿနာရှိပါသည်။');
+      }
+      
+      dev.log('[ImageExport] PDF bytes generated: ${pdfBytes.length} bytes', name: 'SalesInvoiceImageExporter');
+
+      // step: create_file
+      onStep?.call('create_file');
+      dev.log('[ImageExport] STEP: create_file', name: 'SalesInvoiceImageExporter');
+      final filename = _getSafeFilename(invoiceNumber);
+      final filePath = '${tempDir.path}/$filename.pdf';
+      dev.log('[ImageExport] File path: $filePath', name: 'SalesInvoiceImageExporter');
+      
+      final file = File(filePath);
+      dev.log('[ImageExport] File object created', name: 'SalesInvoiceImageExporter');
+
+      // step: write_file
+      onStep?.call('write_file');
+      dev.log('[ImageExport] STEP: write_file', name: 'SalesInvoiceImageExporter');
+      await file.writeAsBytes(pdfBytes);
+      dev.log('[ImageExport] File written to disk', name: 'SalesInvoiceImageExporter');
+
+      // step: verify_file
+      onStep?.call('verify_file');
+      dev.log('[ImageExport] STEP: verify_file', name: 'SalesInvoiceImageExporter');
+      final fileExists = await file.exists();
+      dev.log('[ImageExport] File exists: $fileExists', name: 'SalesInvoiceImageExporter');
+      
+      if (!fileExists) {
+        dev.log('[ImageExport] ERROR: File does not exist after writing', name: 'SalesInvoiceImageExporter');
+        throw StateError('ဖိုင်ရေးခြင်းမှာ ပြဿနာရှိပါသည်။');
+      }
+      
+      final fileSize = await file.length();
+      dev.log('[ImageExport] File size: $fileSize bytes', name: 'SalesInvoiceImageExporter');
+
+      // step: create_xfile
+      onStep?.call('create_xfile');
+      dev.log('[ImageExport] STEP: create_xfile', name: 'SalesInvoiceImageExporter');
+      final xFile = XFile(file.path, mimeType: 'application/pdf');
+      dev.log('[ImageExport] XFile created: ${xFile.path}', name: 'SalesInvoiceImageExporter');
+
+      // step: open_share_sheet
+      onStep?.call('open_share_sheet');
+      dev.log('[ImageExport] STEP: open_share_sheet', name: 'SalesInvoiceImageExporter');
+      dev.log('[ImageExport] Calling Share.shareXFiles()', name: 'SalesInvoiceImageExporter');
+      
+      try {
+        await Share.shareXFiles(
+          [xFile],
+          text: 'ရောင်းချခြင်းဖောင်သည် - $invoiceNumber',
+        );
+        dev.log('[ImageExport] Share.shareXFiles() completed successfully', name: 'SalesInvoiceImageExporter');
+      } catch (shareError, shareStackTrace) {
+        dev.log(
+          '[ImageExport] ERROR in Share.shareXFiles(): $shareError\nStackTrace: $shareStackTrace',
+          name: 'SalesInvoiceImageExporter',
+        );
+        rethrow;
+      }
+
+      onStep?.call('completed');
+      dev.log('[ImageExport] SUCCESS - Export completed', name: 'SalesInvoiceImageExporter');
+      return true;
+    } catch (error, stackTrace) {
+      dev.log(
+        '[ImageExport] FATAL ERROR: $error\nStackTrace: $stackTrace',
+        name: 'SalesInvoiceImageExporter',
+      );
+      rethrow;
     }
-
-    // step: get_temp_dir
-    onStep?.call('get_temp_dir');
-    dev.log('[ImageExport] step=get_temp_dir', name: 'SalesInvoiceImageExporter');
-    final tempDir = await getTemporaryDirectory();
-
-    // step: generate_pdf_bytes
-    onStep?.call('generate_pdf_bytes');
-    dev.log('[ImageExport] step=generate_pdf_bytes', name: 'SalesInvoiceImageExporter');
-    final voucherService = VoucherExportService();
-    final pdfBytes = await voucherService.generatePdfInvoiceBytes(sales);
-    
-    if (pdfBytes == null || pdfBytes.isEmpty) {
-      dev.log('[ImageExport] error: PDF generation failed', name: 'SalesInvoiceImageExporter');
-      throw StateError('PDF ထုတ်ပြန်ခြင်းမှာ ပြဿနာရှိပါသည်။');
-    }
-    dev.log('[ImageExport] pdf_bytes_generated size=${pdfBytes.length}', name: 'SalesInvoiceImageExporter');
-
-    // step: write_file
-    onStep?.call('write_file');
-    dev.log('[ImageExport] step=write_file', name: 'SalesInvoiceImageExporter');
-    final filename = _getSafeFilename(invoiceNumber);
-    final file = File('${tempDir.path}/$filename.pdf');
-    await file.writeAsBytes(pdfBytes);
-    dev.log('[ImageExport] file_written path=${file.path}', name: 'SalesInvoiceImageExporter');
-
-    // step: open_share_sheet
-    onStep?.call('open_share_sheet');
-    dev.log(
-      '[ImageExport] step=open_share_sheet',
-      name: 'SalesInvoiceImageExporter',
-    );
-    await Share.shareXFiles(
-      [XFile(file.path, mimeType: 'application/pdf')],
-      text: 'ရောင်းချခြင်းဖောင်သည် - $invoiceNumber',
-    );
-
-    onStep?.call('completed');
-    dev.log('[ImageExport] success', name: 'SalesInvoiceImageExporter');
-    return true;
   }
 
   /// Get safe filename for export
