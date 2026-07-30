@@ -586,6 +586,34 @@ class _SalesPageState extends State<SalesPage> {
     String currentStep = 'initialization';
     try {
       currentStep = 'check_photos';
+      
+      // CHECKPOINT 1: Before photo check
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext cpContext) {
+            return AlertDialog(
+              title: const Text('CHECKPOINT 1', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('About to check if sale.photoPaths is empty'),
+                  const SizedBox(height: 12),
+                  Text('sale.photoPaths.length = ${sale.photoPaths.length}', style: const TextStyle(fontFamily: 'monospace')),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(cpContext).pop(),
+                  child: const Text('CONTINUE'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+      
       if (sale.photoPaths.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -594,6 +622,33 @@ class _SalesPageState extends State<SalesPage> {
           ),
         );
         return;
+      }
+      
+      // CHECKPOINT 2: After photo check - photos exist
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext cpContext) {
+            return AlertDialog(
+              title: const Text('CHECKPOINT 2', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+              content: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Photo check passed - photos exist'),
+                  SizedBox(height: 12),
+                  Text('Proceeding to exporter call...', style: TextStyle(fontFamily: 'monospace')),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(cpContext).pop(),
+                  child: const Text('CONTINUE'),
+                ),
+              ],
+            );
+          },
+        );
       }
       
       currentStep = 'exportImageAndShare';
