@@ -8,7 +8,6 @@ import 'package:share_plus/share_plus.dart';
 import '../local/local_db.dart';
 import '../local/models.dart';
 import 'voucher_export_service.dart';
-import 'error_dialog_helper.dart';
 
 /// Exports sales invoices as PDF and shares them
 class SalesInvoiceImageExporter {
@@ -131,18 +130,8 @@ class SalesInvoiceImageExporter {
         name: 'SalesInvoiceImageExporter',
       );
 
-      // Show error dialog on mobile
-      if (context.mounted) {
-        await ErrorDialogHelper.showErrorDialog(
-          context,
-          step: currentStep,
-          error: error,
-          stackTrace: stackTrace,
-          sourceFile: 'lib/core/services/sales_invoice_image_exporter.dart',
-        );
-      }
-
-      return false;
+      // Re-throw the original exception to expose it to the caller
+      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 

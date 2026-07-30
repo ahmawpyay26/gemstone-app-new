@@ -549,35 +549,35 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   Future<void> _exportImage(Sale sale) async {
-    // DEBUG: Confirm entry point for SINGLE-ITEM export
-    dev.log('[DEBUG] REAL SINGLE-ITEM EXPORT PATH ENTERED - _exportImage called', name: 'SalesPage');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('REAL SINGLE-ITEM EXPORT PATH ENTERED'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
     String currentStep = 'initialization';
     try {
       currentStep = 'check_photos';
       if (sale.photoPaths.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('ዳቔብምራይሴብብፐማ።'),
+            content: Text('ဓာတ်ပုံမရှိသေးပါ။'),
             backgroundColor: AppTheme.errorColor,
           ),
         );
         return;
       }
-      currentStep = 'show_success';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('ပုံထုတ်မှုး: ${sale.gemstoneName}'),
-          backgroundColor: AppTheme.successColor,
-        ),
+      
+      currentStep = 'exportImageAndShare';
+      // Call the exporter - will throw exception on failure
+      await SalesInvoiceImageExporter.exportImageAndShare(
+        [sale],
+        context,
       );
-      // TODO: Implement actual image export functionality
+      
+      // Success
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ပုံထုတ်မှု: ${sale.gemstoneName}'),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+      }
     } catch (e, stackTrace) {
       dev.log('[ImageExport] SINGLE-ITEM EXPORT ERROR at step "$currentStep": $e\nStackTrace: $stackTrace', name: 'SalesPage');
       
@@ -586,14 +586,14 @@ class _SalesPageState extends State<SalesPage> {
         final stackLines = stackTrace.toString().split('\n');
         final truncatedStack = stackLines.take(30).join('\n');
         
-        // Show detailed error dialog instead of generic SnackBar
+        // Show detailed error dialog with the REAL exception
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (BuildContext dialogContext) {
             return AlertDialog(
               title: const Text(
-                'SINGLE-ITEM EXPORT ERROR',
+                'EXPORT ERROR',
                 style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
               content: SingleChildScrollView(
@@ -607,7 +607,7 @@ class _SalesPageState extends State<SalesPage> {
                     const SizedBox(height: 12),
                     _buildSingleItemErrorField('ERROR', e.toString()),
                     const SizedBox(height: 12),
-                    _buildSingleItemErrorField('FILE', 'lib/features/sales/presentation/pages/sales_page.dart'),
+                    _buildSingleItemErrorField('FILE', 'sales_invoice_image_exporter.dart'),
                     const SizedBox(height: 12),
                     _buildSingleItemErrorField('STACK TRACE', truncatedStack, isCode: true),
                   ],
