@@ -548,271 +548,36 @@ class _SalesPageState extends State<SalesPage> {
     );
   }
 
+  /// Export sale photos as an image and share.
+  /// This is for sharing individual sale photos, not invoice export.
+  /// Requires at least one photo to be attached to the sale.
   Future<void> _exportImage(Sale sale) async {
-    // RUNTIME IDENTITY MARKER - PROVE THIS METHOD IS EXECUTING
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext dialogContext) {
-          return AlertDialog(
-            title: const Text('RUNTIME METHOD ID', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-            content: const SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('FILE: lib/features/sales/presentation/pages/sales_page.dart', style: TextStyle(fontFamily: 'monospace', fontSize: 11)),
-                  SizedBox(height: 8),
-                  Text('METHOD: _exportImage', style: TextStyle(fontFamily: 'monospace', fontSize: 11)),
-                  SizedBox(height: 8),
-                  Text('COMMIT: 4954624', style: TextStyle(fontFamily: 'monospace', fontSize: 11)),
-                  SizedBox(height: 8),
-                  Text('MARKER: SINGLE_EXPORT_V3', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue)),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('CONTINUE'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-
-    String currentStep = 'initialization';
     try {
-      currentStep = 'check_photos';
-      
-      // CHECKPOINT 1: Before photo check
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext cpContext) {
-            return AlertDialog(
-              title: const Text('CHECKPOINT 1', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('About to check if sale.photoPaths is empty'),
-                  const SizedBox(height: 12),
-                  Text('sale.photoPaths.length = ${sale.photoPaths.length}', style: const TextStyle(fontFamily: 'monospace')),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(cpContext).pop(),
-                  child: const Text('CONTINUE'),
-                ),
-              ],
-            );
-          },
-        );
-      }
-      
       if (sale.photoPaths.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ဓာတ်ပုံမရှိသေးပါ။'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ဓာတ်ပုံမရှိသေးပါ။'),
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
+        }
         return;
       }
-      
-      // CHECKPOINT 2: After photo check - photos exist
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext cpContext) {
-            return AlertDialog(
-              title: const Text('CHECKPOINT 2', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
-              content: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Photo check passed - photos exist'),
-                  SizedBox(height: 12),
-                  Text('Proceeding to exporter call...', style: TextStyle(fontFamily: 'monospace')),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(cpContext).pop(),
-                  child: const Text('CONTINUE'),
-                ),
-              ],
-            );
-          },
-        );
-      }
-      
-      currentStep = 'exportImageAndShare';
-      
-      // BEFORE EXPORTER CALL MARKER
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext dialogContext) {
-            return AlertDialog(
-              title: const Text('BEFORE EXPORTER CALL', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-              content: const SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('About to call SalesInvoiceImageExporter.exportImageAndShare()', style: TextStyle(fontFamily: 'monospace', fontSize: 11)),
-                    SizedBox(height: 8),
-                    Text('MARKER: SINGLE_EXPORT_V3', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green)),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('CONTINUE'),
-                ),
-              ],
-            );
-          },
-        );
-      }
-      
-      // Call the exporter - will throw exception on failure
-      await SalesInvoiceImageExporter.exportImageAndShare(
-        [sale],
-        context,
-      );
-      
-      // Success
+
+      // Export photos
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('ပုံထုတ်မှု: ${sale.gemstoneName}'),
-            backgroundColor: AppTheme.successColor,
-          ),
+          const SnackBar(content: Text('ဓာတ်ပုံများ ထုတ်ပြန်နေ...')),
         );
       }
-    } catch (e, stackTrace) {
-      dev.log('[ImageExport] SINGLE-ITEM EXPORT ERROR at step "$currentStep": $e\nStackTrace: $stackTrace', name: 'SalesPage');
-      
+    } catch (e) {
       if (mounted) {
-        // CALLER CATCH REACHED MARKER
-        final stackLines = stackTrace.toString().split('\n');
-        final truncatedStack = stackLines.take(30).join('\n');
-        
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext markerDialogContext) {
-            return AlertDialog(
-              title: const Text('CALLER CATCH REACHED', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('ERROR:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text(e.toString(), style: const TextStyle(fontFamily: 'monospace', fontSize: 10)),
-                    const SizedBox(height: 12),
-                    const Text('STACK TRACE (first 30 lines):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text(truncatedStack, style: const TextStyle(fontFamily: 'monospace', fontSize: 9)),
-                    const SizedBox(height: 12),
-                    const Text('MARKER: SINGLE_EXPORT_V3', style: TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red)),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(markerDialogContext).pop(),
-                  child: const Text('CLOSE'),
-                ),
-              ],
-            );
-          },
-        );
-        
-        // Show detailed error dialog with the REAL exception
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext dialogContext) {
-            return AlertDialog(
-              title: const Text(
-                'EXPORT ERROR',
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSingleItemErrorField('METHOD', '_exportImage'),
-                    const SizedBox(height: 12),
-                    _buildSingleItemErrorField('STEP', currentStep),
-                    const SizedBox(height: 12),
-                    _buildSingleItemErrorField('ERROR', e.toString()),
-                    const SizedBox(height: 12),
-                    _buildSingleItemErrorField('FILE', 'sales_invoice_image_exporter.dart'),
-                    const SizedBox(height: 12),
-                    _buildSingleItemErrorField('STACK TRACE', truncatedStack, isCode: true),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('CLOSE'),
-                ),
-              ],
-            );
-          },
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('အမှားအယွင်း: $e')),
         );
       }
     }
-  }
-
-  Widget _buildSingleItemErrorField(String label, String value, {bool isCode = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.red,
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            value,
-            style: TextStyle(
-              fontFamily: isCode ? 'monospace' : 'Roboto',
-              fontSize: isCode ? 10 : 12,
-              color: Colors.black87,
-            ),
-            maxLines: isCode ? 35 : 5,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
   }
 
   Future<void> _delete(dynamic key) async {
@@ -1004,8 +769,8 @@ class _SalesPageState extends State<SalesPage> {
                                 onEdit: () => _openForm(existing: primarySale, key: primaryKey),
                                 onDelete: () => _delete(primaryKey),
                                 onPrint: () => _printSale(primarySale),
-                                onExportImage: () => _exportImage(primarySale),
-                                onExportPdf: () => _exportVoucher(primarySale),
+                                onExportImage: () => _exportInvoiceImage([primarySale]),
+                                onExportPdf: () => _exportInvoicePdf([primarySale]),
                                 onShowPhotos: () => _showPhotoViewer(primarySale),
                                 onShowDetails: () => _showDetails(primarySale, hiveKey: primaryKey),
                                 dateFormat: _date,
