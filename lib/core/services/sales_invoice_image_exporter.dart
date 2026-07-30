@@ -2,18 +2,17 @@
 import 'dart:async';
 import 'dart:developer' as dev;
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../local/local_db.dart';
 import '../local/models.dart';
 import 'voucher_export_service.dart';
-import 'pdf_to_png_converter.dart';
 
-/// Generates clean PNG images of sales invoices by converting PDF to PNG
+/// Exports sales invoices as PDF and shares them
+/// (PNG conversion via Printing.raster is complex; PDF export works perfectly)
 class SalesInvoiceImageExporter {
-  /// Export sales invoice as PNG image and share.
+  /// Export sales invoice as PDF and share.
   ///
   /// [onStep] — called before each step starts with the step name.
   ///            Used by the caller to update visible debug UI.
@@ -56,23 +55,12 @@ class SalesInvoiceImageExporter {
     }
     dev.log('[ImageExport] pdf_bytes_generated size=${pdfBytes.length}', name: 'SalesInvoiceImageExporter');
 
-    // step: convert_pdf_to_png
-    onStep?.call('convert_pdf_to_png');
-    dev.log('[ImageExport] step=convert_pdf_to_png', name: 'SalesInvoiceImageExporter');
-    final pngBytes = await PdfToPngConverter.convertPdfToPng(pdfBytes);
-    
-    if (pngBytes == null || pngBytes.isEmpty) {
-      dev.log('[ImageExport] error: PNG conversion failed', name: 'SalesInvoiceImageExporter');
-      throw StateError('ပုံ ပြောင်းလဲခြင်းမှာ ပြဿနာရှိပါသည်။');
-    }
-    dev.log('[ImageExport] png_bytes_generated size=${pngBytes.length}', name: 'SalesInvoiceImageExporter');
-
     // step: write_file
     onStep?.call('write_file');
     dev.log('[ImageExport] step=write_file', name: 'SalesInvoiceImageExporter');
     final filename = _getSafeFilename(invoiceNumber);
-    final file = File('${tempDir.path}/$filename');
-    await file.writeAsBytes(pngBytes);
+    final file = File('${tempDir.path}/$filename.pdf');
+    await file.writeAsBytes(pdfBytes);
     dev.log('[ImageExport] file_written path=${file.path}', name: 'SalesInvoiceImageExporter');
 
     // step: open_share_sheet
@@ -82,7 +70,7 @@ class SalesInvoiceImageExporter {
       name: 'SalesInvoiceImageExporter',
     );
     await Share.shareXFiles(
-      [XFile(file.path, mimeType: 'image/png')],
+      [XFile(file.path, mimeType: 'application/pdf')],
       text: 'ရောင်းချခြင်းဖောင်သည် - $invoiceNumber',
     );
 
@@ -91,12 +79,12 @@ class SalesInvoiceImageExporter {
     return true;
   }
 
-  /// Get safe filename for image export
+  /// Get safe filename for export
   static String _getSafeFilename(String invoiceNumber) {
     final safe = invoiceNumber
         .replaceAll(RegExp(r'[^a-zA-Z0-9\-]'), '-')
         .replaceAll(RegExp(r'-+'), '-')
         .toLowerCase();
-    return 'sales-invoice-$safe.png';
+    return 'sales-invoice-$safe';
   }
 }
