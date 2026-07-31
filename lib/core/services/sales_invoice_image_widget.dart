@@ -359,8 +359,8 @@ class SalesInvoiceImageWidget extends StatelessWidget {
         2: FlexColumnWidth(12),
         3: FlexColumnWidth(10),
         4: FlexColumnWidth(8),
-        5: FlexColumnWidth(15),
-        6: FlexColumnWidth(10),
+        5: FlexColumnWidth(11),    // Reduced from 15 (Unit Price)
+        6: FlexColumnWidth(14),    // Increased from 10 (Total)
         7: FlexColumnWidth(16),
       },
       children: [
