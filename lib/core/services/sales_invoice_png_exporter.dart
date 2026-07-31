@@ -134,12 +134,16 @@ class SalesInvoicePngExporter {
     BuildContext context,
   ) async {
     try {
-      final repaintKey = GlobalKey<State<StatefulWidget>>();
+      // Use correct GlobalKey type for rendering
+      final repaintKey = GlobalKey();
       
-      // Create invoice widget
-      final invoiceWidget = SalesInvoiceImageWidget(
-        sales: sales,
-        repaintKey: repaintKey,
+      // Create invoice widget wrapped with RepaintBoundary
+      final invoiceWidget = RepaintBoundary(
+        key: repaintKey,
+        child: SalesInvoiceImageWidget(
+          sales: sales,
+          repaintKey: null,  // Don't use nested key
+        ),
       );
 
       // Use a Completer to wait for the image capture
@@ -153,12 +157,24 @@ class SalesInvoicePngExporter {
           // Schedule capture after widget is built and laid out
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             try {
-              final renderBox = repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-              if (renderBox == null) {
-                dev.log('[PngExport] ERROR: RenderRepaintBoundary not found', name: 'SalesInvoicePngExporter');
+              // Wait for frame to complete rendering
+              await WidgetsBinding.instance.endOfFrame;
+              await Future.delayed(const Duration(milliseconds: 100));
+              
+              final renderObject = repaintKey.currentContext?.findRenderObject();
+              if (renderObject == null) {
+                dev.log('[PngExport] ERROR: RenderObject not found', name: 'SalesInvoicePngExporter');
                 completer.complete(null);
                 return;
               }
+              
+              if (renderObject is! RenderRepaintBoundary) {
+                dev.log('[PngExport] ERROR: RenderObject is not RenderRepaintBoundary, got ${renderObject.runtimeType}', name: 'SalesInvoicePngExporter');
+                completer.complete(null);
+                return;
+              }
+              
+              final renderBox = renderObject as RenderRepaintBoundary;
 
               // Capture image
               final image = await renderBox.toImage(pixelRatio: 2.0);
