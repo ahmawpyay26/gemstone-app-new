@@ -16,6 +16,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
   final GlobalKey<State<StatefulWidget>>? repaintKey;
   final DecodedLogo? decodedLogo;
   final void Function(String step)? onWidgetStep;
+  final bool isPngExport;
 
   const SalesInvoiceImageWidget({
     Key? key,
@@ -23,7 +24,20 @@ class SalesInvoiceImageWidget extends StatelessWidget {
     this.repaintKey,
     this.decodedLogo,
     this.onWidgetStep,
+    this.isPngExport = false,
   }) : super(key: key);
+
+  /// PNG export variant with optimized sizing
+  factory SalesInvoiceImageWidget.forPngExport({
+    required List<Sale> sales,
+    required GlobalKey<State<StatefulWidget>>? repaintKey,
+  }) {
+    return SalesInvoiceImageWidget(
+      sales: sales,
+      repaintKey: repaintKey,
+      isPngExport: true,
+    );
+  }
 
   /// Legacy constructor for in-dialog rendering (backward compatibility)
   factory SalesInvoiceImageWidget.forDialog({
@@ -38,13 +52,18 @@ class SalesInvoiceImageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // PNG export uses smaller dimensions for phone display
+    final width = isPngExport ? 600.0 : 800.0;
+    final padding = isPngExport ? 12.0 : 20.0;
+    final height = isPngExport ? null : 1100.0;  // Auto-fit for PNG
+
     return RepaintBoundary(
       key: repaintKey,
       child: Container(
-        width: 800,
-        height: 1100,
+        width: width,
+        height: height,
         color: Colors.white,
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(padding),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

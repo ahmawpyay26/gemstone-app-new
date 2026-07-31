@@ -137,12 +137,12 @@ class SalesInvoicePngExporter {
       // Use correct GlobalKey type for rendering
       final repaintKey = GlobalKey();
       
-      // Create invoice widget wrapped with RepaintBoundary
+      // Create invoice widget with PNG-optimized sizing
       final invoiceWidget = RepaintBoundary(
         key: repaintKey,
-        child: SalesInvoiceImageWidget(
+        child: SalesInvoiceImageWidget.forPngExport(
           sales: sales,
-          repaintKey: null,  // Don't use nested key
+          repaintKey: null,
         ),
       );
 
