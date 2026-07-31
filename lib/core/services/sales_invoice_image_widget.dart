@@ -8,6 +8,7 @@ import '../local/local_db.dart';
 import 'package:intl/intl.dart';
 import 'dart:developer' as dev;
 import 'decoded_logo.dart';
+import 'invoice_header_widget.dart';
 
 /// Widget that renders Sales Invoice as a visual layout for image export
 /// Matches Broker Consignment Voucher design 1:1
@@ -68,56 +69,11 @@ class SalesInvoiceImageWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header - matching Broker Voucher design
-              _buildHeader(),
-              const SizedBox(height: 12),
-
-              // Invoice number and date row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'ဘောင်ချာ နံပါတ်: ${sales.isNotEmpty ? sales.first.invoiceNumber : ""}',
-                    style: const TextStyle(
-                      fontFamily: 'Padauk',
-                      fontSize: 11,
-                      color: Colors.black,
-                    ),
-                  ),
-                  Text(
-                    'ရက်စွဲ: ${DateFormat('yyyy-MM-dd').format(DateTime.fromMillisecondsSinceEpoch(sales.isNotEmpty ? sales.first.saleDate : 0))}',
-                    style: const TextStyle(
-                      fontFamily: 'Padauk',
-                      fontSize: 11,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Customer details box - matching Broker Info Box style
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'ဖောက်သည်အချက်အလက်',
-                      style: TextStyle(
-                        fontFamily: 'Padauk',
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    _buildCustomerDetails(),
-                  ],
-                ),
+              // Shared header widget (standardized across PNG and PDF)
+              InvoiceHeaderWidget(
+                sales: sales,
+                decodedLogo: decodedLogo,
+                onWidgetStep: onWidgetStep,
               ),
               const SizedBox(height: 15),
 
@@ -160,8 +116,10 @@ class SalesInvoiceImageWidget extends StatelessWidget {
     );
   }
 
-  /// Build header section (matching Broker Voucher)
-  Widget _buildHeader() {
+  /// OLD: _buildHeader() moved to InvoiceHeaderWidget
+  /// This method is no longer used
+  /*
+  Widget _buildHeader_DEPRECATED() {
     final profile = LocalDb.getBusinessProfile();
     final shopName = profile.shopName.isNotEmpty
         ? profile.shopName
@@ -279,9 +237,12 @@ class SalesInvoiceImageWidget extends StatelessWidget {
       ],
     );
   }
+  */
 
-  /// Build customer details section
-  Widget _buildCustomerDetails() {
+  /// OLD: _buildCustomerDetails() moved to InvoiceHeaderWidget
+  /// This method is no longer used
+  /*
+  Widget _buildCustomerDetails_DEPRECATED() {
     double totalAmount = 0;
     double totalCommission = 0;
     double totalNet = 0;
@@ -336,6 +297,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
       ],
     );
   }
+  */
 
   /// Build items table (matching Broker Voucher table design)
   Widget _buildItemsTable() {
