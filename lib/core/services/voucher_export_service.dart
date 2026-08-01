@@ -1053,7 +1053,7 @@ class VoucherExportService {
 
   /// Build standardized invoice header (6-row layout) for PDF export
   /// Matches the PNG export header layout exactly
-  static pw.Widget _buildStandardizedInvoiceHeader(
+  pw.Widget _buildStandardizedInvoiceHeader(
     List<Sale> sales,
     dynamic profile,
     Uint8List? logoBytes,
