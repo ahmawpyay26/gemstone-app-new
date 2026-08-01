@@ -156,25 +156,52 @@ class _SalesPageState extends State<SalesPage> {
   /// Export invoice (multiple sales) as PDF
   Future<void> _exportInvoicePdf(List<Sale> sales) async {
     try {
-      if (sales.isEmpty) return;
+      developer.log('[PDF_EXPORT] Started with ${sales.length} sales');
+      if (sales.isEmpty) {
+        developer.log('[PDF_EXPORT] Sales list is empty, returning');
+        return;
+      }
       
+      developer.log('[PDF_EXPORT] Showing loading SnackBar');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ဘောင်ချာ PDF တည်ဆောက်နေ...')),
       );
       
+      developer.log('[PDF_EXPORT] Creating VoucherExportService');
       final voucherService = VoucherExportService();
+      
+      developer.log('[PDF_EXPORT] Calling generatePdfInvoice()');
       final file = await voucherService.generatePdfInvoice(sales);
-      if (file != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('ဘောင်ချာ PDF သိမ်းဆည်းပြီးပါပြီ'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-        // Optionally share the file
-        await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ');
+      
+      developer.log('[PDF_EXPORT] generatePdfInvoice() returned: ${file != null ? file.path : "NULL"}');
+      
+      if (file != null) {
+        developer.log('[PDF_EXPORT] File is not null, checking if mounted');
+        developer.log('[PDF_EXPORT] File path: ${file.path}');
+        developer.log('[PDF_EXPORT] File exists: ${file.existsSync()}');
+        developer.log('[PDF_EXPORT] File size: ${file.lengthSync()} bytes');
+        
+        if (mounted) {
+          developer.log('[PDF_EXPORT] Widget is mounted, showing success SnackBar');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('ဘောင်ချာ PDF သိမ်းဆည်းပြီးပါပြီ'),
+              backgroundColor: AppTheme.successColor,
+            ),
+          );
+          
+          developer.log('[PDF_EXPORT] Calling Share.shareXFiles() with file: ${file.path}');
+          final result = await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ');
+          developer.log('[PDF_EXPORT] Share.shareXFiles() completed with result: $result');
+        } else {
+          developer.log('[PDF_EXPORT] Widget is NOT mounted, skipping share');
+        }
+      } else {
+        developer.log('[PDF_EXPORT] File is NULL - generatePdfInvoice() returned null');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      developer.log('[PDF_EXPORT] EXCEPTION CAUGHT: $e');
+      developer.log('[PDF_EXPORT] Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

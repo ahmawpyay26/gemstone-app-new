@@ -509,7 +509,11 @@ class VoucherExportService {
 
   /// Generate PDF invoice for multiple sales (matching Broker Voucher design 1:1)
   Future<File?> generatePdfInvoice(List<Sale> sales) async {
-    if (sales.isEmpty) return null;
+    developer.log('[VOUCHER_SERVICE] generatePdfInvoice() called with ${sales.length} sales');
+    if (sales.isEmpty) {
+      developer.log('[VOUCHER_SERVICE] Sales list is empty, returning null');
+      return null;
+    }
     
     try {
       // Load Padauk fonts
@@ -661,12 +665,38 @@ class VoucherExportService {
         ),
       );
       
+      developer.log('[VOUCHER_SERVICE] Getting temporary directory');
       final tempDir = await getTemporaryDirectory();
+      developer.log('[VOUCHER_SERVICE] Temp directory: ${tempDir.path}');
+      
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final file = File('${tempDir.path}/invoice_${firstSale.invoiceNumber}_$timestamp.pdf');
-      await file.writeAsBytes(await pdf.save());
+      final fileName = 'invoice_${firstSale.invoiceNumber}_$timestamp.pdf';
+      final filePath = '${tempDir.path}/$fileName';
+      final file = File(filePath);
+      
+      developer.log('[VOUCHER_SERVICE] Creating file at: $filePath');
+      developer.log('[VOUCHER_SERVICE] Generating PDF bytes');
+      final pdfBytes = await pdf.save();
+      developer.log('[VOUCHER_SERVICE] PDF bytes generated: ${pdfBytes.length} bytes');
+      
+      developer.log('[VOUCHER_SERVICE] Writing PDF bytes to file');
+      await file.writeAsBytes(pdfBytes);
+      developer.log('[VOUCHER_SERVICE] File written successfully');
+      
+      developer.log('[VOUCHER_SERVICE] Verifying file exists');
+      final exists = file.existsSync();
+      developer.log('[VOUCHER_SERVICE] File exists: $exists');
+      
+      if (exists) {
+        final fileSize = file.lengthSync();
+        developer.log('[VOUCHER_SERVICE] File size: $fileSize bytes');
+      }
+      
+      developer.log('[VOUCHER_SERVICE] Returning file: ${file.path}');
       return file;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      developer.log('[VOUCHER_SERVICE] EXCEPTION in generatePdfInvoice: $e');
+      developer.log('[VOUCHER_SERVICE] Stack trace: $stackTrace');
       print('Error generating PDF invoice: $e');
       return null;
     }
