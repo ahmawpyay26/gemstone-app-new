@@ -570,109 +570,13 @@ class VoucherExportService {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Header - matching Broker Voucher design
-                _buildInvoiceHeader(
+                // Header - standardized for Own Sales
+                _buildStandardizedInvoiceHeader(
+                  sales,
                   profile,
                   logoBytes,
                   padaukRegular,
                   padaukBold,
-                ),
-                pw.SizedBox(height: 12),
-                
-                // Invoice number and date row - matching Broker Voucher
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'ဘောင်ချာ နံပါတ်: ${firstSale.invoiceNumber}',
-                      style: pw.TextStyle(font: padaukRegular, fontSize: 11),
-                    ),
-                    pw.Text(
-                      'ရက်စွဲ: $createdDate',
-                      style: pw.TextStyle(font: padaukRegular, fontSize: 11),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 12),
-                
-                // Customer details box - matching Broker Info Box style
-                pw.Container(
-                  padding: pw.EdgeInsets.all(8),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey400),
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'ဖောက်သည်အချက်အလက်',
-                        style: pw.TextStyle(
-                          font: padaukBold,
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.black,
-                        ),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        'ကျောက်အမျိုးအစား: ${sales.map((s) => s.gemstoneName).toSet().join(", ")}',
-                        style: pw.TextStyle(font: padaukRegular, fontSize: 10, color: PdfColors.black),
-                      ),
-                      pw.Text(
-                        'အရေအတွက်: $totalQty',
-                        style: pw.TextStyle(font: padaukRegular, fontSize: 10, color: PdfColors.black),
-                      ),
-                      pw.Text(
-                        'ယူနစ်: kg',
-                        style: pw.TextStyle(font: padaukRegular, fontSize: 10, color: PdfColors.black),
-                      ),
-                      pw.SizedBox(height: 4),
-                      pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: [
-                              pw.Text(
-                                'စုစုပေါင်းရောင်းချမှု',
-                                style: pw.TextStyle(font: padaukRegular, fontSize: 9, color: PdfColors.black),
-                              ),
-                              pw.Text(
-                                '${moneyFormat.format(totalAmount)} ကျပ်',
-                                style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
-                              ),
-                            ],
-                          ),
-                          pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: [
-                              pw.Text(
-                                'စုစုပေါင်းကော်မရှင်',
-                                style: pw.TextStyle(font: padaukRegular, fontSize: 9, color: PdfColors.black),
-                              ),
-                              pw.Text(
-                                '${moneyFormat.format(totalCommission)} ကျပ်',
-                                style: pw.TextStyle(font: padaukRegular, fontSize: 9, color: PdfColors.black),
-                              ),
-                            ],
-                          ),
-                          pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: [
-                              pw.Text(
-                                'စုစုပေါင်းကျန်ရှိ',
-                                style: pw.TextStyle(font: padaukRegular, fontSize: 9, color: PdfColors.black),
-                              ),
-                              pw.Text(
-                                '${moneyFormat.format(totalNet)} ကျပ်',
-                                style: pw.TextStyle(font: padaukBold, fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
                 ),
                 pw.SizedBox(height: 15),
                 
@@ -768,85 +672,8 @@ class VoucherExportService {
     }
   }
 
-  /// Build invoice header section (matching Broker Voucher)
-  static pw.Widget _buildInvoiceHeader(
-    dynamic profile,
-    Uint8List? logoBytes,
-    pw.Font padaukRegular,
-    pw.Font padaukBold,
-  ) {
-    final shopName = profile.shopName.isNotEmpty
-        ? profile.shopName
-        : 'ပွဲစားအပ်နှံဘောင်ချာ';
-
-    // Build logo widget from pre-loaded bytes
-    pw.Widget? logoWidget;
-    if (logoBytes != null && logoBytes.isNotEmpty) {
-      try {
-        final pdfImage = pw.MemoryImage(logoBytes);
-        logoWidget = pw.Container(
-          width: 60,
-          height: 60,
-          child: pw.Image(pdfImage, fit: pw.BoxFit.contain),
-        );
-      } catch (_) {
-        logoWidget = null;
-      }
-    }
-
-    // Build the info column
-    final infoColumn = pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        // Shop name — large bold title
-        pw.Text(
-          shopName,
-          style: pw.TextStyle(
-            font: padaukBold,
-            fontSize: 18,
-            fontWeight: pw.FontWeight.bold,
-          ),
-        ),
-        pw.SizedBox(height: 2),
-
-        // Voucher subtitle
-        pw.Text(
-          'ရောင်းချမှုဘောင်ချာ',
-          style: pw.TextStyle(
-            font: padaukBold,
-            fontSize: 14,
-            fontWeight: pw.FontWeight.bold,
-          ),
-        ),
-        pw.SizedBox(height: 4),
-
-        // Business contact info — only show non-empty fields
-        if (profile.phone?.isNotEmpty == true)
-          pw.Text(
-            'ဖုန်း: ${profile.phone}',
-            style: pw.TextStyle(font: padaukRegular, fontSize: 10),
-          ),
-        if (profile.address?.isNotEmpty == true)
-          pw.Text(
-            'လိပ်စာ: ${profile.address}',
-            style: pw.TextStyle(font: padaukRegular, fontSize: 10),
-          ),
-        if (profile.email?.isNotEmpty == true)
-          pw.Text(
-            'Email: ${profile.email}',
-            style: pw.TextStyle(font: padaukRegular, fontSize: 10),
-          ),
-      ],
-    );
-
-    return pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        if (logoWidget != null) ...[logoWidget, pw.SizedBox(width: 10)],
-        pw.Expanded(child: infoColumn),
-      ],
-    );
-  }
+  // DEPRECATED: Old _buildInvoiceHeader method removed in Phase 2
+  // Now using _buildStandardizedInvoiceHeader for both PNG and PDF exports
 
   /// Build a single invoice table cell (matching Broker Voucher)
   static pw.Widget _buildInvoiceTableCell(
