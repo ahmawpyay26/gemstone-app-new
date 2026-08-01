@@ -19,7 +19,6 @@ import '../../../../core/services/voucher_export_service.dart';
 import '../../../../core/services/sales_invoice_image_widget.dart';
 import '../../../../core/services/sales_invoice_image_exporter.dart';
 import 'package:share_plus/share_plus.dart';
-import 'dart:developer' as dev;
 import 'package:uuid/uuid.dart';
 import 'package:collection/collection.dart';
 import '../widgets/broker_sale_form.dart';
