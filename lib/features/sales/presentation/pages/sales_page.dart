@@ -248,7 +248,7 @@ class _SalesPageState extends State<SalesPage> {
         sales,
         context,
         onStep: (step) {
-          dev.log('[ImageExport] step=$step', name: 'SalesPage');
+          developer.log('[ImageExport] step=$step');
         },
       );
 
@@ -275,7 +275,7 @@ class _SalesPageState extends State<SalesPage> {
           ),
         );
       }
-      dev.log('[ImageExport] error=$e stackTrace=$stackTrace', name: 'SalesPage');
+      developer.log('[ImageExport] error=$e stackTrace=$stackTrace');
     }
   }
 
