@@ -1104,7 +1104,7 @@ class VoucherExportService {
     pw.Widget row4 = pw.SizedBox.shrink();
     if (sales.isNotEmpty) {
       final firstSale = sales.first;
-      final hasCustomer = firstSale.customerName.isNotEmpty || firstSale.customerId != null;
+      final hasCustomer = (firstSale.customerName?.isNotEmpty ?? false) || firstSale.customerId != null;
       if (hasCustomer) {
         row4 = pw.Container(
           padding: pw.EdgeInsets.all(8),
@@ -1123,7 +1123,7 @@ class VoucherExportService {
                 ),
               ),
               pw.SizedBox(height: 4),
-              if (firstSale.customerName.isNotEmpty)
+              if ((firstSale.customerName?.isNotEmpty ?? false))
                 pw.Text(
                   'အမည်: ${firstSale.customerName}',
                   style: pw.TextStyle(font: padaukRegular, fontSize: 9),
@@ -1145,7 +1145,7 @@ class VoucherExportService {
       totalWeight += sale.weightCarat;
     }
 
-    final gemstoneTypes = sales.map((s) => s.gemstoneName).toSet().join(", ");
+    final gemstoneTypes = sales.map((s) => s.gemstoneName ?? 'Unknown').toSet().join(", ");
 
     final row5 = pw.Container(
       padding: pw.EdgeInsets.all(8),
