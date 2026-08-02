@@ -181,7 +181,10 @@ class _SalesPageState extends State<SalesPage> {
         developer.log('[PDF_EXPORT] File size: ${file.lengthSync()} bytes');
         
         if (mounted) {
-          developer.log('[PDF_EXPORT] Widget is mounted, showing success SnackBar');
+          developer.log('[PDF_EXPORT] Widget is mounted, clearing loading SnackBar');
+          ScaffoldMessenger.of(context).clearSnackBars();
+          
+          developer.log('[PDF_EXPORT] Showing success SnackBar');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('ဘောင်ချာ PDF သိမ်းဆည်းပြီးပါပြီ'),
