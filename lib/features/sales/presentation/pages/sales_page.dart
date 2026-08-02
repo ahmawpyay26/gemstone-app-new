@@ -18,7 +18,9 @@ import '../../../../shared/widgets/gemstone_breakdown_widget.dart';
 import '../../../../core/services/voucher_export_service.dart';
 import '../../../../core/services/sales_invoice_image_widget.dart';
 import '../../../../core/services/sales_invoice_image_exporter.dart';
+import '../../../../core/services/pdf_export_diagnostic.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../../core/widgets/pdf_export_diagnostic_overlay.dart';
 import 'package:uuid/uuid.dart';
 import 'package:collection/collection.dart';
 import '../widgets/broker_sale_form.dart';
@@ -154,10 +156,14 @@ class _SalesPageState extends State<SalesPage> {
 
   /// Export invoice (multiple sales) as PDF
   Future<void> _exportInvoicePdf(List<Sale> sales) async {
+    final diagnostic = PdfExportDiagnostic();
+    diagnostic.startExport();
+    
     try {
       developer.log('[PDF_EXPORT] CHECKPOINT: Started with ${sales.length} sales');
       if (sales.isEmpty) {
         developer.log('[PDF_EXPORT] CHECKPOINT: Sales list is empty, returning');
+        diagnostic.endExport();
         return;
       }
       
@@ -170,15 +176,26 @@ class _SalesPageState extends State<SalesPage> {
       final voucherService = VoucherExportService();
       
       developer.log('[PDF_EXPORT] Calling generatePdfInvoice()');
-      final file = await voucherService.generatePdfInvoice(sales);
+      diagnostic.checkpoint('Before generatePdfInvoice');
+      
+      // Add timeout for PDF generation (30 seconds)
+      final file = await voucherService.generatePdfInvoice(sales).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          diagnostic.recordTimeout('generatePdfInvoice', const Duration(seconds: 30));
+          return null;
+        },
+      );
       
       developer.log('[PDF_EXPORT] generatePdfInvoice() returned: ${file != null ? file.path : "NULL"}');
+      diagnostic.checkpoint('After generatePdfInvoice');
       
       if (file != null) {
         developer.log('[PDF_EXPORT] File is not null, checking if mounted');
         developer.log('[PDF_EXPORT] File path: ${file.path}');
         developer.log('[PDF_EXPORT] File exists: ${file.existsSync()}');
         developer.log('[PDF_EXPORT] File size: ${file.lengthSync()} bytes');
+        diagnostic.checkpoint('File verified: ${file.lengthSync()} bytes');
         
         if (mounted) {
           developer.log('[PDF_EXPORT] Widget is mounted, clearing loading SnackBar');
@@ -193,7 +210,18 @@ class _SalesPageState extends State<SalesPage> {
           );
           
           developer.log('[PDF_EXPORT] CHECKPOINT: Before Share.shareXFiles() with file: ${file.path}');
-          final result = await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ');
+          diagnostic.checkpoint('Before Share.shareXFiles');
+          
+          // Add timeout for Share (10 seconds)
+          final result = await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ').timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              diagnostic.recordTimeout('Share.shareXFiles', const Duration(seconds: 10));
+              return null;
+            },
+          );
+          
+          diagnostic.checkpoint('After Share.shareXFiles');
           developer.log('[PDF_EXPORT] CHECKPOINT: After Share.shareXFiles() completed with result: $result');
         } else {
           developer.log('[PDF_EXPORT] Widget is NOT mounted, skipping share');
@@ -201,10 +229,13 @@ class _SalesPageState extends State<SalesPage> {
       } else {
         developer.log('[PDF_EXPORT] CHECKPOINT: File is NULL - generatePdfInvoice() returned null');
         developer.log('[PDF_EXPORT] CHECKPOINT: This means PDF generation failed or returned null');
+        diagnostic.checkpoint('File is NULL');
       }
+      diagnostic.endExport();
     } catch (e, stackTrace) {
       developer.log('[PDF_EXPORT] CHECKPOINT: EXCEPTION CAUGHT: $e');
       developer.log('[PDF_EXPORT] CHECKPOINT: Stack trace: $stackTrace');
+      diagnostic.recordException(e, stackTrace);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -213,6 +244,7 @@ class _SalesPageState extends State<SalesPage> {
           ),
         );
       }
+      diagnostic.endExport();
     }
   }
 
@@ -732,20 +764,22 @@ class _SalesPageState extends State<SalesPage> {
         label: const Text('အရောင်းအသစ်'),
         onPressed: () => _showSaleTypeSelector(),
       ),
-      body: ValueListenableBuilder(
-        valueListenable: LocalDb.sales().listenable(),
-        builder: (context, Box<Sale> box, _) {
-          final totalCommission = LocalDb.totalSalesCommission();
-          final netSales = LocalDb.totalSales() - totalCommission; // Deduct commission
-          final totalGain = LocalDb.grossProfit(); // 0 until capital recouped
-          final remainingCapital = LocalDb.remainingCapital(); // capital left to recoup
-          return Column(
-            children: [
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _summaryCard(
+      body: Stack(
+        children: [
+          ValueListenableBuilder(
+            valueListenable: LocalDb.sales().listenable(),
+            builder: (context, Box<Sale> box, _) {
+              final totalCommission = LocalDb.totalSalesCommission();
+              final netSales = LocalDb.totalSales() - totalCommission; // Deduct commission
+              final totalGain = LocalDb.grossProfit(); // 0 until capital recouped
+              final remainingCapital = LocalDb.remainingCapital(); // capital left to recoup
+              return Column(
+                children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _summaryCard(
                       'စုစုပေါင်း အရောင်း',
                       '${_money.format(netSales)} ကျပ်',
                       AppTheme.successColor,
@@ -833,11 +867,18 @@ class _SalesPageState extends State<SalesPage> {
               ),
             ],
           );
-        },
+                    },
+          ),
+          ListenableBuilder(
+            listenable: PdfExportDiagnostic(),
+            builder: (context, _) {
+              return PdfExportDiagnosticOverlay();
+            },
+          ),
+        ],
       ),
     );
   }
-
   Widget _summaryCard(String label, String value, Color color) {
     return Container(
       margin: const EdgeInsets.all(8),
