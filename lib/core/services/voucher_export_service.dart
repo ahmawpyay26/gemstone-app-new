@@ -940,7 +940,7 @@ class VoucherExportService {
       }
     }
 
-    final shopName = profile.shopName.isNotEmpty
+    final shopName = (profile?.shopName?.isNotEmpty ?? false)
         ? profile.shopName
         : 'ပွဲစားအပ်နှံဘောင်ချာ';
 
