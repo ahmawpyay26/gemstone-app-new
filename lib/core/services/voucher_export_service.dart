@@ -518,8 +518,13 @@ class VoucherExportService {
     
     try {
       // Load Padauk fonts
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before loading Regular font');
       final padaukRegular = await _loadPadaukFont('Regular');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: After loading Regular font, result=$padaukRegular');
+      
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before loading Bold font');
       final padaukBold = await _loadPadaukFont('Bold');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: After loading Bold font, result=$padaukBold');
       
       final pdf = pw.Document(
         theme: pw.ThemeData.withFont(
@@ -666,9 +671,9 @@ class VoucherExportService {
         ),
       );
       
-      developer.log('[VOUCHER_SERVICE] Getting temporary directory');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before getTemporaryDirectory()');
       final tempDir = await getTemporaryDirectory();
-      developer.log('[VOUCHER_SERVICE] Temp directory: ${tempDir.path}');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: After getTemporaryDirectory(), path=${tempDir.path}');
       
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'invoice_${firstSale.invoiceNumber}_$timestamp.pdf';
@@ -676,24 +681,26 @@ class VoucherExportService {
       final file = File(filePath);
       
       developer.log('[VOUCHER_SERVICE] Creating file at: $filePath');
-      developer.log('[VOUCHER_SERVICE] Generating PDF bytes');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before pdf.save()');
       final pdfBytes = await pdf.save();
-      developer.log('[VOUCHER_SERVICE] PDF bytes generated: ${pdfBytes.length} bytes');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: After pdf.save(), bytes=${pdfBytes.length}');
       
-      developer.log('[VOUCHER_SERVICE] Writing PDF bytes to file');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before file.writeAsBytes()');
       await file.writeAsBytes(pdfBytes);
-      developer.log('[VOUCHER_SERVICE] File written successfully');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: After file.writeAsBytes()');
       
-      developer.log('[VOUCHER_SERVICE] Verifying file exists');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before file.existsSync()');
       final exists = file.existsSync();
-      developer.log('[VOUCHER_SERVICE] File exists: $exists');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: After file.existsSync(), exists=$exists');
       
       if (exists) {
         final fileSize = file.lengthSync();
-        developer.log('[VOUCHER_SERVICE] File size: $fileSize bytes');
+        developer.log('[VOUCHER_SERVICE] CHECKPOINT: File size verified: $fileSize bytes');
+      } else {
+        developer.log('[VOUCHER_SERVICE] CHECKPOINT: FILE DOES NOT EXIST! Path: ${file.path}');
       }
       
-      developer.log('[VOUCHER_SERVICE] Returning file: ${file.path}');
+      developer.log('[VOUCHER_SERVICE] CHECKPOINT: About to return file: ${file.path}');
       return file;
     } catch (e, stackTrace) {
       developer.log('[VOUCHER_SERVICE] EXCEPTION in generatePdfInvoice: $e');

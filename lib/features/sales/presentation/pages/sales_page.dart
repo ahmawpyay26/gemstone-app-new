@@ -155,9 +155,9 @@ class _SalesPageState extends State<SalesPage> {
   /// Export invoice (multiple sales) as PDF
   Future<void> _exportInvoicePdf(List<Sale> sales) async {
     try {
-      developer.log('[PDF_EXPORT] Started with ${sales.length} sales');
+      developer.log('[PDF_EXPORT] CHECKPOINT: Started with ${sales.length} sales');
       if (sales.isEmpty) {
-        developer.log('[PDF_EXPORT] Sales list is empty, returning');
+        developer.log('[PDF_EXPORT] CHECKPOINT: Sales list is empty, returning');
         return;
       }
       
@@ -192,18 +192,19 @@ class _SalesPageState extends State<SalesPage> {
             ),
           );
           
-          developer.log('[PDF_EXPORT] Calling Share.shareXFiles() with file: ${file.path}');
+          developer.log('[PDF_EXPORT] CHECKPOINT: Before Share.shareXFiles() with file: ${file.path}');
           final result = await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ');
-          developer.log('[PDF_EXPORT] Share.shareXFiles() completed with result: $result');
+          developer.log('[PDF_EXPORT] CHECKPOINT: After Share.shareXFiles() completed with result: $result');
         } else {
           developer.log('[PDF_EXPORT] Widget is NOT mounted, skipping share');
         }
       } else {
-        developer.log('[PDF_EXPORT] File is NULL - generatePdfInvoice() returned null');
+        developer.log('[PDF_EXPORT] CHECKPOINT: File is NULL - generatePdfInvoice() returned null');
+        developer.log('[PDF_EXPORT] CHECKPOINT: This means PDF generation failed or returned null');
       }
     } catch (e, stackTrace) {
-      developer.log('[PDF_EXPORT] EXCEPTION CAUGHT: $e');
-      developer.log('[PDF_EXPORT] Stack trace: $stackTrace');
+      developer.log('[PDF_EXPORT] CHECKPOINT: EXCEPTION CAUGHT: $e');
+      developer.log('[PDF_EXPORT] CHECKPOINT: Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
