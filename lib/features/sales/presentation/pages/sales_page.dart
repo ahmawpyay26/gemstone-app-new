@@ -179,13 +179,18 @@ class _SalesPageState extends State<SalesPage> {
       diagnostic.checkpoint('Before generatePdfInvoice');
       
       // Add timeout for PDF generation (30 seconds)
-      final file = await voucherService.generatePdfInvoice(sales).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          diagnostic.recordTimeout('generatePdfInvoice', const Duration(seconds: 30));
-          return null;
-        },
-      );
+      File? file;
+      try {
+        file = await voucherService.generatePdfInvoice(sales).timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            diagnostic.recordTimeout('generatePdfInvoice', const Duration(seconds: 30));
+            return null;
+          },
+        );
+      } catch (e) {
+        file = null;
+      }
       
       developer.log('[PDF_EXPORT] generatePdfInvoice() returned: ${file != null ? file.path : "NULL"}');
       diagnostic.checkpoint('After generatePdfInvoice');
@@ -217,7 +222,7 @@ class _SalesPageState extends State<SalesPage> {
             const Duration(seconds: 10),
             onTimeout: () {
               diagnostic.recordTimeout('Share.shareXFiles', const Duration(seconds: 10));
-              return null;
+              return ShareResult(status: ShareResultStatus.unavailable, raw: 'timeout');
             },
           );
           
