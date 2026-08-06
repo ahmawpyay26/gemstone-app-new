@@ -218,16 +218,20 @@ class _SalesPageState extends State<SalesPage> {
           diagnostic.checkpoint('Before Share.shareXFiles');
           
           // Add timeout for Share (10 seconds)
-          final result = await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ').timeout(
-            const Duration(seconds: 10),
-            onTimeout: () {
-              diagnostic.recordTimeout('Share.shareXFiles', const Duration(seconds: 10));
-              return ShareResult(status: ShareResultStatus.unavailable, raw: 'timeout');
-            },
-          );
-          
-          diagnostic.checkpoint('After Share.shareXFiles');
-          developer.log('[PDF_EXPORT] CHECKPOINT: After Share.shareXFiles() completed with result: $result');
+          try {
+            await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ').timeout(
+              const Duration(seconds: 10),
+              onTimeout: () {
+                diagnostic.recordTimeout('Share.shareXFiles', const Duration(seconds: 10));
+                throw TimeoutException('Share.shareXFiles timeout after 10 seconds');
+              },
+            );
+            diagnostic.checkpoint('After Share.shareXFiles');
+            developer.log('[PDF_EXPORT] CHECKPOINT: After Share.shareXFiles() completed successfully');
+          } on TimeoutException catch (e) {
+            developer.log('[PDF_EXPORT] CHECKPOINT: Share.shareXFiles timed out: $e');
+            diagnostic.checkpoint('Share.shareXFiles timeout');
+          }
         } else {
           developer.log('[PDF_EXPORT] Widget is NOT mounted, skipping share');
         }
