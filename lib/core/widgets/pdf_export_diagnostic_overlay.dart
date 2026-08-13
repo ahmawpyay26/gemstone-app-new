@@ -69,24 +69,67 @@ class _PdfExportDiagnosticOverlayState extends State<PdfExportDiagnosticOverlay>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
+                // Header with CLOSE button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text(
-                        'PDF Export Diagnostic',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
+                      child: Row(
+                        children: [
+                          Text(
+                            'PDF Export Diagnostic',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _getResultColor(diagnostic.finalResult),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              diagnostic.finalResult,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Icon(
-                      _isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: Colors.white,
-                      size: 16,
+                    Row(
+                      children: [
+                        InkWell(
+                          onTap: () => diagnostic.dismiss(),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red[700],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'CLOSE',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          _isExpanded ? Icons.expand_less : Icons.expand_more,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -98,10 +141,31 @@ class _PdfExportDiagnosticOverlayState extends State<PdfExportDiagnosticOverlay>
                   diagnostic.currentCheckpoint,
                   Colors.cyan,
                 ),
-                
+
                 if (_isExpanded) ...[
                   const SizedBox(height: 8),
                   
+                  // Final result details table
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Result Details:', style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Text('• PDF Null: ${diagnostic.generatePdfReturnedNull ?? "N/A"}', style: TextStyle(color: Colors.white, fontSize: 10)),
+                        Text('• File Exists: ${diagnostic.fileExists ?? "N/A"}', style: TextStyle(color: Colors.white, fontSize: 10)),
+                        Text('• File Size: ${diagnostic.fileSize != null ? "${diagnostic.fileSize} bytes" : "N/A"}', style: TextStyle(color: Colors.white, fontSize: 10)),
+                        Text('• Share Reached: ${diagnostic.shareReached}', style: TextStyle(color: Colors.white, fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
                   // Last completed checkpoint
                   _buildCheckpointRow(
                     'Last:',
@@ -165,6 +229,21 @@ class _PdfExportDiagnosticOverlayState extends State<PdfExportDiagnosticOverlay>
         ),
       ),
     );
+  }
+
+  Color _getResultColor(String result) {
+    switch (result) {
+      case 'SUCCESS':
+        return Colors.green;
+      case 'NULL RETURN':
+      case 'EARLY RETURN':
+        return Colors.orange;
+      case 'EXCEPTION':
+      case 'TIMEOUT':
+        return Colors.red;
+      default:
+        return Colors.blue;
+    }
   }
 
   Widget _buildCheckpointRow(String label, String value, Color color) {

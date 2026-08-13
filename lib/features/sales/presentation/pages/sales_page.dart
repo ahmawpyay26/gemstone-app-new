@@ -164,7 +164,8 @@ class _SalesPageState extends State<SalesPage> {
       developer.log('[PDF_EXPORT] CHECKPOINT: Started with ${sales.length} sales');
       if (sales.isEmpty) {
         developer.log('[PDF_EXPORT] CHECKPOINT: Sales list is empty, returning');
-        diagnostic.endExport();
+        diagnostic.checkpoint('RETURN: sales list empty');
+        diagnostic.endExport(finalResult: 'EARLY RETURN', pdfNull: null, exists: false, size: 0, share: false);
         return;
       }
       
@@ -196,55 +197,70 @@ class _SalesPageState extends State<SalesPage> {
       developer.log('[PDF_EXPORT] generatePdfInvoice() returned: ${file != null ? file.path : "NULL"}');
       diagnostic.checkpoint('After generatePdfInvoice');
       
-      if (file != null) {
-        developer.log('[PDF_EXPORT] File is not null, checking if mounted');
-        developer.log('[PDF_EXPORT] File path: ${file.path}');
-        developer.log('[PDF_EXPORT] File exists: ${file.existsSync()}');
-        developer.log('[PDF_EXPORT] File size: ${file.lengthSync()} bytes');
-        diagnostic.checkpoint('File verified: ${file.lengthSync()} bytes');
-        
-        if (mounted) {
-          developer.log('[PDF_EXPORT] Widget is mounted, clearing loading SnackBar');
-          ScaffoldMessenger.of(context).clearSnackBars();
-          
-          developer.log('[PDF_EXPORT] Showing success SnackBar');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('ဘောင်ချာ PDF သိမ်းဆည်းပြီးပါပြီ'),
-              backgroundColor: AppTheme.successColor,
-            ),
-          );
-          
-          developer.log('[PDF_EXPORT] CHECKPOINT: Before Share.shareXFiles() with file: ${file.path}');
-          diagnostic.checkpoint('Before Share.shareXFiles');
-          
-          // Add timeout for Share (10 seconds)
-          try {
-            await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ').timeout(
-              const Duration(seconds: 10),
-              onTimeout: () {
-                diagnostic.recordTimeout('Share.shareXFiles', const Duration(seconds: 10));
-                throw TimeoutException('Share.shareXFiles timeout after 10 seconds');
-              },
-            );
-            diagnostic.checkpoint('After Share.shareXFiles');
-            developer.log('[PDF_EXPORT] CHECKPOINT: After Share.shareXFiles() completed successfully');
-          } on TimeoutException catch (e) {
-            developer.log('[PDF_EXPORT] CHECKPOINT: Share.shareXFiles timed out: $e');
-            diagnostic.checkpoint('Share.shareXFiles timeout');
-          }
-        } else {
-          developer.log('[PDF_EXPORT] Widget is NOT mounted, skipping share');
-        }
-      } else {
+      if (file == null) {
         developer.log('[PDF_EXPORT] CHECKPOINT: File is NULL - generatePdfInvoice() returned null');
-        developer.log('[PDF_EXPORT] CHECKPOINT: This means PDF generation failed or returned null');
-        diagnostic.checkpoint('File is NULL');
+        diagnostic.checkpoint('RETURN: generatePdfInvoice returned null');
+        diagnostic.endExport(finalResult: 'NULL RETURN', pdfNull: true, exists: false, size: 0, share: false);
+        return;
       }
-      diagnostic.endExport();
+
+      final exists = file.existsSync();
+      final size = exists ? file.lengthSync() : 0;
+      developer.log('[PDF_EXPORT] File path: ${file.path}, exists: $exists, size: $size');
+      diagnostic.checkpoint('File verified: exists=$exists, size=$size');
+
+      if (!exists) {
+        diagnostic.checkpoint('RETURN: file missing');
+        diagnostic.endExport(finalResult: 'EARLY RETURN', pdfNull: false, exists: false, size: 0, share: false);
+        return;
+      }
+
+      if (size == 0) {
+        diagnostic.checkpoint('RETURN: file size zero');
+        diagnostic.endExport(finalResult: 'EARLY RETURN', pdfNull: false, exists: true, size: 0, share: false);
+        return;
+      }
+
+      if (!mounted) {
+        diagnostic.checkpoint('RETURN: context not mounted');
+        diagnostic.endExport(finalResult: 'EARLY RETURN', pdfNull: false, exists: true, size: size, share: false);
+        return;
+      }
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ဘောင်ချာ PDF သိမ်းဆည်းပြီးပါပြီ'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
+
+      diagnostic.checkpoint('Before Share.shareXFiles');
+      bool shareReached = false;
+      try {
+        await Share.shareXFiles([XFile(file.path)], text: 'ဘောင်ချာ').timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            diagnostic.recordTimeout('Share.shareXFiles', const Duration(seconds: 10));
+            throw TimeoutException('Share.shareXFiles timeout after 10 seconds');
+          },
+        );
+        shareReached = true;
+        diagnostic.checkpoint('After Share.shareXFiles');
+      } on TimeoutException catch (e) {
+        diagnostic.checkpoint('Share.shareXFiles timeout');
+      }
+
+      diagnostic.endExport(
+        finalResult: 'SUCCESS',
+        pdfNull: false,
+        exists: true,
+        size: size,
+        share: shareReached,
+      );
     } catch (e, stackTrace) {
       developer.log('[PDF_EXPORT] CHECKPOINT: EXCEPTION CAUGHT: $e');
-      developer.log('[PDF_EXPORT] CHECKPOINT: Stack trace: $stackTrace');
+      diagnostic.checkpoint('RETURN: exception caught');
       diagnostic.recordException(e, stackTrace);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -254,7 +270,13 @@ class _SalesPageState extends State<SalesPage> {
           ),
         );
       }
-      diagnostic.endExport();
+      diagnostic.endExport(
+        finalResult: 'EXCEPTION',
+        pdfNull: null,
+        exists: null,
+        size: null,
+        share: false,
+      );
     }
   }
 
