@@ -510,13 +510,18 @@ class VoucherExportService {
 
   /// Generate PDF invoice for multiple sales (matching Broker Voucher design 1:1)
   Future<File?> generatePdfInvoice(List<Sale> sales) async {
-    developer.log('[VOUCHER_SERVICE] generatePdfInvoice() called with ${sales.length} sales');
+    developer.log('[VOUCHER_SERVICE] ENTER: generatePdfInvoice with ${sales.length} sales');
+    final diagnostic = PdfExportDiagnostic();
+    diagnostic.checkpoint('ENTER: generatePdfInvoice');
+
     if (sales.isEmpty) {
       developer.log('[VOUCHER_SERVICE] Sales list is empty, returning null');
+      diagnostic.checkpoint('PDF ERROR: sales list empty');
       return null;
     }
     
     try {
+      diagnostic.checkpoint('PDF: data preparation complete');
       // Load Padauk fonts
       developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before loading Regular font');
       final padaukRegular = await _loadPadaukFont('Regular');
@@ -525,6 +530,8 @@ class VoucherExportService {
       developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before loading Bold font');
       final padaukBold = await _loadPadaukFont('Bold');
       developer.log('[VOUCHER_SERVICE] CHECKPOINT: After loading Bold font, result=$padaukBold');
+      
+      diagnostic.checkpoint('PDF: document object created');
       
       final pdf = pw.Document(
         theme: pw.ThemeData.withFont(
@@ -572,6 +579,7 @@ class VoucherExportService {
         logoBytes = null;
       }
       
+      diagnostic.checkpoint('PDF: page construction started');
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
@@ -670,6 +678,7 @@ class VoucherExportService {
           },
         ),
       );
+      diagnostic.checkpoint('PDF: page construction complete');
       
       developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before getTemporaryDirectory()');
       final tempDir = await getTemporaryDirectory();
@@ -681,31 +690,40 @@ class VoucherExportService {
       final file = File(filePath);
       
       developer.log('[VOUCHER_SERVICE] Creating file at: $filePath');
-      developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before pdf.save()');
+      diagnostic.checkpoint('PDF: before pdf.save');
       final pdfBytes = await pdf.save();
       developer.log('[VOUCHER_SERVICE] CHECKPOINT: After pdf.save(), bytes=${pdfBytes.length}');
+      diagnostic.checkpoint('PDF: after pdf.save');
+      diagnostic.checkpoint('PDF: bytes length = ${pdfBytes.length}');
       
+      diagnostic.checkpoint('PDF: before file write');
       developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before file.writeAsBytes()');
       await file.writeAsBytes(pdfBytes);
       developer.log('[VOUCHER_SERVICE] CHECKPOINT: After file.writeAsBytes()');
+      diagnostic.checkpoint('PDF: after file write');
       
       developer.log('[VOUCHER_SERVICE] CHECKPOINT: Before file.existsSync()');
       final exists = file.existsSync();
       developer.log('[VOUCHER_SERVICE] CHECKPOINT: After file.existsSync(), exists=$exists');
+      diagnostic.checkpoint('PDF: output file exists = $exists');
       
+      int fileSize = 0;
       if (exists) {
-        final fileSize = file.lengthSync();
+        fileSize = file.lengthSync();
         developer.log('[VOUCHER_SERVICE] CHECKPOINT: File size verified: $fileSize bytes');
       } else {
         developer.log('[VOUCHER_SERVICE] CHECKPOINT: FILE DOES NOT EXIST! Path: ${file.path}');
       }
+      diagnostic.checkpoint('PDF: output file size = $fileSize');
+      diagnostic.checkpoint('PDF: RETURN FILE');
       
       developer.log('[VOUCHER_SERVICE] CHECKPOINT: About to return file: ${file.path}');
       return file;
     } catch (e, stackTrace) {
       developer.log('[VOUCHER_SERVICE] EXCEPTION in generatePdfInvoice: $e');
       developer.log('[VOUCHER_SERVICE] Stack trace: $stackTrace');
-      print('Error generating PDF invoice: $e');
+      diagnostic.checkpoint('PDF ERROR: $e');
+      diagnostic.recordException(e, stackTrace);
       return null;
     }
   }
