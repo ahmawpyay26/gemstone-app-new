@@ -656,7 +656,7 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
                         children: [
                           Icon(Icons.image, size: 20),
                           SizedBox(width: 8),
-                          Text('ပုံထုတ်ရန်'),
+                          Text('ဘောင်ချာထုတ်ရန်'),
                         ],
                       ),
                     ),
@@ -1642,7 +1642,7 @@ class _CompletedVoucherCardState extends State<_CompletedVoucherCard> {
                         children: [
                           Icon(Icons.image, size: 20),
                           SizedBox(width: 8),
-                          Text('ပုံထုတ်ရန်'),
+                          Text('ဘောင်ချာထုတ်ရန်'),
                         ],
                       ),
                     ),

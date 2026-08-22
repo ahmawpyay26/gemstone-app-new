@@ -4017,7 +4017,7 @@ class _SaleHistoryCardState extends State<_SaleHistoryCard> {
                           children: [
                             Text('🖼️'),
                             SizedBox(width: 8),
-                            Text('ပုံထုတ်ရန်'),
+                            Text('ဘောင်ချာထုတ်ရန်'),
                           ],
                         ),
                       ),
