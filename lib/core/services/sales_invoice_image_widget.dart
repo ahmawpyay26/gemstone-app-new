@@ -32,10 +32,12 @@ class SalesInvoiceImageWidget extends StatelessWidget {
   factory SalesInvoiceImageWidget.forPngExport({
     required List<Sale> sales,
     required GlobalKey<State<StatefulWidget>>? repaintKey,
+    DecodedLogo? decodedLogo,
   }) {
     return SalesInvoiceImageWidget(
       sales: sales,
       repaintKey: repaintKey,
+      decodedLogo: decodedLogo,
       isPngExport: true,
     );
   }

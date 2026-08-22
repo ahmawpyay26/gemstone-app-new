@@ -1,4 +1,5 @@
 // ignore_for_file: avoid_catches_without_on_clauses
+import 'dart:async';
 import 'dart:developer' as dev;
 import 'dart:io';
 import 'dart:typed_data';
@@ -8,6 +9,8 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../local/models.dart';
+import '../local/local_db.dart';
+import 'decoded_logo.dart';
 import 'sales_invoice_image_widget.dart';
 
 /// Exports sales invoices as PNG images and shares them
@@ -53,10 +56,12 @@ class SalesInvoicePngExporter {
       currentStep = 'render_and_capture';
       onStep?.call(currentStep);
       dev.log('[PngExport] STEP: $currentStep', name: 'SalesInvoicePngExporter');
-      
+
+      final decodedLogo = await _loadShopLogo();
       final pngBytes = await _captureInvoiceAsImage(
         sales,
         context,
+        decodedLogo: decodedLogo,
         onStep: onStep,
       );
 
@@ -140,6 +145,7 @@ class SalesInvoicePngExporter {
   static Future<Uint8List> _captureInvoiceAsImage(
     List<Sale> sales,
     BuildContext context, {
+    DecodedLogo? decodedLogo,
     void Function(String step)? onStep,
   }) async {
     final pngKey = GlobalKey();
@@ -158,6 +164,7 @@ class SalesInvoicePngExporter {
               child: SalesInvoiceImageWidget.forPngExport(
                 sales: sales,
                 repaintKey: null,
+                decodedLogo: decodedLogo,
               ),
             ),
           ),
@@ -217,6 +224,27 @@ class SalesInvoicePngExporter {
       }
     } finally {
       invoiceEntry.remove();
+    }
+  }
+
+  /// Decodes the optional logo saved in the existing business profile so the
+  /// current PNG header can paint it through its pre-existing RawImage slot.
+  static Future<DecodedLogo?> _loadShopLogo() async {
+    try {
+      final rawPath = LocalDb.getBusinessProfile().logoPath;
+      if (rawPath == null || rawPath.trim().isEmpty) return null;
+
+      final logoFile = File(rawPath.trim());
+      if (!logoFile.existsSync()) return null;
+
+      final bytes = await logoFile.readAsBytes();
+      if (bytes.isEmpty) return null;
+
+      final completer = Completer<ui.Image>();
+      ui.decodeImageFromList(bytes, completer.complete);
+      return DecodedLogo(bytes: bytes, image: await completer.future);
+    } catch (_) {
+      return null;
     }
   }
 
