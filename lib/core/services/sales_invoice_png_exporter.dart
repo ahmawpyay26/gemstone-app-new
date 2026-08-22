@@ -2,11 +2,12 @@
 import 'dart:developer' as dev;
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../local/models.dart';
-import 'offscreen_widget_image_renderer.dart';
 import 'sales_invoice_image_widget.dart';
 
 /// Exports sales invoices as PNG images and shares them
@@ -53,7 +54,11 @@ class SalesInvoicePngExporter {
       onStep?.call(currentStep);
       dev.log('[PngExport] STEP: $currentStep', name: 'SalesInvoicePngExporter');
       
-      final pngBytes = await _captureInvoiceAsImage(sales, onStep: onStep);
+      final pngBytes = await _captureInvoiceAsImage(
+        sales,
+        context,
+        onStep: onStep,
+      );
 
       if (pngBytes.isEmpty) {
         dev.log('[PngExport] ERROR: Failed to capture invoice as image', name: 'SalesInvoicePngExporter');
@@ -133,32 +138,84 @@ class SalesInvoicePngExporter {
 
   /// Capture invoice widget as PNG image bytes
   static Future<Uint8List> _captureInvoiceAsImage(
-    List<Sale> sales, {
+    List<Sale> sales,
+    BuildContext context, {
     void Function(String step)? onStep,
-  }) {
-    // The former transparent-dialog approach captured a boundary whose paint
-    // completion was not guaranteed. This renders the same invoice widget in
-    // the app's established off-screen pipeline, which explicitly completes
-    // layout, compositing, and paint before `toImage()` is invoked.
-    return OffscreenWidgetImageRenderer.renderWidgetToPNG(
-      SalesInvoiceImageWidget.forPngExport(
-        sales: sales,
-        repaintKey: null,
-      ),
-      pageWidth: 600,
-      pageHeight: _pngInvoiceHeightFor(sales),
-      pixelRatio: 2.0,
-      onStep: onStep,
-      serviceName: 'SalesInvoicePngExporter',
-    );
-  }
+  }) async {
+    final pngKey = GlobalKey();
+    late final OverlayEntry invoiceEntry;
 
-  /// Provides the PNG render tree enough height for the actual invoice rows
-  /// while avoiding a fixed A4 canvas full of unused space for short invoices.
-  static double _pngInvoiceHeightFor(List<Sale> sales) {
-    const headerAndFooterHeight = 560.0;
-    const rowHeightAllowance = 64.0;
-    return headerAndFooterHeight + (sales.length * rowHeightAllowance);
+    invoiceEntry = OverlayEntry(
+      builder: (_) => IgnorePointer(
+        ignoring: true,
+        child: Opacity(
+          // Zero opacity prevents a child from painting. A near-transparent
+          // ancestor keeps the invoice invisible to the user while allowing
+          // the keyed boundary to receive a complete layout and paint pass.
+          opacity: 0.01,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: RepaintBoundary(
+              key: pngKey,
+              child: SalesInvoiceImageWidget.forPngExport(
+                sales: sales,
+                repaintKey: null,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context, rootOverlay: true).insert(invoiceEntry);
+
+    try {
+      // These are frame lifecycle waits, not time delays: the first frame
+      // mounts/layouts the entry and the second settles its paint/compositing.
+      onStep?.call('png_overlay_mounted');
+      await WidgetsBinding.instance.endOfFrame;
+      await WidgetsBinding.instance.endOfFrame;
+
+      final captureContext = pngKey.currentContext;
+      if (captureContext == null) {
+        throw StateError('PNG capture boundary is not mounted.');
+      }
+
+      final renderObject = captureContext.findRenderObject();
+      if (renderObject is! RenderRepaintBoundary) {
+        throw StateError(
+          'PNG capture target is not RenderRepaintBoundary: '
+          '${renderObject.runtimeType}',
+        );
+      }
+
+      if (!renderObject.hasSize ||
+          renderObject.size.width <= 0 ||
+          renderObject.size.height <= 0) {
+        throw StateError('PNG capture boundary has no valid size.');
+      }
+
+      if (renderObject.debugNeedsPaint) {
+        await WidgetsBinding.instance.endOfFrame;
+        if (renderObject.debugNeedsPaint) {
+          throw StateError('PNG invoice boundary has not completed painting.');
+        }
+      }
+
+      onStep?.call('png_invoice_painted');
+      final image = await renderObject.toImage(pixelRatio: 2.0);
+      try {
+        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+        if (byteData == null || byteData.lengthInBytes == 0) {
+          throw StateError('PNG encoding returned empty bytes.');
+        }
+        return byteData.buffer.asUint8List();
+      } finally {
+        image.dispose();
+      }
+    } finally {
+      invoiceEntry.remove();
+    }
   }
 
   /// Get safe filename for export

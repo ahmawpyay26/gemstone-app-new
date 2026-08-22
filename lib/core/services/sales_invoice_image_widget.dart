@@ -104,9 +104,7 @@ class SalesInvoiceImageWidget extends StatelessWidget {
       ],
     );
 
-    return RepaintBoundary(
-      key: repaintKey,
-      child: Container(
+    final invoiceSurface = Container(
         width: width,
         height: height,
         color: Colors.white,
@@ -118,7 +116,18 @@ class SalesInvoiceImageWidget extends StatelessWidget {
         child: isPngExport
             ? invoiceContents
             : SingleChildScrollView(child: invoiceContents),
-      ),
+    );
+
+    // PNG export supplies its own outer, keyed boundary in the mounted
+    // overlay. Keeping this widget as the direct invoice surface prevents a
+    // nested capture layer from separating the background from its content.
+    if (repaintKey == null) {
+      return invoiceSurface;
+    }
+
+    return RepaintBoundary(
+      key: repaintKey,
+      child: invoiceSurface,
     );
   }
 
