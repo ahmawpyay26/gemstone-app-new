@@ -1100,16 +1100,6 @@ class _SalesPageState extends State<SalesPage> {
                     ],
                   ),
                 ),
-                const PopupMenuItem<String>(
-                  value: 'pdf',
-                  child: Row(
-                    children: [
-                      Text('📄'),
-                      SizedBox(width: 8),
-                      Text('PDF ထုတ်ရန်'),
-                    ],
-                  ),
-                ),
               ],
               child: const Text('⋮', style: TextStyle(fontSize: 20)),
             ),
@@ -4032,16 +4022,6 @@ class _SaleHistoryCardState extends State<_SaleHistoryCard> {
                         ),
                       ),
                       PopupMenuItem(
-                        value: 'pdf',
-                        child: const Row(
-                          children: [
-                            Text('📄'),
-                            SizedBox(width: 8),
-                            Text('PDF ထုတ်ရန်'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
                         value: 'photos',
                         child: const Row(
                           children: [
@@ -4419,16 +4399,6 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
                               Text('🖨️'),
                               SizedBox(width: 8),
                               Text('ပရင့်ထုတ်ရန်'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'pdf',
-                          child: Row(
-                            children: [
-                              Text('📄'),
-                              SizedBox(width: 8),
-                              Text('PDF ထုတ်ရန်'),
                             ],
                           ),
                         ),

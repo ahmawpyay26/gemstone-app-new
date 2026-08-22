@@ -18,7 +18,10 @@
 - [x] Apply and validate only the smallest deterministic render-surface correction that makes the complete invoice paint into the existing PNG.
 - [x] Trace the existing saved shop-logo source and current Sales PNG header handoff.
 - [x] Add only the optional existing shop logo at the header top-left without changing the accepted invoice design.
-- [ ] Run focused validation, release build, both workflows, and provide the new app-release-apk artifact.
+- [x] Run focused validation, release build, both workflows, and provide the new app-release-apk artifact.
+- [x] Locate the visible Sales and Broker Consignment `PDF ထုတ်ရန်` menu entries and confirm the underlying PDF services remain separate.
+- [x] Hide only the two visible PDF menu entries, preserving PNG and all other actions.
+- [ ] Run targeted validation, release build, both workflows, and provide the new app-release-apk artifact.
 - [x] Trace the active PNG capture boundary, its direct child, and the selected-sales data handoff for the gray-image device result.
 - [x] Prove why the background paints but the invoice child content does not, without changing the working PNG file/share flow.
 - [x] Apply and validate only the smallest render-tree correction that makes complete invoice content paint inside the existing PNG boundary.

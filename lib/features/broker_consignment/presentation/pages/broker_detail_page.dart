@@ -661,16 +661,6 @@ class _VoucherGroupCardState extends State<_VoucherGroupCard> {
                       ),
                     ),
                     const PopupMenuItem<String>(
-                      value: 'pdf',
-                      child: Row(
-                        children: [
-                          Icon(Icons.picture_as_pdf, size: 20),
-                          SizedBox(width: 8),
-                          Text('PDF ထုတ်ရန်'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem<String>(
                       value: 'photos',
                       child: Row(
                         children: [
@@ -1653,16 +1643,6 @@ class _CompletedVoucherCardState extends State<_CompletedVoucherCard> {
                           Icon(Icons.image, size: 20),
                           SizedBox(width: 8),
                           Text('ပုံထုတ်ရန်'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'pdf',
-                      child: Row(
-                        children: [
-                          Icon(Icons.picture_as_pdf, size: 20),
-                          SizedBox(width: 8),
-                          Text('PDF ထုတ်ရန်'),
                         ],
                       ),
                     ),
