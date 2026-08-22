@@ -143,9 +143,7 @@ class SalesInvoicePngExporter {
     void Function(String step)? onStep,
   }) async {
     final pngKey = GlobalKey();
-    late final OverlayEntry invoiceEntry;
-
-    invoiceEntry = OverlayEntry(
+    final invoiceEntry = OverlayEntry(
       builder: (_) => IgnorePointer(
         ignoring: true,
         child: Opacity(
