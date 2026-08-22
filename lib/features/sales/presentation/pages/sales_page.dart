@@ -1090,16 +1090,6 @@ class _SalesPageState extends State<SalesPage> {
                     ],
                   ),
                 ),
-                const PopupMenuItem<String>(
-                  value: 'print',
-                  child: Row(
-                    children: [
-                      Text('🖨️'),
-                      SizedBox(width: 8),
-                      Text('ပရင့်ထုတ်ရန်'),
-                    ],
-                  ),
-                ),
               ],
               child: const Text('⋮', style: TextStyle(fontSize: 20)),
             ),
@@ -4002,16 +3992,6 @@ class _SaleHistoryCardState extends State<_SaleHistoryCard> {
                         ),
                       ),
                       PopupMenuItem(
-                        value: 'print',
-                        child: const Row(
-                          children: [
-                            Text('🖨️'),
-                            SizedBox(width: 8),
-                            Text('ပရင့်ထုတ်ရန်'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
                         value: 'image',
                         child: const Row(
                           children: [
@@ -4392,16 +4372,6 @@ class _InvoiceGroupCardState extends State<_InvoiceGroupCard> {
                         }
                       },
                       itemBuilder: (_) => [
-                        const PopupMenuItem(
-                          value: 'print',
-                          child: Row(
-                            children: [
-                              Text('🖨️'),
-                              SizedBox(width: 8),
-                              Text('ပရင့်ထုတ်ရန်'),
-                            ],
-                          ),
-                        ),
                         const PopupMenuItem(
                           value: 'image',
                           child: Row(

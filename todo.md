@@ -27,7 +27,10 @@
 - [x] Run release build, both workflows, and provide the updated app-release-apk artifact.
 - [x] Locate the Purchase List Print, PDF, and PNG popup-menu entries and confirm their callbacks/services remain separate.
 - [x] Hide only visible Print/PDF entries and rename only the existing PNG entry to `ဘောင်ချာထုတ်ရန်`.
-- [ ] Run release build, both workflows, and provide the updated app-release-apk artifact.
+- [x] Run release build, both workflows, and provide the updated app-release-apk artifact.
 - [x] Trace the active PNG capture boundary, its direct child, and the selected-sales data handoff for the gray-image device result.
 - [x] Prove why the background paints but the invoice child content does not, without changing the working PNG file/share flow.
 - [x] Apply and validate only the smallest render-tree correction that makes complete invoice content paint inside the existing PNG boundary.
+- [x] Locate visible Sales voucher `ပရင့်ထုတ်ရန်` menu entries and confirm their print callbacks remain separate.
+- [x] Hide only visible Sales Print popup entries while preserving PNG, all non-print actions, and hidden PDF state.
+- [ ] Run release build, both workflows, and provide the updated app-release-apk artifact.
