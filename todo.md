@@ -9,7 +9,10 @@
 - [ ] If an Android runtime is available, install the latest release APK and verify the exported PNG visually contains invoice content.
 - [x] Locate every `late` or conditionally initialized local that can execute in the active mounted-overlay PNG capture path.
 - [x] Fix only the proven uninitialized local/control-flow error while preserving the overlay boundary, frame waits, PNG file flow, and share flow.
-- [ ] Validate the LateInitializationError repair through CI and deliver a new APK artifact for physical-device testing.
+- [x] Validate the LateInitializationError repair through CI and deliver a new APK artifact for physical-device testing.
+- [x] Trace every async callback, helper, dependency, and platform call reachable from the PNG export action for the exact local `result` error.
+- [x] Identify the first exact `result` read before initialization and the reachable branch that leaves it unassigned.
+- [ ] Apply only the proven initialization/control-flow fix, then validate CI and provide a new APK for device retest.
 - [x] Trace the active PNG capture boundary, its direct child, and the selected-sales data handoff for the gray-image device result.
 - [x] Prove why the background paints but the invoice child content does not, without changing the working PNG file/share flow.
 - [x] Apply and validate only the smallest render-tree correction that makes complete invoice content paint inside the existing PNG boundary.

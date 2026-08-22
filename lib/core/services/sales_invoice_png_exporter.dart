@@ -193,12 +193,16 @@ class SalesInvoicePngExporter {
         throw StateError('PNG capture boundary has no valid size.');
       }
 
-      if (renderObject.debugNeedsPaint) {
-        await WidgetsBinding.instance.endOfFrame;
+      // `debugNeedsPaint` is an assert-only Flutter diagnostic. In Flutter
+      // 3.24, reading it in a release APK evaluates an uninitialized internal
+      // local named `result`. Keep the diagnostic check inside `assert`; the
+      // two `endOfFrame` waits above remain the release-safe paint guarantee.
+      assert(() {
         if (renderObject.debugNeedsPaint) {
           throw StateError('PNG invoice boundary has not completed painting.');
         }
-      }
+        return true;
+      }());
 
       onStep?.call('png_invoice_painted');
       final image = await renderObject.toImage(pixelRatio: 2.0);
