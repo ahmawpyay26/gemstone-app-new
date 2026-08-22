@@ -133,9 +133,9 @@ class SalesInvoicePngExporter {
 
   /// Capture invoice widget as PNG image bytes
   static Future<Uint8List> _captureInvoiceAsImage(
-    List<Sale> sales,
-    {void Function(String step)? onStep},
-  ) {
+    List<Sale> sales, {
+    void Function(String step)? onStep,
+  }) {
     // The former transparent-dialog approach captured a boundary whose paint
     // completion was not guaranteed. This renders the same invoice widget in
     // the app's established off-screen pipeline, which explicitly completes
