@@ -56,7 +56,53 @@ class SalesInvoiceImageWidget extends StatelessWidget {
     // PNG export uses smaller dimensions for phone display
     final width = isPngExport ? 600.0 : 800.0;
     final padding = isPngExport ? 12.0 : 20.0;
-    final height = isPngExport ? null : 1100.0;  // Auto-fit for PNG
+    final height = isPngExport ? null : 1100.0;
+
+    final invoiceContents = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Shared header widget (standardized across PNG and PDF)
+        InvoiceHeaderWidget(
+          sales: sales,
+          decodedLogo: decodedLogo,
+          onWidgetStep: onWidgetStep,
+        ),
+        const SizedBox(height: 15),
+
+        // Items table
+        _buildItemsTable(),
+
+        const SizedBox(height: 15),
+
+        // Footer
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'ရေးထိုးသူ: __________',
+              style: TextStyle(
+                fontFamily: 'Padauk',
+                fontSize: 9,
+              ),
+            ),
+            const Text(
+              'စာမျက်နှာ 1 / 1',
+              style: TextStyle(
+                fontFamily: 'Padauk',
+                fontSize: 9,
+              ),
+            ),
+            const Text(
+              'ကုန်သည် လက်မှတ်: __________',
+              style: TextStyle(
+                fontFamily: 'Padauk',
+                fontSize: 9,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
 
     return RepaintBoundary(
       key: repaintKey,
@@ -65,53 +111,13 @@ class SalesInvoiceImageWidget extends StatelessWidget {
         height: height,
         color: Colors.white,
         padding: EdgeInsets.all(padding),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Shared header widget (standardized across PNG and PDF)
-              InvoiceHeaderWidget(
-                sales: sales,
-                decodedLogo: decodedLogo,
-                onWidgetStep: onWidgetStep,
-              ),
-              const SizedBox(height: 15),
-
-              // Items table
-              _buildItemsTable(),
-
-              const SizedBox(height: 15),
-
-              // Footer
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'ရေးထိုးသူ: __________',
-                    style: TextStyle(
-                      fontFamily: 'Padauk',
-                      fontSize: 9,
-                    ),
-                  ),
-                  const Text(
-                    'စာမျက်နှာ 1 / 1',
-                    style: TextStyle(
-                      fontFamily: 'Padauk',
-                      fontSize: 9,
-                    ),
-                  ),
-                  const Text(
-                    'ကုန်သည် လက်မှတ်: __________',
-                    style: TextStyle(
-                      fontFamily: 'Padauk',
-                      fontSize: 9,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        // A PNG capture must paint every invoice row into the boundary; a
+        // scrollable viewport paints only its visible region. The PNG-only
+        // path therefore uses the natural invoice height, while the legacy
+        // dialog variant retains its original scrollable behavior.
+        child: isPngExport
+            ? invoiceContents
+            : SingleChildScrollView(child: invoiceContents),
       ),
     );
   }

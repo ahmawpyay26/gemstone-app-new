@@ -1,13 +1,12 @@
 // ignore_for_file: avoid_catches_without_on_clauses
-import 'dart:async';
 import 'dart:developer' as dev;
 import 'dart:io';
-import 'dart:ui' as ui;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../local/models.dart';
+import 'offscreen_widget_image_renderer.dart';
 import 'sales_invoice_image_widget.dart';
 
 /// Exports sales invoices as PNG images and shares them
@@ -54,9 +53,9 @@ class SalesInvoicePngExporter {
       onStep?.call(currentStep);
       dev.log('[PngExport] STEP: $currentStep', name: 'SalesInvoicePngExporter');
       
-      final pngBytes = await _captureInvoiceAsImage(sales, context);
-      
-      if (pngBytes == null || pngBytes.isEmpty) {
+      final pngBytes = await _captureInvoiceAsImage(sales, onStep: onStep);
+
+      if (pngBytes.isEmpty) {
         dev.log('[PngExport] ERROR: Failed to capture invoice as image', name: 'SalesInvoicePngExporter');
         throw StateError('ဘောင်ချာပုံထုတ်ခြင်းမှာ ပြဿနာရှိပါသည်။');
       }
@@ -94,6 +93,10 @@ class SalesInvoicePngExporter {
       final fileSize = await file.length();
       dev.log('[PngExport] File size: $fileSize bytes', name: 'SalesInvoicePngExporter');
 
+      if (fileSize == 0) {
+        throw StateError('PNG ဖိုင်သည် အလွတ်ဖြစ်နေပါသည်။');
+      }
+
       // step: create_xfile
       currentStep = 'create_xfile';
       onStep?.call(currentStep);
@@ -129,97 +132,33 @@ class SalesInvoicePngExporter {
   }
 
   /// Capture invoice widget as PNG image bytes
-  static Future<List<int>?> _captureInvoiceAsImage(
+  static Future<Uint8List> _captureInvoiceAsImage(
     List<Sale> sales,
-    BuildContext context,
-  ) async {
-    try {
-      // Use correct GlobalKey type for rendering
-      final repaintKey = GlobalKey();
-      
-      // Create invoice widget with PNG-optimized sizing
-      final invoiceWidget = RepaintBoundary(
-        key: repaintKey,
-        child: SalesInvoiceImageWidget.forPngExport(
-          sales: sales,
-          repaintKey: null,
-        ),
-      );
+    {void Function(String step)? onStep},
+  ) {
+    // The former transparent-dialog approach captured a boundary whose paint
+    // completion was not guaranteed. This renders the same invoice widget in
+    // the app's established off-screen pipeline, which explicitly completes
+    // layout, compositing, and paint before `toImage()` is invoked.
+    return OffscreenWidgetImageRenderer.renderWidgetToPNG(
+      SalesInvoiceImageWidget.forPngExport(
+        sales: sales,
+        repaintKey: null,
+      ),
+      pageWidth: 600,
+      pageHeight: _pngInvoiceHeightFor(sales),
+      pixelRatio: 2.0,
+      onStep: onStep,
+      serviceName: 'SalesInvoicePngExporter',
+    );
+  }
 
-      // Use a Completer to wait for the image capture
-      final completer = Completer<List<int>?>();
-
-      // Show widget in a transparent overlay to render it
-      showDialog(
-        context: context,
-        barrierColor: Colors.transparent,
-        builder: (BuildContext dialogContext) {
-          // Schedule capture after widget is built and laid out
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            try {
-              // Wait for frame to complete rendering
-              await WidgetsBinding.instance.endOfFrame;
-              await Future.delayed(const Duration(milliseconds: 100));
-              
-              final renderObject = repaintKey.currentContext?.findRenderObject();
-              if (renderObject == null) {
-                dev.log('[PngExport] ERROR: RenderObject not found', name: 'SalesInvoicePngExporter');
-                completer.complete(null);
-                return;
-              }
-              
-              if (renderObject is! RenderRepaintBoundary) {
-                dev.log('[PngExport] ERROR: RenderObject is not RenderRepaintBoundary, got ${renderObject.runtimeType}', name: 'SalesInvoicePngExporter');
-                completer.complete(null);
-                return;
-              }
-              
-              final renderBox = renderObject as RenderRepaintBoundary;
-
-              // Capture image
-              final image = await renderBox.toImage(pixelRatio: 2.0);
-              dev.log('[PngExport] Image captured: ${image.width}x${image.height}', name: 'SalesInvoicePngExporter');
-
-              // Encode to PNG
-              final pngData = await image.toByteData(format: ui.ImageByteFormat.png);
-              if (pngData == null) {
-                dev.log('[PngExport] ERROR: Failed to encode PNG', name: 'SalesInvoicePngExporter');
-                completer.complete(null);
-                return;
-              }
-
-              final pngBytes = pngData.buffer.asUint8List();
-              dev.log('[PngExport] PNG encoded: ${pngBytes.length} bytes', name: 'SalesInvoicePngExporter');
-
-              // Close dialog and return bytes
-              if (dialogContext.mounted) {
-                Navigator.of(dialogContext).pop();
-              }
-              completer.complete(pngBytes);
-            } catch (e) {
-              dev.log('[PngExport] ERROR in capture callback: $e', name: 'SalesInvoicePngExporter');
-              if (dialogContext.mounted) {
-                Navigator.of(dialogContext).pop();
-              }
-              completer.complete(null);
-            }
-          });
-
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: EdgeInsets.zero,
-            child: SizedBox.expand(
-              child: invoiceWidget,
-            ),
-          );
-        },
-      );
-
-      return await completer.future;
-    } catch (e) {
-      dev.log('[PngExport] ERROR in _captureInvoiceAsImage: $e', name: 'SalesInvoicePngExporter');
-      return null;
-    }
+  /// Provides the PNG render tree enough height for the actual invoice rows
+  /// while avoiding a fixed A4 canvas full of unused space for short invoices.
+  static double _pngInvoiceHeightFor(List<Sale> sales) {
+    const headerAndFooterHeight = 560.0;
+    const rowHeightAllowance = 64.0;
+    return headerAndFooterHeight + (sales.length * rowHeightAllowance);
   }
 
   /// Get safe filename for export
