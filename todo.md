@@ -24,6 +24,9 @@
 - [x] Run targeted validation, release build, both workflows, and provide the new app-release-apk artifact.
 - [x] Confirm the visible Sales and Broker Consignment PNG voucher menu label locations and callbacks.
 - [x] Rename only `ပုံထုတ်ရန်` to `ဘောင်ချာထုတ်ရန်` in those target voucher menu entries.
+- [x] Run release build, both workflows, and provide the updated app-release-apk artifact.
+- [x] Locate the Purchase List Print, PDF, and PNG popup-menu entries and confirm their callbacks/services remain separate.
+- [x] Hide only visible Print/PDF entries and rename only the existing PNG entry to `ဘောင်ချာထုတ်ရန်`.
 - [ ] Run release build, both workflows, and provide the updated app-release-apk artifact.
 - [x] Trace the active PNG capture boundary, its direct child, and the selected-sales data handoff for the gray-image device result.
 - [x] Prove why the background paints but the invoice child content does not, without changing the working PNG file/share flow.

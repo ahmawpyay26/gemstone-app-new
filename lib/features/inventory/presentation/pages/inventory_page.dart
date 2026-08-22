@@ -760,30 +760,12 @@ class _InventoryPageState extends State<InventoryPage> {
                                     ],
                                   )),
                               PopupMenuItem(
-                                  value: 'print',
-                                  child: const Row(
-                                    children: [
-                                      Text('🖨️'),
-                                      SizedBox(width: 8),
-                                      Text('ပရင့်ထုတ်ရန်'),
-                                    ],
-                                  )),
-                              PopupMenuItem(
-                                  value: 'pdf',
-                                  child: const Row(
-                                    children: [
-                                      Text('📄'),
-                                      SizedBox(width: 8),
-                                      Text('PDF ထုတ်ခြင်း'),
-                                    ],
-                                  )),
-                              PopupMenuItem(
                                   value: 'png',
                                   child: const Row(
                                     children: [
                                       Text('🖼️'),
                                       SizedBox(width: 8),
-                                      Text('PNG ထုတ်ခြင်း'),
+                                      Text('ဘောင်ချာထုတ်ရန်'),
                                     ],
                                   )),
                             ],
