@@ -194,7 +194,14 @@ class InvoiceHeaderWidget extends StatelessWidget {
   Widget _buildRow2() {
     final invoiceNumber = sales.isNotEmpty ? sales.first.invoiceNumber : 'N/A';
     final saleDate = sales.isNotEmpty ? sales.first.saleDate : DateTime.now().millisecondsSinceEpoch;
-    final dateStr = DateFormat('dd/MM/yyyy', 'my').format(DateTime.fromMillisecondsSinceEpoch(saleDate));
+    // The PNG surface is built synchronously in an OverlayEntry. Intl requires
+    // asynchronous locale-symbol initialization for `my`, which otherwise
+    // throws while this child subtree is building. The voucher date is numeric,
+    // so use the default initialized date symbols; Myanmar labels remain in the
+    // bundled Padauk font widgets below.
+    final dateStr = DateFormat('dd/MM/yyyy').format(
+      DateTime.fromMillisecondsSinceEpoch(saleDate),
+    );
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

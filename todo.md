@@ -12,7 +12,10 @@
 - [x] Validate the LateInitializationError repair through CI and deliver a new APK artifact for physical-device testing.
 - [x] Trace every async callback, helper, dependency, and platform call reachable from the PNG export action for the exact local `result` error.
 - [x] Identify the first exact `result` read before initialization and the reachable branch that leaves it unassigned.
-- [ ] Apply only the proven initialization/control-flow fix, then validate CI and provide a new APK for device retest.
+- [x] Apply only the proven initialization/control-flow fix, then validate CI and provide a new APK for device retest.
+- [x] Trace the active overlay capture boundary, invoice widget descendants, selected-sale data handoff, and inherited dependencies.
+- [x] Prove why the gray background paints while invoice child layers are omitted from the captured image.
+- [x] Apply and validate only the smallest deterministic render-surface correction that makes the complete invoice paint into the existing PNG.
 - [x] Trace the active PNG capture boundary, its direct child, and the selected-sales data handoff for the gray-image device result.
 - [x] Prove why the background paints but the invoice child content does not, without changing the working PNG file/share flow.
 - [x] Apply and validate only the smallest render-tree correction that makes complete invoice content paint inside the existing PNG boundary.
